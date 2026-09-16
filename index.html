@@ -4,258 +4,70 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MCQsPrep - Dashboard</title>
-    <style>
-        /* Base Styles & Reset */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-        body {
-            background-color: #1a1a1a;
-            color: #ffffff;
-        }
-        a {
-            text-decoration: none;
-            color: inherit;
-        }
-
-        /* Navbar */
-        header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 15px 40px;
-            background-color: #121212;
-            border-bottom: 1px solid #333;
-        }
-        .logo-container {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-size: 24px;
-            font-weight: bold;
-        }
-        .logo-container span {
-            color: #f39c12;
-        }
-        nav {
-            display: flex;
-            gap: 30px;
-            align-items: center;
-        }
-        nav a {
-            font-size: 15px;
-            font-weight: 500;
-            transition: color 0.3s ease;
-        }
-        nav a:hover {
-            color: #f39c12;
-        }
-        .login-btn {
-            background-color: #f39c12;
-            color: #000;
-            padding: 8px 20px;
-            border-radius: 5px;
-            font-weight: bold;
-            border: none;
-            cursor: pointer;
-            transition: background-color 0.3s;
-        }
-        .login-btn:hover {
-            background-color: #d68910;
-        }
-
-        /* Breadcrumb */
-        .breadcrumb {
-            padding: 15px 40px;
-            background-color: #222;
-            color: #888;
-            font-size: 14px;
-            border-bottom: 1px solid #333;
-        }
-
-        /* Main Content Layout */
-        main {
-            display: grid;
-            grid-template-columns: 2.5fr 1fr;
-            gap: 30px;
-            padding: 40px;
-            max-width: 1400px;
-            margin: 0 auto;
-        }
-
-        /* Panels */
-        .panel {
-            background-color: #242424;
-            border-radius: 8px;
-            padding: 25px;
-            margin-bottom: 25px;
-            border: 1px solid #333;
-        }
-        .panel h2 {
-            font-size: 18px;
-            margin-bottom: 20px;
-            color: #fff;
-        }
-
-        /* Search Bar */
-        .search-container {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 25px;
-        }
-        .search-input {
-            flex: 1;
-            padding: 12px 20px;
-            background-color: #1a1a1a;
-            border: 1px solid #444;
-            border-radius: 5px;
-            color: #fff;
-            font-size: 16px;
-        }
-        .search-input:focus {
-            outline: none;
-            border-color: #f39c12;
-        }
-        .search-btn {
-            background-color: #f39c12;
-            color: #000;
-            border: none;
-            padding: 0 25px;
-            border-radius: 5px;
-            font-weight: bold;
-            cursor: pointer;
-        }
-
-        /* Exam Grid */
-        .exam-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-        }
-        .exam-btn {
-            background-color: #333;
-            color: #fff;
-            padding: 20px;
-            border: 1px solid #444;
-            border-radius: 5px;
-            text-align: center;
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-        .exam-btn:hover {
-            background-color: #444;
-        }
-        .exam-btn.active {
-            background-color: #b8860b; /* Golden brown */
-            color: #111;
-            border-color: #b8860b;
-        }
-
-        /* Sidebar Links */
-        .sidebar-menu {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-        .sidebar-link {
-            display: block;
-            padding: 12px 15px;
-            background-color: #1a1a1a;
-            border: 1px solid #333;
-            border-radius: 5px;
-            color: #ddd;
-            font-size: 14px;
-            transition: all 0.2s;
-        }
-        .sidebar-link:hover {
-            border-color: #f39c12;
-            color: #f39c12;
-            transform: translateX(5px);
-        }
-    </style>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-    <!-- Header / Navigation -->
-    <header>
-        <div class="logo-container">
-            🩺 <span>MCQsPrep.</span>
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <!-- Clicking the logo takes you back to the main menu -->
+        <div class="logo-container" onclick="goHome()">
+            🩺 MCQsPrep<span>.</span>
         </div>
-        <nav>
-            <a href="#">Home</a>
-            <a href="#">Courses</a>
-            <a href="#">Leaderboard</a>
-            <a href="#">NCERT Solutions</a>
-            <a href="#">Previous Year Questions</a>
-            <button class="login-btn">Login | Register</button>
-        </nav>
-    </header>
+        
+        <!-- Functional Search Bar -->
+        <div class="search-container">
+            <input type="text" id="searchInput" placeholder="Search for NCERT topics, physics concepts, biology subtopics..." onkeypress="handleSearch(event)">
+            <button onclick="executeSearch()">Search</button>
+        </div>
 
-    <!-- Breadcrumb -->
+        <div class="nav-links">
+            <a href="#" onclick="goHome()">Home</a>
+            <a href="#" onclick="showNotification('Loading Courses Directory...')">Courses</a>
+            <a href="#" onclick="showNotification('Fetching Live Leaderboard...')">Leaderboard</a>
+            <button class="btn-login" onclick="showNotification('Opening Login/Register Modal...')">Login | Register</button>
+        </div>
+    </nav>
+
+    <!-- Breadcrumb Trail -->
     <div class="breadcrumb">
-        Home / Dashboard
+        Home / Select Exam
     </div>
 
-    <!-- Main Content -->
-    <main>
-        <!-- Left Column: Search & Exam Selection -->
-        <div class="left-col">
-            <!-- New Functional Search Bar -->
-            <div class="search-container">
-                <input type="text" id="searchInput" class="search-input" placeholder="Search topics, subtopics, or specific questions (e.g., 'Thermodynamics', 'Cell Cycle')...">
-                <button onclick="handleSearch()" class="search-btn">Search</button>
-            </div>
-
-            <!-- Select Exam Panel -->
-            <div class="panel">
-                <h2>Select Exam:</h2>
-                <div class="exam-grid">
-                    <button class="exam-btn">NEET</button>
-                    <button class="exam-btn active">General Knowledge</button>
-                </div>
-            </div>
+    <!-- Main Layout Grid -->
+    <div class="container">
+        
+        <!-- Left Side: Main Content -->
+        <!-- Notice this is empty! Your script.js will automatically inject the NEET/GK buttons here -->
+        <div class="main-content">
+            
         </div>
 
-        <!-- Right Column: Quick Links & Practice Hub -->
-        <div class="right-col">
-            <!-- Practice Hub (Replaces Social Links) -->
-            <div class="panel">
-                <h2>Practice Hub</h2>
-                <div class="sidebar-menu">
-                    <a href="#" class="sidebar-link">📝 Subject-wise MCQs</a>
-                    <a href="#" class="sidebar-link">⏱️ Full-Length Mock Tests</a>
-                    <a href="#" class="sidebar-link">📊 Daily Quiz Challenge</a>
-                    <a href="#" class="sidebar-link">🔖 Saved / Bookmarked Questions</a>
-                </div>
-            </div>
-
+        <!-- Right Side: Sidebar Functionality -->
+        <div class="sidebar">
+            
             <!-- Quick Links -->
-            <div class="panel">
-                <h2>Quick Links</h2>
-                <div class="sidebar-menu">
-                    <a href="#" class="sidebar-link">📚 NCERT Solutions</a>
-                    <a href="#" class="sidebar-link">📄 Previous Year Papers (PYQs)</a>
-                    <a href="#" class="sidebar-link">📈 View Leaderboard</a>
-                </div>
+            <div class="card">
+                <h3>Quick Links</h3>
+                <a href="#" class="action-link" onclick="jumpToSection(['NEET', 'NCERT Book'])">📚 NCERT Solutions</a>
+                <a href="#" class="action-link" onclick="jumpToSection(['NEET', 'PYQs'])">📄 Previous Year Papers</a>
             </div>
-        </div>
-    </main>
 
-    <!-- Search Functionality Script -->
-    <script>
-        function handleSearch() {
-            const query = document.getElementById('searchInput').value;
-            if(query.trim() !== "") {
-                // In a real app, this would route to a search results page or filter an API
-                alert("Searching for: " + query + "\n\n(This will connect to your backend search route!)");
-            } else {
-                alert("Please enter a topic to search.");
-            }
-        }
-    </script>
+            <!-- Essential Practice -->
+            <div class="card">
+                <h3>Essential Practice</h3>
+                <a href="#" class="action-link" onclick="jumpToSection(['NEET', 'MCQs Practice'])">📝 Subject-wise MCQs</a>
+                <a href="#" class="action-link" onclick="jumpToSection(['NEET', 'Mock Test'])">⏱️ Full-Length Mock Tests</a>
+                <a href="#" class="action-link" onclick="jumpToSection(['NEET', 'Practice Paper', 'Mixed'])">📅 Daily Quiz Challenge</a>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Notification Pop-up -->
+    <div id="notification">Action Triggered!</div>
+
+    <!-- Link to your external JavaScript file -->
+    <script src="script.js"></script>
 </body>
 </html>
