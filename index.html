@@ -4,20 +4,70 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MCQsPrep - Dashboard</title>
-    <link rel="stylesheet" href="style.css">
+    
+    <!-- ALL CSS STYLING IS NOW INSIDE THIS STYLE TAG -->
+    <style>
+        :root {
+            --bg-dark: #121212;
+            --card-bg: #1e1e1e;
+            --primary-yellow: #fdb813;
+            --primary-yellow-hover: #e0a310;
+            --text-light: #ffffff;
+            --text-muted: #a0a0a0;
+            --border-color: #333333;
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-light);
+        }
+
+        .navbar { display: flex; justify-content: space-between; align-items: center; background-color: var(--bg-dark); padding: 15px 40px; border-bottom: 1px solid var(--border-color); }
+        .logo-container { display: flex; align-items: center; font-size: 24px; font-weight: bold; color: var(--text-light); cursor: pointer; }
+        .logo-container span { color: var(--primary-yellow); margin-left: 2px; }
+        
+        .search-container { flex-grow: 1; max-width: 500px; display: flex; margin: 0 30px; }
+        .search-container input { width: 100%; padding: 10px 15px; border: 1px solid var(--border-color); border-right: none; border-radius: 4px 0 0 4px; background-color: #2a2a2a; color: white; outline: none; }
+        .search-container input::placeholder { color: var(--text-muted); }
+        .search-container button { padding: 10px 20px; background-color: #333; border: 1px solid var(--border-color); border-radius: 0 4px 4px 0; color: white; cursor: pointer; transition: 0.2s; }
+        .search-container button:hover { background-color: #444; }
+        
+        .nav-links { display: flex; align-items: center; gap: 20px; }
+        .nav-links a { color: var(--text-light); text-decoration: none; font-weight: 500; transition: color 0.2s; }
+        .nav-links a:hover { color: var(--primary-yellow); }
+        .btn-login { background-color: var(--primary-yellow); color: #000; border: none; padding: 8px 16px; border-radius: 4px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        .btn-login:hover { background-color: var(--primary-yellow-hover); }
+
+        .breadcrumb { background-color: #1a1a1a; padding: 10px 40px; font-size: 14px; color: var(--text-muted); border-bottom: 1px solid var(--border-color); }
+
+        .container { display: flex; padding: 40px; gap: 30px; max-width: 1400px; margin: 0 auto; }
+        .main-content { flex: 2; }
+        .sidebar { flex: 1; max-width: 400px; }
+
+        .card { background-color: var(--card-bg); border-radius: 8px; padding: 25px; margin-bottom: 25px; border: 1px solid var(--border-color); }
+        .card h2, .card h3 { margin-top: 0; margin-bottom: 20px; font-size: 20px; }
+
+        .btn-exam { padding: 15px; border-radius: 6px; border: 1px solid var(--border-color); background-color: #2a2a2a; color: white; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        .btn-exam:hover { background-color: #382909; border-color: var(--primary-yellow); color: var(--primary-yellow); }
+
+        .action-link { display: block; padding: 12px 15px; background-color: #2a2a2a; border: 1px solid var(--border-color); border-radius: 6px; color: white; text-decoration: none; margin-bottom: 10px; transition: 0.2s; }
+        .action-link:hover { border-color: var(--primary-yellow); background-color: #333; }
+
+        #notification { display: none; position: fixed; bottom: 20px; right: 20px; background-color: var(--primary-yellow); color: #000; padding: 15px 25px; border-radius: 5px; font-weight: bold; box-shadow: 0 4px 6px rgba(0,0,0,0.3); z-index: 1000; }
+    </style>
 </head>
 <body>
 
     <!-- Navigation Bar -->
     <nav class="navbar">
-        <!-- Clicking the logo takes you back to the main menu -->
         <div class="logo-container" onclick="goHome()">
             🩺 MCQsPrep<span>.</span>
         </div>
         
-        <!-- Functional Search Bar -->
         <div class="search-container">
-            <input type="text" id="searchInput" placeholder="Search for NCERT topics, physics concepts, biology subtopics..." onkeypress="handleSearch(event)">
+            <input type="text" id="searchInput" placeholder="Search for NCERT topics, physics concepts..." onkeypress="handleSearch(event)">
             <button onclick="executeSearch()">Search</button>
         </div>
 
@@ -25,49 +75,162 @@
             <a href="#" onclick="goHome()">Home</a>
             <a href="#" onclick="showNotification('Loading Courses Directory...')">Courses</a>
             <a href="#" onclick="showNotification('Fetching Live Leaderboard...')">Leaderboard</a>
-            <button class="btn-login" onclick="showNotification('Opening Login/Register Modal...')">Login | Register</button>
+            <button class="btn-login" onclick="showNotification('Opening Login Modal...')">Login | Register</button>
         </div>
     </nav>
 
     <!-- Breadcrumb Trail -->
-    <div class="breadcrumb">
+    <div class="breadcrumb" id="breadcrumb-text">
         Home / Select Exam
     </div>
 
     <!-- Main Layout Grid -->
     <div class="container">
-        
-        <!-- Left Side: Main Content -->
-        <!-- Notice this is empty! Your script.js will automatically inject the NEET/GK buttons here -->
-        <div class="main-content">
-            
+        <!-- Left Side: Main Content (JavaScript draws the buttons here) -->
+        <div class="main-content" id="dynamic-content">
+            <!-- Buttons inject here -->
         </div>
 
-        <!-- Right Side: Sidebar Functionality -->
+        <!-- Right Side: Sidebar -->
         <div class="sidebar">
-            
-            <!-- Quick Links -->
             <div class="card">
                 <h3>Quick Links</h3>
                 <a href="#" class="action-link" onclick="jumpToSection(['NEET', 'NCERT Book'])">📚 NCERT Solutions</a>
                 <a href="#" class="action-link" onclick="jumpToSection(['NEET', 'PYQs'])">📄 Previous Year Papers</a>
             </div>
 
-            <!-- Essential Practice -->
             <div class="card">
                 <h3>Essential Practice</h3>
                 <a href="#" class="action-link" onclick="jumpToSection(['NEET', 'MCQs Practice'])">📝 Subject-wise MCQs</a>
                 <a href="#" class="action-link" onclick="jumpToSection(['NEET', 'Mock Test'])">⏱️ Full-Length Mock Tests</a>
                 <a href="#" class="action-link" onclick="jumpToSection(['NEET', 'Practice Paper', 'Mixed'])">📅 Daily Quiz Challenge</a>
             </div>
-
         </div>
     </div>
 
     <!-- Notification Pop-up -->
     <div id="notification">Action Triggered!</div>
 
-    <!-- Link to your external JavaScript file -->
-    <script src="script.js"></script>
+    <!-- ALL JAVASCRIPT LOGIC IS NOW INSIDE THIS SCRIPT TAG -->
+    <script>
+        // Your complete database structure
+        const appData = {
+            "NEET": {
+                "NCERT Book": {
+                    "Class 11": { "Zoology": [], "Botany": [], "Physics": [], "Chemistry": [] },
+                    "Class 12": { "Zoology": [], "Botany": [], "Physics": [], "Chemistry": [] }
+                },
+                "PYQs": {
+                    "2026": [], "2025": [], "2024": [], "2023": [], "2022": [], "2021": [], 
+                    "2020": [], "2019": [], "2018": [], "2017": [], "2016": [], "2015": [], 
+                    "2014": [], "2013": [], "2012": [], "2011": []
+                },
+                "Practice Paper": { "Easy": [], "Medium": [], "Hard": [], "Mixed": [] },
+                "MCQs Practice": {
+                    "Botany": { "Easy": [], "Medium": [], "Hard": [], "Mixed": [] },
+                    "Zoology": { "Easy": [], "Medium": [], "Hard": [], "Mixed": [] },
+                    "Physics": { "Easy": [], "Medium": [], "Hard": [], "Mixed": [] },
+                    "Organic Chemistry": { "Easy": [], "Medium": [], "Hard": [], "Mixed": [] },
+                    "Physical Chemistry": { "Easy": [], "Medium": [], "Hard": [], "Mixed": [] },
+                    "Inorganic Chemistry": { "Easy": [], "Medium": [], "Hard": [], "Mixed": [] }
+                },
+                "Mock Test": "COMING SOON"
+            },
+            "General Knowledge": {
+                "Current Affairs": [],
+                "History": [],
+                "Geography": []
+            }
+        };
+
+        let currentPath = []; 
+
+        function renderView() {
+            const mainContent = document.getElementById('dynamic-content');
+            const breadcrumb = document.getElementById('breadcrumb-text');
+
+            // Update Breadcrumb
+            if (currentPath.length === 0) {
+                breadcrumb.innerText = "Home / Select Exam";
+            } else {
+                breadcrumb.innerText = "Home / " + currentPath.join(" / ");
+            }
+
+            // Traverse database
+            let currentLevel = appData;
+            for (let node of currentPath) {
+                currentLevel = currentLevel[node];
+            }
+
+            // Scenario A: End of menu (Quiz ready)
+            if (Array.isArray(currentLevel)) {
+                mainContent.innerHTML = `
+                    <div class="card">
+                        <h2>${currentPath[currentPath.length - 1]}</h2>
+                        <p style="color: var(--text-muted); margin-bottom: 20px;">
+                            This section is structured and ready for your MCQs.
+                        </p>
+                        <button class="btn-exam" onclick="goBack()" style="width: 200px; background-color: #333;">&larr; Go Back</button>
+                    </div>
+                `;
+                return;
+            }
+
+            // Scenario B: Coming Soon / Text
+            if (typeof currentLevel === 'string') {
+                mainContent.innerHTML = `
+                    <div class="card">
+                        <h2>${currentPath[currentPath.length - 1]}</h2>
+                        <h3 style="color: var(--primary-yellow); font-size: 24px; padding: 20px 0;">${currentLevel}</h3>
+                        <button class="btn-exam" onclick="goBack()" style="width: 200px; background-color: #333;">&larr; Go Back</button>
+                    </div>
+                `;
+                return;
+            }
+
+            // Scenario C: Render Buttons
+            let title = currentPath.length === 0 ? "Select Exam:" : currentPath[currentPath.length - 1];
+            
+            let html = `
+                <div class="card">
+                    <h2>${title}</h2>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px;">
+            `;
+
+            for (let key in currentLevel) {
+                html += `<button class="btn-exam" onclick="navigateTo('${key}')">${key}</button>`;
+            }
+
+            if (currentPath.length > 0) {
+                html += `<button class="btn-exam" onclick="goBack()" style="grid-column: 1 / -1; background-color: #222; border-color: #444; color: #a0a0a0;">&larr; Go Back</button>`;
+            }
+
+            html += `</div></div>`;
+            mainContent.innerHTML = html;
+        }
+
+        function navigateTo(key) { currentPath.push(key); renderView(); }
+        function goBack() { currentPath.pop(); renderView(); }
+        function goHome() { currentPath = []; renderView(); }
+        function jumpToSection(pathArray) { currentPath = pathArray; renderView(); }
+
+        function showNotification(message) {
+            const notif = document.getElementById('notification');
+            notif.innerText = message;
+            notif.style.display = 'block';
+            setTimeout(() => { notif.style.display = 'none'; }, 3000);
+        }
+
+        function executeSearch() {
+            const query = document.getElementById('searchInput').value;
+            if(query.trim() === "") { showNotification("Please enter a topic to search."); } 
+            else { showNotification("Searching database for: " + query); }
+        }
+
+        function handleSearch(event) { if (event.key === 'Enter') executeSearch(); }
+
+        // Start App
+        renderView();
+    </script>
 </body>
 </html>
