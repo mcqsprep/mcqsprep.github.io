@@ -31,8 +31,6 @@
         .nav-links { display: flex; align-items: center; gap: 20px; }
         .nav-links a { color: var(--text-light); text-decoration: none; font-weight: 500; transition: color 0.2s; cursor: pointer; }
         .nav-links a:hover { color: var(--primary-yellow); }
-        .btn-login { background-color: var(--primary-yellow); color: #000; border: none; padding: 8px 16px; border-radius: 4px; font-weight: bold; cursor: pointer; transition: 0.2s; }
-        .btn-login:hover { background-color: var(--primary-yellow-hover); }
 
         .breadcrumb { background-color: #1a1a1a; padding: 10px 40px; font-size: 14px; color: var(--text-muted); border-bottom: 1px solid var(--border-color); }
 
@@ -49,9 +47,8 @@
         .action-link { display: block; padding: 12px 15px; background-color: #2a2a2a; border: 1px solid var(--border-color); border-radius: 6px; color: white; text-decoration: none; margin-bottom: 10px; transition: 0.2s; }
         .action-link:hover { border-color: var(--primary-yellow); background-color: #333; }
         
-        /* Tables and Forms */
+        /* Tables */
         table th, table td { padding: 12px; border-bottom: 1px solid var(--border-color); text-align: left; }
-        .input-field { width: 100%; padding: 12px; margin-bottom: 15px; border-radius: 4px; border: 1px solid var(--border-color); background: #2a2a2a; color: white; box-sizing: border-box; }
 
         #notification { display: none; position: fixed; bottom: 20px; right: 20px; background-color: var(--primary-yellow); color: #000; padding: 15px 25px; border-radius: 5px; font-weight: bold; box-shadow: 0 4px 6px rgba(0,0,0,0.3); z-index: 1000; }
     </style>
@@ -68,11 +65,10 @@
             <button onclick="executeSearch()">Search</button>
         </div>
 
-        <!-- COURSES REMOVED, LEADERBOARD AND LOGIN CONNECTED -->
         <div class="nav-links">
             <a onclick="goHome()">Home</a>
-            <a onclick="showLeaderboard()">Leaderboard</a>
-            <button class="btn-login" onclick="showLogin()">Login | Register</button>
+            <a onclick="showLeaderboardOptions()">Leaderboard</a>
+            <!-- LOGIN BUTTON HAS BEEN REMOVED -->
         </div>
     </nav>
 
@@ -137,6 +133,9 @@
 
         let currentPath = []; 
 
+        // This is the empty array ready for real database integration later!
+        let realStudentData = []; 
+
         function renderView() {
             const mainContent = document.getElementById('dynamic-content');
             const breadcrumb = document.getElementById('breadcrumb-text');
@@ -185,53 +184,60 @@
             mainContent.innerHTML = html;
         }
 
-        // --- NEW FEATURES ADDED BELOW ---
-
-        // 1. Functional Leaderboard Page
-        function showLeaderboard() {
+        // --- NEW LEADERBOARD LOGIC ---
+        
+        function showLeaderboardOptions() {
             const mainContent = document.getElementById('dynamic-content');
-            document.getElementById('breadcrumb-text').innerText = "Home / Leaderboard";
+            document.getElementById('breadcrumb-text').innerText = "Home / Leaderboard Options";
             currentPath = []; 
             mainContent.innerHTML = `
                 <div class="card">
-                    <h2>🏆 Global Leaderboard</h2>
+                    <h2>🏆 Select Leaderboard</h2>
+                    <p style="color: var(--text-muted); margin-bottom: 20px;">Choose which rankings you want to view.</p>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 15px;">
+                        <button class="btn-exam" onclick="renderLeaderboardTable('Practice Leaderboard')">1. PRACTICE LEADERBOARD</button>
+                        <button class="btn-exam" onclick="renderLeaderboardTable('Mock Test Leaderboard')">2. MOCK TEST LEADERBOARD</button>
+                    </div>
+                </div>`;
+        }
+
+        function renderLeaderboardTable(type) {
+            const mainContent = document.getElementById('dynamic-content');
+            document.getElementById('breadcrumb-text').innerText = "Home / Leaderboard / " + type;
+            
+            let tableHTML = `
+                <div class="card">
+                    <h2>🏆 ${type}</h2>
                     <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
                         <tr style="color: var(--primary-yellow);">
                             <th>Rank</th><th>Student Name</th><th>Tests Taken</th><th>Accuracy</th>
-                        </tr>
-                        <tr><td>🥇 1</td><td>Arjun Sharma</td><td>142</td><td>98.5%</td></tr>
-                        <tr><td>🥈 2</td><td>Priya Patel</td><td>138</td><td>96.2%</td></tr>
-                        <tr><td>🥉 3</td><td>Rahul Verma</td><td>115</td><td>94.0%</td></tr>
-                        <tr><td>4</td><td>Sneha Reddy</td><td>98</td><td>91.8%</td></tr>
+                        </tr>`;
+            
+            // Check if there is real data in our array
+            if (realStudentData.length === 0) {
+                tableHTML += `<tr><td colspan="4" style="text-align: center; padding: 30px; color: var(--text-muted);">No students have attempted questions yet. As real students take tests, their rankings will appear here automatically!</td></tr>`;
+            } else {
+                // If there is data, it loops through and creates the rows
+                realStudentData.forEach((student, index) => {
+                    tableHTML += `<tr><td>${index + 1}</td><td>${student.name}</td><td>${student.tests}</td><td>${student.accuracy}</td></tr>`;
+                });
+            }
+
+            tableHTML += `
                     </table>
+                    <button class="btn-exam" onclick="showLeaderboardOptions()" style="width: 200px; margin-top: 20px; background-color: #333;">&larr; Go Back</button>
                 </div>`;
+            mainContent.innerHTML = tableHTML;
         }
 
-        // 2. Functional Login/Register Page
-        function showLogin() {
-            const mainContent = document.getElementById('dynamic-content');
-            document.getElementById('breadcrumb-text').innerText = "Home / Login";
-            currentPath = [];
-            mainContent.innerHTML = `
-                <div class="card" style="max-width: 400px; margin: 0 auto; text-align: center;">
-                    <h2>Welcome Back</h2>
-                    <p style="color: var(--text-muted); margin-bottom: 20px;">Login to save your mock test progress.</p>
-                    <input type="text" class="input-field" placeholder="Email Address">
-                    <input type="password" class="input-field" placeholder="Password">
-                    <button class="btn-login" style="width: 100%; padding: 12px; font-size: 16px;" onclick="showNotification('Logged in successfully!'); goHome();">Sign In</button>
-                    <p style="margin-top: 20px; font-size: 14px; color: var(--text-muted);">Don't have an account? <span style="color: var(--primary-yellow); cursor: pointer;">Register here</span></p>
-                </div>`;
-        }
+        // --- SEARCH ENGINE ---
 
-        // 3. Functional Search Engine
         function searchDatabase(obj, query, path = [], results = []) {
             for (let key in obj) {
                 let current = [...path, key];
-                // If the key matches what they typed
                 if (key.toLowerCase().includes(query.toLowerCase())) {
                     results.push(current);
                 }
-                // If it has deeper folders, keep searching
                 if (typeof obj[key] === 'object' && !Array.isArray(obj[key])) {
                     searchDatabase(obj[key], query, current, results);
                 }
