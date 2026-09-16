@@ -185,32 +185,19 @@
         }
 
         // --- NEW LEADERBOARD LOGIC ---
-        
-        function showLeaderboardOptions() {
-            const mainContent = document.getElementById('dynamic-content');
-            document.getElementById('breadcrumb-text').innerText = "Home / Leaderboard Options";
-            currentPath = []; 
-            mainContent.innerHTML = `
-                <div class="card">
-                    <h2>🏆 Select Leaderboard</h2>
-                    <p style="color: var(--text-muted); margin-bottom: 20px;">Choose which rankings you want to view.</p>
-                    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 15px;">
-                        <button class="btn-exam" onclick="renderLeaderboardTable('Practice Leaderboard')">1. PRACTICE LEADERBOARD</button>
-                        <button class="btn-exam" onclick="renderLeaderboardTable('Mock Test Leaderboard')">2. MOCK TEST LEADERBOARD</button>
-                    </div>
-                </div>`;
-        }
-
         function renderLeaderboardTable(type) {
             const mainContent = document.getElementById('dynamic-content');
             document.getElementById('breadcrumb-text').innerText = "Home / Leaderboard / " + type;
+            
+            // This smart logic changes the column title based on which leaderboard they clicked
+            let activityHeader = type === 'Practice Leaderboard' ? 'Q. ATTEMPTED' : 'Tests Taken';
             
             let tableHTML = `
                 <div class="card">
                     <h2>🏆 ${type}</h2>
                     <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
                         <tr style="color: var(--primary-yellow);">
-                            <th>Rank</th><th>Student Name</th><th>Tests Taken</th><th>Accuracy</th>
+                            <th>Rank</th><th>Student Name</th><th>${activityHeader}</th><th>Accuracy</th>
                         </tr>`;
             
             // Check if there is real data in our array
@@ -229,7 +216,6 @@
                 </div>`;
             mainContent.innerHTML = tableHTML;
         }
-
         // --- SEARCH ENGINE ---
 
         function searchDatabase(obj, query, path = [], results = []) {
