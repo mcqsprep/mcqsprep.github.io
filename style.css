@@ -1,37 +1,187 @@
-* { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, sans-serif; }
-body { background-color: #f3f4f6; margin: 0; padding: 0; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+/* Premium Font Import */
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap');
 
-nav { background-color: #111827; width: 100%; padding: 15px 30px; color: white; display: flex; justify-content: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-.logo { font-size: 1.5rem; font-weight: bold; letter-spacing: 1px; color: #60a5fa; }
+* {
+    box-sizing: border-box;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+}
 
-.main-container { background-color: #ffffff; max-width: 600px; width: 90%; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); padding: 30px; margin-top: 40px; margin-bottom: 40px; }
+body {
+    background-color: #f8fafc; /* Softer, richer off-white background */
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+    color: #0f172a;
+}
 
-h1, h2 { color: #111827; text-align: center; }
-.subtitle { text-align: center; color: #6b7280; margin-bottom: 25px; }
+/* Elegant Floating Header */
+nav {
+    background-color: #ffffff;
+    width: 100%;
+    padding: 18px 40px;
+    display: flex;
+    justify-content: center;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+    border-bottom: 1px solid #f1f5f9;
+}
 
-/* Grid for the Menu */
-.category-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; }
-.category-card { background-color: #f9fafb; border: 2px solid #e5e7eb; padding: 20px; border-radius: 10px; font-size: 1.1rem; font-weight: bold; color: #374151; cursor: pointer; transition: 0.2s; text-align: center; }
-.category-card:hover { background-color: #eff6ff; border-color: #93c5fd; color: #1d4ed8; transform: translateY(-2px); }
+/* Gradient Logo */
+.logo {
+    font-size: 1.75rem;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    background: linear-gradient(135deg, #2563eb, #7c3aed);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
 
-/* Buttons */
-button { cursor: pointer; font-size: 1rem; border-radius: 8px; transition: 0.2s; }
-#back-btn, .primary-btn { background-color: #4f46e5; color: white; border: none; padding: 10px 20px; margin-top: 10px; width: 100%; font-weight: bold; }
-#back-btn:hover, .primary-btn:hover { background-color: #4338ca; }
-#next-btn { background-color: #111827; color: white; border: none; padding: 12px; width: 100%; margin-top: 20px; font-weight: bold; }
+/* Floating Main Card with Soft Shadows */
+.main-container {
+    background-color: #ffffff;
+    max-width: 650px;
+    width: 90%;
+    border-radius: 24px; /* Smooth, rounded corners */
+    box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0,0,0,0.03);
+    padding: 45px 40px;
+    margin-top: 60px;
+    margin-bottom: 40px;
+    border: 1px solid #f8fafc;
+}
 
-/* Quiz Styling */
-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #e5e7eb; padding-bottom: 10px; margin-bottom: 20px; }
-.score-board { font-weight: bold; color: #4f46e5; font-size: 1.1rem; }
-h3 { margin-bottom: 20px; line-height: 1.5; color: #1f2937; }
-.options-container { display: flex; flex-direction: column; gap: 10px; }
-.option-btn { background: #f9fafb; border: 2px solid #e5e7eb; padding: 15px; text-align: left; }
-.option-btn:hover:not(:disabled) { background: #e0e7ff; border-color: #c7d2fe; }
-.option-btn:disabled { cursor: not-allowed; }
+h1, h2 {
+    color: #0f172a;
+    text-align: center;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+}
 
-/* Colors for correct/wrong answers */
-.correct { background-color: #dcfce7 !important; border-color: #22c55e !important; color: #166534 !important; font-weight: bold; }
-.incorrect { background-color: #fee2e2 !important; border-color: #ef4444 !important; color: #991b1b !important; }
+h1 {
+    font-size: 2.2rem;
+    margin-top: 0;
+    margin-bottom: 10px;
+}
 
-.hidden { display: none !important; }
-#result-screen { text-align: center; padding: 20px 0; }
+.subtitle {
+    text-align: center;
+    color: #64748b;
+    margin-bottom: 35px;
+    font-size: 1.1rem;
+}
+
+/* Premium Interactive Exam Buttons */
+.category-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 25px;
+}
+
+.category-card {
+    background-color: #ffffff;
+    border: 1.5px solid #e2e8f0;
+    padding: 24px 20px;
+    border-radius: 16px;
+    font-size: 1.15rem;
+    font-weight: 600;
+    color: #334155;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    text-align: center;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.01);
+}
+
+/* Hover Animation: Lift and Glow */
+.category-card:hover {
+    background-color: #f0f9ff;
+    border-color: #3b82f6;
+    color: #1d4ed8;
+    transform: translateY(-4px);
+    box-shadow: 0 12px 20px -8px rgba(59, 130, 246, 0.25);
+}
+
+/* Standard Buttons (Next, Back) */
+button {
+    cursor: pointer;
+    font-size: 1.05rem;
+    border-radius: 12px;
+    transition: all 0.2s ease;
+    font-family: inherit;
+}
+
+#back-btn {
+    background-color: transparent;
+    color: #64748b;
+    border: 1.5px solid #cbd5e1;
+    padding: 12px 24px;
+    margin-top: 15px;
+    width: 100%;
+    font-weight: 600;
+}
+
+#back-btn:hover {
+    background-color: #f1f5f9;
+    color: #0f172a;
+}
+
+/* Gradient Action Buttons */
+.primary-btn, #next-btn {
+    background: linear-gradient(135deg, #2563eb, #1d4ed8);
+    color: white;
+    border: none;
+    padding: 14px 24px;
+    width: 100%;
+    font-weight: 600;
+    margin-top: 25px;
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+}
+
+.primary-btn:hover, #next-btn:hover {
+    box-shadow: 0 6px 16px rgba(37, 99, 235, 0.4);
+    transform: translateY(-2px);
+}
+
+/* Quiz Specific Styling */
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid #f1f5f9;
+    padding-bottom: 15px;
+    margin-bottom: 25px;
+}
+
+.score-board {
+    font-weight: 700;
+    color: #2563eb;
+    font-size: 1.2rem;
+    background-color: #eff6ff;
+    padding: 8px 16px;
+    border-radius: 20px;
+}
+
+h3 {
+    margin-bottom: 25px;
+    line-height: 1.6;
+    colorWhen developers talk about a GitHub "homepage," they are usually referring to one of two things: a personal **Profile README** or a standalone **GitHub Pages** website. 
+
+Here is how to elevate both to a premium, professional level.
+
+## The GitHub Profile README (Your Front Page)
+Transforming your default profile into a standout portfolio requires leveraging a hidden GitHub feature and using advanced Markdown.
+
+1. **Create the Special Repository:** Create a new public repository and name it with the *exact same name* as your GitHub username. Check the box to initialize it with a `README.md` file. 
+2. **Design a Custom Banner:** Plain text headers look basic. Create a sleek, personalized header image (roughly 1500x500 pixels) and embed it at the very top of your README using Markdown: `![Header](link-to-image)`.
+3. **Deploy Tech Badges:** Replace text-based lists of your skills with clean, uniform visual tags. Use a free generator like *Shields.io* to create high-resolution badges for your tech stack, software tools, and social media links.
+4. **Integrate Dynamic Stats:** Make your page feel alive by embedding live-updating widgets. Open-source tools like *GitHub Readme Stats* (by anuraghazra) allow you to inject beautifully designed cards that automatically display your top languages, total commits, and contribution streaks.
+5. **Format with Advanced Markdown:** Keep the layout uncluttered. Use HTML `<details>` and `<summary>` tags to create collapsible drop-down menus for longer text, and use Markdown tables to align your badges or project screenshots neatly side-by-side.
+
+## Standalone GitHub Pages Websites
+If you are hosting a dedicated project or portfolio website via GitHub Pages, focus on these two upgrades:
+
+* **Use Modern Themes:** The default GitHub themes are quite basic. To achieve a premium look, fork open-source templates built on static site generators like Jekyll, Hugo, or Astro, which offer modern, responsive layouts out of the box.
+* **Map a Custom Domain:** Nothing signifies a premium project more than a custom web address. Purchase a `.com` or `.dev` domain and link it in your repository's Settings under the "Pages" tab to replace the default `github.io` URL.
+
+Are you looking to design your personal profile README, or are you trying to build a standalone website for a specific project?
