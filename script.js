@@ -1,171 +1,165 @@
-// 1. Your Organized Quiz Database
-const quizDatabase = {
+// 1. The Complete Menu Database (No questions yet, just structure)
+const appData = {
     "NEET": {
-        "Biology": {
-            "Zoology": [
-                {
-                    question: "Q1: According to NCERT excretory physiology, which of the following statements is true?",
-                    options: ["(1) Urea transport is closely related to the vasa recta", "(2) Urea transport is NOT related to the vasa recta", "(3) The vasa recta secretes urea", "(4) Urea is completely reabsorbed"],
-                    correct: 1
-                }
-            ],
-            "Botany": [
-                {
-                    question: "Q1: Which of the following is a characteristic of dicot stems?",
-                    options: ["(1) Scattered vascular bundles", "(2) Ring arrangement of vascular bundles", "(3) Lack of cambium", "(4) Parallel venation"],
-                    correct: 1
-                }
-            ]
+        "NCERT Book": {
+            "Class 11": {
+                "Zoology": [],
+                "Botany": [],
+                "Physics": [],
+                "Chemistry": []
+            },
+            "Class 12": {
+                "Zoology": [],
+                "Botany": [],
+                "Physics": [],
+                "Chemistry": []
+            }
         },
-        "Chemistry": {
-            "Organic": [
-                {
-                    question: "Q1: Which of the following has the highest boiling point?",
-                    options: ["(1) Methane", "(2) Ethane", "(3) Propane", "(4) Butane"],
-                    correct: 3
-                }
-            ]
-        }
+        "PYQs": {
+            "2026": [], "2025": [], "2024": [], "2023": [], 
+            "2022": [], "2021": [], "2020": [], "2019": [], 
+            "2018": [], "2017": [], "2016": [], "2015": [], 
+            "2014": [], "2013": [], "2012": [], "2011": []
+        },
+        "Practice Paper": {
+            "Easy": [],
+            "Medium": [],
+            "Hard": [],
+            "Mixed": []
+        },
+        "MCQs Practice": {
+            "Botany": { "Easy": [], "Medium": [], "Hard": [], "Mixed": [] },
+            "Zoology": { "Easy": [], "Medium": [], "Hard": [], "Mixed": [] },
+            "Physics": { "Easy": [], "Medium": [], "Hard": [], "Mixed": [] },
+            "Organic Chemistry": { "Easy": [], "Medium": [], "Hard": [], "Mixed": [] },
+            "Physical Chemistry": { "Easy": [], "Medium": [], "Hard": [], "Mixed": [] },
+            "Inorganic Chemistry": { "Easy": [], "Medium": [], "Hard": [], "Mixed": [] }
+        },
+        "Mock Test": "COMING SOON"
     },
     "General Knowledge": {
-        "Current Affairs": {
-            "June 2026": [
-                {
-                    question: "Q1: Which portal is utilized for undergraduate B.Sc. degree applications in Assam?",
-                    options: ["(1) Assam Samarth", "(2) OASIS", "(3) NEET UG", "(4) CUET"],
-                    correct: 0
-                }
-            ]
-        }
+        "Current Affairs": [],
+        "History": [],
+        "Geography": []
     }
 };
 
-// 2. Logic Variables
+// 2. Navigation State
 let currentPath = []; 
-let currentQuizData = [];
-let questionIndex = 0;
-let score = 0;
 
-// 3. Menu Navigation Logic
-function renderMenu() {
-    const grid = document.getElementById("category-grid");
-    const backBtn = document.getElementById("back-btn");
-    const menuTitle = document.getElementById("menu-title");
-    const breadcrumb = document.getElementById("breadcrumb");
-    
-    grid.innerHTML = ""; 
+// 3. Core Rendering Engine (Draws the menus based on where you are)
+function renderView() {
+    const mainContent = document.querySelector('.main-content');
+    const breadcrumb = document.querySelector('.breadcrumb');
 
-    let currentObj = quizDatabase;
-    for (let key of currentPath) {
-        currentObj = currentObj[key];
+    // Update Breadcrumb Text
+    if (currentPath.length === 0) {
+        breadcrumb.innerText = "Home / Select Exam";
+    } else {
+        breadcrumb.innerText = "Home / " + currentPath.join(" / ");
     }
 
-    if (Array.isArray(currentObj)) {
-        startQuiz(currentObj, currentPath[currentPath.length - 1]);
+    // Figure out which part of the database we are currently looking at
+    let currentLevel = appData;
+    for (let node of currentPath) {
+        currentLevel = currentLevel[node];
+    }
+
+    // SCENARIO A: We hit a dead-end (Leaf Node) where questions will go
+    if (Array.isArray(currentLevel)) {
+        mainContent.innerHTML = `
+            <div class="card">
+                <h2>${currentPath[currentPath.length - 1]}</h2>
+                <p style="color: var(--text-muted); margin-bottom: 20px;">
+                    This section is structured and ready. You can add your MCQs here later!
+                </p>
+                <button class="btn-exam" onclick="goBack()" style="width: 200px; background-color: #333;">&larr; Go Back</button>
+            </div>
+        `;
         return;
     }
 
-    document.getElementById("category-screen").classList.remove("hidden");
-    document.getElementById("quiz-screen").classList.add("hidden");
+    // SCENARIO B: We hit the "Mock Test" or any "COMING SOON" string
+    if (typeof currentLevel === 'string') {
+        mainContent.innerHTML = `
+            <div class="card">
+                <h2>${currentPath[currentPath.length - 1]}</h2>
+                <h3 style="color: var(--primary-yellow); font-size: 24px; padding: 20px 0;">${currentLevel}</h3>
+                <button class="btn-exam" onclick="goBack()" style="width: 200px; background-color: #333;">&larr; Go Back</button>
+            </div>
+        `;
+        return;
+    }
 
-    // Update Breadcrumbs
+    // SCENARIO C: We are in a menu, so draw the buttons
+    let title = currentPath.length === 0 ? "Select Exam:" : currentPath[currentPath.length - 1];
+    
+    let html = `
+        <div class="card">
+            <h2>${title}</h2>
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px;">
+    `;
+
+    // Create a button for every option in the current level
+    for (let key in currentLevel) {
+        html += `<button class="btn-exam" onclick="navigateTo('${key}')">${key}</button>`;
+    }
+
+    // Add a "Go Back" button if we aren't on the home screen
     if (currentPath.length > 0) {
-        backBtn.classList.remove("hidden");
-        menuTitle.innerText = "Select Subject:";
-        breadcrumb.innerText = "Home / " + currentPath.join(" / ");
-    } else {
-        backBtn.classList.add("hidden");
-        menuTitle.innerText = "Select Exam:";
-        breadcrumb.innerText = "Home / Select Exam";
+        html += `<button class="btn-exam" onclick="goBack()" style="grid-column: 1 / -1; background-color: #222; border-color: #444; color: #a0a0a0;">&larr; Go Back</button>`;
     }
 
-    for (let key in currentObj) {
-        const btn = document.createElement("button");
-        btn.className = "category-card";
-        btn.innerText = key;
-        btn.onclick = () => {
-            currentPath.push(key);
-            renderMenu();
-        };
-        grid.appendChild(btn);
-    }
+    html += `</div></div>`;
+    mainContent.innerHTML = html;
+}
+
+// 4. Navigation Actions
+function navigateTo(key) {
+    currentPath.push(key);
+    renderView();
 }
 
 function goBack() {
-    currentPath.pop(); 
-    renderMenu();
+    currentPath.pop();
+    renderView();
 }
 
-function returnToHome() {
+function goHome() {
     currentPath = [];
-    document.getElementById("result-screen").classList.add("hidden");
-    renderMenu();
+    renderView();
 }
 
-// 4. Quiz Logic
-function startQuiz(quizArray, title) {
-    document.getElementById("category-screen").classList.add("hidden");
-    document.getElementById("quiz-screen").classList.remove("hidden");
-    document.getElementById("exam-title").innerText = title + " Questions";
-    
-    // Update Breadcrumb for Quiz
-    document.getElementById("breadcrumb").innerText = "Home / " + currentPath.join(" / ") + " / Test";
-    
-    currentQuizData = quizArray;
-    questionIndex = 0;
-    score = 0;
-    document.getElementById("score").innerText = score;
-    
-    loadQuestion();
+// 5. Sidebar/Quick Link Jump Function
+// This allows your sidebar links to jump directly deep into the menus
+function jumpToSection(pathArray) {
+    currentPath = pathArray;
+    renderView();
+    showNotification("Navigated to " + pathArray[pathArray.length - 1]);
 }
 
-function loadQuestion() {
-    document.getElementById("next-btn").classList.add("hidden");
-    const optionsEl = document.getElementById("options");
-    optionsEl.innerHTML = ""; 
-    
-    const currentQuestion = currentQuizData[questionIndex];
-    document.getElementById("question").innerText = currentQuestion.question;
-
-    currentQuestion.options.forEach((option, index) => {
-        const button = document.createElement("button");
-        button.innerText = option;
-        button.classList.add("option-btn");
-        button.onclick = () => selectAnswer(index, button);
-        optionsEl.appendChild(button);
-    });
+// 6. Notifications & Search (Kept from previous version)
+function showNotification(message) {
+    const notif = document.getElementById('notification');
+    notif.innerText = message;
+    notif.style.display = 'block';
+    setTimeout(() => { notif.style.display = 'none'; }, 3000);
 }
 
-function selectAnswer(selectedIndex, selectedButton) {
-    const currentQuestion = currentQuizData[questionIndex];
-    const buttons = document.querySelectorAll(".option-btn");
-
-    buttons.forEach(btn => btn.disabled = true);
-
-    if (selectedIndex === currentQuestion.correct) {
-        selectedButton.classList.add("correct");
-        score++;
-        document.getElementById("score").innerText = score;
+function executeSearch() {
+    const query = document.getElementById('searchInput').value;
+    if(query.trim() === "") {
+        showNotification("Please enter a topic or subtopic to search.");
     } else {
-        selectedButton.classList.add("incorrect");
-        buttons[currentQuestion.correct].classList.add("correct"); 
-    }
-
-    document.getElementById("next-btn").classList.remove("hidden");
-}
-
-function nextQuestion() {
-    questionIndex++;
-    if (questionIndex < currentQuizData.length) {
-        loadQuestion();
-    } else {
-        document.getElementById("quiz-screen").querySelector(".question-card").classList.add("hidden");
-        document.getElementById("quiz-screen").querySelector(".action-bar").classList.add("hidden");
-        document.getElementById("result-screen").classList.remove("hidden");
-        document.getElementById("final-score").innerText = score;
-        document.getElementById("total-questions").innerText = currentQuizData.length;
+        showNotification(`Searching database for: "${query}"...`);
     }
 }
 
-// Start the app
-renderMenu();
+function handleSearch(event) {
+    if (event.key === 'Enter') {
+        executeSearch();
+    }
+}
+
+// Start the application
+renderView();
