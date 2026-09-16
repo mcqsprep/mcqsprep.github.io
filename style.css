@@ -1,0 +1,37 @@
+* { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, sans-serif; }
+body { background-color: #f3f4f6; margin: 0; padding: 0; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+
+nav { background-color: #111827; width: 100%; padding: 15px 30px; color: white; display: flex; justify-content: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+.logo { font-size: 1.5rem; font-weight: bold; letter-spacing: 1px; color: #60a5fa; }
+
+.main-container { background-color: #ffffff; max-width: 600px; width: 90%; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); padding: 30px; margin-top: 40px; margin-bottom: 40px; }
+
+h1, h2 { color: #111827; text-align: center; }
+.subtitle { text-align: center; color: #6b7280; margin-bottom: 25px; }
+
+/* Grid for the Menu */
+.category-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; }
+.category-card { background-color: #f9fafb; border: 2px solid #e5e7eb; padding: 20px; border-radius: 10px; font-size: 1.1rem; font-weight: bold; color: #374151; cursor: pointer; transition: 0.2s; text-align: center; }
+.category-card:hover { background-color: #eff6ff; border-color: #93c5fd; color: #1d4ed8; transform: translateY(-2px); }
+
+/* Buttons */
+button { cursor: pointer; font-size: 1rem; border-radius: 8px; transition: 0.2s; }
+#back-btn, .primary-btn { background-color: #4f46e5; color: white; border: none; padding: 10px 20px; margin-top: 10px; width: 100%; font-weight: bold; }
+#back-btn:hover, .primary-btn:hover { background-color: #4338ca; }
+#next-btn { background-color: #111827; color: white; border: none; padding: 12px; width: 100%; margin-top: 20px; font-weight: bold; }
+
+/* Quiz Styling */
+header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #e5e7eb; padding-bottom: 10px; margin-bottom: 20px; }
+.score-board { font-weight: bold; color: #4f46e5; font-size: 1.1rem; }
+h3 { margin-bottom: 20px; line-height: 1.5; color: #1f2937; }
+.options-container { display: flex; flex-direction: column; gap: 10px; }
+.option-btn { background: #f9fafb; border: 2px solid #e5e7eb; padding: 15px; text-align: left; }
+.option-btn:hover:not(:disabled) { background: #e0e7ff; border-color: #c7d2fe; }
+.option-btn:disabled { cursor: not-allowed; }
+
+/* Colors for correct/wrong answers */
+.correct { background-color: #dcfce7 !important; border-color: #22c55e !important; color: #166534 !important; font-weight: bold; }
+.incorrect { background-color: #fee2e2 !important; border-color: #ef4444 !important; color: #991b1b !important; }
+
+.hidden { display: none !important; }
+#result-screen { text-align: center; padding: 20px 0; }
