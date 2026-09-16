@@ -1,54 +1,96 @@
-  <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MCQs Prep | Competitive Exams</title>
+    <title>MCQs Prep | Pro Portal</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <nav>
-        <div class="logo">MCQs Prep.</div>
+    <!-- Premium Dark Header -->
+    <nav class="top-nav">
+        <div class="logo">
+            <span class="logo-icon">🩺</span> MCQs<span class="highlight">Prep.</span>
+        </div>
+        <div class="nav-menu">
+            <a href="#" onclick="returnToHome()">Home</a>
+            <a href="#">Courses</a>
+            <a href="#">Leaderboard</a>
+            <button class="login-btn">Login | Register</button>
+        </div>
     </nav>
 
-    <div class="main-container">
-        
-        <!-- SECTION 1: Category Menu -->
-        <div id="category-screen">
-            <h1 id="menu-title">Select Your Exam</h1>
-            <p class="subtitle" id="subtitle">Choose a category to start practicing.</p>
-            
-            <div class="category-grid" id="category-grid">
-                <!-- JavaScript creates the menu buttons here -->
-            </div>
-            
-            <button id="back-btn" class="hidden" onclick="goBack()">&larr; Go Back</button>
-        </div>
+    <!-- Sub Navigation / Breadcrumbs -->
+    <div class="sub-nav">
+        <span id="breadcrumb">Home / Select Exam</span>
+    </div>
 
-        <!-- SECTION 2: Quiz Engine -->
-        <div id="quiz-screen" class="hidden">
-            <header>
-                <h2 id="exam-title">Exam Title</h2>
-                <div class="score-board">Score: <span id="score">0</span></div>
-            </header>
+    <div class="layout-container">
+        <!-- Main Content Area -->
+        <main class="content-area">
             
-            <div id="quiz-content">
-                <h3 id="question">Loading question...</h3>
-                <div class="options-container" id="options">
-                    <!-- Option buttons appear here -->
+            <!-- SECTION 1: Category Menu -->
+            <div id="category-screen">
+                <div class="section-header">
+                    <h2 id="menu-title">Select Subject:</h2>
                 </div>
-                <button id="next-btn" class="hidden" onclick="nextQuestion()">Next Question</button>
+                <div class="category-grid" id="category-grid">
+                    <!-- Buttons injected here -->
+                </div>
+                <button id="back-btn" class="hidden outline-btn" onclick="goBack()">« Go Back</button>
+            </div>
+
+            <!-- SECTION 2: Quiz Engine -->
+            <div id="quiz-screen" class="hidden">
+                <div class="quiz-header">
+                    <h2 id="exam-title">NEET Questions</h2>
+                    <div class="score-badge">Score: <span id="score">0</span></div>
+                </div>
+                
+                <div class="question-card">
+                    <!-- Notice: No "Loading question" text here anymore -->
+                    <h3 id="question"></h3>
+                    <div class="options-container" id="options">
+                        <!-- Options injected here -->
+                    </div>
+                </div>
+                
+                <div class="action-bar">
+                    <button id="next-btn" class="hidden primary-btn" onclick="nextQuestion()">Next Question »</button>
+                </div>
             </div>
 
             <!-- SECTION 3: Results -->
-            <div id="result-screen" class="hidden">
+            <div id="result-screen" class="hidden result-card">
                 <h2>Test Completed!</h2>
-                <p>Your Final Score: <span id="final-score">0</span> / <span id="total-questions">0</span></p>
-                <button class="primary-btn" onclick="returnToHome()">Return to Home Menu</button>
+                <div class="final-score-display">
+                    <span id="final-score">0</span> / <span id="total-questions">0</span>
+                </div>
+                <button class="primary-btn" onclick="returnToHome()">Return to Dashboard</button>
             </div>
-        </div>
-        
+
+        </main>
+
+        <!-- Right Sidebar (Like SelfStudys) -->
+        <aside class="sidebar">
+            <div class="sidebar-widget">
+                <h3>Stay Connected</h3>
+                <div class="social-links">
+                    <a href="#">📱 Telegram Channel</a>
+                    <a href="#">▶️ YouTube Classes</a>
+                    <a href="#">💬 WhatsApp Group</a>
+                </div>
+            </div>
+            
+            <div class="sidebar-widget mt-20">
+                <h3>Quick Links</h3>
+                <div class="social-links">
+                    <a href="#">NCERT Solutions</a>
+                    <a href="#">Previous Year Papers</a>
+                </div>
+            </div>
+        </aside>
     </div>
     <script src="script.js"></script>
 </body>
-</html>      
+</html>
