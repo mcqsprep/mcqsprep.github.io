@@ -5,6 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MCQsPrep - Dashboard</title>
     
+    <!-- FIREBASE CONNECTION LIBRARIES -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
     <style>
         :root {
             --bg-dark: #121212;
@@ -31,13 +35,7 @@
         .nav-links { display: flex; align-items: center; gap: 20px; }
         .nav-links a { color: var(--text-light); text-decoration: none; font-weight: 500; transition: color 0.2s; cursor: pointer; }
         .nav-links a:hover { color: var(--primary-yellow); }
-        
-        /* New Highlighted Leaderboard Class */
-        .highlight-nav { 
-            color: var(--primary-yellow) !important; 
-            font-weight: bold;
-            text-shadow: 0 0 8px rgba(253, 184, 19, 0.4); 
-        }
+        .highlight-nav { color: var(--primary-yellow) !important; font-weight: bold; text-shadow: 0 0 8px rgba(253, 184, 19, 0.4); }
 
         .breadcrumb { background-color: #1a1a1a; padding: 10px 40px; font-size: 14px; color: var(--text-muted); border-bottom: 1px solid var(--border-color); }
 
@@ -73,7 +71,6 @@
 
         <div class="nav-links">
             <a onclick="goHome()">Home</a>
-            <!-- Highlighted Leaderboard Button -->
             <a onclick="showLeaderboardOptions()" class="highlight-nav">Leaderboard</a>
         </div>
     </nav>
@@ -83,12 +80,8 @@
     </div>
 
     <div class="container">
-        <!-- Main Content Area -->
-        <div class="main-content" id="dynamic-content">
-            <!-- Content injects here -->
-        </div>
+        <div class="main-content" id="dynamic-content"></div>
 
-        <!-- Sidebar -->
         <div class="sidebar">
             <div class="card">
                 <h3>Quick Links</h3>
@@ -108,17 +101,27 @@
     <div id="notification">Action Triggered!</div>
 
     <script>
+        // --- 1. FIREBASE INITIALIZATION ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyDuIetjxv1THjWvWLvO0XqB_z5xBBXLwL8",
+            authDomain: "mcqsprep.firebaseapp.com",
+            projectId: "mcqsprep",
+            storageBucket: "mcqsprep.firebasestorage.app",
+            messagingSenderId: "920181103186",
+            appId: "1:920181103186:web:14c2ba261d4a6163db5d8b"
+        };
+        // Wake up Firebase using your exact keys
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        // --- 2. MENU DATABASE ---
         const appData = {
             "NEET": {
                 "NCERT Book": {
                     "Class 11": { "Zoology": [], "Botany": [], "Physics": [], "Chemistry": [] },
                     "Class 12": { "Zoology": [], "Botany": [], "Physics": [], "Chemistry": [] }
                 },
-                "PYQs": {
-                    "2026": [], "2025": [], "2024": [], "2023": [], "2022": [], "2021": [], 
-                    "2020": [], "2019": [], "2018": [], "2017": [], "2016": [], "2015": [], 
-                    "2014": [], "2013": [], "2012": [], "2011": []
-                },
+                "PYQs": { "2026": [], "2025": [], "2024": [], "2023": [], "2022": [], "2021": [], "2020": [], "2019": [], "2018": [], "2017": [], "2016": [], "2015": [], "2014": [], "2013": [], "2012": [], "2011": [] },
                 "Practice Paper": { "Easy": [], "Medium": [], "Hard": [], "Mixed": [] },
                 "MCQs Practice": {
                     "Botany": { "Easy": [], "Medium": [], "Hard": [], "Mixed": [] },
@@ -130,164 +133,154 @@
                 },
                 "Mock Test": "COMING SOON"
             },
-            "General Knowledge": {
-                "Current Affairs": [],
-                "History": [],
-                "Geography": []
-            }
+            "General Knowledge": { "Current Affairs": [], "History": [], "Geography": [] }
         };
 
         let currentPath = []; 
-        let realStudentData = []; 
 
         function renderView() {
             const mainContent = document.getElementById('dynamic-content');
             const breadcrumb = document.getElementById('breadcrumb-text');
-
-            if (currentPath.length === 0) {
-                breadcrumb.innerText = "Home / Select Exam";
-            } else {
-                breadcrumb.innerText = "Home / " + currentPath.join(" / ");
-            }
+            if (currentPath.length === 0) { breadcrumb.innerText = "Home / Select Exam"; } 
+            else { breadcrumb.innerText = "Home / " + currentPath.join(" / "); }
 
             let currentLevel = appData;
             for (let node of currentPath) { currentLevel = currentLevel[node]; }
 
             if (Array.isArray(currentLevel)) {
-                mainContent.innerHTML = `
-                    <div class="card">
-                        <h2>${currentPath[currentPath.length - 1]}</h2>
-                        <p style="color: var(--text-muted); margin-bottom: 20px;">This section is structured and ready for your MCQs.</p>
-                        <button class="btn-exam" onclick="goBack()" style="width: 200px; background-color: #333;">&larr; Go Back</button>
-                    </div>`;
+                mainContent.innerHTML = `<div class="card"><h2>${currentPath[currentPath.length - 1]}</h2><p style="color: var(--text-muted); margin-bottom: 20px;">This section is ready for MCQs.</p><button class="btn-exam" onclick="goBack()" style="width: 200px; background-color: #333;">&larr; Go Back</button></div>`;
                 return;
             }
-
             if (typeof currentLevel === 'string') {
-                mainContent.innerHTML = `
-                    <div class="card">
-                        <h2>${currentPath[currentPath.length - 1]}</h2>
-                        <h3 style="color: var(--primary-yellow); font-size: 24px; padding: 20px 0;">${currentLevel}</h3>
-                        <button class="btn-exam" onclick="goBack()" style="width: 200px; background-color: #333;">&larr; Go Back</button>
-                    </div>`;
+                mainContent.innerHTML = `<div class="card"><h2>${currentPath[currentPath.length - 1]}</h2><h3 style="color: var(--primary-yellow); font-size: 24px; padding: 20px 0;">${currentLevel}</h3><button class="btn-exam" onclick="goBack()" style="width: 200px; background-color: #333;">&larr; Go Back</button></div>`;
                 return;
             }
 
             let title = currentPath.length === 0 ? "Select Exam:" : currentPath[currentPath.length - 1];
             let html = `<div class="card"><h2>${title}</h2><div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px;">`;
-
-            for (let key in currentLevel) {
-                html += `<button class="btn-exam" onclick="navigateTo('${key}')">${key}</button>`;
-            }
-
-            if (currentPath.length > 0) {
-                html += `<button class="btn-exam" onclick="goBack()" style="grid-column: 1 / -1; background-color: #222; border-color: #444; color: #a0a0a0;">&larr; Go Back</button>`;
-            }
-
+            for (let key in currentLevel) { html += `<button class="btn-exam" onclick="navigateTo('${key}')">${key}</button>`; }
+            if (currentPath.length > 0) { html += `<button class="btn-exam" onclick="goBack()" style="grid-column: 1 / -1; background-color: #222; border-color: #444; color: #a0a0a0;">&larr; Go Back</button>`; }
             html += `</div></div>`;
             mainContent.innerHTML = html;
         }
 
-        // --- FIXED LEADERBOARD LOGIC ---
-        
+        // --- 3. CLOUD LEADERBOARD ---
         function showLeaderboardOptions() {
             const mainContent = document.getElementById('dynamic-content');
-            document.getElementById('breadcrumb-text').innerText = "Home / Leaderboard Options";
+            document.getElementById('breadcrumb-text').innerText = "Home / Leaderboard";
             currentPath = []; 
             mainContent.innerHTML = `
                 <div class="card">
                     <h2>🏆 Select Leaderboard</h2>
-                    <p style="color: var(--text-muted); margin-bottom: 20px;">Choose which rankings you want to view.</p>
-                    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 15px;">
-                        <button class="btn-exam" onclick="renderLeaderboardTable('Practice Leaderboard')">1. PRACTICE LEADERBOARD</button>
-                        <button class="btn-exam" onclick="renderLeaderboardTable('Mock Test Leaderboard')">2. MOCK TEST LEADERBOARD</button>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 15px; margin-top: 20px;">
+                        <button class="btn-exam" onclick="fetchLiveLeaderboard('Practice Leaderboard')">1. PRACTICE LEADERBOARD</button>
+                        <button class="btn-exam" onclick="fetchLiveLeaderboard('Mock Test Leaderboard')">2. MOCK TEST LEADERBOARD</button>
                     </div>
                 </div>`;
         }
 
-        function renderLeaderboardTable(type) {
+        function fetchLiveLeaderboard(type) {
             const mainContent = document.getElementById('dynamic-content');
             document.getElementById('breadcrumb-text').innerText = "Home / Leaderboard / " + type;
-            
-            // Logic changes the column title dynamically
             let activityHeader = type === 'Practice Leaderboard' ? 'Q. ATTEMPTED' : 'Tests Taken';
             
-            let tableHTML = `
+            // Show a loading message while it asks the database
+            mainContent.innerHTML = `<div class="card"><h2>🏆 ${type}</h2><p style="color: var(--primary-yellow);">Fetching live rankings from Firebase...</p></div>`;
+
+            // Ask Firebase for scores
+            db.collection("leaderboard").where("type", "==", type).get()
+            .then((querySnapshot) => {
+                let students = [];
+                querySnapshot.forEach((doc) => { students.push(doc.data()); });
+
+                // Sort students by accuracy
+                students.sort((a, b) => b.accuracy - a.accuracy);
+
+                let tableHTML = `
                 <div class="card">
                     <h2>🏆 ${type}</h2>
                     <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
                         <tr style="color: var(--primary-yellow);">
                             <th>Rank</th><th>Student Name</th><th>${activityHeader}</th><th>Accuracy</th>
                         </tr>`;
-            
-            if (realStudentData.length === 0) {
-                tableHTML += `<tr><td colspan="4" style="text-align: center; padding: 30px; color: var(--text-muted);">No students have attempted questions yet. As real students take tests, their rankings will appear here automatically!</td></tr>`;
-            } else {
-                realStudentData.forEach((student, index) => {
-                    tableHTML += `<tr><td>${index + 1}</td><td>${student.name}</td><td>${student.tests}</td><td>${student.accuracy}</td></tr>`;
-                });
-            }
 
-            tableHTML += `
-                    </table>
-                    <button class="btn-exam" onclick="showLeaderboardOptions()" style="width: 200px; margin-top: 20px; background-color: #333;">&larr; Go Back</button>
-                </div>`;
-            mainContent.innerHTML = tableHTML;
-        }
-
-        // --- SEARCH ENGINE ---
-
-        function searchDatabase(obj, query, path = [], results = []) {
-            for (let key in obj) {
-                let current = [...path, key];
-                if (key.toLowerCase().includes(query.toLowerCase())) {
-                    results.push(current);
+                if (students.length === 0) {
+                    tableHTML += `<tr><td colspan="4" style="text-align: center; padding: 30px; color: var(--text-muted);">No scores yet! Be the first to take a test.</td></tr>`;
+                } else {
+                    students.forEach((student, index) => {
+                        let medal = index === 0 ? '🥇 ' : index === 1 ? '🥈 ' : index === 2 ? '🥉 ' : '';
+                        tableHTML += `<tr><td>${medal}${index + 1}</td><td>${student.name}</td><td>${student.tests}</td><td>${student.accuracy}%</td></tr>`;
+                    });
                 }
-                if (typeof obj[key] === 'object' && !Array.isArray(obj[key])) {
-                    searchDatabase(obj[key], query, current, results);
-                }
-            }
-            return results;
-        }
 
-        function executeSearch() {
-            const query = document.getElementById('searchInput').value.trim();
-            if(query === "") { showNotification("Please enter a topic."); return; }
-
-            const results = searchDatabase(appData, query);
-            const mainContent = document.getElementById('dynamic-content');
-            document.getElementById('breadcrumb-text').innerText = `Home / Search: "${query}"`;
-            currentPath = [];
-
-            if (results.length === 0) {
-                mainContent.innerHTML = `<div class="card"><h2>No results found for "${query}"</h2><button class="btn-exam" onclick="goHome()" style="width: 200px; margin-top: 15px;">&larr; Back to Home</button></div>`;
-                return;
-            }
-
-            let html = `<div class="card"><h2>Search Results for "${query}"</h2><div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px;">`;
-            
-            results.forEach(pathArray => {
-                const buttonText = pathArray.join(" ➔ ");
-                const pathString = JSON.stringify(pathArray).replace(/"/g, "'");
-                html += `<button class="btn-exam" onclick="jumpToSection(${pathString})">${buttonText}</button>`;
+                // Temporary button for you to test the database!
+                tableHTML += `</table>
+                <div style="display: flex; gap: 15px; margin-top: 25px;">
+                    <button class="btn-exam" onclick="showLeaderboardOptions()" style="background-color: #333;">&larr; Go Back</button>
+                    <button class="btn-exam" onclick="addFakeScore('${type}')" style="background-color: #10b981; border-color: #10b981; color: black;">+ Simulate a Student Finishing a Test</button>
+                </div></div>`;
+                
+                mainContent.innerHTML = tableHTML;
+            }).catch((error) => {
+                showNotification("Error connecting to Firebase: " + error.message);
             });
-
-            html += `</div></div>`;
-            mainContent.innerHTML = html;
         }
 
-        // Helper Functions
+        // Test function: Writes a score to your database
+        function addFakeScore(type) {
+            showNotification("Saving score to database...");
+            const names = ["Rohan Verma", "Sneha Patel", "Aditya Sharma", "Kavya Reddy", "Aman Singh"];
+            
+            db.collection("leaderboard").add({
+                name: names[Math.floor(Math.random() * names.length)],
+                tests: Math.floor(Math.random() * 50) + 5,
+                accuracy: (Math.random() * (100 - 80) + 80).toFixed(1),
+                type: type
+            }).then(() => {
+                fetchLiveLeaderboard(type); // Refresh table automatically
+                showNotification("Success! Cloud database updated.");
+            });
+        }
+
+        // --- 4. NAVIGATION & SEARCH ---
         function navigateTo(key) { currentPath.push(key); renderView(); }
         function goBack() { currentPath.pop(); renderView(); }
         function goHome() { currentPath = []; renderView(); }
         function jumpToSection(pathArray) { currentPath = pathArray; renderView(); }
-        function handleSearch(event) { if (event.key === 'Enter') executeSearch(); }
         function showNotification(message) {
             const notif = document.getElementById('notification');
             notif.innerText = message;
             notif.style.display = 'block';
             setTimeout(() => { notif.style.display = 'none'; }, 3000);
         }
+        
+        function executeSearch() {
+            const query = document.getElementById('searchInput').value.trim();
+            if(query === "") { showNotification("Please enter a topic."); return; }
+            let results = [];
+            function searchDB(obj, q, path = []) {
+                for (let key in obj) {
+                    let current = [...path, key];
+                    if (key.toLowerCase().includes(q.toLowerCase())) results.push(current);
+                    if (typeof obj[key] === 'object' && !Array.isArray(obj[key])) searchDB(obj[key], q, current);
+                }
+            }
+            searchDB(appData, query);
+            const mainContent = document.getElementById('dynamic-content');
+            document.getElementById('breadcrumb-text').innerText = `Home / Search: "${query}"`;
+            currentPath = [];
+            if (results.length === 0) {
+                mainContent.innerHTML = `<div class="card"><h2>No results found for "${query}"</h2><button class="btn-exam" onclick="goHome()" style="width: 200px; margin-top: 15px;">&larr; Back to Home</button></div>`;
+                return;
+            }
+            let html = `<div class="card"><h2>Search Results for "${query}"</h2><div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px;">`;
+            results.forEach(pathArray => {
+                html += `<button class="btn-exam" onclick="jumpToSection(${JSON.stringify(pathArray).replace(/"/g, "'")})">${pathArray.join(" ➔ ")}</button>`;
+            });
+            html += `</div></div>`;
+            mainContent.innerHTML = html;
+        }
+        function handleSearch(event) { if (event.key === 'Enter') executeSearch(); }
 
         renderView();
     </script>
