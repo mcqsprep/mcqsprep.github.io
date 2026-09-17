@@ -79,6 +79,43 @@
         .modal-content { background: var(--card-bg); padding: 35px; border-radius: 12px; border: 1px solid var(--border-color); width: 90%; max-width: 420px; position: relative; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
         .close-modal { position: absolute; top: 15px; right: 15px; background: none; border: none; color: var(--text-muted); font-size: 24px; cursor: pointer; transition: 0.2s; }
         .close-modal:hover { color: white; }
+
+        /* --- NEW MOBILE FIXES (ONLY APPLIES TO PHONES) --- */
+        @media (max-width: 768px) {
+            /* Fix the squished side-by-side layout */
+            .container { flex-direction: column; padding: 15px; gap: 15px; }
+            .sidebar { max-width: 100%; }
+            .breadcrumb { padding: 10px 15px; }
+
+            /* Fix Navbar Layout */
+            .navbar { flex-wrap: wrap; padding: 15px; }
+            .logo-container { flex: 1; }
+            .search-wrapper { margin: 0; }
+            .nav-links { width: 100%; justify-content: space-between; margin-top: 15px; font-size: 14px; }
+            .user-badge { margin-left: 0; font-size: 12px; padding: 6px 10px; }
+            
+            /* Fix the Search Bar (Makes it full-screen width when active) */
+            .search-wrapper.active { position: static; } 
+            .search-wrapper.active .search-input-container {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: var(--bg-dark);
+                z-index: 100;
+                padding: 0 15px;
+                box-sizing: border-box;
+                display: flex;
+                align-items: center;
+            }
+            .suggestions-dropdown { 
+                top: 60px; /* Drops right below the new full-width search bar */
+                left: 15px; 
+                right: 15px; 
+                width: calc(100% - 30px); 
+            }
+        }
     </style>
 </head>
 <body>
@@ -141,7 +178,6 @@
     <div id="notification">Action Triggered!</div>
 
     <script>
-        // --- 1. FIREBASE INITIALIZATION ---
         const firebaseConfig = {
             apiKey: "AIzaSyDuIetjxv1THjWvWLvO0XqB_z5xBBXLwL8",
             authDomain: "mcqsprep.firebaseapp.com",
@@ -153,7 +189,6 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
 
-        // --- 2. MENU DATABASE ---
         const appData = {
             "NEET": {
                 "NCERT Book": { "Class 11": { "Zoology": [], "Botany": [], "Physics": [], "Chemistry": [] }, "Class 12": { "Zoology": [], "Botany": [], "Physics": [], "Chemistry": [] } },
@@ -165,7 +200,6 @@
             "General Knowledge": { "Current Affairs": [], "History": [], "Geography": [] }
         };
 
-        // --- 3. IDENTITY AND LOCAL STORAGE SYSTEM ---
         let currentStudentName = localStorage.getItem('mcqsprep_student_name') || "";
         let currentLeaderboardType = "";
 
@@ -193,7 +227,6 @@
             }
         }
 
-        // --- NEW FIREBASE UNIQUENESS CHECK ---
         function saveIdentity() {
             let inputName = document.getElementById('globalNameInput').value.trim();
             const saveBtn = document.getElementById('saveProfileBtn');
@@ -203,17 +236,14 @@
                 saveBtn.style.opacity = "0.7";
                 saveBtn.disabled = true;
 
-                // Ask Firebase if this exact name already exists in the "users" collection
                 db.collection("users").where("name", "==", inputName).get()
                 .then((querySnapshot) => {
                     if (!querySnapshot.empty) {
-                        // Name exists! Stop them.
                         showNotification("⚠️ Name taken! Please enter a different name.");
                         saveBtn.innerText = "Save Profile";
                         saveBtn.style.opacity = "1";
                         saveBtn.disabled = false;
                     } else {
-                        // Name is free! Add it to the database to claim it.
                         db.collection("users").add({ name: inputName }).then(() => {
                             localStorage.setItem('mcqsprep_student_name', inputName);
                             currentStudentName = inputName;
@@ -242,7 +272,6 @@
             _renderView();
         }
 
-        // --- 4. THE HASH ROUTER ---
         let currentPath = []; 
         window.addEventListener('hashchange', handleRouting);
 
@@ -278,7 +307,6 @@
             window.location.hash = '#/quiz'; 
         }
 
-        // --- 5. HTML RENDERERS ---
         function requiresQuizLogin(pathArray) {
             const pathString = pathArray.join(" > ").toLowerCase();
             const triggers = ["mcqs practice", "mock test", "general knowledge", "practice paper"];
