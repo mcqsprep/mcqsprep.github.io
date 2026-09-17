@@ -110,7 +110,6 @@
             messagingSenderId: "920181103186",
             appId: "1:920181103186:web:14c2ba261d4a6163db5d8b"
         };
-        // Wake up Firebase using your exact keys
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
 
@@ -164,7 +163,7 @@
             mainContent.innerHTML = html;
         }
 
-        // --- 3. CLOUD LEADERBOARD ---
+        // --- 3. CLEAN CLOUD LEADERBOARD ---
         function showLeaderboardOptions() {
             const mainContent = document.getElementById('dynamic-content');
             document.getElementById('breadcrumb-text').innerText = "Home / Leaderboard";
@@ -184,14 +183,21 @@
             document.getElementById('breadcrumb-text').innerText = "Home / Leaderboard / " + type;
             let activityHeader = type === 'Practice Leaderboard' ? 'Q. ATTEMPTED' : 'Tests Taken';
             
-            // Show a loading message while it asks the database
             mainContent.innerHTML = `<div class="card"><h2>🏆 ${type}</h2><p style="color: var(--primary-yellow);">Fetching live rankings from Firebase...</p></div>`;
 
-            // Ask Firebase for scores
             db.collection("leaderboard").where("type", "==", type).get()
             .then((querySnapshot) => {
                 let students = [];
-                querySnapshot.forEach((doc) => { students.push(doc.data()); });
+                querySnapshot.forEach((doc) => { 
+                    let data = doc.data();
+                    
+                    // SMART FILTER: Only include real students who pass the threshold
+                    if (type === 'Practice Leaderboard' && data.tests >= 100) {
+                        students.push(data);
+                    } else if (type === 'Mock Test Leaderboard' && data.tests >= 10) {
+                        students.push(data);
+                    }
+                });
 
                 // Sort students by accuracy
                 students.sort((a, b) => b.accuracy - a.accuracy);
@@ -205,7 +211,9 @@
                         </tr>`;
 
                 if (students.length === 0) {
-                    tableHTML += `<tr><td colspan="4" style="text-align: center; padding: 30px; color: var(--text-muted);">No scores yet! Be the first to take a test.</td></tr>`;
+                    // Updated empty state message
+                    let requirement = type === 'Practice Leaderboard' ? '100 Questions Attempted' : '10 Tests Taken';
+                    tableHTML += `<tr><td colspan="4" style="text-align: center; padding: 30px; color: var(--text-muted);">The leaderboard is waiting! To rank here, students must complete at least ${requirement}.</td></tr>`;
                 } else {
                     students.forEach((student, index) => {
                         let medal = index === 0 ? '🥇 ' : index === 1 ? '🥈 ' : index === 2 ? '🥉 ' : '';
@@ -213,32 +221,14 @@
                     });
                 }
 
-                // Temporary button for you to test the database!
                 tableHTML += `</table>
                 <div style="display: flex; gap: 15px; margin-top: 25px;">
                     <button class="btn-exam" onclick="showLeaderboardOptions()" style="background-color: #333;">&larr; Go Back</button>
-                    <button class="btn-exam" onclick="addFakeScore('${type}')" style="background-color: #10b981; border-color: #10b981; color: black;">+ Simulate a Student Finishing a Test</button>
                 </div></div>`;
                 
                 mainContent.innerHTML = tableHTML;
             }).catch((error) => {
                 showNotification("Error connecting to Firebase: " + error.message);
-            });
-        }
-
-        // Test function: Writes a score to your database
-        function addFakeScore(type) {
-            showNotification("Saving score to database...");
-            const names = ["Rohan Verma", "Sneha Patel", "Aditya Sharma", "Kavya Reddy", "Aman Singh"];
-            
-            db.collection("leaderboard").add({
-                name: names[Math.floor(Math.random() * names.length)],
-                tests: Math.floor(Math.random() * 50) + 5,
-                accuracy: (Math.random() * (100 - 80) + 80).toFixed(1),
-                type: type
-            }).then(() => {
-                fetchLiveLeaderboard(type); // Refresh table automatically
-                showNotification("Success! Cloud database updated.");
             });
         }
 
