@@ -14,7 +14,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MCQsPrep - Dashboard</title>
     
-    <!-- FIREBASE LIBRARIES (Storage removed, using Cloudinary instead) -->
+    <!-- FIREBASE LIBRARIES -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 
@@ -86,7 +86,7 @@
         .admin-checkbox-group label { display: flex; align-items: center; gap: 8px; cursor: pointer; }
 
         /* Quiz Engine UI */
-        .quiz-header { display: flex; justify-content: space-between; align-items: center; padding-bottom: 15px; border-bottom: 1px solid var(--border-color); margin-bottom: 20px; }
+        .quiz-header { display: flex; justify-content: space-between; align-items: center; padding-bottom: 15px; border-bottom: 1px solid var(--border-color); margin-bottom: 15px; }
         .quiz-timer { font-size: 18px; font-weight: bold; color: var(--primary-yellow); }
         .quiz-question-text { font-size: 18px; line-height: 1.5; margin-bottom: 25px; }
         .quiz-image { max-width: 100%; border-radius: 8px; margin-bottom: 20px; max-height: 300px; object-fit: contain; }
@@ -96,6 +96,8 @@
         .quiz-option.correct { border-color: var(--correct-green); background: rgba(76, 175, 80, 0.1); }
         .quiz-option.wrong { border-color: var(--wrong-red); background: rgba(244, 67, 54, 0.1); }
         .quiz-explanation { background: #1a1a1a; border-left: 4px solid var(--primary-yellow); padding: 15px; margin-top: 20px; border-radius: 0 8px 8px 0; display: none; }
+        .question-palette { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:20px; background: #1a1a1a; padding: 15px; border-radius: 8px; border: 1px solid var(--border-color); }
+        .nav-buttons-row { display:flex; justify-content:space-between; margin-top:25px; flex-wrap:wrap; gap:10px; }
 
         table th, table td { padding: 12px; border-bottom: 1px solid var(--border-color); text-align: left; }
 
@@ -190,11 +192,11 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
 
-        // CLOUDINARY CONFIGURATION (Free, No Card Required)
+        // CLOUDINARY CONFIGURATION
         const CLOUDINARY_URL = "https://api.cloudinary.com/v1_1/h5gdez7a/auto/upload";
         const CLOUDINARY_PRESET = "mcq_uploads";
 
-        // --- 2. MASTER DIRECTORY (Source of truth for Admin Dropdowns) ---
+        // --- 2. MASTER DIRECTORY ---
         const appData = {
             "NEET": {
                 "NCERT Book": { "Class 11": { "Zoology": [], "Botany": [], "Physics": [], "Chemistry": [] }, "Class 12": { "Zoology": [], "Botany": [], "Physics": [], "Chemistry": [] } },
@@ -263,6 +265,12 @@
             } else { window.location.hash = '#/home'; }
         }
 
+        function formatTime(totalSeconds) {
+            let m = Math.floor(totalSeconds / 60).toString().padStart(2, '0');
+            let s = (totalSeconds % 60).toString().padStart(2, '0');
+            return `${m}:${s}`;
+        }
+
         // --- 4. DYNAMIC ADMIN PANEL ENGINE ---
         let adminSelectedPath = [];
 
@@ -306,7 +314,6 @@
                             </select>
                         </div>
 
-                        <!-- MCQ FORM -->
                         <div id="admin-mcq-form">
                             <textarea id="admQuestion" class="input-field" style="max-width: 100%;" placeholder="Type your question here..."></textarea>
                             <label style="color:var(--text-muted); font-size:14px; margin-bottom:5px; display:block;">Attach Image to Question (Optional):</label>
@@ -326,7 +333,6 @@
                             <textarea id="admExplanation" class="input-field" style="max-width: 100%; min-height: 60px;" placeholder="Explanation for the correct answer (Optional)..."></textarea>
                         </div>
 
-                        <!-- PDF/MATERIAL FORM -->
                         <div id="admin-pdf-form" style="display:none; background: #2a2a2a; padding: 20px; border-radius: 8px;">
                             <input type="text" id="admPdfTitle" class="input-field" placeholder="Document Title (e.g. Chapter 1 Notes)">
                             <label style="color:white; display:block; margin-bottom:10px;">Select File (PDF or Image):</label>
@@ -347,7 +353,6 @@
             document.getElementById('admin-pdf-form').style.display = type === 'pdf' ? 'block' : 'none';
         }
 
-        // Auto-generates dropdowns by reading appData
         function _buildAdminSelectors() {
             const container = document.getElementById('dynamic-path-selectors');
             let html = '';
@@ -369,8 +374,6 @@
                 } else { break; }
             }
             container.innerHTML = html;
-            
-            // Show form only if we reached an endpoint
             document.getElementById('upload-form-area').style.display = (Array.isArray(currentObj) || typeof currentObj === 'string') ? 'block' : 'none';
         }
 
@@ -380,23 +383,17 @@
             _buildAdminSelectors();
         }
 
-        // --- NEW CLOUDINARY UPLOAD LOGIC ---
         async function uploadFileToCloudinary(file) {
             const formData = new FormData();
             formData.append('file', file);
             formData.append('upload_preset', CLOUDINARY_PRESET);
             
-            const response = await fetch(CLOUDINARY_URL, {
-                method: 'POST',
-                body: formData
-            });
-            
+            const response = await fetch(CLOUDINARY_URL, { method: 'POST', body: formData });
             const data = await response.json();
             if (!response.ok) throw new Error(data.error?.message || 'File upload failed');
             return data.secure_url;
         }
 
-        // Processing the upload and saving to Firebase Firestore
         async function processAdminUpload() {
             const type = document.getElementById('admResourceType').value;
             const targetPathString = adminSelectedPath.join(' > '); 
@@ -422,9 +419,7 @@
                     }
 
                     let imageUrl = null;
-                    if (imageFile) {
-                        imageUrl = await uploadFileToCloudinary(imageFile);
-                    }
+                    if (imageFile) { imageUrl = await uploadFileToCloudinary(imageFile); }
 
                     await db.collection("content").add({
                         type: 'mcq', path: targetPathString,
@@ -433,7 +428,6 @@
                         timestamp: firebase.firestore.FieldValue.serverTimestamp()
                     });
 
-                    // Reset fields
                     document.getElementById('admQuestion').value = "";
                     document.getElementById('admQImage').value = "";
                     document.getElementById('admExplanation').value = "";
@@ -447,32 +441,33 @@
                     const fileUrl = await uploadFileToCloudinary(file);
 
                     await db.collection("content").add({
-                        type: 'material', path: targetPathString,
-                        title: title, fileUrl: fileUrl,
+                        type: 'material', path: targetPathString, title: title, fileUrl: fileUrl,
                         timestamp: firebase.firestore.FieldValue.serverTimestamp()
                     });
-
-                    document.getElementById('admPdfTitle').value = "";
-                    document.getElementById('admPdfFile').value = "";
+                    document.getElementById('admPdfTitle').value = ""; document.getElementById('admPdfFile').value = "";
                 }
-                
                 showNotification("✅ Upload Successful!");
-            } catch(error) {
-                showNotification("❌ Error: " + error.message);
-            }
+            } catch(error) { showNotification("❌ Error: " + error.message); }
             btn.innerText = "☁️ Upload to Database";
             btn.disabled = false;
         }
 
-        // --- 5. THE QUIZ ENGINE (UI & LOGIC) ---
-        let quizState = { questions: [], currentIndex: 0, score: 0, timer: null, secondsPassed: 0 };
+        // --- 5. THE QUIZ ENGINE V2 (Mock Test Style) ---
+        let quizState = { 
+            questions: [], 
+            currentIndex: 0, 
+            userAnswers: {}, // Format: { 0: ['A'], 1: ['B', 'C'] }
+            showAnswerTriggered: {}, // Format: { 0: true }
+            timer: null, 
+            secondsPassed: 0 
+        };
 
         async function _initiateQuizEngine() {
             const pathString = currentPath.join(' > ');
             document.getElementById('breadcrumb-text').innerText = "Home / " + pathString + " / Active Quiz"; 
             const mainContent = document.getElementById('dynamic-content');
             
-            mainContent.innerHTML = `<div class="card"><h2 style="color:var(--primary-yellow);">Loading Quiz...</h2><p>Fetching questions from the secure database.</p></div>`;
+            mainContent.innerHTML = `<div class="card"><h2 style="color:var(--primary-yellow);">Loading Quiz...</h2><p>Fetching questions from the database.</p></div>`;
 
             try {
                 const snapshot = await db.collection("content")
@@ -490,13 +485,15 @@
                 
                 quizState.questions.sort(() => Math.random() - 0.5);
                 quizState.currentIndex = 0;
-                quizState.score = 0;
+                quizState.userAnswers = {};
+                quizState.showAnswerTriggered = {};
                 quizState.secondsPassed = 0;
+                
+                clearInterval(quizState.timer);
                 quizState.timer = setInterval(() => {
                     quizState.secondsPassed++;
-                    let m = Math.floor(quizState.secondsPassed / 60).toString().padStart(2, '0');
-                    let s = (quizState.secondsPassed % 60).toString().padStart(2, '0');
-                    if(document.getElementById('quizTimeDisplay')) document.getElementById('quizTimeDisplay').innerText = `${m}:${s}`;
+                    let disp = document.getElementById('quizTimeDisplay');
+                    if(disp) disp.innerText = formatTime(quizState.secondsPassed);
                 }, 1000);
 
                 _renderQuizQuestion();
@@ -509,102 +506,144 @@
         function _renderQuizQuestion() {
             const mainContent = document.getElementById('dynamic-content');
             const q = quizState.questions[quizState.currentIndex];
-            let isLast = quizState.currentIndex === quizState.questions.length - 1;
             let multiText = q.correctAnswers.length > 1 ? `<span style="color:var(--primary-yellow); font-size:12px;">(Select all that apply)</span>` : "";
+            
+            let selectedNow = quizState.userAnswers[quizState.currentIndex] || [];
+            let hasPeeked = quizState.showAnswerTriggered[quizState.currentIndex];
+
+            // Build Navigation Palette
+            let paletteHtml = '<div class="question-palette">';
+            for(let i=0; i<quizState.questions.length; i++) {
+                let isAttempted = quizState.userAnswers[i] && quizState.userAnswers[i].length > 0;
+                let bg = quizState.currentIndex === i ? 'var(--primary-yellow)' : (isAttempted ? '#4CAF50' : '#2a2a2a');
+                let color = quizState.currentIndex === i ? '#000' : '#fff';
+                paletteHtml += `<button onclick="jumpToQuestion(${i})" style="width:35px; height:35px; border-radius:5px; border:1px solid var(--border-color); background:${bg}; color:${color}; font-weight:bold; cursor:pointer;">${i+1}</button>`;
+            }
+            paletteHtml += '</div>';
+
+            // Sorted Options logic
+            let optionsHtml = Object.keys(q.options).sort().map(key => {
+                if(!q.options[key]) return ''; 
+                
+                let isSelected = selectedNow.includes(key);
+                let extraClass = '';
+                
+                if (hasPeeked) {
+                    if (q.correctAnswers.includes(key)) extraClass = 'correct';
+                    else if (isSelected) extraClass = 'wrong';
+                } else if (isSelected) {
+                    extraClass = 'selected';
+                }
+
+                return `<div class="quiz-option ${extraClass}" onclick="toggleOptionSelection('${key}', ${q.correctAnswers.length > 1})">
+                    <b style="margin-right:15px; color:var(--text-muted);">${key}.</b> ${q.options[key]}
+                </div>`;
+            }).join('');
 
             let html = `
                 <div class="card">
                     <div class="quiz-header">
                         <span style="color:var(--text-muted);">Question ${quizState.currentIndex + 1} of ${quizState.questions.length} ${multiText}</span>
-                        <div style="display:flex; gap:15px; align-items:center;">
-                            <span class="quiz-timer">⏱ <span id="quizTimeDisplay">00:00</span></span>
-                            <button class="btn-exam" onclick="endQuizEarly()" style="padding: 5px 15px; background: #333; font-size: 14px;">End & View Stats</button>
-                        </div>
+                        <span class="quiz-timer">⏱ <span id="quizTimeDisplay">${formatTime(quizState.secondsPassed)}</span></span>
                     </div>
+                    
+                    ${paletteHtml}
                     
                     ${q.imageUrl ? `<img src="${q.imageUrl}" class="quiz-image">` : ''}
                     <div class="quiz-question-text">${q.question}</div>
                     
-                    <div id="optionsContainer">
-                        ${Object.keys(q.options).map(key => {
-                            if(!q.options[key]) return ''; 
-                            return `<div class="quiz-option" id="opt_${key}" onclick="toggleOptionSelection('${key}', ${q.correctAnswers.length > 1})">
-                                <b style="margin-right:15px; color:var(--text-muted);">${key}.</b> ${q.options[key]}
-                            </div>`;
-                        }).join('')}
-                    </div>
+                    <div id="optionsContainer">${optionsHtml}</div>
 
-                    <div id="explanationBox" class="quiz-explanation">
+                    <div id="explanationBox" class="quiz-explanation" style="display:${hasPeeked ? 'block' : 'none'}">
                         <b>Explanation:</b><br><span id="expText">${q.explanation || "No explanation provided."}</span>
                     </div>
 
-                    <div style="display:flex; justify-content:space-between; margin-top:25px;">
-                        <button class="btn-exam" onclick="checkAnswer()" id="checkBtn" style="background:var(--primary-yellow); color:black; border:none; width:150px;">Check Answer</button>
-                        <button class="btn-exam" onclick="${isLast ? 'endQuizEarly()' : '_nextQuestion()'}" id="nextBtn" style="display:none; width:150px;">${isLast ? 'Finish Quiz' : 'Next &rarr;'}</button>
+                    <div class="nav-buttons-row">
+                        <div style="display:flex; gap:10px;">
+                            <button class="btn-exam" onclick="_prevQuestion()" ${quizState.currentIndex === 0 ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : ''}>&larr; Prev</button>
+                            <button class="btn-exam" onclick="_nextQuestion()" ${quizState.currentIndex === quizState.questions.length - 1 ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : ''}>Next / Skip &rarr;</button>
+                        </div>
+                        <div style="display:flex; gap:10px;">
+                            <button class="btn-exam" onclick="checkAnswer()" style="background:#333; ${hasPeeked ? 'display:none;' : ''}">Check Answer</button>
+                            <button class="btn-exam" onclick="finishQuiz()" style="background:var(--wrong-red); border:none; color:white;">Finish Quiz</button>
+                        </div>
                     </div>
                 </div>`;
             
             mainContent.innerHTML = html;
         }
 
-        let currentlySelected = [];
         function toggleOptionSelection(optKey, isMulti) {
-            if(document.getElementById('checkBtn').style.display === 'none') return; 
-            const el = document.getElementById('opt_' + optKey);
+            if(quizState.showAnswerTriggered[quizState.currentIndex]) return; // locked if checked
+            
+            let currentSelections = quizState.userAnswers[quizState.currentIndex] || [];
             
             if (!isMulti) {
-                currentlySelected = [optKey];
-                document.querySelectorAll('.quiz-option').forEach(e => e.classList.remove('selected'));
-                el.classList.add('selected');
+                currentSelections = [optKey];
             } else {
-                if (currentlySelected.includes(optKey)) {
-                    currentlySelected = currentlySelected.filter(k => k !== optKey);
-                    el.classList.remove('selected');
+                if (currentSelections.includes(optKey)) {
+                    currentSelections = currentSelections.filter(k => k !== optKey);
                 } else {
-                    currentlySelected.push(optKey);
-                    el.classList.add('selected');
+                    currentSelections.push(optKey);
                 }
             }
-        }
-
-        function checkAnswer() {
-            if(currentlySelected.length === 0) { showNotification("⚠️ Select an option first!"); return; }
-            const q = quizState.questions[quizState.currentIndex];
             
-            document.getElementById('checkBtn').style.display = 'none';
-            document.getElementById('nextBtn').style.display = 'block';
-            document.getElementById('explanationBox').style.display = 'block';
-
-            let userAns = currentlySelected.sort().join(',');
-            let correctAns = q.correctAnswers.sort().join(',');
-            
-            let isRight = (userAns === correctAns);
-            if (isRight) quizState.score++;
-
-            Object.keys(q.options).forEach(key => {
-                if(!q.options[key]) return;
-                const el = document.getElementById('opt_' + key);
-                if (q.correctAnswers.includes(key)) { el.classList.add('correct'); }
-                else if (currentlySelected.includes(key)) { el.classList.add('wrong'); }
-            });
-            currentlySelected = [];
-        }
-
-        function _nextQuestion() {
-            quizState.currentIndex++;
+            quizState.userAnswers[quizState.currentIndex] = currentSelections;
             _renderQuizQuestion();
         }
 
-        function endQuizEarly() {
+        function checkAnswer() {
+            let currentSelections = quizState.userAnswers[quizState.currentIndex] || [];
+            if(currentSelections.length === 0) { showNotification("⚠️ Select an option first!"); return; }
+            
+            quizState.showAnswerTriggered[quizState.currentIndex] = true;
+            _renderQuizQuestion();
+        }
+
+        function jumpToQuestion(index) {
+            quizState.currentIndex = index;
+            _renderQuizQuestion();
+        }
+        
+        function _nextQuestion() {
+            if(quizState.currentIndex < quizState.questions.length - 1) {
+                quizState.currentIndex++;
+                _renderQuizQuestion();
+            }
+        }
+        
+        function _prevQuestion() {
+            if(quizState.currentIndex > 0) {
+                quizState.currentIndex--;
+                _renderQuizQuestion();
+            }
+        }
+
+        function finishQuiz() {
             clearInterval(quizState.timer);
-            let attempted = quizState.currentIndex + (currentlySelected.length > 0 ? 0 : 0); 
-            let accuracy = attempted === 0 ? 0 : Math.round((quizState.score / attempted) * 100);
+            let attempted = 0;
+            let correct = 0;
+
+            quizState.questions.forEach((q, index) => {
+                let userAnsArray = quizState.userAnswers[index] || [];
+                if (userAnsArray.length > 0) {
+                    attempted++;
+                    let userAnsStr = userAnsArray.sort().join(',');
+                    let correctAnsStr = q.correctAnswers.sort().join(',');
+                    if (userAnsStr === correctAnsStr) {
+                        correct++;
+                    }
+                }
+            });
+
+            let accuracy = attempted === 0 ? 0 : Math.round((correct / attempted) * 100);
+            let timeStr = formatTime(quizState.secondsPassed);
             
             const mainContent = document.getElementById('dynamic-content');
             mainContent.innerHTML = `
                 <div class="card" style="text-align: center;">
                     <h2 style="font-size: 32px; color: var(--primary-yellow); margin-bottom: 5px;">Quiz Complete!</h2>
-                    <p style="color: var(--text-muted); margin-bottom: 30px;">Here is your session breakdown.</p>
+                    <p style="color: var(--text-muted); margin-bottom: 30px;">Here is your final session breakdown.</p>
                     
                     <div style="display:flex; justify-content:center; gap:20px; flex-wrap:wrap; margin-bottom: 30px;">
                         <div style="background:#2a2a2a; padding: 20px; border-radius: 8px; min-width: 120px;">
@@ -612,12 +651,16 @@
                             <div style="color: var(--text-muted); font-size: 14px;">Attempted</div>
                         </div>
                         <div style="background:#2a2a2a; padding: 20px; border-radius: 8px; min-width: 120px;">
-                            <div style="font-size: 36px; color: var(--correct-green); font-weight: bold;">${quizState.score}</div>
+                            <div style="font-size: 36px; color: var(--correct-green); font-weight: bold;">${correct}</div>
                             <div style="color: var(--text-muted); font-size: 14px;">Correct</div>
                         </div>
                         <div style="background:#2a2a2a; padding: 20px; border-radius: 8px; min-width: 120px;">
                             <div style="font-size: 36px; color: var(--primary-yellow); font-weight: bold;">${accuracy}%</div>
                             <div style="color: var(--text-muted); font-size: 14px;">Accuracy</div>
+                        </div>
+                        <div style="background:#2a2a2a; padding: 20px; border-radius: 8px; min-width: 120px;">
+                            <div style="font-size: 36px; color: white; font-weight: bold;">${timeStr}</div>
+                            <div style="color: var(--text-muted); font-size: 14px;">Time Taken</div>
                         </div>
                     </div>
                     <button class="btn-exam" onclick="goBack()" style="width: 200px;">&larr; Exit to Dashboard</button>
