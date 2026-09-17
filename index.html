@@ -80,10 +80,14 @@
         
         .input-field { width: 100%; padding: 12px; margin-bottom: 15px; border-radius: 4px; border: 1px solid var(--border-color); background: #2a2a2a; color: white; box-sizing: border-box; font-size: 16px; display: block; }
         .input-field:focus { outline: none; border-color: var(--primary-yellow); }
+        
+        /* Specific Admin Styles */
+        textarea.input-field { min-height: 100px; resize: vertical; font-family: inherit; }
+        .admin-row { display: flex; gap: 15px; margin-bottom: 15px; }
+        .admin-row .input-field { margin-bottom: 0; flex: 1; }
 
         table th, table td { padding: 12px; border-bottom: 1px solid var(--border-color); text-align: left; }
 
-        /* FIXED NOTIFICATION STYLING */
         @keyframes popIn { 0% { transform: translateY(20px); opacity: 0; } 100% { transform: translateY(0); opacity: 1; } }
         #notification { display: none; position: fixed; bottom: 20px; right: 20px; background-color: var(--primary-yellow); color: #000; padding: 15px 25px; border-radius: 5px; font-weight: bold; box-shadow: 0 4px 15px rgba(0,0,0,0.5); z-index: 9999; animation: popIn 0.3s ease-out; }
 
@@ -96,20 +100,15 @@
             .container { flex-direction: column; padding: 15px; gap: 15px; }
             .sidebar { max-width: 100%; }
             .breadcrumb { padding: 10px 15px; }
-
             .navbar { flex-wrap: wrap; padding: 15px; }
             .logo-container { flex: 1; }
             .search-wrapper { margin: 0; }
             .nav-links { width: 100%; justify-content: space-between; margin-top: 15px; font-size: 14px; }
             .user-badge { margin-left: 0; font-size: 12px; padding: 6px 10px; }
-            
             .search-wrapper.active { position: static; } 
-            .search-wrapper.active .search-input-container {
-                position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-                background: var(--bg-dark); z-index: 100; padding: 0 15px;
-                box-sizing: border-box; display: flex; align-items: center;
-            }
+            .search-wrapper.active .search-input-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-dark); z-index: 100; padding: 0 15px; box-sizing: border-box; display: flex; align-items: center; }
             .suggestions-dropdown { top: 60px; left: 15px; right: 15px; width: calc(100% - 30px); }
+            .admin-row { flex-direction: column; gap: 10px; margin-bottom: 10px; }
         }
     </style>
 </head>
@@ -153,7 +152,7 @@
     <div class="container">
         <div class="main-content" id="dynamic-content"></div>
 
-        <div class="sidebar">
+        <div class="sidebar" id="main-sidebar">
             <div class="card">
                 <h3>Quick Links</h3>
                 <a class="action-link" onclick="jumpToSection(['NEET', 'NCERT Book'])">📚 NCERT Solutions</a>
@@ -198,11 +197,14 @@
         let currentLeaderboardType = "";
 
         window.addEventListener('load', () => {
-            if (!currentStudentName && !sessionStorage.getItem('identity_skipped')) {
-                document.getElementById('identityModal').style.display = 'flex';
-                document.getElementById('globalNameInput').focus();
-            } else if (!currentStudentName) {
-                currentStudentName = "Anonymous Student";
+            // Do not show identity modal if going straight to admin
+            if (window.location.hash !== '#/admin' && window.location.hash !== '#/admin-panel') {
+                if (!currentStudentName && !sessionStorage.getItem('identity_skipped')) {
+                    document.getElementById('identityModal').style.display = 'flex';
+                    document.getElementById('globalNameInput').focus();
+                } else if (!currentStudentName) {
+                    currentStudentName = "Anonymous Student";
+                }
             }
             updateUserBadge(); 
 
@@ -213,7 +215,7 @@
         function updateUserBadge() {
             const badge = document.getElementById('userBadge');
             const nameDisplay = document.getElementById('userNameDisplay');
-            if (currentStudentName && currentStudentName !== "Anonymous Student") {
+            if (currentStudentName && currentStudentName !== "Anonymous Student" && window.location.hash !== '#/admin' && window.location.hash !== '#/admin-panel') {
                 nameDisplay.innerText = currentStudentName;
                 badge.style.display = 'flex';
             } else {
@@ -271,11 +273,17 @@
 
         function handleRouting() {
             let hash = decodeURIComponent(window.location.hash.replace('#/', ''));
+            
+            // Show sidebar by default, hide it on Admin pages
+            document.getElementById('main-sidebar').style.display = (hash === 'admin' || hash === 'admin-panel') ? 'none' : 'block';
+
             if (!hash || hash === 'home') { currentPath = []; _renderView(); } 
             else if (hash.startsWith('path/')) { currentPath = hash.replace('path/', '').split('/'); _renderView(); } 
             else if (hash === 'leaderboard') { _renderLeaderboardOptions(); } 
             else if (hash.startsWith('board/')) { _renderLiveLeaderboard(hash.replace('board/', '')); } 
             else if (hash === 'quiz') { _renderQuizStart(); }
+            else if (hash === 'admin') { _renderAdminLogin(); }
+            else if (hash === 'admin-panel') { _renderAdminPanel(); }
         }
 
         function goHome() { window.location.hash = '#/home'; }
@@ -289,6 +297,7 @@
             if (hash === '#/leaderboard') { window.location.hash = '#/home'; } 
             else if (hash.startsWith('#/board/')) { window.location.hash = '#/leaderboard'; } 
             else if (hash === '#/quiz') { window.location.hash = '#/path/' + currentPath.join('/'); } 
+            else if (hash === '#/admin-panel') { window.location.hash = '#/home'; }
             else if (currentPath.length > 0) {
                 let newPath = [...currentPath];
                 newPath.pop();
@@ -301,6 +310,138 @@
             window.location.hash = '#/quiz'; 
         }
 
+        // --- NEW ADMIN FUNCTIONS ---
+        function _renderAdminLogin() {
+            document.getElementById('breadcrumb-text').innerText = "Security / Admin Login";
+            document.getElementById('dynamic-content').innerHTML = `
+                <div class="card" style="max-width: 400px; margin: 0 auto; text-align: center;">
+                    <h2>🔒 Restricted Access</h2>
+                    <p style="color: var(--text-muted); margin-bottom: 20px;">Please enter the admin password to manage the question bank.</p>
+                    <input type="password" id="adminPassInput" class="input-field" style="margin: 0 auto 15px auto;" placeholder="Password">
+                    <button class="btn-exam" onclick="verifyAdmin()" style="width: 100%; max-width: 300px; background-color: var(--primary-yellow); color: black; border: none;">Login to Admin</button>
+                </div>
+            `;
+        }
+
+        function verifyAdmin() {
+            const pass = document.getElementById('adminPassInput').value;
+            if (pass === "mcqs2026") {
+                sessionStorage.setItem('admin_verified', 'true');
+                window.location.hash = '#/admin-panel';
+                showNotification("✅ Admin Access Granted");
+            } else {
+                showNotification("❌ Incorrect Password");
+            }
+        }
+
+        function _renderAdminPanel() {
+            if (!sessionStorage.getItem('admin_verified')) { window.location.hash = '#/admin'; return; }
+            document.getElementById('breadcrumb-text').innerText = "Admin Dashboard / Upload Question";
+            
+            document.getElementById('dynamic-content').innerHTML = `
+                <div class="card">
+                    <h2 style="color: var(--primary-yellow);">🛠️ Upload New MCQ</h2>
+                    <p style="color: var(--text-muted); margin-bottom: 25px;">Questions submitted here are instantly saved to Firebase and available to students.</p>
+                    
+                    <div class="admin-row">
+                        <select id="admSubject" class="input-field">
+                            <option value="" disabled selected>Select Subject</option>
+                            <option value="Botany">Botany</option>
+                            <option value="Zoology">Zoology</option>
+                            <option value="Physics">Physics</option>
+                            <option value="Organic Chemistry">Organic Chemistry</option>
+                            <option value="Physical Chemistry">Physical Chemistry</option>
+                            <option value="Inorganic Chemistry">Inorganic Chemistry</option>
+                            <option value="General Knowledge">General Knowledge</option>
+                        </select>
+                        
+                        <select id="admLevel" class="input-field">
+                            <option value="" disabled selected>Select Level</option>
+                            <option value="Easy">Easy</option>
+                            <option value="Medium">Medium</option>
+                            <option value="Hard">Hard</option>
+                            <option value="Mixed">Mixed</option>
+                        </select>
+                    </div>
+
+                    <textarea id="admQuestion" class="input-field" style="max-width: 100%;" placeholder="Type your question here..."></textarea>
+                    
+                    <div class="admin-row">
+                        <input type="text" id="admOptA" class="input-field" placeholder="Option A">
+                        <input type="text" id="admOptB" class="input-field" placeholder="Option B">
+                    </div>
+                    <div class="admin-row">
+                        <input type="text" id="admOptC" class="input-field" placeholder="Option C">
+                        <input type="text" id="admOptD" class="input-field" placeholder="Option D">
+                    </div>
+
+                    <div class="admin-row" style="align-items: center; margin-top: 20px;">
+                        <span style="font-weight: bold; min-width: 150px;">Correct Answer:</span>
+                        <select id="admCorrect" class="input-field" style="max-width: 150px;">
+                            <option value="A">A</option>
+                            <option value="B">B</option>
+                            <option value="C">C</option>
+                            <option value="D">D</option>
+                        </select>
+                    </div>
+
+                    <button id="uploadBtn" class="btn-exam" onclick="uploadQuestionToFirebase()" style="background-color: #4CAF50; color: white; border: none; margin-top: 20px; width: 250px;">☁️ Upload to Database</button>
+                    <button class="btn-exam" onclick="goBack()" style="background-color: #333; margin-top: 20px; margin-left: 15px;">Exit Admin</button>
+                </div>
+            `;
+        }
+
+        function uploadQuestionToFirebase() {
+            const subject = document.getElementById('admSubject').value;
+            const level = document.getElementById('admLevel').value;
+            const question = document.getElementById('admQuestion').value.trim();
+            const optA = document.getElementById('admOptA').value.trim();
+            const optB = document.getElementById('admOptB').value.trim();
+            const optC = document.getElementById('admOptC').value.trim();
+            const optD = document.getElementById('admOptD').value.trim();
+            const correct = document.getElementById('admCorrect').value;
+
+            if (!subject || !level || !question || !optA || !optB || !optC || !optD) {
+                showNotification("⚠️ Please fill out all fields before uploading.");
+                return;
+            }
+
+            const uploadBtn = document.getElementById('uploadBtn');
+            uploadBtn.innerText = "Uploading...";
+            uploadBtn.disabled = true;
+
+            // Structure the data for Firebase
+            const questionData = {
+                subject: subject,
+                level: level,
+                question: question,
+                options: { A: optA, B: optB, C: optC, D: optD },
+                correctAnswer: correct,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            };
+
+            // Push to Firebase 'questions' collection
+            db.collection("questions").add(questionData)
+            .then(() => {
+                showNotification("✅ Question successfully added to database!");
+                // Clear the form for the next question, but keep subject/level selected
+                document.getElementById('admQuestion').value = "";
+                document.getElementById('admOptA').value = "";
+                document.getElementById('admOptB').value = "";
+                document.getElementById('admOptC').value = "";
+                document.getElementById('admOptD').value = "";
+                document.getElementById('admCorrect').value = "A";
+                uploadBtn.innerText = "☁️ Upload to Database";
+                uploadBtn.disabled = false;
+            })
+            .catch((error) => {
+                showNotification("❌ Error uploading: " + error.message);
+                uploadBtn.innerText = "☁️ Upload to Database";
+                uploadBtn.disabled = false;
+            });
+        }
+
+        // --- RENDERERS ---
         function requiresQuizLogin(pathArray) {
             const pathString = pathArray.join(" > ").toLowerCase();
             const triggers = ["mcqs practice", "mock test", "general knowledge", "practice paper"];
