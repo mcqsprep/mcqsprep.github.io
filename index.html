@@ -65,7 +65,7 @@
         .btn-exam { padding: 15px; border-radius: 6px; border: 1px solid var(--border-color); background-color: #2a2a2a; color: white; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.2s; }
         .btn-exam:hover { background-color: #382909; border-color: var(--primary-yellow); color: var(--primary-yellow); }
 
-        .action-link { display: block; padding: 12px 15px; background-color: #2a2a2a; border: 1px solid var(--border-color); border-radius: 6px; color: white; text-decoration: none; margin-bottom: 10px; transition: 0.2s; }
+        .action-link { display: block; padding: 12px 15px; background-color: #2a2a2a; border: 1px solid var(--border-color); border-radius: 6px; color: white; text-decoration: none; margin-bottom: 10px; transition: 0.2s; cursor: pointer; }
         .action-link:hover { border-color: var(--primary-yellow); background-color: #333; }
         
         .input-field { width: 100%; padding: 12px; margin-bottom: 15px; border-radius: 4px; border: 1px solid var(--border-color); background: #2a2a2a; color: white; box-sizing: border-box; font-size: 16px; display: block; }
@@ -80,47 +80,29 @@
         .close-modal { position: absolute; top: 15px; right: 15px; background: none; border: none; color: var(--text-muted); font-size: 24px; cursor: pointer; transition: 0.2s; }
         .close-modal:hover { color: white; }
 
-        /* --- NEW MOBILE FIXES (ONLY APPLIES TO PHONES) --- */
         @media (max-width: 768px) {
-            /* Fix the squished side-by-side layout */
             .container { flex-direction: column; padding: 15px; gap: 15px; }
             .sidebar { max-width: 100%; }
             .breadcrumb { padding: 10px 15px; }
 
-            /* Fix Navbar Layout */
             .navbar { flex-wrap: wrap; padding: 15px; }
             .logo-container { flex: 1; }
             .search-wrapper { margin: 0; }
             .nav-links { width: 100%; justify-content: space-between; margin-top: 15px; font-size: 14px; }
             .user-badge { margin-left: 0; font-size: 12px; padding: 6px 10px; }
             
-            /* Fix the Search Bar (Makes it full-screen width when active) */
             .search-wrapper.active { position: static; } 
             .search-wrapper.active .search-input-container {
-                position: absolute;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                background: var(--bg-dark);
-                z-index: 100;
-                padding: 0 15px;
-                box-sizing: border-box;
-                display: flex;
-                align-items: center;
+                position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+                background: var(--bg-dark); z-index: 100; padding: 0 15px;
+                box-sizing: border-box; display: flex; align-items: center;
             }
-            .suggestions-dropdown { 
-                top: 60px; /* Drops right below the new full-width search bar */
-                left: 15px; 
-                right: 15px; 
-                width: calc(100% - 30px); 
-            }
+            .suggestions-dropdown { top: 60px; left: 15px; right: 15px; width: calc(100% - 30px); }
         }
     </style>
 </head>
 <body>
 
-    <!-- IDENTITY POP-UP MODAL -->
     <div id="identityModal" class="modal-overlay">
         <div class="modal-content">
             <button class="close-modal" onclick="skipIdentity()">✕</button>
@@ -162,15 +144,17 @@
         <div class="sidebar">
             <div class="card">
                 <h3>Quick Links</h3>
-                <a href="#" class="action-link" onclick="jumpToSection(['NEET', 'NCERT Book'])">📚 NCERT Solutions</a>
-                <a href="#" class="action-link" onclick="jumpToSection(['NEET', 'PYQs'])">📄 Previous Year Papers</a>
+                <!-- REMOVED href="#" TO FIX NAVIGATION BUG -->
+                <a class="action-link" onclick="jumpToSection(['NEET', 'NCERT Book'])">📚 NCERT Solutions</a>
+                <a class="action-link" onclick="jumpToSection(['NEET', 'PYQs'])">📄 Previous Year Papers</a>
             </div>
 
             <div class="card">
                 <h3>Essential Practice</h3>
-                <a href="#" class="action-link" onclick="jumpToSection(['NEET', 'MCQs Practice'])">📝 Subject-wise MCQs</a>
-                <a href="#" class="action-link" onclick="jumpToSection(['NEET', 'Mock Test'])">⏱️ Full-Length Mock Tests</a>
-                <a href="#" class="action-link" onclick="jumpToSection(['NEET', 'Practice Paper', 'Mixed'])">📅 Daily Quiz Challenge</a>
+                <!-- REMOVED href="#" TO FIX NAVIGATION BUG -->
+                <a class="action-link" onclick="jumpToSection(['NEET', 'MCQs Practice'])">📝 Subject-wise MCQs</a>
+                <a class="action-link" onclick="jumpToSection(['NEET', 'Mock Test'])">⏱️ Full-Length Mock Tests</a>
+                <a class="action-link" onclick="jumpToSection(['NEET', 'Practice Paper', 'Mixed'])">📅 Daily Quiz Challenge</a>
             </div>
         </div>
     </div>
