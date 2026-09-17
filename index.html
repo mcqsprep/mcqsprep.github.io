@@ -308,10 +308,10 @@
             return `${m}:${s}`;
         }
 
-        // --- 4. DYNAMIC ADMIN PANEL (UPLOAD + EDIT + DELETE + FILTER) ---
+        // --- 4. DYNAMIC ADMIN PANEL (UPLOAD + EDIT + DELETE + FILTER + SETTINGS) ---
         let adminSelectedPath = [];
         let adminManageSelectedPath = [];
-        let adminCurrentTab = 'upload'; // 'upload' or 'manage'
+        let adminCurrentTab = 'upload'; // 'upload' or 'manage' or 'settings'
 
         function _renderAdminLogin() {
             document.getElementById('breadcrumb-text').innerText = "Security / Admin Login";
@@ -319,16 +319,36 @@
                 <div class="card" style="max-width: 400px; margin: 0 auto; text-align: center;">
                     <h2>🔒 Restricted Access</h2>
                     <input type="password" id="adminPassInput" class="input-field" style="margin: 0 auto 15px auto;" placeholder="Password">
-                    <button class="btn-exam" onclick="verifyAdmin()" style="width: 100%; max-width: 300px; background-color: var(--primary-yellow); color: black; border: none;">Login to Admin</button>
+                    <button id="loginBtn" class="btn-exam" onclick="verifyAdmin()" style="width: 100%; max-width: 300px; background-color: var(--primary-yellow); color: black; border: none;">Login to Admin</button>
                 </div>`;
         }
 
-        function verifyAdmin() {
-            if (document.getElementById('adminPassInput').value === "mcqs2026") {
-                sessionStorage.setItem('admin_verified', 'true');
-                window.location.hash = '#/admin-panel';
-                showNotification("✅ Admin Access Granted");
-            } else { showNotification("❌ Incorrect Password"); }
+        async function verifyAdmin() {
+            const inputPass = document.getElementById('adminPassInput').value;
+            const btn = document.getElementById('loginBtn');
+            btn.innerText = "Verifying...";
+            btn.disabled = true;
+
+            try {
+                // Check Firebase for custom password, default to mcqs2026
+                const doc = await db.collection("settings").doc("admin_auth").get();
+                let correctPass = "mcqs2026"; 
+                if (doc.exists && doc.data().password) {
+                    correctPass = doc.data().password;
+                }
+
+                if (inputPass === correctPass) {
+                    sessionStorage.setItem('admin_verified', 'true');
+                    window.location.hash = '#/admin-panel';
+                    showNotification("✅ Admin Access Granted");
+                } else {
+                    showNotification("❌ Incorrect Password");
+                }
+            } catch (e) {
+                showNotification("❌ Verification error: " + e.message);
+            }
+            btn.innerText = "Login to Admin";
+            btn.disabled = false;
         }
 
         function _renderAdminPanel() {
@@ -342,6 +362,7 @@
                         <div style="display:flex; gap:10px; flex-wrap:wrap;">
                             <button id="tabUploadBtn" class="admin-tab-btn ${adminCurrentTab === 'upload' ? 'active' : ''}" onclick="switchAdminTab('upload')">➕ Upload Content</button>
                             <button id="tabManageBtn" class="admin-tab-btn ${adminCurrentTab === 'manage' ? 'active' : ''}" onclick="switchAdminTab('manage')">📋 Manage / Edit / Delete</button>
+                            <button id="tabSettingsBtn" class="admin-tab-btn ${adminCurrentTab === 'settings' ? 'active' : ''}" onclick="switchAdminTab('settings')">⚙️ Settings</button>
                         </div>
                     </div>
 
@@ -399,20 +420,49 @@
                         </div>
                         <div id="manage-content-list"><p style="color:var(--text-muted);">Select a folder and click Fetch to load items.</p></div>
                     </div>
+                    
+                    <!-- TAB 3: SETTINGS -->
+                    <div id="admin-settings-view" style="display:${adminCurrentTab === 'settings' ? 'block' : 'none'};">
+                        <div style="background: #2a2a2a; padding: 25px; border-radius: 6px; max-width: 400px;">
+                            <h3 style="margin-top:0; margin-bottom:20px;">Change Admin Password</h3>
+                            <label style="color:var(--text-muted); font-size:13px;">New Password (Min 6 characters)</label>
+                            <input type="password" id="newAdminPass" class="input-field" placeholder="Enter New Password">
+                            <label style="color:var(--text-muted); font-size:13px;">Confirm New Password</label>
+                            <input type="password" id="confirmAdminPass" class="input-field" placeholder="Confirm New Password">
+                            <button class="btn-exam" onclick="changeAdminPassword()" style="background:var(--primary-yellow); color:black; border:none; width:100%; margin-top:10px;">Update Password</button>
+                        </div>
+                    </div>
                 </div>
             `;
             
             if (adminCurrentTab === 'upload') {
                 _buildAdminSelectors();
-            } else {
+            } else if (adminCurrentTab === 'manage') {
                 _buildManageSelectors();
-                loadContentForManagement(); // load default (all or filtered)
+                loadContentForManagement();
             }
         }
 
         function switchAdminTab(tab) {
             adminCurrentTab = tab;
             _renderAdminPanel();
+        }
+        
+        async function changeAdminPassword() {
+            const p1 = document.getElementById('newAdminPass').value;
+            const p2 = document.getElementById('confirmAdminPass').value;
+            
+            if(p1.length < 6) { showNotification("⚠️ Password must be at least 6 characters."); return; }
+            if(p1 !== p2) { showNotification("❌ Passwords do not match!"); return; }
+
+            try {
+                await db.collection("settings").doc("admin_auth").set({ password: p1 });
+                document.getElementById('newAdminPass').value = "";
+                document.getElementById('confirmAdminPass').value = "";
+                showNotification("✅ Password changed successfully!");
+            } catch(e) {
+                showNotification("❌ Error updating password: " + e.message);
+            }
         }
 
         function toggleAdminFormType() {
@@ -553,10 +603,8 @@
                 // If user selected a filter path
                 if (adminManageSelectedPath.length > 0) {
                     const prefixPath = adminManageSelectedPath.join(' > ');
-                    // Firebase trick to get all paths that START with the prefix string
                     query = query.where("path", ">=", prefixPath).where("path", "<=", prefixPath + "\uf8ff");
                 } else {
-                    // No filter applied - load 50 most recent items to prevent browser freeze
                     query = query.orderBy("timestamp", "desc").limit(50); 
                 }
 
