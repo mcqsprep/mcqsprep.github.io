@@ -52,6 +52,9 @@
         .action-link { display: block; padding: 12px 15px; background-color: #2a2a2a; border: 1px solid var(--border-color); border-radius: 6px; color: white; text-decoration: none; margin-bottom: 10px; transition: 0.2s; }
         .action-link:hover { border-color: var(--primary-yellow); background-color: #333; }
         
+        .input-field { width: 100%; max-width: 300px; padding: 12px; margin-bottom: 15px; border-radius: 4px; border: 1px solid var(--border-color); background: #2a2a2a; color: white; box-sizing: border-box; font-size: 16px; display: block; }
+        .input-field:focus { outline: none; border-color: var(--primary-yellow); }
+
         table th, table td { padding: 12px; border-bottom: 1px solid var(--border-color); text-align: left; }
 
         #notification { display: none; position: fixed; bottom: 20px; right: 20px; background-color: var(--primary-yellow); color: #000; padding: 15px 25px; border-radius: 5px; font-weight: bold; box-shadow: 0 4px 6px rgba(0,0,0,0.3); z-index: 1000; }
@@ -136,6 +139,7 @@
         };
 
         let currentPath = []; 
+        let currentStudentName = ""; // Memory to hold the student's name
 
         function renderView() {
             const mainContent = document.getElementById('dynamic-content');
@@ -146,10 +150,27 @@
             let currentLevel = appData;
             for (let node of currentPath) { currentLevel = currentLevel[node]; }
 
+            // WHEN THEY REACH THE END OF A FOLDER (Ready to take a quiz)
             if (Array.isArray(currentLevel)) {
-                mainContent.innerHTML = `<div class="card"><h2>${currentPath[currentPath.length - 1]}</h2><p style="color: var(--text-muted); margin-bottom: 20px;">This section is ready for MCQs.</p><button class="btn-exam" onclick="goBack()" style="width: 200px; background-color: #333;">&larr; Go Back</button></div>`;
+                let topicName = currentPath[currentPath.length - 1];
+                let isGK = currentPath[0] === "General Knowledge";
+                let leaderboardType = isGK ? 'GK Leaderboard' : 'NEET Practice Leaderboard';
+
+                mainContent.innerHTML = `
+                    <div class="card">
+                        <h2>${topicName} Practice</h2>
+                        <p style="color: var(--text-muted); margin-bottom: 20px;">Enter your name below to begin the quiz. Your score will be recorded on the ${leaderboardType}.</p>
+                        
+                        <input type="text" id="studentNameInput" class="input-field" placeholder="Enter your full name..." autocomplete="off">
+                        
+                        <div style="display: flex; gap: 15px;">
+                            <button class="btn-exam" onclick="startQuiz('${leaderboardType}')" style="background-color: var(--primary-yellow); color: black; border: none; width: 200px;">Start Quiz &rarr;</button>
+                            <button class="btn-exam" onclick="goBack()" style="width: 150px; background-color: #333;">&larr; Go Back</button>
+                        </div>
+                    </div>`;
                 return;
             }
+
             if (typeof currentLevel === 'string') {
                 mainContent.innerHTML = `<div class="card"><h2>${currentPath[currentPath.length - 1]}</h2><h3 style="color: var(--primary-yellow); font-size: 24px; padding: 20px 0;">${currentLevel}</h3><button class="btn-exam" onclick="goBack()" style="width: 200px; background-color: #333;">&larr; Go Back</button></div>`;
                 return;
@@ -163,7 +184,31 @@
             mainContent.innerHTML = html;
         }
 
-        // --- 3. CLEAN CLOUD LEADERBOARD ---
+        // --- NEW START QUIZ FUNCTION ---
+        function startQuiz(leaderboardCategory) {
+            const nameInput = document.getElementById('studentNameInput').value.trim();
+            
+            if (nameInput === "") {
+                showNotification("⚠️ Please enter your name to start the quiz.");
+                return;
+            }
+
+            // Save the name into our global memory for later
+            currentStudentName = nameInput;
+            
+            // This is a placeholder! In the next step, this will load the actual MCQ questions.
+            const mainContent = document.getElementById('dynamic-content');
+            mainContent.innerHTML = `
+                <div class="card">
+                    <h2>Quiz Starting...</h2>
+                    <p style="color: var(--primary-yellow); font-size: 18px;">Best of luck, ${currentStudentName}!</p>
+                    <p style="color: var(--text-muted); margin-top: 15px;">(The actual quiz questions will appear here once we build the Quiz Engine in the next step.)</p>
+                    <button class="btn-exam" onclick="goBack()" style="width: 200px; margin-top: 20px; background-color: #333;">&larr; Cancel Quiz</button>
+                </div>
+            `;
+        }
+
+        // --- 3. ISOLATED CLOUD LEADERBOARD ---
         function showLeaderboardOptions() {
             const mainContent = document.getElementById('dynamic-content');
             document.getElementById('breadcrumb-text').innerText = "Home / Leaderboard";
@@ -172,8 +217,9 @@
                 <div class="card">
                     <h2>🏆 Select Leaderboard</h2>
                     <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 15px; margin-top: 20px;">
-                        <button class="btn-exam" onclick="fetchLiveLeaderboard('Practice Leaderboard')">1. PRACTICE LEADERBOARD</button>
-                        <button class="btn-exam" onclick="fetchLiveLeaderboard('Mock Test Leaderboard')">2. MOCK TEST LEADERBOARD</button>
+                        <button class="btn-exam" onclick="fetchLiveLeaderboard('NEET Practice Leaderboard')">1. NEET PRACTICE</button>
+                        <button class="btn-exam" onclick="fetchLiveLeaderboard('NEET Mock Test Leaderboard')">2. NEET MOCK TESTS</button>
+                        <button class="btn-exam" onclick="fetchLiveLeaderboard('GK Leaderboard')" style="border-color: #4CAF50;">3. GENERAL KNOWLEDGE</button>
                     </div>
                 </div>`;
         }
@@ -181,25 +227,27 @@
         function fetchLiveLeaderboard(type) {
             const mainContent = document.getElementById('dynamic-content');
             document.getElementById('breadcrumb-text').innerText = "Home / Leaderboard / " + type;
-            let activityHeader = type === 'Practice Leaderboard' ? 'Q. ATTEMPTED' : 'Tests Taken';
+            
+            // Customize column header based on the exact type
+            let activityHeader = type === 'NEET Mock Test Leaderboard' ? 'Tests Taken' : 'Q. ATTEMPTED';
             
             mainContent.innerHTML = `<div class="card"><h2>🏆 ${type}</h2><p style="color: var(--primary-yellow);">Fetching live rankings from Firebase...</p></div>`;
 
+            // Firebase automatically isolates the data because we ask for exact matches on "type"
             db.collection("leaderboard").where("type", "==", type).get()
             .then((querySnapshot) => {
                 let students = [];
                 querySnapshot.forEach((doc) => { 
                     let data = doc.data();
                     
-                    // SMART FILTER: Only include real students who pass the threshold
-                    if (type === 'Practice Leaderboard' && data.tests >= 100) {
+                    // Filter: 100 Qs for Practice/GK, 10 Tests for Mock Tests
+                    if ((type === 'NEET Practice Leaderboard' || type === 'GK Leaderboard') && data.tests >= 100) {
                         students.push(data);
-                    } else if (type === 'Mock Test Leaderboard' && data.tests >= 10) {
+                    } else if (type === 'NEET Mock Test Leaderboard' && data.tests >= 10) {
                         students.push(data);
                     }
                 });
 
-                // Sort students by accuracy
                 students.sort((a, b) => b.accuracy - a.accuracy);
 
                 let tableHTML = `
@@ -211,8 +259,7 @@
                         </tr>`;
 
                 if (students.length === 0) {
-                    // Updated empty state message
-                    let requirement = type === 'Practice Leaderboard' ? '100 Questions Attempted' : '10 Tests Taken';
+                    let requirement = type === 'NEET Mock Test Leaderboard' ? '10 Tests Taken' : '100 Questions Attempted';
                     tableHTML += `<tr><td colspan="4" style="text-align: center; padding: 30px; color: var(--text-muted);">The leaderboard is waiting! To rank here, students must complete at least ${requirement}.</td></tr>`;
                 } else {
                     students.forEach((student, index) => {
