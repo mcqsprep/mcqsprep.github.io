@@ -69,21 +69,28 @@
         .card { background-color: var(--card-bg); border-radius: 8px; padding: 25px; margin-bottom: 25px; border: 1px solid var(--border-color); }
         .card h2, .card h3 { margin-top: 0; margin-bottom: 20px; font-size: 20px; }
 
-        .btn-exam { padding: 15px; border-radius: 6px; border: 1px solid var(--border-color); background-color: #2a2a2a; color: white; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        .btn-exam { padding: 12px 18px; border-radius: 6px; border: 1px solid var(--border-color); background-color: #2a2a2a; color: white; font-size: 15px; font-weight: bold; cursor: pointer; transition: 0.2s; }
         .btn-exam:hover { background-color: #382909; border-color: var(--primary-yellow); color: var(--primary-yellow); }
 
         .action-link { display: block; padding: 12px 15px; background-color: #2a2a2a; border: 1px solid var(--border-color); border-radius: 6px; color: white; text-decoration: none; margin-bottom: 10px; transition: 0.2s; cursor: pointer; }
         .action-link:hover { border-color: var(--primary-yellow); background-color: #333; }
         
-        .input-field { width: 100%; padding: 12px; margin-bottom: 15px; border-radius: 4px; border: 1px solid var(--border-color); background: #2a2a2a; color: white; box-sizing: border-box; font-size: 16px; display: block; }
+        .input-field { width: 100%; padding: 12px; margin-bottom: 15px; border-radius: 4px; border: 1px solid var(--border-color); background: #2a2a2a; color: white; box-sizing: border-box; font-size: 15px; display: block; }
         .input-field:focus { outline: none; border-color: var(--primary-yellow); }
         
         /* Admin specific */
-        textarea.input-field { min-height: 100px; resize: vertical; font-family: inherit; }
+        textarea.input-field { min-height: 80px; resize: vertical; font-family: inherit; }
         .admin-row { display: flex; gap: 15px; margin-bottom: 15px; flex-wrap: wrap; }
         .admin-row > * { flex: 1; min-width: 200px; }
         .admin-checkbox-group { display: flex; gap: 15px; align-items: center; background: #2a2a2a; padding: 12px; border-radius: 6px; border: 1px solid var(--border-color); flex-wrap: wrap; }
         .admin-checkbox-group label { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+        
+        .admin-tab-btn { padding: 10px 20px; background: #2a2a2a; color: var(--text-muted); border: 1px solid var(--border-color); border-radius: 6px; cursor: pointer; font-weight: bold; }
+        .admin-tab-btn.active { background: var(--primary-yellow); color: black; border-color: var(--primary-yellow); }
+
+        .content-item-card { background: #252525; border: 1px solid var(--border-color); border-radius: 8px; padding: 15px; margin-bottom: 15px; }
+        .content-item-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; margin-bottom: 10px; }
+        .badge-path { background: #333; color: var(--primary-yellow); padding: 4px 8px; border-radius: 4px; font-size: 12px; }
 
         /* Quiz Engine UI */
         .quiz-header { display: flex; justify-content: space-between; align-items: center; padding-bottom: 15px; border-bottom: 1px solid var(--border-color); margin-bottom: 15px; }
@@ -105,7 +112,7 @@
         #notification { display: none; position: fixed; bottom: 20px; right: 20px; background-color: var(--primary-yellow); color: #000; padding: 15px 25px; border-radius: 5px; font-weight: bold; box-shadow: 0 4px 15px rgba(0,0,0,0.5); z-index: 9999; animation: popIn 0.3s ease-out; }
 
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 3000; justify-content: center; align-items: center; backdrop-filter: blur(5px); }
-        .modal-content { background: var(--card-bg); padding: 35px; border-radius: 12px; border: 1px solid var(--border-color); width: 90%; max-width: 420px; position: relative; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .modal-content { background: var(--card-bg); padding: 30px; border-radius: 12px; border: 1px solid var(--border-color); width: 90%; max-width: 600px; position: relative; max-height: 90vh; overflow-y: auto; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
         .close-modal { position: absolute; top: 15px; right: 15px; background: none; border: none; color: var(--text-muted); font-size: 24px; cursor: pointer; transition: 0.2s; }
         
         @media (max-width: 768px) {
@@ -124,13 +131,42 @@
 </head>
 <body>
 
+    <!-- Student Identity Modal -->
     <div id="identityModal" class="modal-overlay">
-        <div class="modal-content">
+        <div class="modal-content" style="text-align: center; max-width: 420px;">
             <button class="close-modal" onclick="skipIdentity()">✕</button>
             <h2 style="margin-top:0; color: var(--primary-yellow);">Welcome to MCQsPrep</h2>
             <p style="color: var(--text-muted); margin-bottom: 25px; font-size: 15px;">Enter your name once to save your progress and compete on the global leaderboards.</p>
             <input type="text" id="globalNameInput" class="input-field" placeholder="Full Name (e.g. Rahul Verma)" autocomplete="off">
             <button id="saveProfileBtn" class="btn-exam" onclick="saveIdentity()" style="width: 100%; background-color: var(--primary-yellow); color: black; border: none;">Save Profile</button>
+        </div>
+    </div>
+
+    <!-- Admin Edit Modal -->
+    <div id="editModal" class="modal-overlay">
+        <div class="modal-content">
+            <button class="close-modal" onclick="closeEditModal()">✕</button>
+            <h2 style="margin-top:0; color: var(--primary-yellow);">✏️ Edit MCQ</h2>
+            <input type="hidden" id="editDocId">
+            <label style="color:var(--text-muted); font-size:13px;">Question:</label>
+            <textarea id="editQuestion" class="input-field"></textarea>
+            
+            <label style="color:var(--text-muted); font-size:13px;">Options:</label>
+            <div class="admin-row"><input type="text" id="editOptA" class="input-field" placeholder="Option A"><input type="text" id="editOptB" class="input-field" placeholder="Option B"></div>
+            <div class="admin-row"><input type="text" id="editOptC" class="input-field" placeholder="Option C"><input type="text" id="editOptD" class="input-field" placeholder="Option D"></div>
+            
+            <label style="color:var(--text-muted); font-size:13px;">Correct Answer(s):</label>
+            <div class="admin-checkbox-group" style="margin-bottom: 15px;">
+                <label><input type="checkbox" value="A" class="editCorrectCb"> A</label>
+                <label><input type="checkbox" value="B" class="editCorrectCb"> B</label>
+                <label><input type="checkbox" value="C" class="editCorrectCb"> C</label>
+                <label><input type="checkbox" value="D" class="editCorrectCb"> D</label>
+            </div>
+
+            <label style="color:var(--text-muted); font-size:13px;">Explanation:</label>
+            <textarea id="editExplanation" class="input-field" placeholder="Explanation..."></textarea>
+            
+            <button class="btn-exam" onclick="saveEditedMCQ()" style="width:100%; background-color:var(--correct-green); color:white; border:none;">💾 Save Changes</button>
         </div>
     </div>
 
@@ -196,7 +232,7 @@
         const CLOUDINARY_URL = "https://api.cloudinary.com/v1_1/h5gdez7a/auto/upload";
         const CLOUDINARY_PRESET = "mcq_uploads";
 
-        // --- 2. MASTER DIRECTORY ---
+        // --- 2. MASTER DIRECTORY WITH ALL EXPANDED GK SUBTOPICS ---
         const appData = {
             "NEET": {
                 "NCERT Book": { "Class 11": { "Zoology": [], "Botany": [], "Physics": [], "Chemistry": [] }, "Class 12": { "Zoology": [], "Botany": [], "Physics": [], "Chemistry": [] } },
@@ -205,7 +241,27 @@
                 "MCQs Practice": { "Botany": { "Easy": [], "Medium": [], "Hard": [], "Mixed": [] }, "Zoology": { "Easy": [], "Medium": [], "Hard": [], "Mixed": [] }, "Physics": { "Easy": [], "Medium": [], "Hard": [], "Mixed": [] }, "Organic Chemistry": { "Easy": [], "Medium": [], "Hard": [], "Mixed": [] }, "Physical Chemistry": { "Easy": [], "Medium": [], "Hard": [], "Mixed": [] }, "Inorganic Chemistry": { "Easy": [], "Medium": [], "Hard": [], "Mixed": [] } },
                 "Mock Test": "COMING SOON"
             },
-            "General Knowledge": { "Current Affairs": [], "History": [], "Geography": [] }
+            "General Knowledge": { 
+                "Current Affairs": {
+                    "National & International": [],
+                    "Government Schemes": [],
+                    "Sports & Tournaments": [],
+                    "Awards & Honors": [],
+                    "Appointments": [],
+                    "Science & Defense": []
+                },
+                "History": {
+                    "Ancient India": [],
+                    "Medieval India": [],
+                    "Modern India": []
+                },
+                "Geography": {
+                    "Indian Physical Geography": [],
+                    "World Geography": [],
+                    "Climate & Environment": [],
+                    "Economic Geography": []
+                }
+            }
         };
 
         // --- 3. IDENTITY & ROUTING ---
@@ -271,8 +327,9 @@
             return `${m}:${s}`;
         }
 
-        // --- 4. DYNAMIC ADMIN PANEL ENGINE ---
+        // --- 4. DYNAMIC ADMIN PANEL (UPLOAD + EDIT + DELETE) ---
         let adminSelectedPath = [];
+        let adminCurrentTab = 'upload'; // 'upload' or 'manage'
 
         function _renderAdminLogin() {
             document.getElementById('breadcrumb-text').innerText = "Security / Admin Login";
@@ -294,57 +351,81 @@
 
         function _renderAdminPanel() {
             if (!sessionStorage.getItem('admin_verified')) { window.location.hash = '#/admin'; return; }
-            document.getElementById('breadcrumb-text').innerText = "Admin Dashboard / Upload Resource";
+            document.getElementById('breadcrumb-text').innerText = "Admin Dashboard / Resource Manager";
             
             document.getElementById('dynamic-content').innerHTML = `
                 <div class="card">
-                    <h2 style="color: var(--primary-yellow);">🛠️ Upload Resource</h2>
-                    
-                    <div style="background: #2a2a2a; padding: 15px; border-radius: 6px; margin-bottom: 20px;">
-                        <h4 style="margin-top:0; margin-bottom:10px;">Step 1: Select Target Folder</h4>
-                        <div id="dynamic-path-selectors" style="display:flex; gap:10px; flex-wrap:wrap;"></div>
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:10px;">
+                        <h2 style="color: var(--primary-yellow); margin:0;">🛠️ Admin Control Center</h2>
+                        <div style="display:flex; gap:10px;">
+                            <button id="tabUploadBtn" class="admin-tab-btn ${adminCurrentTab === 'upload' ? 'active' : ''}" onclick="switchAdminTab('upload')">➕ Upload Content</button>
+                            <button id="tabManageBtn" class="admin-tab-btn ${adminCurrentTab === 'manage' ? 'active' : ''}" onclick="switchAdminTab('manage')">📋 Manage / Edit / Delete</button>
+                        </div>
                     </div>
 
-                    <div id="upload-form-area" style="display:none;">
-                        <div class="admin-row" style="margin-bottom: 25px;">
-                            <span style="font-weight: bold;">Resource Type:</span>
-                            <select id="admResourceType" class="input-field" onchange="toggleAdminFormType()" style="max-width: 300px;">
-                                <option value="mcq">Multiple Choice Question</option>
-                                <option value="pdf">Study Material (PDF / Image)</option>
-                            </select>
+                    <!-- TAB 1: UPLOAD SECTION -->
+                    <div id="admin-upload-view" style="display:${adminCurrentTab === 'upload' ? 'block' : 'none'};">
+                        <div style="background: #2a2a2a; padding: 15px; border-radius: 6px; margin-bottom: 20px;">
+                            <h4 style="margin-top:0; margin-bottom:10px;">Step 1: Select Target Folder</h4>
+                            <div id="dynamic-path-selectors" style="display:flex; gap:10px; flex-wrap:wrap;"></div>
                         </div>
 
-                        <div id="admin-mcq-form">
-                            <textarea id="admQuestion" class="input-field" style="max-width: 100%;" placeholder="Type your question here..."></textarea>
-                            <label style="color:var(--text-muted); font-size:14px; margin-bottom:5px; display:block;">Attach Image to Question (Optional):</label>
-                            <input type="file" id="admQImage" class="input-field" accept="image/*">
-                            
-                            <div class="admin-row"><input type="text" id="admOptA" class="input-field" placeholder="Option A"><input type="text" id="admOptB" class="input-field" placeholder="Option B"></div>
-                            <div class="admin-row"><input type="text" id="admOptC" class="input-field" placeholder="Option C"><input type="text" id="admOptD" class="input-field" placeholder="Option D"></div>
-
-                            <div class="admin-checkbox-group" style="margin-bottom: 15px;">
-                                <span style="font-weight: bold; width: 140px;">Correct Answer(s):</span>
-                                <label><input type="checkbox" value="A" class="admCorrectCb"> A</label>
-                                <label><input type="checkbox" value="B" class="admCorrectCb"> B</label>
-                                <label><input type="checkbox" value="C" class="admCorrectCb"> C</label>
-                                <label><input type="checkbox" value="D" class="admCorrectCb"> D</label>
+                        <div id="upload-form-area" style="display:none;">
+                            <div class="admin-row" style="margin-bottom: 25px;">
+                                <span style="font-weight: bold;">Resource Type:</span>
+                                <select id="admResourceType" class="input-field" onchange="toggleAdminFormType()" style="max-width: 300px;">
+                                    <option value="mcq">Multiple Choice Question</option>
+                                    <option value="pdf">Study Material (PDF / Image)</option>
+                                </select>
                             </div>
-                            
-                            <textarea id="admExplanation" class="input-field" style="max-width: 100%; min-height: 60px;" placeholder="Explanation for the correct answer (Optional)..."></textarea>
-                        </div>
 
-                        <div id="admin-pdf-form" style="display:none; background: #2a2a2a; padding: 20px; border-radius: 8px;">
-                            <input type="text" id="admPdfTitle" class="input-field" placeholder="Document Title (e.g. Chapter 1 Notes)">
-                            <label style="color:white; display:block; margin-bottom:10px;">Select File (PDF or Image):</label>
-                            <input type="file" id="admPdfFile" class="input-field" accept=".pdf, image/*">
-                        </div>
+                            <div id="admin-mcq-form">
+                                <textarea id="admQuestion" class="input-field" style="max-width: 100%;" placeholder="Type your question here..."></textarea>
+                                <label style="color:var(--text-muted); font-size:14px; margin-bottom:5px; display:block;">Attach Image to Question (Optional):</label>
+                                <input type="file" id="admQImage" class="input-field" accept="image/*">
+                                
+                                <div class="admin-row"><input type="text" id="admOptA" class="input-field" placeholder="Option A"><input type="text" id="admOptB" class="input-field" placeholder="Option B"></div>
+                                <div class="admin-row"><input type="text" id="admOptC" class="input-field" placeholder="Option C"><input type="text" id="admOptD" class="input-field" placeholder="Option D"></div>
 
-                        <button id="uploadBtn" class="btn-exam" onclick="processAdminUpload()" style="background-color: #4CAF50; color: white; border: none; margin-top: 20px; width: 100%; max-width: 300px;">☁️ Upload to Database</button>
+                                <div class="admin-checkbox-group" style="margin-bottom: 15px;">
+                                    <span style="font-weight: bold; width: 140px;">Correct Answer(s):</span>
+                                    <label><input type="checkbox" value="A" class="admCorrectCb"> A</label>
+                                    <label><input type="checkbox" value="B" class="admCorrectCb"> B</label>
+                                    <label><input type="checkbox" value="C" class="admCorrectCb"> C</label>
+                                    <label><input type="checkbox" value="D" class="admCorrectCb"> D</label>
+                                </div>
+                                
+                                <textarea id="admExplanation" class="input-field" style="max-width: 100%; min-height: 60px;" placeholder="Explanation for the correct answer (Optional)..."></textarea>
+                            </div>
+
+                            <div id="admin-pdf-form" style="display:none; background: #2a2a2a; padding: 20px; border-radius: 8px;">
+                                <input type="text" id="admPdfTitle" class="input-field" placeholder="Document Title (e.g. Chapter 1 Notes)">
+                                <label style="color:white; display:block; margin-bottom:10px;">Select File (PDF or Image):</label>
+                                <input type="file" id="admPdfFile" class="input-field" accept=".pdf, image/*">
+                            </div>
+
+                            <button id="uploadBtn" class="btn-exam" onclick="processAdminUpload()" style="background-color: #4CAF50; color: white; border: none; margin-top: 20px; width: 100%; max-width: 300px;">☁️ Upload to Database</button>
+                        </div>
+                    </div>
+
+                    <!-- TAB 2: MANAGE & DELETE SECTION -->
+                    <div id="admin-manage-view" style="display:${adminCurrentTab === 'manage' ? 'block' : 'none'};">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; flex-wrap:wrap; gap:10px;">
+                            <p style="color:var(--text-muted); margin:0;">View, edit, or permanently delete uploaded questions and PDFs.</p>
+                            <button class="btn-exam" onclick="loadContentForManagement()" style="background:var(--primary-yellow); color:black; border:none;">🔄 Refresh List</button>
+                        </div>
+                        <div id="manage-content-list"><p style="color:var(--text-muted);">Loading items from database...</p></div>
                     </div>
                 </div>
             `;
             adminSelectedPath = [];
             _buildAdminSelectors();
+            if (adminCurrentTab === 'manage') loadContentForManagement();
+        }
+
+        function switchAdminTab(tab) {
+            adminCurrentTab = tab;
+            _renderAdminPanel();
         }
 
         function toggleAdminFormType() {
@@ -355,6 +436,7 @@
 
         function _buildAdminSelectors() {
             const container = document.getElementById('dynamic-path-selectors');
+            if(!container) return;
             let html = '';
             let currentObj = appData;
             
@@ -374,7 +456,8 @@
                 } else { break; }
             }
             container.innerHTML = html;
-            document.getElementById('upload-form-area').style.display = (Array.isArray(currentObj) || typeof currentObj === 'string') ? 'block' : 'none';
+            const formArea = document.getElementById('upload-form-area');
+            if(formArea) formArea.style.display = (Array.isArray(currentObj) || typeof currentObj === 'string') ? 'block' : 'none';
         }
 
         function handleAdminPathChange(event, depth) {
@@ -431,6 +514,10 @@
                     document.getElementById('admQuestion').value = "";
                     document.getElementById('admQImage').value = "";
                     document.getElementById('admExplanation').value = "";
+                    document.getElementById('admOptA').value = "";
+                    document.getElementById('admOptB').value = "";
+                    document.getElementById('admOptC').value = "";
+                    document.getElementById('admOptD').value = "";
                     correctCbs.forEach(cb => cb.checked = false);
 
                 } else if (type === 'pdf') {
@@ -452,12 +539,140 @@
             btn.disabled = false;
         }
 
-        // --- 5. THE QUIZ ENGINE V2 (Mock Test Style) ---
+        // --- MANAGE CONTENT (FETCH, DELETE, EDIT) ---
+        let loadedItemsCache = {};
+
+        async function loadContentForManagement() {
+            const listEl = document.getElementById('manage-content-list');
+            listEl.innerHTML = `<p style="color:var(--primary-yellow);">Fetching items from database...</p>`;
+
+            try {
+                const snapshot = await db.collection("content").orderBy("timestamp", "desc").get();
+                if(snapshot.empty) {
+                    listEl.innerHTML = `<p style="color:var(--text-muted);">No items uploaded in the database yet.</p>`;
+                    return;
+                }
+
+                loadedItemsCache = {};
+                let html = '';
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    loadedItemsCache[doc.id] = data;
+                    
+                    if (data.type === 'mcq') {
+                        let answersStr = (data.correctAnswers || []).join(', ');
+                        html += `
+                            <div class="content-item-card" id="item_${doc.id}">
+                                <div class="content-item-header">
+                                    <span class="badge-path">${data.path || 'Uncategorized'}</span>
+                                    <div style="display:flex; gap:8px;">
+                                        <button class="btn-exam" onclick="openEditModal('${doc.id}')" style="padding:4px 10px; font-size:12px; background:#2196F3; border:none;">✏️ Edit</button>
+                                        <button class="btn-exam" onclick="deleteContentItem('${doc.id}')" style="padding:4px 10px; font-size:12px; background:var(--wrong-red); border:none;">🗑️ Delete</button>
+                                    </div>
+                                </div>
+                                <div style="font-weight:bold; margin-bottom:8px;">${data.question}</div>
+                                ${data.imageUrl ? `<img src="${data.imageUrl}" style="max-height:80px; border-radius:4px; margin-bottom:8px; display:block;">` : ''}
+                                <div style="font-size:13px; color:var(--text-muted); line-height:1.4;">
+                                    A: ${data.options?.A || '-'} | B: ${data.options?.B || '-'} | C: ${data.options?.C || '-'} | D: ${data.options?.D || '-'}
+                                </div>
+                                <div style="margin-top:6px; font-size:13px; color:var(--correct-green);">Correct: ${answersStr}</div>
+                            </div>
+                        `;
+                    } else {
+                        html += `
+                            <div class="content-item-card" id="item_${doc.id}">
+                                <div class="content-item-header">
+                                    <span class="badge-path">${data.path || 'Uncategorized'}</span>
+                                    <button class="btn-exam" onclick="deleteContentItem('${doc.id}')" style="padding:4px 10px; font-size:12px; background:var(--wrong-red); border:none;">🗑️ Delete</button>
+                                </div>
+                                <div style="font-weight:bold; margin-bottom:5px;">📄 ${data.title}</div>
+                                <a href="${data.fileUrl}" target="_blank" style="color:var(--primary-yellow); font-size:13px;">View / Open Document &rarr;</a>
+                            </div>
+                        `;
+                    }
+                });
+                listEl.innerHTML = html;
+            } catch(e) {
+                listEl.innerHTML = `<p style="color:var(--wrong-red);">Error loading items: ${e.message}</p>`;
+            }
+        }
+
+        async function deleteContentItem(docId) {
+            if(!confirm("Are you sure you want to permanently delete this item?")) return;
+
+            try {
+                await db.collection("content").doc(docId).delete();
+                const card = document.getElementById("item_" + docId);
+                if(card) card.remove();
+                showNotification("🗑️ Item deleted successfully!");
+            } catch(e) {
+                showNotification("❌ Delete failed: " + e.message);
+            }
+        }
+
+        function openEditModal(docId) {
+            const data = loadedItemsCache[docId];
+            if(!data) return;
+
+            document.getElementById('editDocId').value = docId;
+            document.getElementById('editQuestion').value = data.question || '';
+            document.getElementById('editOptA').value = data.options?.A || '';
+            document.getElementById('editOptB').value = data.options?.B || '';
+            document.getElementById('editOptC').value = data.options?.C || '';
+            document.getElementById('editOptD').value = data.options?.D || '';
+            document.getElementById('editExplanation').value = data.explanation || '';
+
+            const correct = data.correctAnswers || [];
+            document.querySelectorAll('.editCorrectCb').forEach(cb => {
+                cb.checked = correct.includes(cb.value);
+            });
+
+            document.getElementById('editModal').style.display = 'flex';
+        }
+
+        function closeEditModal() {
+            document.getElementById('editModal').style.display = 'none';
+        }
+
+        async function saveEditedMCQ() {
+            const docId = document.getElementById('editDocId').value;
+            const question = document.getElementById('editQuestion').value.trim();
+            const options = {
+                A: document.getElementById('editOptA').value.trim(),
+                B: document.getElementById('editOptB').value.trim(),
+                C: document.getElementById('editOptC').value.trim(),
+                D: document.getElementById('editOptD').value.trim()
+            };
+            const checkedCbs = document.querySelectorAll('.editCorrectCb:checked');
+            const correctAnswers = Array.from(checkedCbs).map(cb => cb.value);
+            const explanation = document.getElementById('editExplanation').value.trim();
+
+            if(!question || !options.A || !options.B || correctAnswers.length === 0) {
+                alert("Question, Option A, Option B, and at least one correct answer are required.");
+                return;
+            }
+
+            try {
+                await db.collection("content").doc(docId).update({
+                    question: question,
+                    options: options,
+                    correctAnswers: correctAnswers,
+                    explanation: explanation
+                });
+                closeEditModal();
+                showNotification("✅ Changes saved successfully!");
+                loadContentForManagement();
+            } catch(e) {
+                showNotification("❌ Update failed: " + e.message);
+            }
+        }
+
+        // --- 5. THE QUIZ ENGINE (Mock Test Style) ---
         let quizState = { 
             questions: [], 
             currentIndex: 0, 
-            userAnswers: {}, // Format: { 0: ['A'], 1: ['B', 'C'] }
-            showAnswerTriggered: {}, // Format: { 0: true }
+            userAnswers: {}, 
+            showAnswerTriggered: {}, 
             timer: null, 
             secondsPassed: 0 
         };
@@ -521,7 +736,7 @@
             }
             paletteHtml += '</div>';
 
-            // Sorted Options logic
+            // Sorted Options logic (A, B, C, D)
             let optionsHtml = Object.keys(q.options).sort().map(key => {
                 if(!q.options[key]) return ''; 
                 
@@ -574,7 +789,7 @@
         }
 
         function toggleOptionSelection(optKey, isMulti) {
-            if(quizState.showAnswerTriggered[quizState.currentIndex]) return; // locked if checked
+            if(quizState.showAnswerTriggered[quizState.currentIndex]) return;
             
             let currentSelections = quizState.userAnswers[quizState.currentIndex] || [];
             
@@ -707,7 +922,7 @@
         
         function requiresQuizLogin(pathArray) {
             const pathString = pathArray.join(" > ").toLowerCase();
-            const triggers = ["mcqs practice", "mock test", "general knowledge", "practice paper"];
+            const triggers = ["mcqs practice", "mock test", "general knowledge", "practice paper", "current affairs", "history", "geography"];
             return triggers.some(trigger => pathString.includes(trigger));
         }
 
