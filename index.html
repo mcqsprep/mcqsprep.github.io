@@ -26,7 +26,6 @@
         .logo-container { display: flex; align-items: center; font-size: 24px; font-weight: bold; color: var(--text-light); cursor: pointer; white-space: nowrap; }
         .logo-container span { color: var(--primary-yellow); margin-left: 2px; }
         
-        /* NEW DYNAMIC SEARCH BAR STYLES */
         .search-wrapper { position: relative; display: flex; justify-content: flex-end; align-items: center; flex-grow: 1; margin: 0 30px; transition: 0.3s ease; }
         .search-icon-btn { background: #2a2a2a; border: 1px solid var(--border-color); color: white; font-size: 18px; cursor: pointer; padding: 10px 15px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
         .search-icon-btn:hover { background: #333; }
@@ -40,7 +39,6 @@
         .search-close-btn { position: absolute; right: 15px; background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 20px; font-weight: bold; padding: 0; }
         .search-close-btn:hover { color: white; }
 
-        /* LIVE SUGGESTIONS DROPDOWN */
         .suggestions-dropdown { display: none; position: absolute; top: calc(100% + 8px); left: 0; right: 0; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; z-index: 2000; max-height: 350px; overflow-y: auto; box-shadow: 0 8px 24px rgba(0,0,0,0.8); }
         .suggestion-item { padding: 12px 20px; cursor: pointer; border-bottom: 1px solid var(--border-color); color: white; display: flex; align-items: center; gap: 12px; font-size: 15px; }
         .suggestion-item:last-child { border-bottom: none; }
@@ -81,7 +79,6 @@
             🩺 MCQsPrep<span>.</span>
         </div>
         
-        <!-- NEW SEARCH ARCHITECTURE -->
         <div class="search-wrapper" id="searchWrapper">
             <button class="search-icon-btn" onclick="openSearch()">🔍</button>
             <div class="search-input-container">
@@ -97,10 +94,7 @@
         </div>
     </nav>
 
-    <div class="breadcrumb" id="breadcrumb-text">
-        Home / Select Exam
-    </div>
-
+    <div class="breadcrumb" id="breadcrumb-text">Home / Select Exam</div>
     <div class="container">
         <div class="main-content" id="dynamic-content"></div>
 
@@ -138,77 +132,100 @@
         // --- 2. MENU DATABASE ---
         const appData = {
             "NEET": {
-                "NCERT Book": {
-                    "Class 11": { "Zoology": [], "Botany": [], "Physics": [], "Chemistry": [] },
-                    "Class 12": { "Zoology": [], "Botany": [], "Physics": [], "Chemistry": [] }
-                },
+                "NCERT Book": { "Class 11": { "Zoology": [], "Botany": [], "Physics": [], "Chemistry": [] }, "Class 12": { "Zoology": [], "Botany": [], "Physics": [], "Chemistry": [] } },
                 "PYQs": { "2026": [], "2025": [], "2024": [], "2023": [], "2022": [], "2021": [], "2020": [], "2019": [], "2018": [], "2017": [], "2016": [], "2015": [], "2014": [], "2013": [], "2012": [], "2011": [] },
                 "Practice Paper": { "Easy": [], "Medium": [], "Hard": [], "Mixed": [] },
-                "MCQs Practice": {
-                    "Botany": { "Easy": [], "Medium": [], "Hard": [], "Mixed": [] },
-                    "Zoology": { "Easy": [], "Medium": [], "Hard": [], "Mixed": [] },
-                    "Physics": { "Easy": [], "Medium": [], "Hard": [], "Mixed": [] },
-                    "Organic Chemistry": { "Easy": [], "Medium": [], "Hard": [], "Mixed": [] },
-                    "Physical Chemistry": { "Easy": [], "Medium": [], "Hard": [], "Mixed": [] },
-                    "Inorganic Chemistry": { "Easy": [], "Medium": [], "Hard": [], "Mixed": [] }
-                },
+                "MCQs Practice": { "Botany": { "Easy": [], "Medium": [], "Hard": [], "Mixed": [] }, "Zoology": { "Easy": [], "Medium": [], "Hard": [], "Mixed": [] }, "Physics": { "Easy": [], "Medium": [], "Hard": [], "Mixed": [] }, "Organic Chemistry": { "Easy": [], "Medium": [], "Hard": [], "Mixed": [] }, "Physical Chemistry": { "Easy": [], "Medium": [], "Hard": [], "Mixed": [] }, "Inorganic Chemistry": { "Easy": [], "Medium": [], "Hard": [], "Mixed": [] } },
                 "Mock Test": "COMING SOON"
             },
             "General Knowledge": { "Current Affairs": [], "History": [], "Geography": [] }
         };
 
+        // --- 3. THE HASH ROUTER (NEW NAVIGATION ENGINE) ---
         let currentPath = []; 
         let currentStudentName = "";
+        let currentLeaderboardType = "";
 
-        // NEW LOGIC: Checks if the path requires a Name/Quiz setup
+        // This listens for any changes to the URL hash and updates the screen
+        window.addEventListener('hashchange', handleRouting);
+        window.addEventListener('load', () => {
+            if (!window.location.hash) window.location.hash = '#/home';
+            else handleRouting();
+        });
+
+        function handleRouting() {
+            let hash = decodeURIComponent(window.location.hash.replace('#/', ''));
+            
+            if (!hash || hash === 'home') {
+                currentPath = [];
+                _renderView();
+            } else if (hash.startsWith('path/')) {
+                currentPath = hash.replace('path/', '').split('/');
+                _renderView();
+            } else if (hash === 'leaderboard') {
+                _renderLeaderboardOptions();
+            } else if (hash.startsWith('board/')) {
+                _renderLiveLeaderboard(hash.replace('board/', ''));
+            } else if (hash === 'quiz') {
+                if (!currentStudentName) window.location.hash = '#/path/' + currentPath.join('/');
+                else _renderQuizStart();
+            }
+        }
+
+        // Updated Navigation Triggers (These now just change the URL Hash!)
+        function goHome() { window.location.hash = '#/home'; }
+        function navigateTo(key) { window.location.hash = '#/path/' + [...currentPath, key].join('/'); }
+        function jumpToSection(pathArray) { window.location.hash = '#/path/' + pathArray.join('/'); }
+        function showLeaderboardOptions() { window.location.hash = '#/leaderboard'; }
+        function fetchLiveLeaderboard(type) { window.location.hash = '#/board/' + type; }
+        
+        function goBack() { 
+            let hash = window.location.hash;
+            if (hash === '#/leaderboard') { window.location.hash = '#/home'; } 
+            else if (hash.startsWith('#/board/')) { window.location.hash = '#/leaderboard'; } 
+            else if (hash === '#/quiz') { window.location.hash = '#/path/' + currentPath.join('/'); } 
+            else if (currentPath.length > 0) {
+                let newPath = [...currentPath];
+                newPath.pop();
+                window.location.hash = newPath.length === 0 ? '#/home' : '#/path/' + newPath.join('/');
+            } else { window.location.hash = '#/home'; }
+        }
+
+        function startQuiz(leaderboardCategory) {
+            const nameInput = document.getElementById('studentNameInput').value.trim();
+            if (nameInput === "") { showNotification("⚠️ Please enter your name to start the quiz."); return; }
+            currentStudentName = nameInput;
+            currentLeaderboardType = leaderboardCategory;
+            window.location.hash = '#/quiz'; // Changes URL to Quiz mode
+        }
+
+        // --- 4. HTML RENDERERS ---
         function requiresQuizLogin(pathArray) {
             const pathString = pathArray.join(" > ").toLowerCase();
             const triggers = ["mcqs practice", "mock test", "general knowledge", "practice paper"];
             return triggers.some(trigger => pathString.includes(trigger));
         }
 
-        function renderView() {
+        function _renderView() {
             const mainContent = document.getElementById('dynamic-content');
             const breadcrumb = document.getElementById('breadcrumb-text');
-            if (currentPath.length === 0) { breadcrumb.innerText = "Home / Select Exam"; } 
-            else { breadcrumb.innerText = "Home / " + currentPath.join(" / "); }
+            breadcrumb.innerText = currentPath.length === 0 ? "Home / Select Exam" : "Home / " + currentPath.join(" / "); 
 
             let currentLevel = appData;
-            for (let node of currentPath) { currentLevel = currentLevel[node]; }
+            for (let node of currentPath) { 
+                if(currentLevel[node]) currentLevel = currentLevel[node]; 
+                else { window.location.hash = '#/home'; return; } // Failsafe
+            }
 
-            // WHEN THEY REACH THE END OF A FOLDER
             if (Array.isArray(currentLevel) || typeof currentLevel === 'string') {
                 let topicName = currentPath[currentPath.length - 1];
                 let isGK = currentPath[0] === "General Knowledge";
                 let leaderboardType = isGK ? 'GK Leaderboard' : 'NEET Practice Leaderboard';
 
-                // SMART FILTER: Only ask name for Quiz sections!
                 if (requiresQuizLogin(currentPath)) {
-                    mainContent.innerHTML = `
-                        <div class="card">
-                            <h2>${topicName} Practice</h2>
-                            <p style="color: var(--text-muted); margin-bottom: 20px;">Enter your name below to begin the quiz. Your score will be recorded on the ${leaderboardType}.</p>
-                            <input type="text" id="studentNameInput" class="input-field" placeholder="Enter your full name..." autocomplete="off">
-                            <div style="display: flex; gap: 15px;">
-                                <button class="btn-exam" onclick="startQuiz('${leaderboardType}')" style="background-color: var(--primary-yellow); color: black; border: none; width: 200px;">Start Quiz &rarr;</button>
-                                <button class="btn-exam" onclick="goBack()" style="width: 150px; background-color: #333;">&larr; Go Back</button>
-                            </div>
-                        </div>`;
+                    mainContent.innerHTML = `<div class="card"><h2>${topicName} Practice</h2><p style="color: var(--text-muted); margin-bottom: 20px;">Enter your name below to begin the quiz. Your score will be recorded on the ${leaderboardType}.</p><input type="text" id="studentNameInput" class="input-field" placeholder="Enter your full name..." autocomplete="off"><div style="display: flex; gap: 15px;"><button class="btn-exam" onclick="startQuiz('${leaderboardType}')" style="background-color: var(--primary-yellow); color: black; border: none; width: 200px;">Start Quiz &rarr;</button><button class="btn-exam" onclick="goBack()" style="width: 150px; background-color: #333;">&larr; Go Back</button></div></div>`;
                 } else {
-                    // If it's NCERT, PYQs, etc., just show the PDF/Study Material placeholder
-                    mainContent.innerHTML = `
-                        <div class="card">
-                            <h2>${topicName} Resources</h2>
-                            <p style="color: var(--text-muted); margin-bottom: 20px;">Read and download study materials for this topic.</p>
-                            
-                            <div style="padding: 50px 20px; background-color: #2a2a2a; border-radius: 8px; border: 1px dashed var(--border-color); text-align: center;">
-                                <div style="font-size: 40px; margin-bottom: 15px;">📄</div>
-                                <h3 style="margin-bottom: 10px; color: white;">PDF Viewer / Notes</h3>
-                                <p style="color: var(--text-muted); font-size: 14px;">(No login required to read study materials. Document will load here.)</p>
-                            </div>
-                            
-                            <button class="btn-exam" onclick="goBack()" style="width: 200px; margin-top: 20px; background-color: #333;">&larr; Go Back</button>
-                        </div>`;
+                    mainContent.innerHTML = `<div class="card"><h2>${topicName} Resources</h2><p style="color: var(--text-muted); margin-bottom: 20px;">Read and download study materials for this topic.</p><div style="padding: 50px 20px; background-color: #2a2a2a; border-radius: 8px; border: 1px dashed var(--border-color); text-align: center;"><div style="font-size: 40px; margin-bottom: 15px;">📄</div><h3 style="margin-bottom: 10px; color: white;">PDF Viewer / Notes</h3><p style="color: var(--text-muted); font-size: 14px;">(No login required to read study materials. Document will load here.)</p></div><button class="btn-exam" onclick="goBack()" style="width: 200px; margin-top: 20px; background-color: #333;">&larr; Go Back</button></div>`;
                 }
                 return;
             }
@@ -221,30 +238,58 @@
             mainContent.innerHTML = html;
         }
 
-        function startQuiz(leaderboardCategory) {
-            const nameInput = document.getElementById('studentNameInput').value.trim();
-            if (nameInput === "") { showNotification("⚠️ Please enter your name to start the quiz."); return; }
-            currentStudentName = nameInput;
-            const mainContent = document.getElementById('dynamic-content');
-            mainContent.innerHTML = `<div class="card"><h2>Quiz Starting...</h2><p style="color: var(--primary-yellow); font-size: 18px;">Best of luck, ${currentStudentName}!</p><p style="color: var(--text-muted); margin-top: 15px;">(Quiz Engine loads here next...)</p><button class="btn-exam" onclick="goBack()" style="width: 200px; margin-top: 20px; background-color: #333;">&larr; Cancel Quiz</button></div>`;
+        function _renderQuizStart() {
+            document.getElementById('breadcrumb-text').innerText = "Home / " + currentPath.join(" / ") + " / Active Quiz"; 
+            document.getElementById('dynamic-content').innerHTML = `<div class="card"><h2>Quiz Starting...</h2><p style="color: var(--primary-yellow); font-size: 18px;">Best of luck, ${currentStudentName}!</p><p style="color: var(--text-muted); margin-top: 15px;">(Quiz Engine loads here next...)</p><button class="btn-exam" onclick="goBack()" style="width: 200px; margin-top: 20px; background-color: #333;">&larr; Cancel Quiz</button></div>`;
         }
 
-        // --- 3. DYNAMIC SEARCH UI LOGIC ---
+        function _renderLeaderboardOptions() {
+            document.getElementById('breadcrumb-text').innerText = "Home / Leaderboard";
+            document.getElementById('dynamic-content').innerHTML = `<div class="card"><h2>🏆 Select Leaderboard</h2><div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 15px; margin-top: 20px;"><button class="btn-exam" onclick="fetchLiveLeaderboard('NEET Practice Leaderboard')">1. NEET PRACTICE</button><button class="btn-exam" onclick="fetchLiveLeaderboard('NEET Mock Test Leaderboard')">2. NEET MOCK TESTS</button><button class="btn-exam" onclick="fetchLiveLeaderboard('GK Leaderboard')" style="border-color: #4CAF50;">3. GENERAL KNOWLEDGE</button></div></div>`;
+        }
+
+        function _renderLiveLeaderboard(type) {
+            const mainContent = document.getElementById('dynamic-content');
+            document.getElementById('breadcrumb-text').innerText = "Home / Leaderboard / " + type;
+            let activityHeader = type === 'NEET Mock Test Leaderboard' ? 'Tests Taken' : 'Q. ATTEMPTED';
+            mainContent.innerHTML = `<div class="card"><h2>🏆 ${type}</h2><p style="color: var(--primary-yellow);">Fetching live rankings from Firebase...</p></div>`;
+
+            db.collection("leaderboard").where("type", "==", type).get().then((querySnapshot) => {
+                let students = [];
+                querySnapshot.forEach((doc) => { 
+                    let data = doc.data();
+                    if ((type === 'NEET Practice Leaderboard' || type === 'GK Leaderboard') && data.tests >= 100) { students.push(data); } 
+                    else if (type === 'NEET Mock Test Leaderboard' && data.tests >= 10) { students.push(data); }
+                });
+
+                students.sort((a, b) => b.accuracy - a.accuracy);
+                let tableHTML = `<div class="card"><h2>🏆 ${type}</h2><table style="width: 100%; border-collapse: collapse; margin-top: 10px;"><tr style="color: var(--primary-yellow);"><th>Rank</th><th>Student Name</th><th>${activityHeader}</th><th>Accuracy</th></tr>`;
+
+                if (students.length === 0) {
+                    let req = type === 'NEET Mock Test Leaderboard' ? '10 Tests Taken' : '100 Questions Attempted';
+                    tableHTML += `<tr><td colspan="4" style="text-align: center; padding: 30px; color: var(--text-muted);">The leaderboard is waiting! To rank here, students must complete at least ${req}.</td></tr>`;
+                } else {
+                    students.forEach((student, index) => {
+                        let medal = index === 0 ? '🥇 ' : index === 1 ? '🥈 ' : index === 2 ? '🥉 ' : '';
+                        tableHTML += `<tr><td>${medal}${index + 1}</td><td>${student.name}</td><td>${student.tests}</td><td>${student.accuracy}%</td></tr>`;
+                    });
+                }
+                tableHTML += `</table><div style="display: flex; gap: 15px; margin-top: 25px;"><button class="btn-exam" onclick="goBack()" style="background-color: #333;">&larr; Go Back</button></div></div>`;
+                mainContent.innerHTML = tableHTML;
+            }).catch((error) => { showNotification("Error connecting to Firebase: " + error.message); });
+        }
+
+        // --- 5. SEARCH ENGINE & UTILS ---
         function openSearch() {
             document.getElementById('searchWrapper').classList.add('active');
-            document.getElementById('searchInput').focus(); // Automatically triggers mobile keyboard
+            document.getElementById('searchInput').focus();
         }
-
         function closeSearch() {
             document.getElementById('searchWrapper').classList.remove('active');
             document.getElementById('searchInput').value = '';
             document.getElementById('searchSuggestions').style.display = 'none';
         }
-
-        function delayCloseSearch() {
-            // Slight delay so if a user clicks a suggestion, it registers before the dropdown vanishes
-            setTimeout(closeSearch, 250); 
-        }
+        function delayCloseSearch() { setTimeout(closeSearch, 250); }
 
         function handleLiveSearch() {
             const query = document.getElementById('searchInput').value.trim().toLowerCase();
@@ -272,59 +317,12 @@
             dropdown.style.display = 'block';
         }
 
-        // --- 4. CLOUD LEADERBOARD ---
-        function showLeaderboardOptions() {
-            const mainContent = document.getElementById('dynamic-content');
-            document.getElementById('breadcrumb-text').innerText = "Home / Leaderboard";
-            currentPath = []; 
-            mainContent.innerHTML = `<div class="card"><h2>🏆 Select Leaderboard</h2><div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 15px; margin-top: 20px;"><button class="btn-exam" onclick="fetchLiveLeaderboard('NEET Practice Leaderboard')">1. NEET PRACTICE</button><button class="btn-exam" onclick="fetchLiveLeaderboard('NEET Mock Test Leaderboard')">2. NEET MOCK TESTS</button><button class="btn-exam" onclick="fetchLiveLeaderboard('GK Leaderboard')" style="border-color: #4CAF50;">3. GENERAL KNOWLEDGE</button></div></div>`;
-        }
-
-        function fetchLiveLeaderboard(type) {
-            const mainContent = document.getElementById('dynamic-content');
-            document.getElementById('breadcrumb-text').innerText = "Home / Leaderboard / " + type;
-            let activityHeader = type === 'NEET Mock Test Leaderboard' ? 'Tests Taken' : 'Q. ATTEMPTED';
-            mainContent.innerHTML = `<div class="card"><h2>🏆 ${type}</h2><p style="color: var(--primary-yellow);">Fetching live rankings from Firebase...</p></div>`;
-
-            db.collection("leaderboard").where("type", "==", type).get()
-            .then((querySnapshot) => {
-                let students = [];
-                querySnapshot.forEach((doc) => { 
-                    let data = doc.data();
-                    if ((type === 'NEET Practice Leaderboard' || type === 'GK Leaderboard') && data.tests >= 100) { students.push(data); } 
-                    else if (type === 'NEET Mock Test Leaderboard' && data.tests >= 10) { students.push(data); }
-                });
-
-                students.sort((a, b) => b.accuracy - a.accuracy);
-                let tableHTML = `<div class="card"><h2>🏆 ${type}</h2><table style="width: 100%; border-collapse: collapse; margin-top: 10px;"><tr style="color: var(--primary-yellow);"><th>Rank</th><th>Student Name</th><th>${activityHeader}</th><th>Accuracy</th></tr>`;
-
-                if (students.length === 0) {
-                    let req = type === 'NEET Mock Test Leaderboard' ? '10 Tests Taken' : '100 Questions Attempted';
-                    tableHTML += `<tr><td colspan="4" style="text-align: center; padding: 30px; color: var(--text-muted);">The leaderboard is waiting! To rank here, students must complete at least ${req}.</td></tr>`;
-                } else {
-                    students.forEach((student, index) => {
-                        let medal = index === 0 ? '🥇 ' : index === 1 ? '🥈 ' : index === 2 ? '🥉 ' : '';
-                        tableHTML += `<tr><td>${medal}${index + 1}</td><td>${student.name}</td><td>${student.tests}</td><td>${student.accuracy}%</td></tr>`;
-                    });
-                }
-                tableHTML += `</table><div style="display: flex; gap: 15px; margin-top: 25px;"><button class="btn-exam" onclick="showLeaderboardOptions()" style="background-color: #333;">&larr; Go Back</button></div></div>`;
-                mainContent.innerHTML = tableHTML;
-            }).catch((error) => { showNotification("Error connecting to Firebase: " + error.message); });
-        }
-
-        // --- 5. NAVIGATION HELPER ---
-        function navigateTo(key) { currentPath.push(key); renderView(); }
-        function goBack() { currentPath.pop(); renderView(); }
-        function goHome() { currentPath = []; renderView(); }
-        function jumpToSection(pathArray) { currentPath = pathArray; renderView(); }
         function showNotification(message) {
             const notif = document.getElementById('notification');
             notif.innerText = message;
             notif.style.display = 'block';
             setTimeout(() => { notif.style.display = 'none'; }, 3000);
         }
-
-        renderView();
     </script>
 </body>
 </html>
