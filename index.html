@@ -1,6 +1,16 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-9DMLHEWB1Q"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-9DMLHEWB1Q');
+    </script>
+
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MCQsPrep - Dashboard</title>
@@ -144,14 +154,12 @@
         <div class="sidebar">
             <div class="card">
                 <h3>Quick Links</h3>
-                <!-- REMOVED href="#" TO FIX NAVIGATION BUG -->
                 <a class="action-link" onclick="jumpToSection(['NEET', 'NCERT Book'])">📚 NCERT Solutions</a>
                 <a class="action-link" onclick="jumpToSection(['NEET', 'PYQs'])">📄 Previous Year Papers</a>
             </div>
 
             <div class="card">
                 <h3>Essential Practice</h3>
-                <!-- REMOVED href="#" TO FIX NAVIGATION BUG -->
                 <a class="action-link" onclick="jumpToSection(['NEET', 'MCQs Practice'])">📝 Subject-wise MCQs</a>
                 <a class="action-link" onclick="jumpToSection(['NEET', 'Mock Test'])">⏱️ Full-Length Mock Tests</a>
                 <a class="action-link" onclick="jumpToSection(['NEET', 'Practice Paper', 'Mixed'])">📅 Daily Quiz Challenge</a>
@@ -382,7 +390,6 @@
             }).catch((error) => { showNotification("Error connecting to Firebase: " + error.message); });
         }
 
-        // --- 6. SEARCH ENGINE & UTILS ---
         function openSearch() { document.getElementById('searchWrapper').classList.add('active'); document.getElementById('searchInput').focus(); }
         function closeSearch() { document.getElementById('searchWrapper').classList.remove('active'); document.getElementById('searchInput').value = ''; document.getElementById('searchSuggestions').style.display = 'none'; }
         function delayCloseSearch() { setTimeout(closeSearch, 250); }
