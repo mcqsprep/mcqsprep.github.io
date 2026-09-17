@@ -64,15 +64,32 @@
         .action-link { display: block; padding: 12px 15px; background-color: #2a2a2a; border: 1px solid var(--border-color); border-radius: 6px; color: white; text-decoration: none; margin-bottom: 10px; transition: 0.2s; }
         .action-link:hover { border-color: var(--primary-yellow); background-color: #333; }
         
-        .input-field { width: 100%; max-width: 300px; padding: 12px; margin-bottom: 15px; border-radius: 4px; border: 1px solid var(--border-color); background: #2a2a2a; color: white; box-sizing: border-box; font-size: 16px; display: block; }
+        .input-field { width: 100%; padding: 12px; margin-bottom: 15px; border-radius: 4px; border: 1px solid var(--border-color); background: #2a2a2a; color: white; box-sizing: border-box; font-size: 16px; display: block; }
         .input-field:focus { outline: none; border-color: var(--primary-yellow); }
 
         table th, table td { padding: 12px; border-bottom: 1px solid var(--border-color); text-align: left; }
 
         #notification { display: none; position: fixed; bottom: 20px; right: 20px; background-color: var(--primary-yellow); color: #000; padding: 15px 25px; border-radius: 5px; font-weight: bold; box-shadow: 0 4px 6px rgba(0,0,0,0.3); z-index: 1000; }
+
+        /* NEW MODAL STYLES */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 3000; justify-content: center; align-items: center; backdrop-filter: blur(5px); }
+        .modal-content { background: var(--card-bg); padding: 35px; border-radius: 12px; border: 1px solid var(--border-color); width: 90%; max-width: 420px; position: relative; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .close-modal { position: absolute; top: 15px; right: 15px; background: none; border: none; color: var(--text-muted); font-size: 24px; cursor: pointer; transition: 0.2s; }
+        .close-modal:hover { color: white; }
     </style>
 </head>
 <body>
+
+    <!-- IDENTITY POP-UP MODAL -->
+    <div id="identityModal" class="modal-overlay">
+        <div class="modal-content">
+            <button class="close-modal" onclick="skipIdentity()">✕</button>
+            <h2 style="margin-top:0; color: var(--primary-yellow);">Welcome to MCQsPrep</h2>
+            <p style="color: var(--text-muted); margin-bottom: 25px; font-size: 15px;">Enter your name once to save your progress and compete on the global leaderboards.</p>
+            <input type="text" id="globalNameInput" class="input-field" placeholder="Full Name (e.g. Rahul Verma)" autocomplete="off">
+            <button class="btn-exam" onclick="saveIdentity()" style="width: 100%; background-color: var(--primary-yellow); color: black; border: none;">Save Profile</button>
+        </div>
+    </div>
 
     <nav class="navbar">
         <div class="logo-container" onclick="goHome()">
@@ -141,38 +158,59 @@
             "General Knowledge": { "Current Affairs": [], "History": [], "Geography": [] }
         };
 
-        // --- 3. THE HASH ROUTER (NEW NAVIGATION ENGINE) ---
-        let currentPath = []; 
-        let currentStudentName = "";
+        // --- 3. IDENTITY AND LOCAL STORAGE SYSTEM ---
+        let currentStudentName = localStorage.getItem('mcqsprep_student_name') || "";
         let currentLeaderboardType = "";
 
-        // This listens for any changes to the URL hash and updates the screen
-        window.addEventListener('hashchange', handleRouting);
+        // Triggers as soon as the website loads
         window.addEventListener('load', () => {
+            // If they haven't saved a name, and they didn't explicitly skip it this session, show modal
+            if (!currentStudentName && !sessionStorage.getItem('identity_skipped')) {
+                document.getElementById('identityModal').style.display = 'flex';
+                document.getElementById('globalNameInput').focus();
+            } else if (!currentStudentName) {
+                currentStudentName = "Anonymous Student";
+            }
+
+            // Initialize Routing
             if (!window.location.hash) window.location.hash = '#/home';
             else handleRouting();
         });
 
-        function handleRouting() {
-            let hash = decodeURIComponent(window.location.hash.replace('#/', ''));
-            
-            if (!hash || hash === 'home') {
-                currentPath = [];
-                _renderView();
-            } else if (hash.startsWith('path/')) {
-                currentPath = hash.replace('path/', '').split('/');
-                _renderView();
-            } else if (hash === 'leaderboard') {
-                _renderLeaderboardOptions();
-            } else if (hash.startsWith('board/')) {
-                _renderLiveLeaderboard(hash.replace('board/', ''));
-            } else if (hash === 'quiz') {
-                if (!currentStudentName) window.location.hash = '#/path/' + currentPath.join('/');
-                else _renderQuizStart();
+        function saveIdentity() {
+            let inputName = document.getElementById('globalNameInput').value.trim();
+            if(inputName !== "") {
+                localStorage.setItem('mcqsprep_student_name', inputName);
+                currentStudentName = inputName;
+                document.getElementById('identityModal').style.display = 'none';
+                showNotification("Profile saved! Welcome, " + currentStudentName);
+                _renderView(); // Refresh the view to show their name if they are on a quiz screen
+            } else {
+                showNotification("⚠️ Please enter a name or click ✕ to skip.");
             }
         }
 
-        // Updated Navigation Triggers (These now just change the URL Hash!)
+        function skipIdentity() {
+            sessionStorage.setItem('identity_skipped', 'true');
+            currentStudentName = "Anonymous Student";
+            document.getElementById('identityModal').style.display = 'none';
+            _renderView();
+        }
+
+
+        // --- 4. THE HASH ROUTER ---
+        let currentPath = []; 
+        window.addEventListener('hashchange', handleRouting);
+
+        function handleRouting() {
+            let hash = decodeURIComponent(window.location.hash.replace('#/', ''));
+            if (!hash || hash === 'home') { currentPath = []; _renderView(); } 
+            else if (hash.startsWith('path/')) { currentPath = hash.replace('path/', '').split('/'); _renderView(); } 
+            else if (hash === 'leaderboard') { _renderLeaderboardOptions(); } 
+            else if (hash.startsWith('board/')) { _renderLiveLeaderboard(hash.replace('board/', '')); } 
+            else if (hash === 'quiz') { _renderQuizStart(); }
+        }
+
         function goHome() { window.location.hash = '#/home'; }
         function navigateTo(key) { window.location.hash = '#/path/' + [...currentPath, key].join('/'); }
         function jumpToSection(pathArray) { window.location.hash = '#/path/' + pathArray.join('/'); }
@@ -192,14 +230,11 @@
         }
 
         function startQuiz(leaderboardCategory) {
-            const nameInput = document.getElementById('studentNameInput').value.trim();
-            if (nameInput === "") { showNotification("⚠️ Please enter your name to start the quiz."); return; }
-            currentStudentName = nameInput;
             currentLeaderboardType = leaderboardCategory;
-            window.location.hash = '#/quiz'; // Changes URL to Quiz mode
+            window.location.hash = '#/quiz'; // Instantly loads Quiz mode
         }
 
-        // --- 4. HTML RENDERERS ---
+        // --- 5. HTML RENDERERS ---
         function requiresQuizLogin(pathArray) {
             const pathString = pathArray.join(" > ").toLowerCase();
             const triggers = ["mcqs practice", "mock test", "general knowledge", "practice paper"];
@@ -214,7 +249,7 @@
             let currentLevel = appData;
             for (let node of currentPath) { 
                 if(currentLevel[node]) currentLevel = currentLevel[node]; 
-                else { window.location.hash = '#/home'; return; } // Failsafe
+                else { window.location.hash = '#/home'; return; } 
             }
 
             if (Array.isArray(currentLevel) || typeof currentLevel === 'string') {
@@ -223,7 +258,20 @@
                 let leaderboardType = isGK ? 'GK Leaderboard' : 'NEET Practice Leaderboard';
 
                 if (requiresQuizLogin(currentPath)) {
-                    mainContent.innerHTML = `<div class="card"><h2>${topicName} Practice</h2><p style="color: var(--text-muted); margin-bottom: 20px;">Enter your name below to begin the quiz. Your score will be recorded on the ${leaderboardType}.</p><input type="text" id="studentNameInput" class="input-field" placeholder="Enter your full name..." autocomplete="off"><div style="display: flex; gap: 15px;"><button class="btn-exam" onclick="startQuiz('${leaderboardType}')" style="background-color: var(--primary-yellow); color: black; border: none; width: 200px;">Start Quiz &rarr;</button><button class="btn-exam" onclick="goBack()" style="width: 150px; background-color: #333;">&larr; Go Back</button></div></div>`;
+                    // Cleaner Quiz Prep Screen without input box!
+                    let welcomeMessage = currentStudentName === "Anonymous Student" ? 
+                        "You are playing as an Anonymous Student. Your score will not be tracked globally." : 
+                        `Welcome back, <span style="color: var(--primary-yellow); font-weight: bold;">${currentStudentName}</span>!`;
+
+                    mainContent.innerHTML = `
+                        <div class="card">
+                            <h2>${topicName} Practice</h2>
+                            <p style="color: var(--text-muted); margin-bottom: 25px;">${welcomeMessage} Ready to test your knowledge?</p>
+                            <div style="display: flex; gap: 15px;">
+                                <button class="btn-exam" onclick="startQuiz('${leaderboardType}')" style="background-color: var(--primary-yellow); color: black; border: none; width: 200px;">Start Quiz &rarr;</button>
+                                <button class="btn-exam" onclick="goBack()" style="width: 150px; background-color: #333;">&larr; Go Back</button>
+                            </div>
+                        </div>`;
                 } else {
                     mainContent.innerHTML = `<div class="card"><h2>${topicName} Resources</h2><p style="color: var(--text-muted); margin-bottom: 20px;">Read and download study materials for this topic.</p><div style="padding: 50px 20px; background-color: #2a2a2a; border-radius: 8px; border: 1px dashed var(--border-color); text-align: center;"><div style="font-size: 40px; margin-bottom: 15px;">📄</div><h3 style="margin-bottom: 10px; color: white;">PDF Viewer / Notes</h3><p style="color: var(--text-muted); font-size: 14px;">(No login required to read study materials. Document will load here.)</p></div><button class="btn-exam" onclick="goBack()" style="width: 200px; margin-top: 20px; background-color: #333;">&larr; Go Back</button></div>`;
                 }
@@ -279,16 +327,9 @@
             }).catch((error) => { showNotification("Error connecting to Firebase: " + error.message); });
         }
 
-        // --- 5. SEARCH ENGINE & UTILS ---
-        function openSearch() {
-            document.getElementById('searchWrapper').classList.add('active');
-            document.getElementById('searchInput').focus();
-        }
-        function closeSearch() {
-            document.getElementById('searchWrapper').classList.remove('active');
-            document.getElementById('searchInput').value = '';
-            document.getElementById('searchSuggestions').style.display = 'none';
-        }
+        // --- 6. SEARCH ENGINE & UTILS ---
+        function openSearch() { document.getElementById('searchWrapper').classList.add('active'); document.getElementById('searchInput').focus(); }
+        function closeSearch() { document.getElementById('searchWrapper').classList.remove('active'); document.getElementById('searchInput').value = ''; document.getElementById('searchSuggestions').style.display = 'none'; }
         function delayCloseSearch() { setTimeout(closeSearch, 250); }
 
         function handleLiveSearch() {
