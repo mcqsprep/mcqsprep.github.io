@@ -22,17 +22,31 @@
 
         body { margin: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: var(--bg-dark); color: var(--text-light); }
 
-        .navbar { display: flex; justify-content: space-between; align-items: center; background-color: var(--bg-dark); padding: 15px 40px; border-bottom: 1px solid var(--border-color); }
-        .logo-container { display: flex; align-items: center; font-size: 24px; font-weight: bold; color: var(--text-light); cursor: pointer; }
+        .navbar { display: flex; justify-content: space-between; align-items: center; background-color: var(--bg-dark); padding: 15px 40px; border-bottom: 1px solid var(--border-color); position: relative; }
+        .logo-container { display: flex; align-items: center; font-size: 24px; font-weight: bold; color: var(--text-light); cursor: pointer; white-space: nowrap; }
         .logo-container span { color: var(--primary-yellow); margin-left: 2px; }
         
-        .search-container { flex-grow: 1; max-width: 500px; display: flex; margin: 0 30px; }
-        .search-container input { width: 100%; padding: 10px 15px; border: 1px solid var(--border-color); border-right: none; border-radius: 4px 0 0 4px; background-color: #2a2a2a; color: white; outline: none; }
-        .search-container input::placeholder { color: var(--text-muted); }
-        .search-container button { padding: 10px 20px; background-color: #333; border: 1px solid var(--border-color); border-radius: 0 4px 4px 0; color: white; cursor: pointer; transition: 0.2s; }
-        .search-container button:hover { background-color: #444; }
+        /* NEW DYNAMIC SEARCH BAR STYLES */
+        .search-wrapper { position: relative; display: flex; justify-content: flex-end; align-items: center; flex-grow: 1; margin: 0 30px; transition: 0.3s ease; }
+        .search-icon-btn { background: #2a2a2a; border: 1px solid var(--border-color); color: white; font-size: 18px; cursor: pointer; padding: 10px 15px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
+        .search-icon-btn:hover { background: #333; }
         
-        .nav-links { display: flex; align-items: center; gap: 20px; }
+        .search-input-container { display: none; width: 100%; max-width: 600px; position: relative; }
+        .search-wrapper.active .search-icon-btn { display: none; }
+        .search-wrapper.active .search-input-container { display: flex; align-items: center; }
+        
+        .search-input-container input { width: 100%; padding: 12px 45px 12px 20px; border-radius: 24px; border: 1px solid var(--border-color); background: #2a2a2a; color: white; outline: none; font-size: 16px; transition: 0.2s; }
+        .search-input-container input:focus { border-color: var(--primary-yellow); background: #1e1e1e; }
+        .search-close-btn { position: absolute; right: 15px; background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 20px; font-weight: bold; padding: 0; }
+        .search-close-btn:hover { color: white; }
+
+        /* LIVE SUGGESTIONS DROPDOWN */
+        .suggestions-dropdown { display: none; position: absolute; top: calc(100% + 8px); left: 0; right: 0; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; z-index: 2000; max-height: 350px; overflow-y: auto; box-shadow: 0 8px 24px rgba(0,0,0,0.8); }
+        .suggestion-item { padding: 12px 20px; cursor: pointer; border-bottom: 1px solid var(--border-color); color: white; display: flex; align-items: center; gap: 12px; font-size: 15px; }
+        .suggestion-item:last-child { border-bottom: none; }
+        .suggestion-item:hover { background: #2a2a2a; color: var(--primary-yellow); }
+        
+        .nav-links { display: flex; align-items: center; gap: 20px; white-space: nowrap; }
         .nav-links a { color: var(--text-light); text-decoration: none; font-weight: 500; transition: color 0.2s; cursor: pointer; }
         .nav-links a:hover { color: var(--primary-yellow); }
         .highlight-nav { color: var(--primary-yellow) !important; font-weight: bold; text-shadow: 0 0 8px rgba(253, 184, 19, 0.4); }
@@ -67,9 +81,14 @@
             🩺 MCQsPrep<span>.</span>
         </div>
         
-        <div class="search-container">
-            <input type="text" id="searchInput" placeholder="Search for NCERT topics, physics concepts..." onkeypress="handleSearch(event)">
-            <button onclick="executeSearch()">Search</button>
+        <!-- NEW SEARCH ARCHITECTURE -->
+        <div class="search-wrapper" id="searchWrapper">
+            <button class="search-icon-btn" onclick="openSearch()">🔍</button>
+            <div class="search-input-container">
+                <input type="text" id="searchInput" placeholder="Search MCQs, chapters, mock tests..." oninput="handleLiveSearch()" onblur="delayCloseSearch()">
+                <button class="search-close-btn" onclick="closeSearch()">✕</button>
+                <div class="suggestions-dropdown" id="searchSuggestions"></div>
+            </div>
         </div>
 
         <div class="nav-links">
@@ -139,7 +158,14 @@
         };
 
         let currentPath = []; 
-        let currentStudentName = ""; // Memory to hold the student's name
+        let currentStudentName = "";
+
+        // NEW LOGIC: Checks if the path requires a Name/Quiz setup
+        function requiresQuizLogin(pathArray) {
+            const pathString = pathArray.join(" > ").toLowerCase();
+            const triggers = ["mcqs practice", "mock test", "general knowledge", "practice paper"];
+            return triggers.some(trigger => pathString.includes(trigger));
+        }
 
         function renderView() {
             const mainContent = document.getElementById('dynamic-content');
@@ -150,29 +176,40 @@
             let currentLevel = appData;
             for (let node of currentPath) { currentLevel = currentLevel[node]; }
 
-            // WHEN THEY REACH THE END OF A FOLDER (Ready to take a quiz)
-            if (Array.isArray(currentLevel)) {
+            // WHEN THEY REACH THE END OF A FOLDER
+            if (Array.isArray(currentLevel) || typeof currentLevel === 'string') {
                 let topicName = currentPath[currentPath.length - 1];
                 let isGK = currentPath[0] === "General Knowledge";
                 let leaderboardType = isGK ? 'GK Leaderboard' : 'NEET Practice Leaderboard';
 
-                mainContent.innerHTML = `
-                    <div class="card">
-                        <h2>${topicName} Practice</h2>
-                        <p style="color: var(--text-muted); margin-bottom: 20px;">Enter your name below to begin the quiz. Your score will be recorded on the ${leaderboardType}.</p>
-                        
-                        <input type="text" id="studentNameInput" class="input-field" placeholder="Enter your full name..." autocomplete="off">
-                        
-                        <div style="display: flex; gap: 15px;">
-                            <button class="btn-exam" onclick="startQuiz('${leaderboardType}')" style="background-color: var(--primary-yellow); color: black; border: none; width: 200px;">Start Quiz &rarr;</button>
-                            <button class="btn-exam" onclick="goBack()" style="width: 150px; background-color: #333;">&larr; Go Back</button>
-                        </div>
-                    </div>`;
-                return;
-            }
-
-            if (typeof currentLevel === 'string') {
-                mainContent.innerHTML = `<div class="card"><h2>${currentPath[currentPath.length - 1]}</h2><h3 style="color: var(--primary-yellow); font-size: 24px; padding: 20px 0;">${currentLevel}</h3><button class="btn-exam" onclick="goBack()" style="width: 200px; background-color: #333;">&larr; Go Back</button></div>`;
+                // SMART FILTER: Only ask name for Quiz sections!
+                if (requiresQuizLogin(currentPath)) {
+                    mainContent.innerHTML = `
+                        <div class="card">
+                            <h2>${topicName} Practice</h2>
+                            <p style="color: var(--text-muted); margin-bottom: 20px;">Enter your name below to begin the quiz. Your score will be recorded on the ${leaderboardType}.</p>
+                            <input type="text" id="studentNameInput" class="input-field" placeholder="Enter your full name..." autocomplete="off">
+                            <div style="display: flex; gap: 15px;">
+                                <button class="btn-exam" onclick="startQuiz('${leaderboardType}')" style="background-color: var(--primary-yellow); color: black; border: none; width: 200px;">Start Quiz &rarr;</button>
+                                <button class="btn-exam" onclick="goBack()" style="width: 150px; background-color: #333;">&larr; Go Back</button>
+                            </div>
+                        </div>`;
+                } else {
+                    // If it's NCERT, PYQs, etc., just show the PDF/Study Material placeholder
+                    mainContent.innerHTML = `
+                        <div class="card">
+                            <h2>${topicName} Resources</h2>
+                            <p style="color: var(--text-muted); margin-bottom: 20px;">Read and download study materials for this topic.</p>
+                            
+                            <div style="padding: 50px 20px; background-color: #2a2a2a; border-radius: 8px; border: 1px dashed var(--border-color); text-align: center;">
+                                <div style="font-size: 40px; margin-bottom: 15px;">📄</div>
+                                <h3 style="margin-bottom: 10px; color: white;">PDF Viewer / Notes</h3>
+                                <p style="color: var(--text-muted); font-size: 14px;">(No login required to read study materials. Document will load here.)</p>
+                            </div>
+                            
+                            <button class="btn-exam" onclick="goBack()" style="width: 200px; margin-top: 20px; background-color: #333;">&larr; Go Back</button>
+                        </div>`;
+                }
                 return;
             }
 
@@ -184,102 +221,98 @@
             mainContent.innerHTML = html;
         }
 
-        // --- NEW START QUIZ FUNCTION ---
         function startQuiz(leaderboardCategory) {
             const nameInput = document.getElementById('studentNameInput').value.trim();
-            
-            if (nameInput === "") {
-                showNotification("⚠️ Please enter your name to start the quiz.");
-                return;
-            }
-
-            // Save the name into our global memory for later
+            if (nameInput === "") { showNotification("⚠️ Please enter your name to start the quiz."); return; }
             currentStudentName = nameInput;
-            
-            // This is a placeholder! In the next step, this will load the actual MCQ questions.
             const mainContent = document.getElementById('dynamic-content');
-            mainContent.innerHTML = `
-                <div class="card">
-                    <h2>Quiz Starting...</h2>
-                    <p style="color: var(--primary-yellow); font-size: 18px;">Best of luck, ${currentStudentName}!</p>
-                    <p style="color: var(--text-muted); margin-top: 15px;">(The actual quiz questions will appear here once we build the Quiz Engine in the next step.)</p>
-                    <button class="btn-exam" onclick="goBack()" style="width: 200px; margin-top: 20px; background-color: #333;">&larr; Cancel Quiz</button>
-                </div>
-            `;
+            mainContent.innerHTML = `<div class="card"><h2>Quiz Starting...</h2><p style="color: var(--primary-yellow); font-size: 18px;">Best of luck, ${currentStudentName}!</p><p style="color: var(--text-muted); margin-top: 15px;">(Quiz Engine loads here next...)</p><button class="btn-exam" onclick="goBack()" style="width: 200px; margin-top: 20px; background-color: #333;">&larr; Cancel Quiz</button></div>`;
         }
 
-        // --- 3. ISOLATED CLOUD LEADERBOARD ---
+        // --- 3. DYNAMIC SEARCH UI LOGIC ---
+        function openSearch() {
+            document.getElementById('searchWrapper').classList.add('active');
+            document.getElementById('searchInput').focus(); // Automatically triggers mobile keyboard
+        }
+
+        function closeSearch() {
+            document.getElementById('searchWrapper').classList.remove('active');
+            document.getElementById('searchInput').value = '';
+            document.getElementById('searchSuggestions').style.display = 'none';
+        }
+
+        function delayCloseSearch() {
+            // Slight delay so if a user clicks a suggestion, it registers before the dropdown vanishes
+            setTimeout(closeSearch, 250); 
+        }
+
+        function handleLiveSearch() {
+            const query = document.getElementById('searchInput').value.trim().toLowerCase();
+            const dropdown = document.getElementById('searchSuggestions');
+            if(query === "") { dropdown.style.display = 'none'; return; }
+            
+            let results = [];
+            function searchDB(obj, q, path = []) {
+                for (let key in obj) {
+                    let current = [...path, key];
+                    if (key.toLowerCase().includes(q)) results.push(current);
+                    if (typeof obj[key] === 'object' && !Array.isArray(obj[key])) searchDB(obj[key], q, current);
+                }
+            }
+            searchDB(appData, query);
+            
+            if(results.length > 0) {
+                dropdown.innerHTML = results.slice(0, 8).map(pathArray => {
+                    const cleanPath = JSON.stringify(pathArray).replace(/"/g, "'");
+                    return `<div class="suggestion-item" onclick="jumpToSection(${cleanPath}); closeSearch();">🔍 <span>${pathArray.join(" <span style='color:var(--text-muted);font-size:12px;'>&rarr;</span> ")}</span></div>`;
+                }).join('');
+            } else {
+                dropdown.innerHTML = `<div class="suggestion-item" style="color: var(--text-muted);">No results match "${query}"</div>`;
+            }
+            dropdown.style.display = 'block';
+        }
+
+        // --- 4. CLOUD LEADERBOARD ---
         function showLeaderboardOptions() {
             const mainContent = document.getElementById('dynamic-content');
             document.getElementById('breadcrumb-text').innerText = "Home / Leaderboard";
             currentPath = []; 
-            mainContent.innerHTML = `
-                <div class="card">
-                    <h2>🏆 Select Leaderboard</h2>
-                    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 15px; margin-top: 20px;">
-                        <button class="btn-exam" onclick="fetchLiveLeaderboard('NEET Practice Leaderboard')">1. NEET PRACTICE</button>
-                        <button class="btn-exam" onclick="fetchLiveLeaderboard('NEET Mock Test Leaderboard')">2. NEET MOCK TESTS</button>
-                        <button class="btn-exam" onclick="fetchLiveLeaderboard('GK Leaderboard')" style="border-color: #4CAF50;">3. GENERAL KNOWLEDGE</button>
-                    </div>
-                </div>`;
+            mainContent.innerHTML = `<div class="card"><h2>🏆 Select Leaderboard</h2><div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 15px; margin-top: 20px;"><button class="btn-exam" onclick="fetchLiveLeaderboard('NEET Practice Leaderboard')">1. NEET PRACTICE</button><button class="btn-exam" onclick="fetchLiveLeaderboard('NEET Mock Test Leaderboard')">2. NEET MOCK TESTS</button><button class="btn-exam" onclick="fetchLiveLeaderboard('GK Leaderboard')" style="border-color: #4CAF50;">3. GENERAL KNOWLEDGE</button></div></div>`;
         }
 
         function fetchLiveLeaderboard(type) {
             const mainContent = document.getElementById('dynamic-content');
             document.getElementById('breadcrumb-text').innerText = "Home / Leaderboard / " + type;
-            
-            // Customize column header based on the exact type
             let activityHeader = type === 'NEET Mock Test Leaderboard' ? 'Tests Taken' : 'Q. ATTEMPTED';
-            
             mainContent.innerHTML = `<div class="card"><h2>🏆 ${type}</h2><p style="color: var(--primary-yellow);">Fetching live rankings from Firebase...</p></div>`;
 
-            // Firebase automatically isolates the data because we ask for exact matches on "type"
             db.collection("leaderboard").where("type", "==", type).get()
             .then((querySnapshot) => {
                 let students = [];
                 querySnapshot.forEach((doc) => { 
                     let data = doc.data();
-                    
-                    // Filter: 100 Qs for Practice/GK, 10 Tests for Mock Tests
-                    if ((type === 'NEET Practice Leaderboard' || type === 'GK Leaderboard') && data.tests >= 100) {
-                        students.push(data);
-                    } else if (type === 'NEET Mock Test Leaderboard' && data.tests >= 10) {
-                        students.push(data);
-                    }
+                    if ((type === 'NEET Practice Leaderboard' || type === 'GK Leaderboard') && data.tests >= 100) { students.push(data); } 
+                    else if (type === 'NEET Mock Test Leaderboard' && data.tests >= 10) { students.push(data); }
                 });
 
                 students.sort((a, b) => b.accuracy - a.accuracy);
-
-                let tableHTML = `
-                <div class="card">
-                    <h2>🏆 ${type}</h2>
-                    <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
-                        <tr style="color: var(--primary-yellow);">
-                            <th>Rank</th><th>Student Name</th><th>${activityHeader}</th><th>Accuracy</th>
-                        </tr>`;
+                let tableHTML = `<div class="card"><h2>🏆 ${type}</h2><table style="width: 100%; border-collapse: collapse; margin-top: 10px;"><tr style="color: var(--primary-yellow);"><th>Rank</th><th>Student Name</th><th>${activityHeader}</th><th>Accuracy</th></tr>`;
 
                 if (students.length === 0) {
-                    let requirement = type === 'NEET Mock Test Leaderboard' ? '10 Tests Taken' : '100 Questions Attempted';
-                    tableHTML += `<tr><td colspan="4" style="text-align: center; padding: 30px; color: var(--text-muted);">The leaderboard is waiting! To rank here, students must complete at least ${requirement}.</td></tr>`;
+                    let req = type === 'NEET Mock Test Leaderboard' ? '10 Tests Taken' : '100 Questions Attempted';
+                    tableHTML += `<tr><td colspan="4" style="text-align: center; padding: 30px; color: var(--text-muted);">The leaderboard is waiting! To rank here, students must complete at least ${req}.</td></tr>`;
                 } else {
                     students.forEach((student, index) => {
                         let medal = index === 0 ? '🥇 ' : index === 1 ? '🥈 ' : index === 2 ? '🥉 ' : '';
                         tableHTML += `<tr><td>${medal}${index + 1}</td><td>${student.name}</td><td>${student.tests}</td><td>${student.accuracy}%</td></tr>`;
                     });
                 }
-
-                tableHTML += `</table>
-                <div style="display: flex; gap: 15px; margin-top: 25px;">
-                    <button class="btn-exam" onclick="showLeaderboardOptions()" style="background-color: #333;">&larr; Go Back</button>
-                </div></div>`;
-                
+                tableHTML += `</table><div style="display: flex; gap: 15px; margin-top: 25px;"><button class="btn-exam" onclick="showLeaderboardOptions()" style="background-color: #333;">&larr; Go Back</button></div></div>`;
                 mainContent.innerHTML = tableHTML;
-            }).catch((error) => {
-                showNotification("Error connecting to Firebase: " + error.message);
-            });
+            }).catch((error) => { showNotification("Error connecting to Firebase: " + error.message); });
         }
 
-        // --- 4. NAVIGATION & SEARCH ---
+        // --- 5. NAVIGATION HELPER ---
         function navigateTo(key) { currentPath.push(key); renderView(); }
         function goBack() { currentPath.pop(); renderView(); }
         function goHome() { currentPath = []; renderView(); }
@@ -290,34 +323,6 @@
             notif.style.display = 'block';
             setTimeout(() => { notif.style.display = 'none'; }, 3000);
         }
-        
-        function executeSearch() {
-            const query = document.getElementById('searchInput').value.trim();
-            if(query === "") { showNotification("Please enter a topic."); return; }
-            let results = [];
-            function searchDB(obj, q, path = []) {
-                for (let key in obj) {
-                    let current = [...path, key];
-                    if (key.toLowerCase().includes(q.toLowerCase())) results.push(current);
-                    if (typeof obj[key] === 'object' && !Array.isArray(obj[key])) searchDB(obj[key], q, current);
-                }
-            }
-            searchDB(appData, query);
-            const mainContent = document.getElementById('dynamic-content');
-            document.getElementById('breadcrumb-text').innerText = `Home / Search: "${query}"`;
-            currentPath = [];
-            if (results.length === 0) {
-                mainContent.innerHTML = `<div class="card"><h2>No results found for "${query}"</h2><button class="btn-exam" onclick="goHome()" style="width: 200px; margin-top: 15px;">&larr; Back to Home</button></div>`;
-                return;
-            }
-            let html = `<div class="card"><h2>Search Results for "${query}"</h2><div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px;">`;
-            results.forEach(pathArray => {
-                html += `<button class="btn-exam" onclick="jumpToSection(${JSON.stringify(pathArray).replace(/"/g, "'")})">${pathArray.join(" ➔ ")}</button>`;
-            });
-            html += `</div></div>`;
-            mainContent.innerHTML = html;
-        }
-        function handleSearch(event) { if (event.key === 'Enter') executeSearch(); }
 
         renderView();
     </script>
