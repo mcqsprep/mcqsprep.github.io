@@ -205,7 +205,7 @@
             <a onclick="goHome()">Home</a>
             <a onclick="showLeaderboardOptions()" class="highlight-nav">Leaderboard</a>
             
-            <!-- Google Sign In Button (Visible only to guests) -->
+            <!-- Google Sign In Button -->
             <div id="loginNavBtn" class="user-badge" onclick="showAuthModal()" style="display:none; cursor: pointer; background: white; color: #444; border: none; padding: 6px 12px;" title="Sign in with Google">
                 <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="G" style="border-radius:0;">
                 <span style="font-weight: bold;">Sign In</span>
@@ -769,8 +769,8 @@
             }
         }
 
-        // --- 5. THE QUIZ ENGINE (With Smart Progress Tracking & Detailed Review) ---
-        let quizState = { questions: [], currentIndex: 0, userAnswers: {}, showAnswerTriggered: {}, flaggedDoubts: {}, timer: null, secondsPassed: 0 };
+        // --- 5. THE QUIZ ENGINE ---
+        let quizState = { questions: [], currentIndex: 0, userAnswers: {}, showAnswerTriggered: {}, flaggedDoubts: {}, viewedQuestions: [], timer: null, secondsPassed: 0, isTimerPaused: false };
 
         async function _initiateQuizEngine() {
             const pathString = currentPath.join(' > ');
@@ -811,7 +811,7 @@
                     mainContent.innerHTML = `
                         <div class="card" style="text-align:center; padding: 40px 20px;">
                             <h2 style="color: var(--primary-yellow); font-size: 28px; margin-bottom: 15px;">🎉 Section Completed!</h2>
-                            <p style="color: var(--text-muted); font-size: 16px; margin-bottom: 25px;">You have successfully attempted all ${totalQuestionsInDB} questions available in this section.</p>
+                            <p style="color: var(--text-muted); font-size: 16px; margin-bottom: 25px;">You have successfully attempted all available questions in this section.</p>
                             <div style="display:flex; justify-content:center; gap:15px; flex-wrap:wrap;">
                                 <button class="btn-exam" onclick="resetProgress('${safePath}')" style="background: #333; color: white; border-color: var(--border-color);">🔄 Reset My Progress</button>
                                 <button class="btn-exam" onclick="goBack()">&larr; Explore Other Topics</button>
@@ -826,13 +826,17 @@
                 quizState.userAnswers = {}; 
                 quizState.showAnswerTriggered = {}; 
                 quizState.flaggedDoubts = {}; 
+                quizState.viewedQuestions = [];
                 quizState.secondsPassed = 0;
+                quizState.isTimerPaused = false;
                 
                 clearInterval(quizState.timer);
                 quizState.timer = setInterval(() => {
-                    quizState.secondsPassed++;
-                    let disp = document.getElementById('quizTimeDisplay');
-                    if(disp) disp.innerText = formatTime(quizState.secondsPassed);
+                    if (!quizState.isTimerPaused) {
+                        quizState.secondsPassed++;
+                        let disp = document.getElementById('quizTimeDisplay');
+                        if(disp) disp.innerText = formatTime(quizState.secondsPassed);
+                    }
                 }, 1000);
                 _renderQuizQuestion();
             } catch (error) { mainContent.innerHTML = `<div class="card"><h2>Error</h2><p>${error.message}</p><button class="btn-exam" onclick="goBack()">&larr; Go Back</button></div>`; }
@@ -847,10 +851,20 @@
 
         function _renderQuizQuestion() {
             const mainContent = document.getElementById('dynamic-content');
+            
+            // Track that user actually looked at this question
+            if (!quizState.viewedQuestions.includes(quizState.currentIndex)) {
+                quizState.viewedQuestions.push(quizState.currentIndex);
+            }
+
             const q = quizState.questions[quizState.currentIndex];
             let multiText = q.correctAnswers.length > 1 ? `<span style="color:var(--primary-yellow); font-size:12px;">(Select all that apply)</span>` : "";
-            let selectedNow = quizState.userAnswers[quizState.currentIndex] || []; let hasPeeked = quizState.showAnswerTriggered[quizState.currentIndex];
+            let selectedNow = quizState.userAnswers[quizState.currentIndex] || []; 
+            let hasPeeked = quizState.showAnswerTriggered[quizState.currentIndex];
             let isFlagged = quizState.flaggedDoubts[quizState.currentIndex];
+
+            // 🧠 Smart Timer Pause/Resume Logic
+            quizState.isTimerPaused = !!hasPeeked;
 
             let paletteHtml = '<div class="question-palette">';
             for(let i=0; i<quizState.questions.length; i++) {
@@ -873,7 +887,7 @@
             let html = `
                 <div class="card">
                     <div class="quiz-header">
-                        <span style="color:var(--text-muted);">Question ${quizState.currentIndex + 1} of ${quizState.questions.length} ${multiText}</span>
+                        <span style="color:var(--text-muted);">Question ${quizState.currentIndex + 1} ${multiText}</span>
                         <div style="display:flex; align-items:center; gap:15px;">
                             <button id="flagDoubtBtn" class="flag-btn ${isFlagged ? 'flagged' : ''}" onclick="toggleFlag()">${isFlagged ? '⭐ Flagged' : '⭐ Flag for Review'}</button>
                             <span class="quiz-timer">⏱ <span id="quizTimeDisplay">${formatTime(quizState.secondsPassed)}</span></span>
@@ -981,7 +995,7 @@
             clearInterval(quizState.timer); 
             let attempted = 0; let totalScore = 0; let correctCount = 0; let wrongCount = 0;
             let sessionAttemptedIds = []; 
-            let totalQ = quizState.questions.length;
+            let skippedCount = 0; // We only track viewed but unattempted questions here now
 
             let correctHtml = '';
             let wrongHtml = '';
@@ -994,6 +1008,7 @@
                 let userAnsArray = quizState.userAnswers[index] || [];
                 let isAttempted = userAnsArray.length > 0;
                 let isCorrect = false;
+                let isViewed = quizState.viewedQuestions.includes(index);
 
                 if (isAttempted) {
                     attempted++;
@@ -1006,11 +1021,12 @@
 
                 if (isAttempted && !isCorrect) wrongCount++;
 
-                // Build the Review Tabs UI
+                // Build the Review Tabs UI (Skipped now ONLY counts questions the user actually saw)
                 if (isAttempted) {
                     if (isCorrect) correctHtml += buildReviewItemHtml(q, index, 'correct', userAnsArray);
                     else wrongHtml += buildReviewItemHtml(q, index, 'wrong', userAnsArray);
-                } else {
+                } else if (isViewed) {
+                    skippedCount++;
                     skippedHtml += buildReviewItemHtml(q, index, 'skipped', []);
                 }
 
@@ -1108,7 +1124,7 @@
                     <div style="display:flex; justify-content:center; gap:15px; flex-wrap:wrap; margin-bottom: 40px;">
                         ${scoreCardsHtml}
                         <div style="background:#2a2a2a; padding: 20px; border-radius: 8px; min-width: 100px; flex: 1;">
-                            <div style="font-size: 32px; color: white; font-weight: bold;">${attempted}/${totalQ}</div>
+                            <div style="font-size: 32px; color: white; font-weight: bold;">${attempted}</div>
                             <div style="color: var(--text-muted); font-size: 14px;">Attempted</div>
                         </div>
                         <div style="background:#2a2a2a; padding: 20px; border-radius: 8px; min-width: 100px; flex: 1;">
@@ -1126,7 +1142,7 @@
                     <div class="review-tabs">
                         <button id="tab-btn-correct" class="review-tab-btn active correct" onclick="showReviewTab('correct')">✅ Correct (${correctCount})</button>
                         <button id="tab-btn-wrong" class="review-tab-btn wrong" onclick="showReviewTab('wrong')">❌ Wrong (${wrongCount})</button>
-                        <button id="tab-btn-skipped" class="review-tab-btn skipped" onclick="showReviewTab('skipped')">⏭️ Skipped (${totalQ - attempted})</button>
+                        <button id="tab-btn-skipped" class="review-tab-btn skipped" onclick="showReviewTab('skipped')">⏭️ Skipped (${skippedCount})</button>
                     </div>
 
                     <div id="review-correct" style="display:block;">
@@ -1136,7 +1152,7 @@
                         ${wrongHtml || '<p style="color:var(--text-muted); margin: 20px 0;">No wrong answers! Great job.</p>'}
                     </div>
                     <div id="review-skipped" style="display:none;">
-                        ${skippedHtml || '<p style="color:var(--text-muted); margin: 20px 0;">You attempted every question!</p>'}
+                        ${skippedHtml || '<p style="color:var(--text-muted); margin: 20px 0;">You did not skip any questions you viewed.</p>'}
                     </div>
 
                     ${flaggedListHtml !== '' ? `
