@@ -105,6 +105,15 @@
         .flag-btn { background: #333; border: 1px solid var(--border-color); color: white; padding: 5px 12px; border-radius: 4px; cursor: pointer; font-size: 14px; transition: 0.2s; }
         .flag-btn.flagged { background: #382909; border-color: var(--primary-yellow); color: var(--primary-yellow); }
 
+        /* Detailed Review UI */
+        .review-tabs { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; justify-content: center; }
+        .review-tab-btn { background: #2a2a2a; border: 1px solid var(--border-color); color: var(--text-muted); padding: 10px 20px; border-radius: 6px; cursor: pointer; transition: 0.2s; font-weight: bold; flex: 1; min-width: 120px; }
+        .review-tab-btn:hover { background: #333; }
+        .review-tab-btn.active.correct { background: rgba(76, 175, 80, 0.15); border-color: var(--correct-green); color: var(--correct-green); }
+        .review-tab-btn.active.wrong { background: rgba(244, 67, 54, 0.15); border-color: var(--wrong-red); color: var(--wrong-red); }
+        .review-tab-btn.active.skipped { background: rgba(253, 184, 19, 0.15); border-color: var(--primary-yellow); color: var(--primary-yellow); }
+        .review-item { background: #1a1a1a; border: 1px solid var(--border-color); border-radius: 8px; padding: 20px; margin-bottom: 15px; text-align: left; }
+
         table { width: 100%; border-collapse: collapse; margin-top: 15px; }
         table th, table td { padding: 12px; border-bottom: 1px solid var(--border-color); text-align: left; }
         table th { color: var(--primary-yellow); background: #2a2a2a; }
@@ -756,11 +765,11 @@
                     delete localProg[safePath];
                     localStorage.setItem('mcq_progress', JSON.stringify(localProg));
                 }
-                _initiateQuizEngine(); // Reload the quiz fresh
+                _initiateQuizEngine(); 
             }
         }
 
-        // --- 5. THE QUIZ ENGINE (With Smart Progress Tracking) ---
+        // --- 5. THE QUIZ ENGINE (With Smart Progress Tracking & Detailed Review) ---
         let quizState = { questions: [], currentIndex: 0, userAnswers: {}, showAnswerTriggered: {}, flaggedDoubts: {}, timer: null, secondsPassed: 0 };
 
         async function _initiateQuizEngine() {
@@ -772,12 +781,9 @@
             try {
                 const snapshot = await db.collection("content").where("type", "==", "mcq").where("path", "==", pathString).get();
                 
-                // --- NEW PROGRESS TRACKING LOGIC ---
-                // Create a database-safe key based on the folder path
                 let safePath = "prog_" + currentPath.join('_').replace(/[^a-zA-Z0-9]/g, '_');
                 let previouslyAttemptedIds = [];
                 
-                // Fetch previously attempted question IDs
                 if (currentUser) {
                     let userDoc = await db.collection("users").doc(currentUser.uid).get();
                     if (userDoc.exists) previouslyAttemptedIds = userDoc.data()[safePath] || [];
@@ -789,7 +795,6 @@
                 let availableQuestions = [];
                 let totalQuestionsInDB = 0;
 
-                // Filter out the questions the student already did
                 snapshot.forEach(doc => {
                     totalQuestionsInDB++;
                     if (!previouslyAttemptedIds.includes(doc.id)) {
@@ -802,7 +807,6 @@
                     return; 
                 }
 
-                // If all questions are done, show completion screen
                 if (availableQuestions.length === 0) {
                     mainContent.innerHTML = `
                         <div class="card" style="text-align:center; padding: 40px 20px;">
@@ -815,7 +819,6 @@
                         </div>`;
                     return;
                 }
-                // ------------------------------------
 
                 quizState.questions = availableQuestions;
                 quizState.questions.sort(() => Math.random() - 0.5);
@@ -913,11 +916,77 @@
             return `${m}:${s < 10 ? '0' : ''}${s}`;
         }
 
+        // --- NEW REVIEW TABS LOGIC ---
+        window.showReviewTab = function(tabName) {
+            ['correct', 'wrong', 'skipped'].forEach(t => {
+                document.getElementById('review-' + t).style.display = 'none';
+                document.getElementById('tab-btn-' + t).classList.remove('active');
+            });
+            document.getElementById('review-' + tabName).style.display = 'block';
+            document.getElementById('tab-btn-' + tabName).classList.add('active');
+        };
+
+        window.toggleViewAnswer = function(id) {
+            let el = document.getElementById(id);
+            el.style.display = el.style.display === 'none' ? 'block' : 'none';
+        };
+
+        function buildReviewItemHtml(q, index, type, userAnsArray) {
+            let optionsHtml = '';
+            let optKeys = Object.keys(q.options).sort();
+            for(let key of optKeys) {
+                let isUser = userAnsArray.includes(key);
+                let isCorr = q.correctAnswers.includes(key);
+                let bgClass = '';
+                let icon = '';
+                
+                if (type !== 'skipped') {
+                    if (isCorr) { bgClass = 'background: rgba(76, 175, 80, 0.1); border-color: var(--correct-green);'; icon = '✅ '; }
+                    else if (isUser && !isCorr) { bgClass = 'background: rgba(244, 67, 54, 0.1); border-color: var(--wrong-red);'; icon = '❌ '; }
+                }
+                optionsHtml += `<div style="padding: 10px; border: 1px solid var(--border-color); border-radius: 6px; margin-bottom: 8px; ${bgClass}"><b>${icon}${key}.</b> ${q.options[key]}</div>`;
+            }
+
+            let exp = q.explanation ? `<div style="margin-top:10px; color:var(--text-muted); font-size:14px;"><b>Explanation:</b> ${q.explanation}</div>` : '';
+            let img = q.imageUrl ? `<img src="${q.imageUrl}" style="max-height:150px; border-radius:6px; margin-bottom:10px; display:block;">` : '';
+            
+            if (type === 'skipped') {
+                return `
+                    <div class="review-item" style="border-left: 4px solid var(--primary-yellow);">
+                        <p style="margin-top:0; font-size: 16px;"><b>Q${index + 1}:</b> ${q.question}</p>
+                        ${img}
+                        ${optionsHtml}
+                        <button onclick="toggleViewAnswer('ans_div_${q.id}')" style="background:#333; color:white; border:none; padding:8px 15px; border-radius:4px; cursor:pointer; margin-top:10px;">👁️ View Answer</button>
+                        <div id="ans_div_${q.id}" style="display:none; margin-top:15px; padding-top:15px; border-top:1px solid #333;">
+                            <p style="color:var(--correct-green); margin:0 0 10px 0;"><b>Correct Answer:</b> ${q.correctAnswers.join(', ')}</p>
+                            ${exp}
+                        </div>
+                    </div>
+                `;
+            } else {
+                let borderColor = type === 'correct' ? 'var(--correct-green)' : 'var(--wrong-red)';
+                return `
+                    <div class="review-item" style="border-left: 4px solid ${borderColor};">
+                        <p style="margin-top:0; font-size: 16px;"><b>Q${index + 1}:</b> ${q.question}</p>
+                        ${img}
+                        ${optionsHtml}
+                        <p style="color:var(--correct-green); margin:15px 0 5px 0;"><b>Correct Answer:</b> ${q.correctAnswers.join(', ')}</p>
+                        ${exp}
+                    </div>
+                `;
+            }
+        }
+
         async function finishQuiz() {
             clearInterval(quizState.timer); 
-            let attempted = 0; let totalScore = 0; let correctCount = 0;
+            let attempted = 0; let totalScore = 0; let correctCount = 0; let wrongCount = 0;
+            let sessionAttemptedIds = []; 
+            let totalQ = quizState.questions.length;
+
+            let correctHtml = '';
+            let wrongHtml = '';
+            let skippedHtml = '';
             let flaggedListHtml = '';
-            let sessionAttemptedIds = []; // Track specifically what was answered this session
 
             let isNeetSection = currentPath[0] === "NEET";
 
@@ -928,13 +997,24 @@
 
                 if (isAttempted) {
                     attempted++;
-                    sessionAttemptedIds.push(q.id); // Save question ID
+                    sessionAttemptedIds.push(q.id); 
                     
                     let userAnsStr = userAnsArray.sort().join(','); 
                     let correctAnsStr = q.correctAnswers.sort().join(','); 
                     if (userAnsStr === correctAnsStr) { isCorrect = true; correctCount++; }
                 }
 
+                if (isAttempted && !isCorrect) wrongCount++;
+
+                // Build the Review Tabs UI
+                if (isAttempted) {
+                    if (isCorrect) correctHtml += buildReviewItemHtml(q, index, 'correct', userAnsArray);
+                    else wrongHtml += buildReviewItemHtml(q, index, 'wrong', userAnsArray);
+                } else {
+                    skippedHtml += buildReviewItemHtml(q, index, 'skipped', []);
+                }
+
+                // Math Formula logic
                 if (isNeetSection) {
                     if (isCorrect) totalScore += 4;
                     else if (isAttempted && !isCorrect) totalScore -= 1;
@@ -942,11 +1022,11 @@
                     if (isCorrect) totalScore += 1;
                 }
 
+                // Handle Flagged questions for Admin
                 if(quizState.flaggedDoubts[index]) {
                     flaggedListHtml += `
                         <div style="background:#2a2a2a; border-left:4px solid var(--primary-yellow); padding:15px; margin-bottom:15px; text-align:left;">
                             <p style="margin-top:0;"><b>Q:</b> ${q.question}</p>
-                            <p style="color:var(--correct-green); margin-bottom:5px;"><b>Correct Answer:</b> ${q.correctAnswers.join(',')}</p>
                             <p style="color:var(--text-muted); font-size:14px;"><b>Explanation:</b> ${q.explanation || 'None'}</p>
                         </div>
                     `;
@@ -963,7 +1043,7 @@
                 }
             });
 
-            // --- SAVE PROGRESS (Exclude from future attempts) ---
+            // Save Progress Secretly
             if (sessionAttemptedIds.length > 0) {
                 let safePath = "prog_" + currentPath.join('_').replace(/[^a-zA-Z0-9]/g, '_');
                 if (currentUser) {
@@ -976,7 +1056,6 @@
                     localStorage.setItem('mcq_progress', JSON.stringify(localProg));
                 }
             }
-            // ----------------------------------------------------
 
             let accuracy = attempted === 0 ? 0 : Math.round((correctCount / attempted) * 100); 
             let timeStr = formatTime(quizState.secondsPassed);
@@ -996,25 +1075,76 @@
                 });
             }
 
+            // Build Top Cards UI based on Category
+            let scoreCardsHtml = '';
+            if (isNeetSection) {
+                scoreCardsHtml = `
+                    <div style="background:#2a2a2a; padding: 20px; border-radius: 8px; min-width: 120px; flex: 1;">
+                        <div style="font-size: 32px; color: white; font-weight: bold;">${attempted * 4}</div>
+                        <div style="color: var(--text-muted); font-size: 14px;">Total Marks</div>
+                        <div style="color: var(--text-muted); font-size: 11px; margin-top:5px;">(${attempted}x4)</div>
+                    </div>
+                    <div style="background:#2a2a2a; padding: 20px; border-radius: 8px; min-width: 120px; flex: 1; border: 1px solid var(--primary-yellow);">
+                        <div style="font-size: 32px; color: var(--primary-yellow); font-weight: bold;">${totalScore}</div>
+                        <div style="color: var(--text-muted); font-size: 14px;">Obtained Mark</div>
+                        <div style="color: var(--text-muted); font-size: 11px; margin-top:5px;">(${correctCount}x4) - ${wrongCount}</div>
+                    </div>
+                `;
+            } else {
+                scoreCardsHtml = `
+                    <div style="background:#2a2a2a; padding: 20px; border-radius: 8px; min-width: 120px; flex: 1; border: 1px solid var(--primary-yellow);">
+                        <div style="font-size: 32px; color: var(--primary-yellow); font-weight: bold;">${totalScore}</div>
+                        <div style="color: var(--text-muted); font-size: 14px;">Total Score</div>
+                    </div>
+                `;
+            }
+
             const mainContent = document.getElementById('dynamic-content');
             mainContent.innerHTML = `
                 <div class="card" style="text-align: center;">
                     <h2 style="font-size: 32px; color: var(--primary-yellow); margin-bottom: 5px;">Test Complete!</h2>
                     <p style="color: var(--text-muted); margin-bottom: 30px;">Great effort, ${studentName.split(" ")[0]}! Here is your final breakdown.</p>
-                    <div style="display:flex; justify-content:center; gap:20px; flex-wrap:wrap; margin-bottom: 30px;">
-                        <div style="background:#2a2a2a; padding: 20px; border-radius: 8px; min-width: 120px;"><div style="font-size: 36px; color: var(--primary-yellow); font-weight: bold;">${totalScore}</div><div style="color: var(--text-muted); font-size: 14px;">Total Score</div></div>
-                        <div style="background:#2a2a2a; padding: 20px; border-radius: 8px; min-width: 120px;"><div style="font-size: 36px; color: white; font-weight: bold;">${attempted}</div><div style="color: var(--text-muted); font-size: 14px;">Attempted</div></div>
-                        <div style="background:#2a2a2a; padding: 20px; border-radius: 8px; min-width: 120px;"><div style="font-size: 36px; color: var(--correct-green); font-weight: bold;">${accuracy}%</div><div style="color: var(--text-muted); font-size: 14px;">Accuracy</div></div>
-                        <div style="background:#2a2a2a; padding: 20px; border-radius: 8px; min-width: 120px;"><div style="font-size: 36px; color: white; font-weight: bold;">${timeStr}</div><div style="color: var(--text-muted); font-size: 14px;">Time Taken</div></div>
+                    
+                    <div style="display:flex; justify-content:center; gap:15px; flex-wrap:wrap; margin-bottom: 40px;">
+                        ${scoreCardsHtml}
+                        <div style="background:#2a2a2a; padding: 20px; border-radius: 8px; min-width: 100px; flex: 1;">
+                            <div style="font-size: 32px; color: white; font-weight: bold;">${attempted}/${totalQ}</div>
+                            <div style="color: var(--text-muted); font-size: 14px;">Attempted</div>
+                        </div>
+                        <div style="background:#2a2a2a; padding: 20px; border-radius: 8px; min-width: 100px; flex: 1;">
+                            <div style="font-size: 32px; color: var(--correct-green); font-weight: bold;">${accuracy}%</div>
+                            <div style="color: var(--text-muted); font-size: 14px;">Accuracy</div>
+                        </div>
+                        <div style="background:#2a2a2a; padding: 20px; border-radius: 8px; min-width: 100px; flex: 1;">
+                            <div style="font-size: 32px; color: white; font-weight: bold;">${timeStr}</div>
+                            <div style="color: var(--text-muted); font-size: 14px;">Time Taken</div>
+                        </div>
                     </div>
                     
+                    <h3 style="margin-top:20px; padding-bottom: 10px; border-bottom: 1px solid var(--border-color); text-align: left;">📊 Detailed Analysis</h3>
+                    
+                    <div class="review-tabs">
+                        <button id="tab-btn-correct" class="review-tab-btn active correct" onclick="showReviewTab('correct')">✅ Correct (${correctCount})</button>
+                        <button id="tab-btn-wrong" class="review-tab-btn wrong" onclick="showReviewTab('wrong')">❌ Wrong (${wrongCount})</button>
+                        <button id="tab-btn-skipped" class="review-tab-btn skipped" onclick="showReviewTab('skipped')">⏭️ Skipped (${totalQ - attempted})</button>
+                    </div>
+
+                    <div id="review-correct" style="display:block;">
+                        ${correctHtml || '<p style="color:var(--text-muted); margin: 20px 0;">No correct answers this time.</p>'}
+                    </div>
+                    <div id="review-wrong" style="display:none;">
+                        ${wrongHtml || '<p style="color:var(--text-muted); margin: 20px 0;">No wrong answers! Great job.</p>'}
+                    </div>
+                    <div id="review-skipped" style="display:none;">
+                        ${skippedHtml || '<p style="color:var(--text-muted); margin: 20px 0;">You attempted every question!</p>'}
+                    </div>
+
                     ${flaggedListHtml !== '' ? `
-                        <h3 style="text-align:left; color:var(--primary-yellow); border-bottom:1px solid #333; padding-bottom:10px;">⭐ Your Flagged Questions Review</h3>
+                        <h3 style="text-align:left; color:var(--primary-yellow); border-bottom:1px solid #333; padding-bottom:10px; margin-top: 40px;">⭐ Questions Sent to Admin</h3>
                         ${flaggedListHtml}
-                        <p style="color:var(--text-muted); font-size:13px; text-align:left;">*These doubts have been logged for the Admin to review.</p>
                     ` : ''}
                     
-                    <button class="btn-exam" onclick="goBack()" style="width: 200px; margin-top:20px;">&larr; Exit to Dashboard</button>
+                    <button class="btn-exam" onclick="goBack()" style="width: 250px; margin-top:30px;">&larr; Exit to Dashboard</button>
                 </div>
             `;
         }
