@@ -285,7 +285,6 @@
             const authModal = document.getElementById('authModal');
 
             if (user) {
-                // User is signed in
                 nameDisplay.innerText = user.displayName.split(" ")[0];
                 if(user.photoURL) { photoDisplay.src = user.photoURL; photoDisplay.style.display = 'block'; }
                 
@@ -293,7 +292,6 @@
                 loginNavBtn.style.display = 'none'; 
                 authModal.style.display = 'none';
 
-                // Save user info to DB silently
                 db.collection("users").doc(user.uid).set({
                     displayName: user.displayName,
                     email: user.email,
@@ -746,7 +744,23 @@
             catch(e) { showNotification("❌ Error updating password: " + e.message); }
         }
 
-        // --- 5. THE QUIZ ENGINE (With Doubts & Smart Grading) ---
+        // --- PROGRESS TRACKING RESET ---
+        async function resetProgress(safePath) {
+            if(confirm("Are you sure you want to reset your progress? This will let you re-attempt all questions in this section from the beginning.")) {
+                if (currentUser) {
+                    let dataToSave = {};
+                    dataToSave[safePath] = firebase.firestore.FieldValue.delete();
+                    await db.collection("users").doc(currentUser.uid).update(dataToSave).catch(e=>{});
+                } else {
+                    let localProg = JSON.parse(localStorage.getItem('mcq_progress') || '{}');
+                    delete localProg[safePath];
+                    localStorage.setItem('mcq_progress', JSON.stringify(localProg));
+                }
+                _initiateQuizEngine(); // Reload the quiz fresh
+            }
+        }
+
+        // --- 5. THE QUIZ ENGINE (With Smart Progress Tracking) ---
         let quizState = { questions: [], currentIndex: 0, userAnswers: {}, showAnswerTriggered: {}, flaggedDoubts: {}, timer: null, secondsPassed: 0 };
 
         async function _initiateQuizEngine() {
@@ -757,12 +771,59 @@
 
             try {
                 const snapshot = await db.collection("content").where("type", "==", "mcq").where("path", "==", pathString).get();
-                if (snapshot.empty) { mainContent.innerHTML = `<div class="card"><h2>No Questions Yet</h2><p style="color:var(--text-muted);">Admin hasn't uploaded questions here yet.</p><button class="btn-exam" onclick="goBack()">&larr; Go Back</button></div>`; return; }
+                
+                // --- NEW PROGRESS TRACKING LOGIC ---
+                // Create a database-safe key based on the folder path
+                let safePath = "prog_" + currentPath.join('_').replace(/[^a-zA-Z0-9]/g, '_');
+                let previouslyAttemptedIds = [];
+                
+                // Fetch previously attempted question IDs
+                if (currentUser) {
+                    let userDoc = await db.collection("users").doc(currentUser.uid).get();
+                    if (userDoc.exists) previouslyAttemptedIds = userDoc.data()[safePath] || [];
+                } else {
+                    let localProg = JSON.parse(localStorage.getItem('mcq_progress') || '{}');
+                    previouslyAttemptedIds = localProg[safePath] || [];
+                }
 
-                quizState.questions = [];
-                snapshot.forEach(doc => quizState.questions.push({ id: doc.id, ...doc.data() }));
+                let availableQuestions = [];
+                let totalQuestionsInDB = 0;
+
+                // Filter out the questions the student already did
+                snapshot.forEach(doc => {
+                    totalQuestionsInDB++;
+                    if (!previouslyAttemptedIds.includes(doc.id)) {
+                        availableQuestions.push({ id: doc.id, ...doc.data() });
+                    }
+                });
+
+                if (totalQuestionsInDB === 0) { 
+                    mainContent.innerHTML = `<div class="card"><h2>No Questions Yet</h2><p style="color:var(--text-muted);">Admin hasn't uploaded questions here yet.</p><button class="btn-exam" onclick="goBack()">&larr; Go Back</button></div>`; 
+                    return; 
+                }
+
+                // If all questions are done, show completion screen
+                if (availableQuestions.length === 0) {
+                    mainContent.innerHTML = `
+                        <div class="card" style="text-align:center; padding: 40px 20px;">
+                            <h2 style="color: var(--primary-yellow); font-size: 28px; margin-bottom: 15px;">🎉 Section Completed!</h2>
+                            <p style="color: var(--text-muted); font-size: 16px; margin-bottom: 25px;">You have successfully attempted all ${totalQuestionsInDB} questions available in this section.</p>
+                            <div style="display:flex; justify-content:center; gap:15px; flex-wrap:wrap;">
+                                <button class="btn-exam" onclick="resetProgress('${safePath}')" style="background: #333; color: white; border-color: var(--border-color);">🔄 Reset My Progress</button>
+                                <button class="btn-exam" onclick="goBack()">&larr; Explore Other Topics</button>
+                            </div>
+                        </div>`;
+                    return;
+                }
+                // ------------------------------------
+
+                quizState.questions = availableQuestions;
                 quizState.questions.sort(() => Math.random() - 0.5);
-                quizState.currentIndex = 0; quizState.userAnswers = {}; quizState.showAnswerTriggered = {}; quizState.flaggedDoubts = {}; quizState.secondsPassed = 0;
+                quizState.currentIndex = 0; 
+                quizState.userAnswers = {}; 
+                quizState.showAnswerTriggered = {}; 
+                quizState.flaggedDoubts = {}; 
+                quizState.secondsPassed = 0;
                 
                 clearInterval(quizState.timer);
                 quizState.timer = setInterval(() => {
@@ -856,6 +917,7 @@
             clearInterval(quizState.timer); 
             let attempted = 0; let totalScore = 0; let correctCount = 0;
             let flaggedListHtml = '';
+            let sessionAttemptedIds = []; // Track specifically what was answered this session
 
             let isNeetSection = currentPath[0] === "NEET";
 
@@ -866,6 +928,8 @@
 
                 if (isAttempted) {
                     attempted++;
+                    sessionAttemptedIds.push(q.id); // Save question ID
+                    
                     let userAnsStr = userAnsArray.sort().join(','); 
                     let correctAnsStr = q.correctAnswers.sort().join(','); 
                     if (userAnsStr === correctAnsStr) { isCorrect = true; correctCount++; }
@@ -899,13 +963,27 @@
                 }
             });
 
+            // --- SAVE PROGRESS (Exclude from future attempts) ---
+            if (sessionAttemptedIds.length > 0) {
+                let safePath = "prog_" + currentPath.join('_').replace(/[^a-zA-Z0-9]/g, '_');
+                if (currentUser) {
+                    let dataToSave = {};
+                    dataToSave[safePath] = firebase.firestore.FieldValue.arrayUnion(...sessionAttemptedIds);
+                    db.collection("users").doc(currentUser.uid).set(dataToSave, {merge: true});
+                } else {
+                    let localProg = JSON.parse(localStorage.getItem('mcq_progress') || '{}');
+                    localProg[safePath] = [...(localProg[safePath] || []), ...sessionAttemptedIds];
+                    localStorage.setItem('mcq_progress', JSON.stringify(localProg));
+                }
+            }
+            // ----------------------------------------------------
+
             let accuracy = attempted === 0 ? 0 : Math.round((correctCount / attempted) * 100); 
             let timeStr = formatTime(quizState.secondsPassed);
             let pathString = currentPath.join(' > ');
             let studentName = currentUser ? currentUser.displayName : "Anonymous";
 
             if (currentUser && attempted > 0) {
-                // IMPORTANT: We now save the number of attempted questions so the leaderboard lock works
                 db.collection("leaderboards").add({
                     userId: currentUser.uid,
                     userName: currentUser.displayName,
@@ -996,7 +1074,6 @@
         async function fetchLiveLeaderboard(pathPrefix) { 
             const mainContent = document.getElementById('dynamic-content');
             
-            // Block completely anonymous users to prevent database errors
             if (!currentUser) {
                 mainContent.innerHTML = `
                     <div class="card">
@@ -1012,7 +1089,6 @@
             mainContent.innerHTML = `<div class="card"><h2>🏆 Fetching Leaderboard...</h2></div>`;
             
             try {
-                // 1. Gather User's Personal Stats without triggering composite index errors
                 const userSnapshot = await db.collection("leaderboards").where("userId", "==", currentUser.uid).get();
                 let totalQuestions = 0;
                 let totalTests = 0;
@@ -1031,7 +1107,6 @@
                     }
                 });
 
-                // 2. Check if the threshold is met
                 let isMockTest = pathPrefix.includes('Mock Test');
                 let thresholdMet = false;
                 let requiredText = "";
@@ -1047,7 +1122,6 @@
                     progressText = `${totalQuestions} / 100 Questions Attempted`;
                 }
 
-                // If threshold failed, show Lock Screen
                 if (!thresholdMet) {
                     mainContent.innerHTML = `
                         <div class="card" style="text-align:center; padding: 40px 20px;">
@@ -1065,7 +1139,6 @@
                     return;
                 }
 
-                // 3. Threshold Passed. Fetch top 100 to determine global ranks.
                 const boardSnapshot = await db.collection("leaderboards")
                     .where("quizPath", ">=", pathPrefix)
                     .where("quizPath", "<=", pathPrefix + "\uf8ff")
@@ -1082,7 +1155,6 @@
                 let docs = [];
                 boardSnapshot.forEach(doc => docs.push(doc.data()));
 
-                // Calculate User's Rank
                 for(let i = 0; i < docs.length; i++) {
                     if (docs[i].userId === currentUser.uid && docs[i].score === myBestScore) {
                         myRank = i + 1;
@@ -1091,7 +1163,6 @@
                     }
                 }
 
-                // Render Top 10 rows
                 let displayCount = Math.min(10, docs.length);
                 for(let i = 0; i < displayCount; i++) {
                     let data = docs[i];
@@ -1103,7 +1174,6 @@
                 }
                 html += `</table>`;
 
-                // 4. Render Personal Stats if user is NOT in the top 10
                 if (!inTop10 && myBestData) {
                     html += `
                         <div style="margin-top: 30px; background: #2a2a2a; border: 1px solid var(--border-color); border-left: 4px solid var(--primary-yellow); padding: 20px; border-radius: 4px;">
