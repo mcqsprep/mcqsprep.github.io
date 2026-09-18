@@ -195,6 +195,14 @@
         <div class="nav-links">
             <a onclick="goHome()">Home</a>
             <a onclick="showLeaderboardOptions()" class="highlight-nav">Leaderboard</a>
+            
+            <!-- Google Sign In Button (Visible only to guests) -->
+            <div id="loginNavBtn" class="user-badge" onclick="showAuthModal()" style="display:none; cursor: pointer; background: white; color: #444; border: none; padding: 6px 12px;" title="Sign in with Google">
+                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="G" style="border-radius:0;">
+                <span style="font-weight: bold;">Sign In</span>
+            </div>
+
+            <!-- Logged In User Profile -->
             <div id="userBadge" class="user-badge" onclick="signOut()" style="cursor: pointer;" title="Click to sign out">
                 <img id="userPhotoDisplay" src="" alt="👤" style="display:none;">
                 <span id="userNameDisplay">Student</span>
@@ -259,6 +267,10 @@
         let currentUser = null;
         let currentPath = []; 
 
+        function showAuthModal() {
+            document.getElementById('authModal').style.display = 'flex';
+        }
+
         function skipSignIn() {
             sessionStorage.setItem('auth_skipped', 'true');
             document.getElementById('authModal').style.display = 'none';
@@ -267,6 +279,7 @@
         auth.onAuthStateChanged((user) => {
             currentUser = user;
             const badge = document.getElementById('userBadge');
+            const loginNavBtn = document.getElementById('loginNavBtn');
             const nameDisplay = document.getElementById('userNameDisplay');
             const photoDisplay = document.getElementById('userPhotoDisplay');
             const authModal = document.getElementById('authModal');
@@ -275,7 +288,9 @@
                 // User is signed in
                 nameDisplay.innerText = user.displayName.split(" ")[0];
                 if(user.photoURL) { photoDisplay.src = user.photoURL; photoDisplay.style.display = 'block'; }
+                
                 badge.style.display = 'flex';
+                loginNavBtn.style.display = 'none'; // Hide manual sign-in button
                 authModal.style.display = 'none';
 
                 // Save user info to DB silently
@@ -288,6 +303,8 @@
 
             } else {
                 badge.style.display = 'none';
+                loginNavBtn.style.display = 'flex'; // Show manual sign-in button
+                
                 if (window.location.hash !== '#/admin' && window.location.hash !== '#/admin-panel') {
                     if (!sessionStorage.getItem('auth_skipped')) {
                         authModal.style.display = 'flex';
@@ -339,7 +356,7 @@
         // --- 4. DYNAMIC ADMIN PANEL ---
         let adminSelectedPath = [];
         let adminManageSelectedPath = [];
-        let adminCurrentTab = 'upload'; // upload | manage | users | doubts | settings
+        let adminCurrentTab = 'upload'; 
 
         function _renderAdminLogin() {
             document.getElementById('breadcrumb-text').innerText = "Security / Admin Login";
@@ -937,8 +954,13 @@
             document.getElementById('dynamic-content').innerHTML = `
                 <div class="card">
                     <h2>🏆 Global Leaderboards</h2>
-                    <p style="color:var(--text-muted);">Select a category to view the top 10 scores.</p>
-                    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 15px; margin-top: 20px;">
+                    <p style="color:var(--text-muted); margin-bottom: 20px;">Select a category to view the top 10 scores.</p>
+                    
+                    <div style="background: rgba(244, 67, 54, 0.1); border-left: 4px solid var(--wrong-red); padding: 12px; margin-bottom: 25px; border-radius: 4px;">
+                        <span style="color: var(--wrong-red); font-weight: bold;">⚠️ CAUTION:</span> <span style="color: var(--text-light); font-size: 14px;">Only signed-in users will have their scores recorded and displayed on the leaderboard.</span>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 15px;">
                         <button class="btn-exam" onclick="fetchLiveLeaderboard('NEET > MCQs Practice')">1. NEET MCQs (Overall)</button>
                         <button class="btn-exam" onclick="fetchLiveLeaderboard('General Knowledge > Current Affairs')">2. CURRENT AFFAIRS</button>
                     </div>
@@ -948,6 +970,13 @@
         async function fetchLiveLeaderboard(pathPrefix) { 
             const mainContent = document.getElementById('dynamic-content');
             mainContent.innerHTML = `<div class="card"><h2>🏆 Fetching Leaderboard...</h2></div>`;
+            
+            let cautionHtml = `
+                <div style="background: rgba(244, 67, 54, 0.1); border-left: 4px solid var(--wrong-red); padding: 10px; margin-bottom: 20px; border-radius: 4px;">
+                    <span style="color: var(--wrong-red); font-weight: bold; font-size: 13px;">⚠️ Only signed-in users can secure a rank on this board.</span>
+                </div>
+            `;
+
             try {
                 // Fetch top 10 scores that match the requested path prefix
                 const snapshot = await db.collection("leaderboards")
@@ -958,9 +987,9 @@
                     .limit(10)
                     .get();
 
-                if (snapshot.empty) { mainContent.innerHTML = `<div class="card"><h2>🏆 Leaderboard: ${pathPrefix.split(' > ')[1]}</h2><p style="color:var(--text-muted);">No scores recorded yet. Be the first!</p><button class="btn-exam" onclick="showLeaderboardOptions()" style="margin-top:15px;">&larr; Back</button></div>`; return; }
+                if (snapshot.empty) { mainContent.innerHTML = `<div class="card"><h2>🏆 Leaderboard: ${pathPrefix.split(' > ')[1]}</h2>${cautionHtml}<p style="color:var(--text-muted);">No scores recorded yet. Be the first!</p><button class="btn-exam" onclick="showLeaderboardOptions()" style="margin-top:15px;">&larr; Back</button></div>`; return; }
 
-                let html = `<div class="card"><h2>🏆 Top 10: ${pathPrefix.split(' > ')[1]}</h2><table><tr><th>Rank</th><th>Student</th><th>Score</th><th>Accuracy</th><th>Time</th></tr>`;
+                let html = `<div class="card"><h2>🏆 Top 10: ${pathPrefix.split(' > ')[1]}</h2>${cautionHtml}<table><tr><th>Rank</th><th>Student</th><th>Score</th><th>Accuracy</th><th>Time</th></tr>`;
                 let rank = 1;
                 snapshot.forEach(doc => {
                     const data = doc.data();
