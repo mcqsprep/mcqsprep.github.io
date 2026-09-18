@@ -961,8 +961,9 @@
                     </div>
 
                     <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 15px;">
-                        <button class="btn-exam" onclick="fetchLiveLeaderboard('NEET > MCQs Practice')">1. NEET MCQs (Overall)</button>
-                        <button class="btn-exam" onclick="fetchLiveLeaderboard('General Knowledge > Current Affairs')">2. CURRENT AFFAIRS</button>
+                        <button class="btn-exam" onclick="fetchLiveLeaderboard('NEET > MCQs Practice')">1. NEET PRACTICE</button>
+                        <button class="btn-exam" onclick="fetchLiveLeaderboard('NEET > Mock Test')">2. MOCK TEST</button>
+                        <button class="btn-exam" onclick="fetchLiveLeaderboard('General Knowledge')">3. GENERAL KNOWLEDGE</button>
                     </div>
                 </div>`; 
         }
@@ -987,9 +988,9 @@
                     .limit(10)
                     .get();
 
-                if (snapshot.empty) { mainContent.innerHTML = `<div class="card"><h2>🏆 Leaderboard: ${pathPrefix.split(' > ')[1]}</h2>${cautionHtml}<p style="color:var(--text-muted);">No scores recorded yet. Be the first!</p><button class="btn-exam" onclick="showLeaderboardOptions()" style="margin-top:15px;">&larr; Back</button></div>`; return; }
+                if (snapshot.empty) { mainContent.innerHTML = `<div class="card"><h2>🏆 Leaderboard: ${pathPrefix.split(' > ').pop()}</h2>${cautionHtml}<p style="color:var(--text-muted);">No scores recorded yet. Be the first!</p><button class="btn-exam" onclick="showLeaderboardOptions()" style="margin-top:15px;">&larr; Back</button></div>`; return; }
 
-                let html = `<div class="card"><h2>🏆 Top 10: ${pathPrefix.split(' > ')[1]}</h2>${cautionHtml}<table><tr><th>Rank</th><th>Student</th><th>Score</th><th>Accuracy</th><th>Time</th></tr>`;
+                let html = `<div class="card"><h2>🏆 Top 10: ${pathPrefix.split(' > ').pop()}</h2>${cautionHtml}<table><tr><th>Rank</th><th>Student</th><th>Score</th><th>Accuracy</th><th>Time</th></tr>`;
                 let rank = 1;
                 snapshot.forEach(doc => {
                     const data = doc.data();
