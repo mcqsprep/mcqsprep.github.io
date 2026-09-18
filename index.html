@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <!-- Google Analytics -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-9DMLHEWB1Q"></script>
     <script>
       window.dataLayer = window.dataLayer || [];
@@ -14,9 +13,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MCQsPrep - Dashboard</title>
     
-    <!-- FIREBASE LIBRARIES -->
+    <!-- FIREBASE LIBRARIES (Added Auth) -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
 
     <style>
         :root {
@@ -39,7 +39,6 @@
         
         .search-wrapper { position: relative; display: flex; justify-content: flex-end; align-items: center; flex-grow: 1; margin: 0 30px; transition: 0.3s ease; }
         .search-icon-btn { background: #2a2a2a; border: 1px solid var(--border-color); color: white; font-size: 18px; cursor: pointer; padding: 10px 15px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
-        .search-icon-btn:hover { background: #333; }
         
         .search-input-container { display: none; width: 100%; max-width: 600px; position: relative; }
         .search-wrapper.active .search-icon-btn { display: none; }
@@ -50,7 +49,6 @@
         
         .suggestions-dropdown { display: none; position: absolute; top: calc(100% + 8px); left: 0; right: 0; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; z-index: 2000; max-height: 350px; overflow-y: auto; box-shadow: 0 8px 24px rgba(0,0,0,0.8); }
         .suggestion-item { padding: 12px 20px; cursor: pointer; border-bottom: 1px solid var(--border-color); color: white; display: flex; align-items: center; gap: 12px; font-size: 15px; }
-        .suggestion-item:last-child { border-bottom: none; }
         .suggestion-item:hover { background: #2a2a2a; color: var(--primary-yellow); }
         
         .nav-links { display: flex; align-items: center; gap: 20px; white-space: nowrap; }
@@ -59,9 +57,9 @@
         .highlight-nav { color: var(--primary-yellow) !important; font-weight: bold; text-shadow: 0 0 8px rgba(253, 184, 19, 0.4); }
 
         .user-badge { display: none; align-items: center; gap: 8px; background: linear-gradient(135deg, #2a2a2a, #1a1a1a); border: 1px solid var(--primary-yellow); color: var(--text-light); padding: 6px 16px; border-radius: 20px; font-size: 14px; font-weight: 600; box-shadow: 0 0 10px rgba(253, 184, 19, 0.2); transition: 0.3s; cursor: default; margin-left: 10px; }
+        .user-badge img { width: 20px; height: 20px; border-radius: 50%; }
         
         .breadcrumb { background-color: #1a1a1a; padding: 10px 40px; font-size: 14px; color: var(--text-muted); border-bottom: 1px solid var(--border-color); }
-
         .container { display: flex; padding: 40px; gap: 30px; max-width: 1400px; margin: 0 auto; }
         .main-content { flex: 2; }
         .sidebar { flex: 1; max-width: 400px; }
@@ -84,19 +82,17 @@
         .admin-row > * { flex: 1; min-width: 200px; }
         .admin-checkbox-group { display: flex; gap: 15px; align-items: center; background: #2a2a2a; padding: 12px; border-radius: 6px; border: 1px solid var(--border-color); flex-wrap: wrap; }
         .admin-checkbox-group label { display: flex; align-items: center; gap: 8px; cursor: pointer; }
-        
         .admin-tab-btn { padding: 10px 20px; background: #2a2a2a; color: var(--text-muted); border: 1px solid var(--border-color); border-radius: 6px; cursor: pointer; font-weight: bold; margin-bottom:10px;}
         .admin-tab-btn.active { background: var(--primary-yellow); color: black; border-color: var(--primary-yellow); }
 
         .content-item-card { background: #252525; border: 1px solid var(--border-color); border-radius: 8px; padding: 15px; margin-bottom: 15px; }
-        .content-item-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; margin-bottom: 10px; }
         .badge-path { background: #333; color: var(--primary-yellow); padding: 4px 8px; border-radius: 4px; font-size: 12px; }
 
         /* Quiz Engine UI */
         .quiz-header { display: flex; justify-content: space-between; align-items: center; padding-bottom: 15px; border-bottom: 1px solid var(--border-color); margin-bottom: 15px; }
         .quiz-timer { font-size: 18px; font-weight: bold; color: var(--primary-yellow); }
         .quiz-question-text { font-size: 18px; line-height: 1.5; margin-bottom: 25px; }
-        .quiz-image { max-width: 100%; border-radius: 8px; margin-bottom: 20px; max-height: 300px; object-fit: contain; }
+        .quiz-image { max-width: 100%; border-radius: 8px; margin-bottom: 20px; max-height: 300px; object-fit: contain; cursor: zoom-in; }
         .quiz-option { display: flex; align-items: center; padding: 15px; background: #2a2a2a; border: 2px solid var(--border-color); border-radius: 8px; margin-bottom: 12px; cursor: pointer; transition: 0.2s; font-size: 16px; }
         .quiz-option:hover { border-color: var(--primary-yellow); background: #333; }
         .quiz-option.selected { border-color: var(--primary-yellow); background: rgba(253, 184, 19, 0.1); }
@@ -106,24 +102,31 @@
         .question-palette { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:20px; background: #1a1a1a; padding: 15px; border-radius: 8px; border: 1px solid var(--border-color); }
         .nav-buttons-row { display:flex; justify-content:space-between; margin-top:25px; flex-wrap:wrap; gap:10px; }
 
-        table th, table td { padding: 12px; border-bottom: 1px solid var(--border-color); text-align: left; }
+        .flag-btn { background: #333; border: 1px solid var(--border-color); color: white; padding: 5px 12px; border-radius: 4px; cursor: pointer; font-size: 14px; transition: 0.2s; }
+        .flag-btn.flagged { background: #382909; border-color: var(--primary-yellow); color: var(--primary-yellow); }
 
-        @keyframes popIn { 0% { transform: translateY(20px); opacity: 0; } 100% { transform: translateY(0); opacity: 1; } }
-        #notification { display: none; position: fixed; bottom: 20px; right: 20px; background-color: var(--primary-yellow); color: #000; padding: 15px 25px; border-radius: 5px; font-weight: bold; box-shadow: 0 4px 15px rgba(0,0,0,0.5); z-index: 9999; animation: popIn 0.3s ease-out; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        table th, table td { padding: 12px; border-bottom: 1px solid var(--border-color); text-align: left; }
+        table th { color: var(--primary-yellow); background: #2a2a2a; }
+
+        #notification { display: none; position: fixed; bottom: 20px; right: 20px; background-color: var(--primary-yellow); color: #000; padding: 15px 25px; border-radius: 5px; font-weight: bold; box-shadow: 0 4px 15px rgba(0,0,0,0.5); z-index: 9999; }
 
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 3000; justify-content: center; align-items: center; backdrop-filter: blur(5px); }
         .modal-content { background: var(--card-bg); padding: 30px; border-radius: 12px; border: 1px solid var(--border-color); width: 90%; max-width: 600px; position: relative; max-height: 90vh; overflow-y: auto; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
         .close-modal { position: absolute; top: 15px; right: 15px; background: none; border: none; color: var(--text-muted); font-size: 24px; cursor: pointer; transition: 0.2s; }
         
+        .full-image-modal img { max-width: 90vw; max-height: 90vh; object-fit: contain; border-radius: 8px; }
+
+        .google-btn { display: flex; align-items: center; justify-content: center; gap: 10px; background: white; color: #444; width: 100%; padding: 12px; border-radius: 6px; border: none; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        .google-btn:hover { background: #eee; }
+        .google-btn img { width: 20px; height: 20px; }
+
         @media (max-width: 768px) {
             .container { flex-direction: column; padding: 15px; gap: 15px; }
             .sidebar { max-width: 100%; }
             .breadcrumb { padding: 10px 15px; }
             .navbar { flex-wrap: wrap; padding: 15px; }
-            .logo-container { flex: 1; }
-            .search-wrapper { margin: 0; }
             .nav-links { width: 100%; justify-content: space-between; margin-top: 15px; font-size: 14px; }
-            .user-badge { margin-left: 0; font-size: 12px; padding: 6px 10px; }
             .search-wrapper.active .search-input-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-dark); z-index: 100; padding: 0 15px; box-sizing: border-box; display: flex; align-items: center; }
             .suggestions-dropdown { top: 60px; left: 15px; right: 15px; width: calc(100% - 30px); }
         }
@@ -131,14 +134,22 @@
 </head>
 <body>
 
-    <!-- Student Identity Modal -->
-    <div id="identityModal" class="modal-overlay">
+    <!-- Auth Modal (Google Sign-In) -->
+    <div id="authModal" class="modal-overlay">
         <div class="modal-content" style="text-align: center; max-width: 420px;">
-            <button class="close-modal" onclick="skipIdentity()">✕</button>
             <h2 style="margin-top:0; color: var(--primary-yellow);">Welcome to MCQsPrep</h2>
-            <p style="color: var(--text-muted); margin-bottom: 25px; font-size: 15px;">Enter your name once to save your progress and compete on the global leaderboards.</p>
-            <input type="text" id="globalNameInput" class="input-field" placeholder="Full Name (e.g. Rahul Verma)" autocomplete="off">
-            <button id="saveProfileBtn" class="btn-exam" onclick="saveIdentity()" style="width: 100%; background-color: var(--primary-yellow); color: black; border: none;">Save Profile</button>
+            <p style="color: var(--text-muted); margin-bottom: 25px; font-size: 15px;">Sign in securely to save your progress, track your accuracy, and compete on the global leaderboards.</p>
+            <button class="google-btn" onclick="signInWithGoogle()">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg" alt="Google">
+                Sign in with Google
+            </button>
+        </div>
+    </div>
+
+    <!-- Image Zoom Modal -->
+    <div id="imageZoomModal" class="modal-overlay" onclick="closeImageModal()">
+        <div class="full-image-modal">
+            <img id="zoomedImageSrc" src="">
         </div>
     </div>
 
@@ -155,8 +166,10 @@
             <div class="admin-row"><input type="text" id="editOptA" class="input-field" placeholder="Option A"><input type="text" id="editOptB" class="input-field" placeholder="Option B"></div>
             <div class="admin-row"><input type="text" id="editOptC" class="input-field" placeholder="Option C"><input type="text" id="editOptD" class="input-field" placeholder="Option D"></div>
             
-            <label style="color:var(--text-muted); font-size:13px;">Correct Answer(s):</label>
+            <label style="color:var(--text-muted); font-size:13px;">Settings & Correct Answer(s):</label>
             <div class="admin-checkbox-group" style="margin-bottom: 15px;">
+                <label><input type="checkbox" id="editNeetGrading"> <b>Enable NEET (+4/-1) Grading</b></label>
+                <div style="width: 100%; height: 1px; background: var(--border-color); margin: 5px 0;"></div>
                 <label><input type="checkbox" value="A" class="editCorrectCb"> A</label>
                 <label><input type="checkbox" value="B" class="editCorrectCb"> B</label>
                 <label><input type="checkbox" value="C" class="editCorrectCb"> C</label>
@@ -171,10 +184,7 @@
     </div>
 
     <nav class="navbar">
-        <div class="logo-container" onclick="goHome()">
-            🩺 MCQsPrep<span>.</span>
-        </div>
-        
+        <div class="logo-container" onclick="goHome()">🩺 MCQsPrep<span>.</span></div>
         <div class="search-wrapper" id="searchWrapper">
             <button class="search-icon-btn" onclick="openSearch()">🔍</button>
             <div class="search-input-container">
@@ -183,13 +193,12 @@
                 <div class="suggestions-dropdown" id="searchSuggestions"></div>
             </div>
         </div>
-
         <div class="nav-links">
             <a onclick="goHome()">Home</a>
             <a onclick="showLeaderboardOptions()" class="highlight-nav">Leaderboard</a>
-            
-            <div id="userBadge" class="user-badge">
-                👤 <span id="userNameDisplay">Student</span>
+            <div id="userBadge" class="user-badge" onclick="signOut()">
+                <img id="userPhotoDisplay" src="" alt="👤" style="display:none;">
+                <span id="userNameDisplay">Student</span>
             </div>
         </div>
     </nav>
@@ -197,14 +206,12 @@
     <div class="breadcrumb" id="breadcrumb-text">Home / Select Exam</div>
     <div class="container">
         <div class="main-content" id="dynamic-content"></div>
-
         <div class="sidebar" id="main-sidebar">
             <div class="card">
                 <h3>Quick Links</h3>
                 <a class="action-link" onclick="jumpToSection(['NEET', 'NCERT Book'])">📚 NCERT Solutions</a>
                 <a class="action-link" onclick="jumpToSection(['NEET', 'PYQs'])">📄 Previous Year Papers</a>
             </div>
-
             <div class="card">
                 <h3>Essential Practice</h3>
                 <a class="action-link" onclick="jumpToSection(['NEET', 'MCQs Practice'])">📝 Subject-wise MCQs</a>
@@ -227,12 +234,12 @@
         };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
+        const auth = firebase.auth();
+        const provider = new firebase.auth.GoogleAuthProvider();
 
-        // CLOUDINARY CONFIGURATION
         const CLOUDINARY_URL = "https://api.cloudinary.com/v1_1/h5gdez7a/auto/upload";
         const CLOUDINARY_PRESET = "mcq_uploads";
 
-        // --- 2. MASTER DIRECTORY ---
         const appData = {
             "NEET": {
                 "NCERT Book": { "Class 11": { "Zoology": [], "Botany": [], "Physics": [], "Chemistry": [] }, "Class 12": { "Zoology": [], "Botany": [], "Physics": [], "Chemistry": [] } },
@@ -248,27 +255,49 @@
             }
         };
 
-        // --- 3. IDENTITY & ROUTING ---
-        let currentStudentName = localStorage.getItem('mcqsprep_student_name') || "";
+        // --- AUTHENTICATION LOGIC ---
+        let currentUser = null;
         let currentPath = []; 
 
-        window.addEventListener('load', () => {
-            if (window.location.hash !== '#/admin' && window.location.hash !== '#/admin-panel') {
-                if (!currentStudentName && !sessionStorage.getItem('identity_skipped')) {
-                    document.getElementById('identityModal').style.display = 'flex';
-                } else if (!currentStudentName) { currentStudentName = "Anonymous Student"; }
-            }
-            updateUserBadge(); 
-            if (!window.location.hash) window.location.hash = '#/home';
-            else handleRouting();
-        });
-
-        function updateUserBadge() {
+        auth.onAuthStateChanged((user) => {
+            currentUser = user;
             const badge = document.getElementById('userBadge');
             const nameDisplay = document.getElementById('userNameDisplay');
-            if (currentStudentName && currentStudentName !== "Anonymous Student" && window.location.hash !== '#/admin' && window.location.hash !== '#/admin-panel') {
-                nameDisplay.innerText = currentStudentName; badge.style.display = 'flex';
-            } else { badge.style.display = 'none'; }
+            const photoDisplay = document.getElementById('userPhotoDisplay');
+            const authModal = document.getElementById('authModal');
+
+            if (user) {
+                // User is signed in
+                nameDisplay.innerText = user.displayName.split(" ")[0];
+                if(user.photoURL) { photoDisplay.src = user.photoURL; photoDisplay.style.display = 'block'; }
+                badge.style.display = 'flex';
+                authModal.style.display = 'none';
+
+                // Save user info to DB silently
+                db.collection("users").doc(user.uid).set({
+                    displayName: user.displayName,
+                    email: user.email,
+                    photoURL: user.photoURL,
+                    lastLogin: firebase.firestore.FieldValue.serverTimestamp()
+                }, { merge: true });
+
+            } else {
+                badge.style.display = 'none';
+                if (window.location.hash !== '#/admin' && window.location.hash !== '#/admin-panel') {
+                    authModal.style.display = 'flex';
+                }
+            }
+            if (!window.location.hash) window.location.hash = '#/home';
+            handleRouting();
+        });
+
+        function signInWithGoogle() {
+            auth.signInWithPopup(provider).catch(err => {
+                showNotification("❌ Sign-in Error: " + err.message);
+            });
+        }
+        function signOut() {
+            if(confirm("Are you sure you want to sign out?")) auth.signOut();
         }
 
         window.addEventListener('hashchange', handleRouting);
@@ -289,29 +318,21 @@
         function navigateTo(key) { window.location.hash = '#/path/' + [...currentPath, key].join('/'); }
         function jumpToSection(pathArray) { window.location.hash = '#/path/' + pathArray.join('/'); }
         function showLeaderboardOptions() { window.location.hash = '#/leaderboard'; }
-        
-        function goBack() { 
-            let hash = window.location.hash;
-            if (hash === '#/leaderboard') { window.location.hash = '#/home'; } 
-            else if (hash.startsWith('#/board/')) { window.location.hash = '#/leaderboard'; } 
-            else if (hash === '#/quiz' || hash === '#/admin-panel') { window.location.hash = '#/path/' + currentPath.join('/'); } 
-            else if (currentPath.length > 0) {
-                let newPath = [...currentPath];
-                newPath.pop();
-                window.location.hash = newPath.length === 0 ? '#/home' : '#/path/' + newPath.join('/');
-            } else { window.location.hash = '#/home'; }
+        function goBack() { window.history.back(); }
+
+        // --- IMAGE MODAL ---
+        function expandImage(src) {
+            document.getElementById('zoomedImageSrc').src = src;
+            document.getElementById('imageZoomModal').style.display = 'flex';
+        }
+        function closeImageModal() {
+            document.getElementById('imageZoomModal').style.display = 'none';
         }
 
-        function formatTime(totalSeconds) {
-            let m = Math.floor(totalSeconds / 60).toString().padStart(2, '0');
-            let s = (totalSeconds % 60).toString().padStart(2, '0');
-            return `${m}:${s}`;
-        }
-
-        // --- 4. DYNAMIC ADMIN PANEL (UPLOAD + EDIT + DELETE + FILTER + SETTINGS) ---
+        // --- 4. DYNAMIC ADMIN PANEL ---
         let adminSelectedPath = [];
         let adminManageSelectedPath = [];
-        let adminCurrentTab = 'upload'; // 'upload' or 'manage' or 'settings'
+        let adminCurrentTab = 'upload'; // upload | manage | users | doubts | settings
 
         function _renderAdminLogin() {
             document.getElementById('breadcrumb-text').innerText = "Security / Admin Login";
@@ -326,47 +347,40 @@
         async function verifyAdmin() {
             const inputPass = document.getElementById('adminPassInput').value;
             const btn = document.getElementById('loginBtn');
-            btn.innerText = "Verifying...";
-            btn.disabled = true;
+            btn.innerText = "Verifying..."; btn.disabled = true;
 
             try {
-                // Check Firebase for custom password, default to mcqs2026
                 const doc = await db.collection("settings").doc("admin_auth").get();
                 let correctPass = "mcqs2026"; 
-                if (doc.exists && doc.data().password) {
-                    correctPass = doc.data().password;
-                }
+                if (doc.exists && doc.data().password) correctPass = doc.data().password;
 
                 if (inputPass === correctPass) {
                     sessionStorage.setItem('admin_verified', 'true');
                     window.location.hash = '#/admin-panel';
                     showNotification("✅ Admin Access Granted");
-                } else {
-                    showNotification("❌ Incorrect Password");
-                }
-            } catch (e) {
-                showNotification("❌ Verification error: " + e.message);
-            }
-            btn.innerText = "Login to Admin";
-            btn.disabled = false;
+                } else { showNotification("❌ Incorrect Password"); }
+            } catch (e) { showNotification("❌ Verification error: " + e.message); }
+            btn.innerText = "Login to Admin"; btn.disabled = false;
         }
 
         function _renderAdminPanel() {
             if (!sessionStorage.getItem('admin_verified')) { window.location.hash = '#/admin'; return; }
-            document.getElementById('breadcrumb-text').innerText = "Admin Dashboard / Resource Manager";
+            document.getElementById('breadcrumb-text').innerText = "Admin Dashboard";
             
             document.getElementById('dynamic-content').innerHTML = `
                 <div class="card">
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:10px;">
                         <h2 style="color: var(--primary-yellow); margin:0;">🛠️ Admin Control Center</h2>
                         <div style="display:flex; gap:10px; flex-wrap:wrap;">
-                            <button id="tabUploadBtn" class="admin-tab-btn ${adminCurrentTab === 'upload' ? 'active' : ''}" onclick="switchAdminTab('upload')">➕ Upload Content</button>
-                            <button id="tabManageBtn" class="admin-tab-btn ${adminCurrentTab === 'manage' ? 'active' : ''}" onclick="switchAdminTab('manage')">📋 Manage / Edit / Delete</button>
-                            <button id="tabSettingsBtn" class="admin-tab-btn ${adminCurrentTab === 'settings' ? 'active' : ''}" onclick="switchAdminTab('settings')">⚙️ Settings</button>
+                            <button class="admin-tab-btn ${adminCurrentTab === 'upload' ? 'active' : ''}" onclick="switchAdminTab('upload')">➕ Upload</button>
+                            <button class="admin-tab-btn ${adminCurrentTab === 'manage' ? 'active' : ''}" onclick="switchAdminTab('manage')">📋 Manage</button>
+                            <button class="admin-tab-btn ${adminCurrentTab === 'users' ? 'active' : ''}" onclick="switchAdminTab('users')">👥 Users</button>
+                            <button class="admin-tab-btn ${adminCurrentTab === 'doubts' ? 'active' : ''}" onclick="switchAdminTab('doubts')">🚩 Doubts</button>
+                            <button class="admin-tab-btn ${adminCurrentTab === 'settings' ? 'active' : ''}" onclick="switchAdminTab('settings')">⚙️ Settings</button>
                         </div>
                     </div>
 
-                    <!-- TAB 1: UPLOAD SECTION -->
+                    <!-- TAB 1: UPLOAD -->
                     <div id="admin-upload-view" style="display:${adminCurrentTab === 'upload' ? 'block' : 'none'};">
                         <div style="background: #2a2a2a; padding: 15px; border-radius: 6px; margin-bottom: 20px;">
                             <h4 style="margin-top:0; margin-bottom:10px;">Step 1: Select Target Folder</h4>
@@ -391,6 +405,8 @@
                                 <div class="admin-row"><input type="text" id="admOptC" class="input-field" placeholder="Option C"><input type="text" id="admOptD" class="input-field" placeholder="Option D"></div>
 
                                 <div class="admin-checkbox-group" style="margin-bottom: 15px;">
+                                    <label><input type="checkbox" id="admNeetGrading" checked> <b>Enable NEET (+4/-1) Grading</b></label>
+                                    <div style="width: 100%; height: 1px; background: var(--border-color); margin: 5px 0;"></div>
                                     <span style="font-weight: bold; width: 140px;">Correct Answer(s):</span>
                                     <label><input type="checkbox" value="A" class="admCorrectCb"> A</label>
                                     <label><input type="checkbox" value="B" class="admCorrectCb"> B</label>
@@ -411,7 +427,7 @@
                         </div>
                     </div>
 
-                    <!-- TAB 2: MANAGE & DELETE SECTION -->
+                    <!-- TAB 2: MANAGE -->
                     <div id="admin-manage-view" style="display:${adminCurrentTab === 'manage' ? 'block' : 'none'};">
                         <div style="background: #2a2a2a; padding: 15px; border-radius: 6px; margin-bottom: 20px;">
                             <h4 style="margin-top:0; margin-bottom:10px; color:var(--text-muted);">Filter Content by Folder (Optional)</h4>
@@ -421,54 +437,86 @@
                         <div id="manage-content-list"><p style="color:var(--text-muted);">Select a folder and click Fetch to load items.</p></div>
                     </div>
                     
-                    <!-- TAB 3: SETTINGS -->
+                    <!-- TAB 3: USERS -->
+                    <div id="admin-users-view" style="display:${adminCurrentTab === 'users' ? 'block' : 'none'};">
+                        <button class="btn-exam" onclick="loadAdminUsers()" style="margin-bottom:15px; background:var(--primary-yellow); color:black; border:none;">🔄 Refresh Students List</button>
+                        <div id="users-table-container" style="overflow-x:auto;"></div>
+                    </div>
+
+                    <!-- TAB 4: DOUBTS -->
+                    <div id="admin-doubts-view" style="display:${adminCurrentTab === 'doubts' ? 'block' : 'none'};">
+                        <button class="btn-exam" onclick="loadAdminDoubts()" style="margin-bottom:15px; background:var(--primary-yellow); color:black; border:none;">🔄 Refresh Flagged Doubts</button>
+                        <div id="doubts-list-container"></div>
+                    </div>
+
+                    <!-- TAB 5: SETTINGS -->
                     <div id="admin-settings-view" style="display:${adminCurrentTab === 'settings' ? 'block' : 'none'};">
                         <div style="background: #2a2a2a; padding: 25px; border-radius: 6px; max-width: 400px;">
                             <h3 style="margin-top:0; margin-bottom:20px;">Change Admin Password</h3>
-                            <label style="color:var(--text-muted); font-size:13px;">New Password (Min 6 characters)</label>
-                            <input type="password" id="newAdminPass" class="input-field" placeholder="Enter New Password">
-                            <label style="color:var(--text-muted); font-size:13px;">Confirm New Password</label>
+                            <input type="password" id="newAdminPass" class="input-field" placeholder="Enter New Password (Min 6 chars)">
                             <input type="password" id="confirmAdminPass" class="input-field" placeholder="Confirm New Password">
-                            <button class="btn-exam" onclick="changeAdminPassword()" style="background:var(--primary-yellow); color:black; border:none; width:100%; margin-top:10px;">Update Password</button>
+                            <button class="btn-exam" onclick="changeAdminPassword()" style="background:var(--primary-yellow); color:black; border:none; width:100%;">Update Password</button>
                         </div>
                     </div>
                 </div>
             `;
             
-            if (adminCurrentTab === 'upload') {
-                _buildAdminSelectors();
-            } else if (adminCurrentTab === 'manage') {
-                _buildManageSelectors();
-                loadContentForManagement();
-            }
+            if (adminCurrentTab === 'upload') _buildAdminSelectors();
+            else if (adminCurrentTab === 'manage') { _buildManageSelectors(); loadContentForManagement(); }
+            else if (adminCurrentTab === 'users') loadAdminUsers();
+            else if (adminCurrentTab === 'doubts') loadAdminDoubts();
         }
 
-        function switchAdminTab(tab) {
-            adminCurrentTab = tab;
-            _renderAdminPanel();
-        }
-        
-        async function changeAdminPassword() {
-            const p1 = document.getElementById('newAdminPass').value;
-            const p2 = document.getElementById('confirmAdminPass').value;
-            
-            if(p1.length < 6) { showNotification("⚠️ Password must be at least 6 characters."); return; }
-            if(p1 !== p2) { showNotification("❌ Passwords do not match!"); return; }
+        function switchAdminTab(tab) { adminCurrentTab = tab; _renderAdminPanel(); }
 
+        // --- NEW ADMIN TABS LOGIC (USERS & DOUBTS) ---
+        async function loadAdminUsers() {
+            const container = document.getElementById('users-table-container');
+            container.innerHTML = `<p style="color:var(--primary-yellow);">Fetching students...</p>`;
             try {
-                await db.collection("settings").doc("admin_auth").set({ password: p1 });
-                document.getElementById('newAdminPass').value = "";
-                document.getElementById('confirmAdminPass').value = "";
-                showNotification("✅ Password changed successfully!");
-            } catch(e) {
-                showNotification("❌ Error updating password: " + e.message);
-            }
+                const snapshot = await db.collection("users").orderBy("lastLogin", "desc").get();
+                let html = `<table><tr><th>Name</th><th>Email</th><th>Last Login</th></tr>`;
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    let dateStr = data.lastLogin ? data.lastLogin.toDate().toLocaleString() : "Unknown";
+                    html += `<tr><td>${data.displayName}</td><td>${data.email}</td><td>${dateStr}</td></tr>`;
+                });
+                html += `</table>`;
+                container.innerHTML = html;
+            } catch(e) { container.innerHTML = `<p style="color:red;">Error: ${e.message}</p>`; }
         }
 
-        function toggleAdminFormType() {
-            const type = document.getElementById('admResourceType').value;
-            document.getElementById('admin-mcq-form').style.display = type === 'mcq' ? 'block' : 'none';
-            document.getElementById('admin-pdf-form').style.display = type === 'pdf' ? 'block' : 'none';
+        async function loadAdminDoubts() {
+            const container = document.getElementById('doubts-list-container');
+            container.innerHTML = `<p style="color:var(--primary-yellow);">Fetching doubts...</p>`;
+            try {
+                const snapshot = await db.collection("flagged_doubts").orderBy("timestamp", "desc").get();
+                if(snapshot.empty) { container.innerHTML = "<p>No flagged questions!</p>"; return; }
+                let html = '';
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    let dateStr = data.timestamp ? data.timestamp.toDate().toLocaleString() : "";
+                    html += `
+                        <div class="content-item-card">
+                            <div class="content-item-header">
+                                <span class="badge-path">${data.path}</span>
+                                <span style="font-size:12px; color:var(--text-muted);">${dateStr}</span>
+                            </div>
+                            <p style="color:var(--primary-yellow); margin:5px 0;"><b>Flagged by:</b> ${data.studentName}</p>
+                            <div style="background:#1a1a1a; padding:10px; border-radius:4px; font-size:14px;">${data.questionText}</div>
+                            <button onclick="resolveDoubt('${doc.id}')" style="margin-top:10px; padding:5px 10px; background:var(--correct-green); border:none; border-radius:4px; color:white; cursor:pointer;">Mark Resolved</button>
+                        </div>
+                    `;
+                });
+                container.innerHTML = html;
+            } catch(e) { container.innerHTML = `<p style="color:red;">Error: ${e.message}</p>`; }
+        }
+
+        async function resolveDoubt(docId) {
+            if(confirm("Mark this doubt as resolved and remove it?")) {
+                await db.collection("flagged_doubts").doc(docId).delete();
+                loadAdminDoubts();
+            }
         }
 
         // Dropdowns for UPLOAD tab
@@ -476,15 +524,11 @@
             const container = document.getElementById('dynamic-path-selectors');
             if(!container) return;
             let html = ''; let currentObj = appData;
-            
             for (let i = 0; i <= adminSelectedPath.length; i++) {
                 if (Array.isArray(currentObj) || typeof currentObj === 'string') break; 
                 html += `<select class="input-field" style="flex:1; min-width:150px; margin-bottom:0;" onchange="handleAdminPathChange(event, ${i})">`;
                 html += `<option value="" disabled ${!adminSelectedPath[i] ? 'selected' : ''}>Select...</option>`;
-                for (let key in currentObj) {
-                    let selected = (adminSelectedPath[i] === key) ? 'selected' : '';
-                    html += `<option value="${key}" ${selected}>${key}</option>`;
-                }
+                for (let key in currentObj) { html += `<option value="${key}" ${adminSelectedPath[i] === key ? 'selected' : ''}>${key}</option>`; }
                 html += `</select>`;
                 if (adminSelectedPath[i] && currentObj[adminSelectedPath[i]]) { currentObj = currentObj[adminSelectedPath[i]]; } else { break; }
             }
@@ -492,45 +536,32 @@
             const formArea = document.getElementById('upload-form-area');
             if(formArea) formArea.style.display = (Array.isArray(currentObj) || typeof currentObj === 'string') ? 'block' : 'none';
         }
-        function handleAdminPathChange(event, depth) {
-            adminSelectedPath = adminSelectedPath.slice(0, depth);
-            adminSelectedPath.push(event.target.value);
-            _buildAdminSelectors();
-        }
+        function handleAdminPathChange(event, depth) { adminSelectedPath = adminSelectedPath.slice(0, depth); adminSelectedPath.push(event.target.value); _buildAdminSelectors(); }
 
         // Dropdowns for MANAGE tab
         function _buildManageSelectors() {
             const container = document.getElementById('manage-path-selectors');
             if(!container) return;
             let html = ''; let currentObj = appData;
-            
             for (let i = 0; i <= adminManageSelectedPath.length; i++) {
                 if (Array.isArray(currentObj) || typeof currentObj === 'string') break; 
                 html += `<select class="input-field" style="flex:1; min-width:150px; margin-bottom:0;" onchange="handleManagePathChange(event, ${i})">`;
                 html += `<option value="" ${!adminManageSelectedPath[i] ? 'selected' : ''}>-- All --</option>`;
-                for (let key in currentObj) {
-                    let selected = (adminManageSelectedPath[i] === key) ? 'selected' : '';
-                    html += `<option value="${key}" ${selected}>${key}</option>`;
-                }
+                for (let key in currentObj) { html += `<option value="${key}" ${adminManageSelectedPath[i] === key ? 'selected' : ''}>${key}</option>`; }
                 html += `</select>`;
                 if (adminManageSelectedPath[i] && currentObj[adminManageSelectedPath[i]]) { currentObj = currentObj[adminManageSelectedPath[i]]; } else { break; }
             }
             container.innerHTML = html;
         }
         function handleManagePathChange(event, depth) {
-            if(event.target.value === "") {
-                adminManageSelectedPath = adminManageSelectedPath.slice(0, depth);
-            } else {
-                adminManageSelectedPath = adminManageSelectedPath.slice(0, depth);
-                adminManageSelectedPath.push(event.target.value);
-            }
+            if(event.target.value === "") adminManageSelectedPath = adminManageSelectedPath.slice(0, depth);
+            else { adminManageSelectedPath = adminManageSelectedPath.slice(0, depth); adminManageSelectedPath.push(event.target.value); }
             _buildManageSelectors();
         }
 
         async function uploadFileToCloudinary(file) {
             const formData = new FormData();
-            formData.append('file', file);
-            formData.append('upload_preset', CLOUDINARY_PRESET);
+            formData.append('file', file); formData.append('upload_preset', CLOUDINARY_PRESET);
             const response = await fetch(CLOUDINARY_URL, { method: 'POST', body: formData });
             const data = await response.json();
             if (!response.ok) throw new Error(data.error?.message || 'File upload failed');
@@ -541,21 +572,17 @@
             const type = document.getElementById('admResourceType').value;
             const targetPathString = adminSelectedPath.join(' > '); 
             const btn = document.getElementById('uploadBtn');
-            
-            btn.innerText = "Uploading... Please wait";
-            btn.disabled = true;
+            btn.innerText = "Uploading... Please wait"; btn.disabled = true;
 
             try {
                 if (type === 'mcq') {
                     const question = document.getElementById('admQuestion').value.trim();
-                    const options = {
-                        A: document.getElementById('admOptA').value.trim(), B: document.getElementById('admOptB').value.trim(),
-                        C: document.getElementById('admOptC').value.trim(), D: document.getElementById('admOptD').value.trim()
-                    };
+                    const options = { A: document.getElementById('admOptA').value.trim(), B: document.getElementById('admOptB').value.trim(), C: document.getElementById('admOptC').value.trim(), D: document.getElementById('admOptD').value.trim() };
                     const correctCbs = document.querySelectorAll('.admCorrectCb:checked');
                     let correctAnswers = Array.from(correctCbs).map(cb => cb.value);
                     const explanation = document.getElementById('admExplanation').value.trim();
                     const imageFile = document.getElementById('admQImage').files[0];
+                    const isNeetGrading = document.getElementById('admNeetGrading').checked;
 
                     if (!question || !options.A || !options.B || correctAnswers.length === 0) { throw new Error("Question, Option A, Option B, and Correct Answer are required."); }
 
@@ -563,10 +590,8 @@
                     if (imageFile) { imageUrl = await uploadFileToCloudinary(imageFile); }
 
                     await db.collection("content").add({
-                        type: 'mcq', path: targetPathString,
-                        question: question, options: options, correctAnswers: correctAnswers, 
-                        explanation: explanation, imageUrl: imageUrl,
-                        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                        type: 'mcq', path: targetPathString, question: question, options: options, correctAnswers: correctAnswers, 
+                        explanation: explanation, imageUrl: imageUrl, isNeetGrading: isNeetGrading, timestamp: firebase.firestore.FieldValue.serverTimestamp()
                     });
 
                     document.getElementById('admQuestion').value = ""; document.getElementById('admQImage').value = ""; document.getElementById('admExplanation').value = "";
@@ -576,68 +601,44 @@
                     const title = document.getElementById('admPdfTitle').value.trim();
                     const file = document.getElementById('admPdfFile').files[0];
                     if (!title || !file) throw new Error("Title and File are required for Study Materials.");
-
                     const fileUrl = await uploadFileToCloudinary(file);
-                    await db.collection("content").add({
-                        type: 'material', path: targetPathString, title: title, fileUrl: fileUrl,
-                        timestamp: firebase.firestore.FieldValue.serverTimestamp()
-                    });
+                    await db.collection("content").add({ type: 'material', path: targetPathString, title: title, fileUrl: fileUrl, timestamp: firebase.firestore.FieldValue.serverTimestamp() });
                     document.getElementById('admPdfTitle').value = ""; document.getElementById('admPdfFile').value = "";
                 }
                 showNotification("✅ Upload Successful!");
             } catch(error) { showNotification("❌ Error: " + error.message); }
-            btn.innerText = "☁️ Upload to Database";
-            btn.disabled = false;
+            btn.innerText = "☁️ Upload to Database"; btn.disabled = false;
         }
 
-        // --- MANAGE CONTENT (FETCH, DELETE, EDIT) ---
         let loadedItemsCache = {};
-
         async function loadContentForManagement() {
             const listEl = document.getElementById('manage-content-list');
             listEl.innerHTML = `<p style="color:var(--primary-yellow);">Fetching items from database...</p>`;
-
             try {
                 let query = db.collection("content");
-                
-                // If user selected a filter path
                 if (adminManageSelectedPath.length > 0) {
                     const prefixPath = adminManageSelectedPath.join(' > ');
                     query = query.where("path", ">=", prefixPath).where("path", "<=", prefixPath + "\uf8ff");
-                } else {
-                    query = query.orderBy("timestamp", "desc").limit(50); 
-                }
+                } else { query = query.orderBy("timestamp", "desc").limit(50); }
 
                 const snapshot = await query.get();
-                
-                if(snapshot.empty) {
-                    listEl.innerHTML = `<p style="color:var(--text-muted);">No items found in this folder.</p>`;
-                    return;
-                }
+                if(snapshot.empty) { listEl.innerHTML = `<p style="color:var(--text-muted);">No items found in this folder.</p>`; return; }
 
-                loadedItemsCache = {};
-                let html = '';
+                loadedItemsCache = {}; let html = '';
                 snapshot.forEach(doc => {
-                    const data = doc.data();
-                    loadedItemsCache[doc.id] = data;
-                    
+                    const data = doc.data(); loadedItemsCache[doc.id] = data;
                     if (data.type === 'mcq') {
                         let answersStr = (data.correctAnswers || []).join(', ');
                         html += `
                             <div class="content-item-card" id="item_${doc.id}">
                                 <div class="content-item-header">
                                     <span class="badge-path">${data.path || 'Uncategorized'}</span>
-                                    <div style="display:flex; gap:8px;">
-                                        <button class="btn-exam" onclick="openEditModal('${doc.id}')" style="padding:4px 10px; font-size:12px; background:#2196F3; border:none;">✏️ Edit</button>
-                                        <button class="btn-exam" onclick="deleteContentItem('${doc.id}')" style="padding:4px 10px; font-size:12px; background:var(--wrong-red); border:none;">🗑️ Delete</button>
-                                    </div>
+                                    <div style="display:flex; gap:8px;"><button class="btn-exam" onclick="openEditModal('${doc.id}')" style="padding:4px 10px; font-size:12px; background:#2196F3; border:none;">✏️ Edit</button><button class="btn-exam" onclick="deleteContentItem('${doc.id}')" style="padding:4px 10px; font-size:12px; background:var(--wrong-red); border:none;">🗑️ Delete</button></div>
                                 </div>
                                 <div style="font-weight:bold; margin-bottom:8px;">${data.question}</div>
                                 ${data.imageUrl ? `<img src="${data.imageUrl}" style="max-height:80px; border-radius:4px; margin-bottom:8px; display:block;">` : ''}
-                                <div style="font-size:13px; color:var(--text-muted); line-height:1.4;">
-                                    A: ${data.options?.A || '-'} | B: ${data.options?.B || '-'} | C: ${data.options?.C || '-'} | D: ${data.options?.D || '-'}
-                                </div>
-                                <div style="margin-top:6px; font-size:13px; color:var(--correct-green);">Correct: ${answersStr}</div>
+                                <div style="font-size:13px; color:var(--text-muted); line-height:1.4;">A: ${data.options?.A || '-'} | B: ${data.options?.B || '-'} | C: ${data.options?.C || '-'} | D: ${data.options?.D || '-'}</div>
+                                <div style="margin-top:6px; font-size:13px; color:var(--correct-green);">Correct: ${answersStr} ${data.isNeetGrading ? '<span style="color:var(--primary-yellow); margin-left:10px;">(+4/-1 Grading)</span>' : ''}</div>
                             </div>
                         `;
                     } else {
@@ -648,35 +649,30 @@
                                     <button class="btn-exam" onclick="deleteContentItem('${doc.id}')" style="padding:4px 10px; font-size:12px; background:var(--wrong-red); border:none;">🗑️ Delete</button>
                                 </div>
                                 <div style="font-weight:bold; margin-bottom:5px;">📄 ${data.title}</div>
-                                <a href="${data.fileUrl}" target="_blank" style="color:var(--primary-yellow); font-size:13px;">View / Open Document &rarr;</a>
+                                <a href="${data.fileUrl}" target="_blank" style="color:var(--primary-yellow); font-size:13px;">View Document &rarr;</a>
                             </div>
                         `;
                     }
                 });
-                
                 let titleMsg = adminManageSelectedPath.length > 0 ? `<p style="color:white; font-size:14px; margin-bottom:15px;">Showing results for: <b>${adminManageSelectedPath.join(' > ')}</b></p>` : `<p style="color:white; font-size:14px; margin-bottom:15px;">Showing 50 most recent uploads across all folders.</p>`;
                 listEl.innerHTML = titleMsg + html;
-                
             } catch(e) { listEl.innerHTML = `<p style="color:var(--wrong-red);">Error loading items: ${e.message}</p>`; }
         }
 
         async function deleteContentItem(docId) {
             if(!confirm("Are you sure you want to permanently delete this item?")) return;
-            try {
-                await db.collection("content").doc(docId).delete();
-                const card = document.getElementById("item_" + docId);
-                if(card) card.remove();
-                showNotification("🗑️ Item deleted successfully!");
-            } catch(e) { showNotification("❌ Delete failed: " + e.message); }
+            try { await db.collection("content").doc(docId).delete(); document.getElementById("item_" + docId).remove(); showNotification("🗑️ Item deleted successfully!"); } 
+            catch(e) { showNotification("❌ Delete failed: " + e.message); }
         }
 
         function openEditModal(docId) {
-            const data = loadedItemsCache[docId];
-            if(!data) return;
+            const data = loadedItemsCache[docId]; if(!data) return;
             document.getElementById('editDocId').value = docId; document.getElementById('editQuestion').value = data.question || '';
             document.getElementById('editOptA').value = data.options?.A || ''; document.getElementById('editOptB').value = data.options?.B || '';
             document.getElementById('editOptC').value = data.options?.C || ''; document.getElementById('editOptD').value = data.options?.D || '';
             document.getElementById('editExplanation').value = data.explanation || '';
+            document.getElementById('editNeetGrading').checked = data.isNeetGrading !== false; // Default true if undefined
+            
             const correct = data.correctAnswers || [];
             document.querySelectorAll('.editCorrectCb').forEach(cb => { cb.checked = correct.includes(cb.value); });
             document.getElementById('editModal').style.display = 'flex';
@@ -687,35 +683,42 @@
             const docId = document.getElementById('editDocId').value;
             const question = document.getElementById('editQuestion').value.trim();
             const options = { A: document.getElementById('editOptA').value.trim(), B: document.getElementById('editOptB').value.trim(), C: document.getElementById('editOptC').value.trim(), D: document.getElementById('editOptD').value.trim() };
-            const checkedCbs = document.querySelectorAll('.editCorrectCb:checked');
-            const correctAnswers = Array.from(checkedCbs).map(cb => cb.value);
+            const correctAnswers = Array.from(document.querySelectorAll('.editCorrectCb:checked')).map(cb => cb.value);
             const explanation = document.getElementById('editExplanation').value.trim();
+            const isNeetGrading = document.getElementById('editNeetGrading').checked;
 
-            if(!question || !options.A || !options.B || correctAnswers.length === 0) { alert("Question, Option A, Option B, and at least one correct answer are required."); return; }
-
+            if(!question || !options.A || !options.B || correctAnswers.length === 0) { alert("Question, Options A/B, and Correct Answer required."); return; }
             try {
-                await db.collection("content").doc(docId).update({ question: question, options: options, correctAnswers: correctAnswers, explanation: explanation });
-                closeEditModal(); showNotification("✅ Changes saved successfully!"); loadContentForManagement();
+                await db.collection("content").doc(docId).update({ question: question, options: options, correctAnswers: correctAnswers, explanation: explanation, isNeetGrading: isNeetGrading });
+                closeEditModal(); showNotification("✅ Changes saved!"); loadContentForManagement();
             } catch(e) { showNotification("❌ Update failed: " + e.message); }
         }
 
-        // --- 5. THE QUIZ ENGINE (Mock Test Style) ---
-        let quizState = { questions: [], currentIndex: 0, userAnswers: {}, showAnswerTriggered: {}, timer: null, secondsPassed: 0 };
+        async function changeAdminPassword() {
+            const p1 = document.getElementById('newAdminPass').value; const p2 = document.getElementById('confirmAdminPass').value;
+            if(p1.length < 6) { showNotification("⚠️ Password must be at least 6 characters."); return; }
+            if(p1 !== p2) { showNotification("❌ Passwords do not match!"); return; }
+            try { await db.collection("settings").doc("admin_auth").set({ password: p1 }); document.getElementById('newAdminPass').value = ""; document.getElementById('confirmAdminPass').value = ""; showNotification("✅ Password changed successfully!"); } 
+            catch(e) { showNotification("❌ Error updating password: " + e.message); }
+        }
+
+        // --- 5. THE QUIZ ENGINE (With Doubts & +4/-1) ---
+        let quizState = { questions: [], currentIndex: 0, userAnswers: {}, showAnswerTriggered: {}, flaggedDoubts: {}, timer: null, secondsPassed: 0 };
 
         async function _initiateQuizEngine() {
             const pathString = currentPath.join(' > ');
             document.getElementById('breadcrumb-text').innerText = "Home / " + pathString + " / Active Quiz"; 
             const mainContent = document.getElementById('dynamic-content');
-            mainContent.innerHTML = `<div class="card"><h2 style="color:var(--primary-yellow);">Loading Quiz...</h2><p>Fetching questions from the database.</p></div>`;
+            mainContent.innerHTML = `<div class="card"><h2 style="color:var(--primary-yellow);">Loading Quiz...</h2><p>Fetching questions...</p></div>`;
 
             try {
                 const snapshot = await db.collection("content").where("type", "==", "mcq").where("path", "==", pathString).get();
-                if (snapshot.empty) { mainContent.innerHTML = `<div class="card"><h2>No Questions Yet</h2><p style="color:var(--text-muted);">The admin hasn't uploaded questions to this specific folder yet.</p><button class="btn-exam" onclick="goBack()">&larr; Go Back</button></div>`; return; }
+                if (snapshot.empty) { mainContent.innerHTML = `<div class="card"><h2>No Questions Yet</h2><p style="color:var(--text-muted);">Admin hasn't uploaded questions here yet.</p><button class="btn-exam" onclick="goBack()">&larr; Go Back</button></div>`; return; }
 
                 quizState.questions = [];
                 snapshot.forEach(doc => quizState.questions.push({ id: doc.id, ...doc.data() }));
                 quizState.questions.sort(() => Math.random() - 0.5);
-                quizState.currentIndex = 0; quizState.userAnswers = {}; quizState.showAnswerTriggered = {}; quizState.secondsPassed = 0;
+                quizState.currentIndex = 0; quizState.userAnswers = {}; quizState.showAnswerTriggered = {}; quizState.flaggedDoubts = {}; quizState.secondsPassed = 0;
                 
                 clearInterval(quizState.timer);
                 quizState.timer = setInterval(() => {
@@ -727,18 +730,27 @@
             } catch (error) { mainContent.innerHTML = `<div class="card"><h2>Error</h2><p>${error.message}</p><button class="btn-exam" onclick="goBack()">&larr; Go Back</button></div>`; }
         }
 
+        function toggleFlag() {
+            quizState.flaggedDoubts[quizState.currentIndex] = !quizState.flaggedDoubts[quizState.currentIndex];
+            const btn = document.getElementById('flagDoubtBtn');
+            if(quizState.flaggedDoubts[quizState.currentIndex]) { btn.classList.add('flagged'); btn.innerText = '⭐ Flagged'; }
+            else { btn.classList.remove('flagged'); btn.innerText = '⭐ Flag for Review'; }
+        }
+
         function _renderQuizQuestion() {
             const mainContent = document.getElementById('dynamic-content');
             const q = quizState.questions[quizState.currentIndex];
             let multiText = q.correctAnswers.length > 1 ? `<span style="color:var(--primary-yellow); font-size:12px;">(Select all that apply)</span>` : "";
             let selectedNow = quizState.userAnswers[quizState.currentIndex] || []; let hasPeeked = quizState.showAnswerTriggered[quizState.currentIndex];
+            let isFlagged = quizState.flaggedDoubts[quizState.currentIndex];
 
             let paletteHtml = '<div class="question-palette">';
             for(let i=0; i<quizState.questions.length; i++) {
                 let isAttempted = quizState.userAnswers[i] && quizState.userAnswers[i].length > 0;
                 let bg = quizState.currentIndex === i ? 'var(--primary-yellow)' : (isAttempted ? '#4CAF50' : '#2a2a2a');
                 let color = quizState.currentIndex === i ? '#000' : '#fff';
-                paletteHtml += `<button onclick="jumpToQuestion(${i})" style="width:35px; height:35px; border-radius:5px; border:1px solid var(--border-color); background:${bg}; color:${color}; font-weight:bold; cursor:pointer;">${i+1}</button>`;
+                let flagStar = quizState.flaggedDoubts[i] ? '⭐' : '';
+                paletteHtml += `<button onclick="jumpToQuestion(${i})" style="width:35px; height:35px; border-radius:5px; border:1px solid var(--border-color); background:${bg}; color:${color}; font-weight:bold; cursor:pointer;">${i+1}${flagStar}</button>`;
             }
             paletteHtml += '</div>';
 
@@ -754,10 +766,13 @@
                 <div class="card">
                     <div class="quiz-header">
                         <span style="color:var(--text-muted);">Question ${quizState.currentIndex + 1} of ${quizState.questions.length} ${multiText}</span>
-                        <span class="quiz-timer">⏱ <span id="quizTimeDisplay">${formatTime(quizState.secondsPassed)}</span></span>
+                        <div style="display:flex; align-items:center; gap:15px;">
+                            <button id="flagDoubtBtn" class="flag-btn ${isFlagged ? 'flagged' : ''}" onclick="toggleFlag()">${isFlagged ? '⭐ Flagged' : '⭐ Flag for Review'}</button>
+                            <span class="quiz-timer">⏱ <span id="quizTimeDisplay">${formatTime(quizState.secondsPassed)}</span></span>
+                        </div>
                     </div>
                     ${paletteHtml}
-                    ${q.imageUrl ? `<img src="${q.imageUrl}" class="quiz-image">` : ''}
+                    ${q.imageUrl ? `<img src="${q.imageUrl}" class="quiz-image" onclick="expandImage(this.src)" title="Click to enlarge">` : ''}
                     <div class="quiz-question-text">${q.question}</div>
                     <div id="optionsContainer">${optionsHtml}</div>
                     <div id="explanationBox" class="quiz-explanation" style="display:${hasPeeked ? 'block' : 'none'}"><b>Explanation:</b><br><span id="expText">${q.explanation || "No explanation provided."}</span></div>
@@ -788,26 +803,93 @@
         function _nextQuestion() { if(quizState.currentIndex < quizState.questions.length - 1) { quizState.currentIndex++; _renderQuizQuestion(); } }
         function _prevQuestion() { if(quizState.currentIndex > 0) { quizState.currentIndex--; _renderQuizQuestion(); } }
 
-        function finishQuiz() {
-            clearInterval(quizState.timer); let attempted = 0; let correct = 0;
+        async function finishQuiz() {
+            clearInterval(quizState.timer); 
+            let attempted = 0; let totalScore = 0; let correctCount = 0;
+            let flaggedListHtml = '';
+
             quizState.questions.forEach((q, index) => {
                 let userAnsArray = quizState.userAnswers[index] || [];
-                if (userAnsArray.length > 0) { attempted++; let userAnsStr = userAnsArray.sort().join(','); let correctAnsStr = q.correctAnswers.sort().join(','); if (userAnsStr === correctAnsStr) { correct++; } }
+                let isAttempted = userAnsArray.length > 0;
+                let isCorrect = false;
+
+                if (isAttempted) {
+                    attempted++;
+                    let userAnsStr = userAnsArray.sort().join(','); 
+                    let correctAnsStr = q.correctAnswers.sort().join(','); 
+                    if (userAnsStr === correctAnsStr) { isCorrect = true; correctCount++; }
+                }
+
+                // Grading Logic
+                if (q.isNeetGrading !== false) {
+                    // NEET Standard +4/-1
+                    if (isCorrect) totalScore += 4;
+                    else if (isAttempted && !isCorrect) totalScore -= 1;
+                } else {
+                    // Standard +1/0
+                    if (isCorrect) totalScore += 1;
+                }
+
+                // Handle Flagged questions saving & display
+                if(quizState.flaggedDoubts[index]) {
+                    flaggedListHtml += `
+                        <div style="background:#2a2a2a; border-left:4px solid var(--primary-yellow); padding:15px; margin-bottom:15px; text-align:left;">
+                            <p style="margin-top:0;"><b>Q:</b> ${q.question}</p>
+                            <p style="color:var(--correct-green); margin-bottom:5px;"><b>Correct Answer:</b> ${q.correctAnswers.join(',')}</p>
+                            <p style="color:var(--text-muted); font-size:14px;"><b>Explanation:</b> ${q.explanation || 'None'}</p>
+                        </div>
+                    `;
+                    // Push to Admin Doubts Database if user is logged in
+                    if (currentUser) {
+                        db.collection("flagged_doubts").add({
+                            studentId: currentUser.uid,
+                            studentName: currentUser.displayName,
+                            questionId: q.id,
+                            questionText: q.question,
+                            path: q.path,
+                            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                        });
+                    }
+                }
             });
 
-            let accuracy = attempted === 0 ? 0 : Math.round((correct / attempted) * 100); let timeStr = formatTime(quizState.secondsPassed);
+            let accuracy = attempted === 0 ? 0 : Math.round((correctCount / attempted) * 100); 
+            let timeStr = formatTime(quizState.secondsPassed);
+            let pathString = currentPath.join(' > ');
+            let studentName = currentUser ? currentUser.displayName : "Anonymous";
+
+            // Push to Leaderboard
+            if (currentUser && attempted > 0) {
+                db.collection("leaderboards").add({
+                    userId: currentUser.uid,
+                    userName: currentUser.displayName,
+                    quizPath: pathString,
+                    score: totalScore,
+                    accuracy: accuracy,
+                    timeStr: timeStr,
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                });
+            }
+
             const mainContent = document.getElementById('dynamic-content');
             mainContent.innerHTML = `
                 <div class="card" style="text-align: center;">
-                    <h2 style="font-size: 32px; color: var(--primary-yellow); margin-bottom: 5px;">Quiz Complete!</h2>
-                    <p style="color: var(--text-muted); margin-bottom: 30px;">Here is your final session breakdown.</p>
+                    <h2 style="font-size: 32px; color: var(--primary-yellow); margin-bottom: 5px;">Test Complete!</h2>
+                    <p style="color: var(--text-muted); margin-bottom: 30px;">Great effort, ${studentName.split(" ")[0]}! Here is your final breakdown.</p>
                     <div style="display:flex; justify-content:center; gap:20px; flex-wrap:wrap; margin-bottom: 30px;">
+                        <div style="background:#2a2a2a; padding: 20px; border-radius: 8px; min-width: 120px;"><div style="font-size: 36px; color: var(--primary-yellow); font-weight: bold;">${totalScore}</div><div style="color: var(--text-muted); font-size: 14px;">Total Score</div></div>
                         <div style="background:#2a2a2a; padding: 20px; border-radius: 8px; min-width: 120px;"><div style="font-size: 36px; color: white; font-weight: bold;">${attempted}</div><div style="color: var(--text-muted); font-size: 14px;">Attempted</div></div>
-                        <div style="background:#2a2a2a; padding: 20px; border-radius: 8px; min-width: 120px;"><div style="font-size: 36px; color: var(--correct-green); font-weight: bold;">${correct}</div><div style="color: var(--text-muted); font-size: 14px;">Correct</div></div>
-                        <div style="background:#2a2a2a; padding: 20px; border-radius: 8px; min-width: 120px;"><div style="font-size: 36px; color: var(--primary-yellow); font-weight: bold;">${accuracy}%</div><div style="color: var(--text-muted); font-size: 14px;">Accuracy</div></div>
+                        <div style="background:#2a2a2a; padding: 20px; border-radius: 8px; min-width: 120px;"><div style="font-size: 36px; color: var(--correct-green); font-weight: bold;">${accuracy}%</div><div style="color: var(--text-muted); font-size: 14px;">Accuracy</div></div>
                         <div style="background:#2a2a2a; padding: 20px; border-radius: 8px; min-width: 120px;"><div style="font-size: 36px; color: white; font-weight: bold;">${timeStr}</div><div style="color: var(--text-muted); font-size: 14px;">Time Taken</div></div>
                     </div>
-                    <button class="btn-exam" onclick="goBack()" style="width: 200px;">&larr; Exit to Dashboard</button>
+                    
+                    ${flaggedListHtml !== '' ? `
+                        <h3 style="text-align:left; color:var(--primary-yellow); border-bottom:1px solid #333; padding-bottom:10px;">⭐ Your Flagged Questions Review</h3>
+                        ${flaggedListHtml}
+                        <p style="color:var(--text-muted); font-size:13px; text-align:left;">*These doubts have been logged for the Admin to review.</p>
+                    ` : ''}
+                    
+                    <button class="btn-exam" onclick="goBack()" style="width: 200px; margin-top:20px;">&larr; Exit to Dashboard</button>
                 </div>
             `;
         }
@@ -821,16 +903,15 @@
             for (let node of currentPath) { if(currentLevel[node]) currentLevel = currentLevel[node]; else { window.location.hash = '#/home'; return; } }
 
             if (Array.isArray(currentLevel) || typeof currentLevel === 'string') {
-                let topicName = currentPath[currentPath.length - 1]; let isGK = currentPath[0] === "General Knowledge"; let leaderboardType = isGK ? 'GK Leaderboard' : 'NEET Practice Leaderboard';
+                let topicName = currentPath[currentPath.length - 1]; let isGK = currentPath[0] === "General Knowledge";
                 if (requiresQuizLogin(currentPath)) {
-                    let welcomeMessage = currentStudentName === "Anonymous Student" ? "You are playing as an Anonymous Student. Score not tracked globally." : `Welcome back, <span style="color: var(--primary-yellow); font-weight: bold;">${currentStudentName}</span>!`;
-                    mainContent.innerHTML = `<div class="card"><h2>${topicName} Practice</h2><p style="color: var(--text-muted); margin-bottom: 25px;">${welcomeMessage}</p><div style="display: flex; gap: 15px;"><button class="btn-exam" onclick="startQuiz('${leaderboardType}')" style="background-color: var(--primary-yellow); color: black; border: none; width: 200px;">Start Quiz &rarr;</button><button class="btn-exam" onclick="goBack()" style="width: 150px; background-color: #333;">&larr; Go Back</button></div></div>`;
+                    let welcomeMessage = !currentUser ? "Sign in to track your scores on the global leaderboard!" : `Ready for practice, <span style="color: var(--primary-yellow); font-weight: bold;">${currentUser.displayName.split(" ")[0]}</span>?`;
+                    mainContent.innerHTML = `<div class="card"><h2>${topicName} Practice</h2><p style="color: var(--text-muted); margin-bottom: 25px;">${welcomeMessage}</p><div style="display: flex; gap: 15px;"><button class="btn-exam" onclick="startQuiz()" style="background-color: var(--primary-yellow); color: black; border: none; width: 200px;">Start Quiz &rarr;</button><button class="btn-exam" onclick="goBack()" style="width: 150px; background-color: #333;">&larr; Go Back</button></div></div>`;
                 } else {
                     mainContent.innerHTML = `<div class="card"><h2>${topicName} Resources</h2><p style="color: var(--text-muted);">Study materials will appear here once uploaded via Admin Panel.</p><button class="btn-exam" onclick="goBack()" style="width: 150px; margin-top:20px; background-color: #333;">&larr; Go Back</button></div>`;
                 }
                 return;
             }
-
             let title = currentPath.length === 0 ? "Select Exam:" : currentPath[currentPath.length - 1];
             let html = `<div class="card"><h2>${title}</h2><div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px;">`;
             for (let key in currentLevel) { html += `<button class="btn-exam" onclick="navigateTo('${key}')">${key}</button>`; }
@@ -844,10 +925,49 @@
             return triggers.some(trigger => pathString.includes(trigger));
         }
 
-        function _renderLeaderboardOptions() { document.getElementById('breadcrumb-text').innerText = "Home / Leaderboard"; document.getElementById('dynamic-content').innerHTML = `<div class="card"><h2>🏆 Select Leaderboard</h2><div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 15px; margin-top: 20px;"><button class="btn-exam" onclick="fetchLiveLeaderboard('NEET Practice Leaderboard')">1. NEET PRACTICE</button><button class="btn-exam" onclick="fetchLiveLeaderboard('NEET Mock Test Leaderboard')">2. NEET MOCK TESTS</button><button class="btn-exam" onclick="fetchLiveLeaderboard('GK Leaderboard')" style="border-color: #4CAF50;">3. GENERAL KNOWLEDGE</button></div></div>`; }
-        function fetchLiveLeaderboard(type) { window.location.hash = '#/board/' + type; }
-        function _renderLiveLeaderboard(type) { document.getElementById('dynamic-content').innerHTML = `<div class="card"><h2>🏆 ${type}</h2><p style="color:var(--primary-yellow);">Fetching rankings...</p></div>`; }
-        function startQuiz(leaderboardCategory) { window.location.hash = '#/quiz'; }
+        // --- TRUE LEADERBOARD RENDERING ---
+        function _renderLeaderboardOptions() { 
+            document.getElementById('breadcrumb-text').innerText = "Home / Leaderboard"; 
+            document.getElementById('dynamic-content').innerHTML = `
+                <div class="card">
+                    <h2>🏆 Global Leaderboards</h2>
+                    <p style="color:var(--text-muted);">Select a category to view the top 10 scores.</p>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 15px; margin-top: 20px;">
+                        <button class="btn-exam" onclick="fetchLiveLeaderboard('NEET > MCQs Practice')">1. NEET MCQs (Overall)</button>
+                        <button class="btn-exam" onclick="fetchLiveLeaderboard('General Knowledge > Current Affairs')">2. CURRENT AFFAIRS</button>
+                    </div>
+                </div>`; 
+        }
+        
+        async function fetchLiveLeaderboard(pathPrefix) { 
+            const mainContent = document.getElementById('dynamic-content');
+            mainContent.innerHTML = `<div class="card"><h2>🏆 Fetching Leaderboard...</h2></div>`;
+            try {
+                // Fetch top 10 scores that match the requested path prefix
+                const snapshot = await db.collection("leaderboards")
+                    .where("quizPath", ">=", pathPrefix)
+                    .where("quizPath", "<=", pathPrefix + "\uf8ff")
+                    .orderBy("quizPath") // Required by Firestore for range filters
+                    .orderBy("score", "desc")
+                    .limit(10)
+                    .get();
+
+                if (snapshot.empty) { mainContent.innerHTML = `<div class="card"><h2>🏆 Leaderboard: ${pathPrefix.split(' > ')[1]}</h2><p style="color:var(--text-muted);">No scores recorded yet. Be the first!</p><button class="btn-exam" onclick="showLeaderboardOptions()" style="margin-top:15px;">&larr; Back</button></div>`; return; }
+
+                let html = `<div class="card"><h2>🏆 Top 10: ${pathPrefix.split(' > ')[1]}</h2><table><tr><th>Rank</th><th>Student</th><th>Score</th><th>Accuracy</th><th>Time</th></tr>`;
+                let rank = 1;
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    let medal = rank === 1 ? "🥇 " : (rank === 2 ? "🥈 " : (rank === 3 ? "🥉 " : rank + ". "));
+                    html += `<tr><td>${medal}</td><td><b>${data.userName}</b></td><td style="color:var(--correct-green); font-weight:bold;">${data.score}</td><td>${data.accuracy}%</td><td>${data.timeStr}</td></tr>`;
+                    rank++;
+                });
+                html += `</table><button class="btn-exam" onclick="showLeaderboardOptions()" style="margin-top:20px; background:#333;">&larr; Back to Categories</button></div>`;
+                mainContent.innerHTML = html;
+            } catch(e) { mainContent.innerHTML = `<div class="card"><h2 style="color:var(--wrong-red);">Error</h2><p>${e.message}</p></div>`; }
+        }
+        
+        function startQuiz() { window.location.hash = '#/quiz'; }
         
         function openSearch() { document.getElementById('searchWrapper').classList.add('active'); document.getElementById('searchInput').focus(); }
         function closeSearch() { document.getElementById('searchWrapper').classList.remove('active'); document.getElementById('searchInput').value = ''; document.getElementById('searchSuggestions').style.display = 'none'; }
@@ -861,9 +981,6 @@
             if(results.length > 0) { dropdown.innerHTML = results.slice(0, 8).map(pathArray => { const cleanPath = JSON.stringify(pathArray).replace(/"/g, "'"); return `<div class="suggestion-item" onclick="jumpToSection(${cleanPath}); closeSearch();">🔍 <span>${pathArray.join(" <span style='color:var(--text-muted);font-size:12px;'>&rarr;</span> ")}</span></div>`; }).join(''); } else { dropdown.innerHTML = `<div class="suggestion-item" style="color: var(--text-muted);">No results match "${query}"</div>`; }
             dropdown.style.display = 'block';
         }
-        
-        function saveIdentity() { let inputName = document.getElementById('globalNameInput').value.trim(); if(inputName !== "") { localStorage.setItem('mcqsprep_student_name', inputName); currentStudentName = inputName; document.getElementById('identityModal').style.display = 'none'; updateUserBadge(); _renderView(); } }
-        function skipIdentity() { sessionStorage.setItem('identity_skipped', 'true'); currentStudentName = "Anonymous Student"; document.getElementById('identityModal').style.display = 'none'; updateUserBadge(); _renderView(); }
         function showNotification(message) { const notif = document.getElementById('notification'); notif.innerText = message; notif.style.display = 'block'; setTimeout(() => { notif.style.display = 'none'; }, 3000); }
     </script>
 </body>
