@@ -290,7 +290,7 @@
                 if(user.photoURL) { photoDisplay.src = user.photoURL; photoDisplay.style.display = 'block'; }
                 
                 badge.style.display = 'flex';
-                loginNavBtn.style.display = 'none'; // Hide manual sign-in button
+                loginNavBtn.style.display = 'none'; 
                 authModal.style.display = 'none';
 
                 // Save user info to DB silently
@@ -303,7 +303,7 @@
 
             } else {
                 badge.style.display = 'none';
-                loginNavBtn.style.display = 'flex'; // Show manual sign-in button
+                loginNavBtn.style.display = 'flex'; 
                 
                 if (window.location.hash !== '#/admin' && window.location.hash !== '#/admin-panel') {
                     if (!sessionStorage.getItem('auth_skipped')) {
@@ -332,7 +332,8 @@
             if (!hash || hash === 'home') { currentPath = []; _renderView(); } 
             else if (hash.startsWith('path/')) { currentPath = hash.replace('path/', '').split('/'); _renderView(); } 
             else if (hash === 'leaderboard') { _renderLeaderboardOptions(); } 
-            else if (hash.startsWith('board/')) { _renderLiveLeaderboard(hash.replace('board/', '')); } 
+            // 🔧 FIXED ROUTING FOR LEADERBOARD
+            else if (hash.startsWith('board/')) { fetchLiveLeaderboard(hash.replace('board/', '')); } 
             else if (hash === 'quiz') { _initiateQuizEngine(); }
             else if (hash === 'admin') { _renderAdminLogin(); }
             else if (hash === 'admin-panel') { _renderAdminPanel(); }
@@ -948,7 +949,7 @@
             return triggers.some(trigger => pathString.includes(trigger));
         }
 
-        // --- TRUE LEADERBOARD RENDERING ---
+        // --- 🔧 TRUE LEADERBOARD RENDERING (FIXED ROUTING) ---
         function _renderLeaderboardOptions() { 
             document.getElementById('breadcrumb-text').innerText = "Home / Leaderboard"; 
             document.getElementById('dynamic-content').innerHTML = `
@@ -961,9 +962,10 @@
                     </div>
 
                     <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 15px;">
-                        <button class="btn-exam" onclick="fetchLiveLeaderboard('NEET > MCQs Practice')">1. NEET PRACTICE</button>
-                        <button class="btn-exam" onclick="fetchLiveLeaderboard('NEET > Mock Test')">2. MOCK TEST</button>
-                        <button class="btn-exam" onclick="fetchLiveLeaderboard('General Knowledge')">3. GENERAL KNOWLEDGE</button>
+                        <!-- Using window.location.hash fixes the back button -->
+                        <button class="btn-exam" onclick="window.location.hash='#/board/NEET > MCQs Practice'">1. NEET PRACTICE</button>
+                        <button class="btn-exam" onclick="window.location.hash='#/board/NEET > Mock Test'">2. MOCK TEST</button>
+                        <button class="btn-exam" onclick="window.location.hash='#/board/General Knowledge'">3. GENERAL KNOWLEDGE</button>
                     </div>
                 </div>`; 
         }
@@ -983,12 +985,15 @@
                 const snapshot = await db.collection("leaderboards")
                     .where("quizPath", ">=", pathPrefix)
                     .where("quizPath", "<=", pathPrefix + "\uf8ff")
-                    .orderBy("quizPath") // Required by Firestore for range filters
+                    .orderBy("quizPath") 
                     .orderBy("score", "desc")
                     .limit(10)
                     .get();
 
-                if (snapshot.empty) { mainContent.innerHTML = `<div class="card"><h2>🏆 Leaderboard: ${pathPrefix.split(' > ').pop()}</h2>${cautionHtml}<p style="color:var(--text-muted);">No scores recorded yet. Be the first!</p><button class="btn-exam" onclick="showLeaderboardOptions()" style="margin-top:15px;">&larr; Back</button></div>`; return; }
+                if (snapshot.empty) { 
+                    mainContent.innerHTML = `<div class="card"><h2>🏆 Leaderboard: ${pathPrefix.split(' > ').pop()}</h2>${cautionHtml}<p style="color:var(--text-muted);">No scores recorded yet. Be the first!</p><button class="btn-exam" onclick="window.location.hash='#/leaderboard'" style="margin-top:15px;">&larr; Back</button></div>`; 
+                    return; 
+                }
 
                 let html = `<div class="card"><h2>🏆 Top 10: ${pathPrefix.split(' > ').pop()}</h2>${cautionHtml}<table><tr><th>Rank</th><th>Student</th><th>Score</th><th>Accuracy</th><th>Time</th></tr>`;
                 let rank = 1;
@@ -998,7 +1003,7 @@
                     html += `<tr><td>${medal}</td><td><b>${data.userName}</b></td><td style="color:var(--correct-green); font-weight:bold;">${data.score}</td><td>${data.accuracy}%</td><td>${data.timeStr}</td></tr>`;
                     rank++;
                 });
-                html += `</table><button class="btn-exam" onclick="showLeaderboardOptions()" style="margin-top:20px; background:#333;">&larr; Back to Categories</button></div>`;
+                html += `</table><button class="btn-exam" onclick="window.location.hash='#/leaderboard'" style="margin-top:20px; background:#333;">&larr; Back to Categories</button></div>`;
                 mainContent.innerHTML = html;
             } catch(e) { mainContent.innerHTML = `<div class="card"><h2 style="color:var(--wrong-red);">Error</h2><p>${e.message}</p></div>`; }
         }
