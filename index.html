@@ -13,7 +13,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MCQsPrep - Dashboard</title>
     
-    <!-- FIREBASE LIBRARIES (Added Auth) -->
+    <!-- FIREBASE LIBRARIES -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
@@ -140,7 +140,7 @@
             <h2 style="margin-top:0; color: var(--primary-yellow);">Welcome to MCQsPrep</h2>
             <p style="color: var(--text-muted); margin-bottom: 25px; font-size: 15px;">Sign in securely to save your progress, track your accuracy, and compete on the global leaderboards.</p>
             <button class="google-btn" onclick="signInWithGoogle()">
-                <img src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg" alt="Google">
+                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google">
                 Sign in with Google
             </button>
         </div>
@@ -196,7 +196,7 @@
         <div class="nav-links">
             <a onclick="goHome()">Home</a>
             <a onclick="showLeaderboardOptions()" class="highlight-nav">Leaderboard</a>
-            <div id="userBadge" class="user-badge" onclick="signOut()">
+            <div id="userBadge" class="user-badge" onclick="signOut()" style="cursor: pointer;" title="Click to sign out">
                 <img id="userPhotoDisplay" src="" alt="👤" style="display:none;">
                 <span id="userNameDisplay">Student</span>
             </div>
@@ -226,9 +226,10 @@
     <script>
         // --- 1. FIREBASE INITIALIZATION ---
         const firebaseConfig = {
-            apiKey: "AIzaSyDuIetjxv1THjWvWLvO0XqB_z5xBBXLwL8",
+            apiKey: "AIzaSyDuletjxV1THjWvWLvO0XqB_z5xBBXLwL8",
             authDomain: "mcqsprep.firebaseapp.com",
             projectId: "mcqsprep",
+            storageBucket: "mcqsprep.firebasestorage.app",
             messagingSenderId: "920181103186",
             appId: "1:920181103186:web:14c2ba261d4a6163db5d8b"
         };
