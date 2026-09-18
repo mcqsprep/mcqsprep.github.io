@@ -332,7 +332,6 @@
             if (!hash || hash === 'home') { currentPath = []; _renderView(); } 
             else if (hash.startsWith('path/')) { currentPath = hash.replace('path/', '').split('/'); _renderView(); } 
             else if (hash === 'leaderboard') { _renderLeaderboardOptions(); } 
-            // 🔧 FIXED ROUTING FOR LEADERBOARD
             else if (hash.startsWith('board/')) { fetchLiveLeaderboard(hash.replace('board/', '')); } 
             else if (hash === 'quiz') { _initiateQuizEngine(); }
             else if (hash === 'admin') { _renderAdminLogin(); }
@@ -823,12 +822,16 @@
         function _nextQuestion() { if(quizState.currentIndex < quizState.questions.length - 1) { quizState.currentIndex++; _renderQuizQuestion(); } }
         function _prevQuestion() { if(quizState.currentIndex > 0) { quizState.currentIndex--; _renderQuizQuestion(); } }
 
+        function formatTime(totalSeconds) {
+            const m = Math.floor(totalSeconds / 60); const s = totalSeconds % 60;
+            return `${m}:${s < 10 ? '0' : ''}${s}`;
+        }
+
         async function finishQuiz() {
             clearInterval(quizState.timer); 
             let attempted = 0; let totalScore = 0; let correctCount = 0;
             let flaggedListHtml = '';
 
-            // 🧠 SMART GRADING: Check if the current folder is "NEET"
             let isNeetSection = currentPath[0] === "NEET";
 
             quizState.questions.forEach((q, index) => {
@@ -843,17 +846,13 @@
                     if (userAnsStr === correctAnsStr) { isCorrect = true; correctCount++; }
                 }
 
-                // Apply the automatic grading rule
                 if (isNeetSection) {
-                    // NEET Standard (+4 for correct, -1 for incorrect)
                     if (isCorrect) totalScore += 4;
                     else if (isAttempted && !isCorrect) totalScore -= 1;
                 } else {
-                    // General Knowledge Standard (+1 for correct, 0 for incorrect)
                     if (isCorrect) totalScore += 1;
                 }
 
-                // Handle Flagged questions saving & display
                 if(quizState.flaggedDoubts[index]) {
                     flaggedListHtml += `
                         <div style="background:#2a2a2a; border-left:4px solid var(--primary-yellow); padding:15px; margin-bottom:15px; text-align:left;">
@@ -862,7 +861,6 @@
                             <p style="color:var(--text-muted); font-size:14px;"><b>Explanation:</b> ${q.explanation || 'None'}</p>
                         </div>
                     `;
-                    // Push to Admin Doubts Database if user is logged in
                     if (currentUser) {
                         db.collection("flagged_doubts").add({
                             studentId: currentUser.uid,
@@ -881,8 +879,8 @@
             let pathString = currentPath.join(' > ');
             let studentName = currentUser ? currentUser.displayName : "Anonymous";
 
-            // Push to Leaderboard
             if (currentUser && attempted > 0) {
+                // IMPORTANT: We now save the number of attempted questions so the leaderboard lock works
                 db.collection("leaderboards").add({
                     userId: currentUser.uid,
                     userName: currentUser.displayName,
@@ -890,6 +888,7 @@
                     score: totalScore,
                     accuracy: accuracy,
                     timeStr: timeStr,
+                    attemptedQuestions: attempted, // Added parameter
                     timestamp: firebase.firestore.FieldValue.serverTimestamp()
                 });
             }
@@ -949,7 +948,6 @@
             return triggers.some(trigger => pathString.includes(trigger));
         }
 
-        // --- 🔧 TRUE LEADERBOARD RENDERING (FIXED ROUTING) ---
         function _renderLeaderboardOptions() { 
             document.getElementById('breadcrumb-text').innerText = "Home / Leaderboard"; 
             document.getElementById('dynamic-content').innerHTML = `
@@ -962,7 +960,6 @@
                     </div>
 
                     <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 15px;">
-                        <!-- Using window.location.hash fixes the back button -->
                         <button class="btn-exam" onclick="window.location.hash='#/board/NEET > MCQs Practice'">1. NEET PRACTICE</button>
                         <button class="btn-exam" onclick="window.location.hash='#/board/NEET > Mock Test'">2. MOCK TEST</button>
                         <button class="btn-exam" onclick="window.location.hash='#/board/General Knowledge'">3. GENERAL KNOWLEDGE</button>
@@ -970,41 +967,135 @@
                 </div>`; 
         }
         
+        // --- SECURE LEADERBOARD LOGIC WITH RANKING AND LOCKOUT ---
         async function fetchLiveLeaderboard(pathPrefix) { 
             const mainContent = document.getElementById('dynamic-content');
+            
+            // Block completely anonymous users to prevent database errors
+            if (!currentUser) {
+                mainContent.innerHTML = `
+                    <div class="card">
+                        <h2>🏆 Fetching Leaderboard...</h2>
+                        <div style="background: rgba(244, 67, 54, 0.1); border-left: 4px solid var(--wrong-red); padding: 15px; margin: 20px 0; border-radius: 4px;">
+                            <span style="color: var(--wrong-red); font-weight: bold;">⚠️ ACCESS DENIED:</span> <span style="color: var(--text-light); font-size: 14px;">You must be signed in with Google to view the global leaderboards.</span>
+                        </div>
+                        <button class="btn-exam" onclick="window.location.hash='#/leaderboard'">&larr; Back</button>
+                    </div>`;
+                return;
+            }
+
             mainContent.innerHTML = `<div class="card"><h2>🏆 Fetching Leaderboard...</h2></div>`;
             
-            let cautionHtml = `
-                <div style="background: rgba(244, 67, 54, 0.1); border-left: 4px solid var(--wrong-red); padding: 10px; margin-bottom: 20px; border-radius: 4px;">
-                    <span style="color: var(--wrong-red); font-weight: bold; font-size: 13px;">⚠️ Only signed-in users can secure a rank on this board.</span>
-                </div>
-            `;
-
             try {
-                // Fetch top 10 scores that match the requested path prefix
-                const snapshot = await db.collection("leaderboards")
+                // 1. Gather User's Personal Stats without triggering composite index errors
+                const userSnapshot = await db.collection("leaderboards").where("userId", "==", currentUser.uid).get();
+                let totalQuestions = 0;
+                let totalTests = 0;
+                let myBestScore = -99999;
+                let myBestData = null;
+
+                userSnapshot.forEach(doc => {
+                    let data = doc.data();
+                    if (data.quizPath && data.quizPath.startsWith(pathPrefix)) {
+                        totalTests++;
+                        totalQuestions += (data.attemptedQuestions || 0);
+                        if (data.score > myBestScore) {
+                            myBestScore = data.score;
+                            myBestData = data;
+                        }
+                    }
+                });
+
+                // 2. Check if the threshold is met
+                let isMockTest = pathPrefix.includes('Mock Test');
+                let thresholdMet = false;
+                let requiredText = "";
+                let progressText = "";
+
+                if (isMockTest) {
+                    thresholdMet = (totalTests >= 5);
+                    requiredText = "5 Full Mock Tests";
+                    progressText = `${totalTests} / 5 Tests Completed`;
+                } else {
+                    thresholdMet = (totalQuestions >= 100);
+                    requiredText = "100 Practice Questions";
+                    progressText = `${totalQuestions} / 100 Questions Attempted`;
+                }
+
+                // If threshold failed, show Lock Screen
+                if (!thresholdMet) {
+                    mainContent.innerHTML = `
+                        <div class="card" style="text-align:center; padding: 40px 20px;">
+                            <h2 style="color: var(--primary-yellow); font-size: 28px; margin-bottom: 10px;">🔒 Leaderboard Locked</h2>
+                            <p style="color: var(--text-muted); font-size: 15px; max-width: 500px; margin: 0 auto 20px auto; line-height: 1.5;">
+                                To ensure competitive integrity, you must attempt a minimum of <b style="color: white;">${requiredText}</b> in this specific category before unlocking the global rankings.
+                            </p>
+                            <div style="background: #2a2a2a; border: 1px solid var(--border-color); padding: 15px 25px; border-radius: 8px; display: inline-block; margin-bottom: 30px;">
+                                <span style="color: var(--primary-yellow); font-weight: bold; margin-right: 10px;">Your Progress:</span> 
+                                <span style="color: white; font-weight: bold;">${progressText}</span>
+                            </div>
+                            <br>
+                            <button class="btn-exam" onclick="window.location.hash='#/leaderboard'">&larr; Back to Categories</button>
+                        </div>`;
+                    return;
+                }
+
+                // 3. Threshold Passed. Fetch top 100 to determine global ranks.
+                const boardSnapshot = await db.collection("leaderboards")
                     .where("quizPath", ">=", pathPrefix)
                     .where("quizPath", "<=", pathPrefix + "\uf8ff")
                     .orderBy("quizPath") 
                     .orderBy("score", "desc")
-                    .limit(10)
+                    .limit(100)
                     .get();
 
-                if (snapshot.empty) { 
-                    mainContent.innerHTML = `<div class="card"><h2>🏆 Leaderboard: ${pathPrefix.split(' > ').pop()}</h2>${cautionHtml}<p style="color:var(--text-muted);">No scores recorded yet. Be the first!</p><button class="btn-exam" onclick="window.location.hash='#/leaderboard'" style="margin-top:15px;">&larr; Back</button></div>`; 
-                    return; 
+                let html = `<div class="card"><h2>🏆 Top 10: ${pathPrefix.split(' > ').pop()}</h2>`;
+                html += `<table><tr><th>Rank</th><th>Student</th><th>Score</th><th>Accuracy</th><th>Time</th></tr>`;
+                
+                let myRank = ">100";
+                let inTop10 = false;
+                let docs = [];
+                boardSnapshot.forEach(doc => docs.push(doc.data()));
+
+                // Calculate User's Rank
+                for(let i = 0; i < docs.length; i++) {
+                    if (docs[i].userId === currentUser.uid && docs[i].score === myBestScore) {
+                        myRank = i + 1;
+                        if (myRank <= 10) inTop10 = true;
+                        break;
+                    }
                 }
 
-                let html = `<div class="card"><h2>🏆 Top 10: ${pathPrefix.split(' > ').pop()}</h2>${cautionHtml}<table><tr><th>Rank</th><th>Student</th><th>Score</th><th>Accuracy</th><th>Time</th></tr>`;
-                let rank = 1;
-                snapshot.forEach(doc => {
-                    const data = doc.data();
-                    let medal = rank === 1 ? "🥇 " : (rank === 2 ? "🥈 " : (rank === 3 ? "🥉 " : rank + ". "));
-                    html += `<tr><td>${medal}</td><td><b>${data.userName}</b></td><td style="color:var(--correct-green); font-weight:bold;">${data.score}</td><td>${data.accuracy}%</td><td>${data.timeStr}</td></tr>`;
-                    rank++;
-                });
-                html += `</table><button class="btn-exam" onclick="window.location.hash='#/leaderboard'" style="margin-top:20px; background:#333;">&larr; Back to Categories</button></div>`;
+                // Render Top 10 rows
+                let displayCount = Math.min(10, docs.length);
+                for(let i = 0; i < displayCount; i++) {
+                    let data = docs[i];
+                    let medal = (i === 0) ? "🥇 " : ((i === 1) ? "🥈 " : ((i === 2) ? "🥉 " : (i + 1) + ". "));
+                    let isMe = (data.userId === currentUser.uid);
+                    let rowStyle = isMe ? `style="background: rgba(253, 184, 19, 0.15);"` : "";
+                    
+                    html += `<tr ${rowStyle}><td>${medal}</td><td><b>${data.userName}</b> ${isMe ? '<span style="color:var(--primary-yellow); font-size:12px; margin-left:5px;">(You)</span>' : ''}</td><td style="color:var(--correct-green); font-weight:bold;">${data.score}</td><td>${data.accuracy}%</td><td>${data.timeStr}</td></tr>`;
+                }
+                html += `</table>`;
+
+                // 4. Render Personal Stats if user is NOT in the top 10
+                if (!inTop10 && myBestData) {
+                    html += `
+                        <div style="margin-top: 30px; background: #2a2a2a; border: 1px solid var(--border-color); border-left: 4px solid var(--primary-yellow); padding: 20px; border-radius: 4px;">
+                            <h4 style="margin: 0 0 15px 0; color: var(--primary-yellow); font-size: 18px;">Your Personal Best</h4>
+                            <div style="display: flex; gap: 30px; flex-wrap: wrap;">
+                                <div><span style="color:var(--text-muted); font-size:13px;">Global Rank</span><br><b style="font-size:20px; color: white;">${myRank}</b></div>
+                                <div><span style="color:var(--text-muted); font-size:13px;">Best Score</span><br><b style="font-size:20px; color:var(--correct-green);">${myBestData.score}</b></div>
+                                <div><span style="color:var(--text-muted); font-size:13px;">Accuracy</span><br><b style="font-size:20px; color: white;">${myBestData.accuracy}%</b></div>
+                                <div><span style="color:var(--text-muted); font-size:13px;">Total Tests Attempted</span><br><b style="font-size:20px; color: white;">${totalTests}</b></div>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                html += `<button class="btn-exam" onclick="window.location.hash='#/leaderboard'" style="margin-top:25px; background:#333;">&larr; Back to Categories</button></div>`;
                 mainContent.innerHTML = html;
+
             } catch(e) { mainContent.innerHTML = `<div class="card"><h2 style="color:var(--wrong-red);">Error</h2><p>${e.message}</p></div>`; }
         }
         
