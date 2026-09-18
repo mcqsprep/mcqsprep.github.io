@@ -137,6 +137,7 @@
     <!-- Auth Modal (Google Sign-In) -->
     <div id="authModal" class="modal-overlay">
         <div class="modal-content" style="text-align: center; max-width: 420px;">
+            <button class="close-modal" onclick="skipSignIn()">✕</button>
             <h2 style="margin-top:0; color: var(--primary-yellow);">Welcome to MCQsPrep</h2>
             <p style="color: var(--text-muted); margin-bottom: 25px; font-size: 15px;">Sign in securely to save your progress, track your accuracy, and compete on the global leaderboards.</p>
             <button class="google-btn" onclick="signInWithGoogle()">
@@ -166,10 +167,8 @@
             <div class="admin-row"><input type="text" id="editOptA" class="input-field" placeholder="Option A"><input type="text" id="editOptB" class="input-field" placeholder="Option B"></div>
             <div class="admin-row"><input type="text" id="editOptC" class="input-field" placeholder="Option C"><input type="text" id="editOptD" class="input-field" placeholder="Option D"></div>
             
-            <label style="color:var(--text-muted); font-size:13px;">Settings & Correct Answer(s):</label>
+            <label style="color:var(--text-muted); font-size:13px;">Correct Answer(s):</label>
             <div class="admin-checkbox-group" style="margin-bottom: 15px;">
-                <label><input type="checkbox" id="editNeetGrading"> <b>Enable NEET (+4/-1) Grading</b></label>
-                <div style="width: 100%; height: 1px; background: var(--border-color); margin: 5px 0;"></div>
                 <label><input type="checkbox" value="A" class="editCorrectCb"> A</label>
                 <label><input type="checkbox" value="B" class="editCorrectCb"> B</label>
                 <label><input type="checkbox" value="C" class="editCorrectCb"> C</label>
@@ -260,6 +259,11 @@
         let currentUser = null;
         let currentPath = []; 
 
+        function skipSignIn() {
+            sessionStorage.setItem('auth_skipped', 'true');
+            document.getElementById('authModal').style.display = 'none';
+        }
+
         auth.onAuthStateChanged((user) => {
             currentUser = user;
             const badge = document.getElementById('userBadge');
@@ -285,7 +289,9 @@
             } else {
                 badge.style.display = 'none';
                 if (window.location.hash !== '#/admin' && window.location.hash !== '#/admin-panel') {
-                    authModal.style.display = 'flex';
+                    if (!sessionStorage.getItem('auth_skipped')) {
+                        authModal.style.display = 'flex';
+                    }
                 }
             }
             if (!window.location.hash) window.location.hash = '#/home';
@@ -406,8 +412,6 @@
                                 <div class="admin-row"><input type="text" id="admOptC" class="input-field" placeholder="Option C"><input type="text" id="admOptD" class="input-field" placeholder="Option D"></div>
 
                                 <div class="admin-checkbox-group" style="margin-bottom: 15px;">
-                                    <label><input type="checkbox" id="admNeetGrading" checked> <b>Enable NEET (+4/-1) Grading</b></label>
-                                    <div style="width: 100%; height: 1px; background: var(--border-color); margin: 5px 0;"></div>
                                     <span style="font-weight: bold; width: 140px;">Correct Answer(s):</span>
                                     <label><input type="checkbox" value="A" class="admCorrectCb"> A</label>
                                     <label><input type="checkbox" value="B" class="admCorrectCb"> B</label>
@@ -583,7 +587,6 @@
                     let correctAnswers = Array.from(correctCbs).map(cb => cb.value);
                     const explanation = document.getElementById('admExplanation').value.trim();
                     const imageFile = document.getElementById('admQImage').files[0];
-                    const isNeetGrading = document.getElementById('admNeetGrading').checked;
 
                     if (!question || !options.A || !options.B || correctAnswers.length === 0) { throw new Error("Question, Option A, Option B, and Correct Answer are required."); }
 
@@ -592,7 +595,7 @@
 
                     await db.collection("content").add({
                         type: 'mcq', path: targetPathString, question: question, options: options, correctAnswers: correctAnswers, 
-                        explanation: explanation, imageUrl: imageUrl, isNeetGrading: isNeetGrading, timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                        explanation: explanation, imageUrl: imageUrl, timestamp: firebase.firestore.FieldValue.serverTimestamp()
                     });
 
                     document.getElementById('admQuestion').value = ""; document.getElementById('admQImage').value = ""; document.getElementById('admExplanation').value = "";
@@ -639,7 +642,7 @@
                                 <div style="font-weight:bold; margin-bottom:8px;">${data.question}</div>
                                 ${data.imageUrl ? `<img src="${data.imageUrl}" style="max-height:80px; border-radius:4px; margin-bottom:8px; display:block;">` : ''}
                                 <div style="font-size:13px; color:var(--text-muted); line-height:1.4;">A: ${data.options?.A || '-'} | B: ${data.options?.B || '-'} | C: ${data.options?.C || '-'} | D: ${data.options?.D || '-'}</div>
-                                <div style="margin-top:6px; font-size:13px; color:var(--correct-green);">Correct: ${answersStr} ${data.isNeetGrading ? '<span style="color:var(--primary-yellow); margin-left:10px;">(+4/-1 Grading)</span>' : ''}</div>
+                                <div style="margin-top:6px; font-size:13px; color:var(--correct-green);">Correct: ${answersStr}</div>
                             </div>
                         `;
                     } else {
@@ -672,7 +675,6 @@
             document.getElementById('editOptA').value = data.options?.A || ''; document.getElementById('editOptB').value = data.options?.B || '';
             document.getElementById('editOptC').value = data.options?.C || ''; document.getElementById('editOptD').value = data.options?.D || '';
             document.getElementById('editExplanation').value = data.explanation || '';
-            document.getElementById('editNeetGrading').checked = data.isNeetGrading !== false; // Default true if undefined
             
             const correct = data.correctAnswers || [];
             document.querySelectorAll('.editCorrectCb').forEach(cb => { cb.checked = correct.includes(cb.value); });
@@ -686,11 +688,10 @@
             const options = { A: document.getElementById('editOptA').value.trim(), B: document.getElementById('editOptB').value.trim(), C: document.getElementById('editOptC').value.trim(), D: document.getElementById('editOptD').value.trim() };
             const correctAnswers = Array.from(document.querySelectorAll('.editCorrectCb:checked')).map(cb => cb.value);
             const explanation = document.getElementById('editExplanation').value.trim();
-            const isNeetGrading = document.getElementById('editNeetGrading').checked;
 
             if(!question || !options.A || !options.B || correctAnswers.length === 0) { alert("Question, Options A/B, and Correct Answer required."); return; }
             try {
-                await db.collection("content").doc(docId).update({ question: question, options: options, correctAnswers: correctAnswers, explanation: explanation, isNeetGrading: isNeetGrading });
+                await db.collection("content").doc(docId).update({ question: question, options: options, correctAnswers: correctAnswers, explanation: explanation });
                 closeEditModal(); showNotification("✅ Changes saved!"); loadContentForManagement();
             } catch(e) { showNotification("❌ Update failed: " + e.message); }
         }
@@ -703,7 +704,7 @@
             catch(e) { showNotification("❌ Error updating password: " + e.message); }
         }
 
-        // --- 5. THE QUIZ ENGINE (With Doubts & +4/-1) ---
+        // --- 5. THE QUIZ ENGINE (With Doubts & Smart Grading) ---
         let quizState = { questions: [], currentIndex: 0, userAnswers: {}, showAnswerTriggered: {}, flaggedDoubts: {}, timer: null, secondsPassed: 0 };
 
         async function _initiateQuizEngine() {
@@ -809,6 +810,9 @@
             let attempted = 0; let totalScore = 0; let correctCount = 0;
             let flaggedListHtml = '';
 
+            // 🧠 SMART GRADING: Check if the current folder is "NEET"
+            let isNeetSection = currentPath[0] === "NEET";
+
             quizState.questions.forEach((q, index) => {
                 let userAnsArray = quizState.userAnswers[index] || [];
                 let isAttempted = userAnsArray.length > 0;
@@ -821,13 +825,13 @@
                     if (userAnsStr === correctAnsStr) { isCorrect = true; correctCount++; }
                 }
 
-                // Grading Logic
-                if (q.isNeetGrading !== false) {
-                    // NEET Standard +4/-1
+                // Apply the automatic grading rule
+                if (isNeetSection) {
+                    // NEET Standard (+4 for correct, -1 for incorrect)
                     if (isCorrect) totalScore += 4;
                     else if (isAttempted && !isCorrect) totalScore -= 1;
                 } else {
-                    // Standard +1/0
+                    // General Knowledge Standard (+1 for correct, 0 for incorrect)
                     if (isCorrect) totalScore += 1;
                 }
 
@@ -906,7 +910,8 @@
             if (Array.isArray(currentLevel) || typeof currentLevel === 'string') {
                 let topicName = currentPath[currentPath.length - 1]; let isGK = currentPath[0] === "General Knowledge";
                 if (requiresQuizLogin(currentPath)) {
-                    let welcomeMessage = !currentUser ? "Sign in to track your scores on the global leaderboard!" : `Ready for practice, <span style="color: var(--primary-yellow); font-weight: bold;">${currentUser.displayName.split(" ")[0]}</span>?`;
+                    let studentName = currentUser ? currentUser.displayName.split(" ")[0] : "Student";
+                    let welcomeMessage = !currentUser ? "Sign in to track your scores on the global leaderboard!" : `Ready for practice, <span style="color: var(--primary-yellow); font-weight: bold;">${studentName}</span>?`;
                     mainContent.innerHTML = `<div class="card"><h2>${topicName} Practice</h2><p style="color: var(--text-muted); margin-bottom: 25px;">${welcomeMessage}</p><div style="display: flex; gap: 15px;"><button class="btn-exam" onclick="startQuiz()" style="background-color: var(--primary-yellow); color: black; border: none; width: 200px;">Start Quiz &rarr;</button><button class="btn-exam" onclick="goBack()" style="width: 150px; background-color: #333;">&larr; Go Back</button></div></div>`;
                 } else {
                     mainContent.innerHTML = `<div class="card"><h2>${topicName} Resources</h2><p style="color: var(--text-muted);">Study materials will appear here once uploaded via Admin Panel.</p><button class="btn-exam" onclick="goBack()" style="width: 150px; margin-top:20px; background-color: #333;">&larr; Go Back</button></div>`;
