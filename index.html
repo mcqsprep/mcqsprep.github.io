@@ -445,7 +445,10 @@
                                 <input type="file" id="admPdfFile" class="input-field" accept=".pdf, image/*">
                             </div>
 
-                            <button id="uploadBtn" class="btn-exam" onclick="processAdminUpload()" style="background-color: #4CAF50; color: white; border: none; margin-top: 20px; width: 100%; max-width: 300px;">☁️ Upload to Database</button>
+                            <div style="display: flex; gap: 15px; margin-top: 20px; max-width: 450px;">
+                                <button id="uploadBtn" class="btn-exam" onclick="processAdminUpload()" style="background-color: #4CAF50; color: white; border: none; flex: 2;">☁️ Upload to Database</button>
+                                <button class="btn-exam" onclick="clearAdminUploadForm()" style="background-color: var(--wrong-red); color: white; border: none; flex: 1;">🧹 Clear Form</button>
+                            </div>
                         </div>
                     </div>
 
@@ -541,7 +544,29 @@
             }
         }
 
-        // Dropdowns for UPLOAD tab
+        // Dropdowns & Form Logic for UPLOAD tab
+        function toggleAdminFormType() {
+            let val = document.getElementById('admResourceType').value;
+            document.getElementById('admin-mcq-form').style.display = val === 'mcq' ? 'block' : 'none';
+            document.getElementById('admin-pdf-form').style.display = val === 'pdf' ? 'block' : 'none';
+        }
+
+        function clearAdminUploadForm() {
+            if(!confirm("Are you sure you want to clear all typed fields?")) return;
+            document.getElementById('admQuestion').value = ""; 
+            document.getElementById('admQImage').value = ""; 
+            document.getElementById('admExplanation').value = "";
+            document.getElementById('admOptA').value = ""; 
+            document.getElementById('admOptB').value = ""; 
+            document.getElementById('admOptC').value = ""; 
+            document.getElementById('admOptD').value = "";
+            document.querySelectorAll('.admCorrectCb').forEach(cb => cb.checked = false);
+            
+            document.getElementById('admPdfTitle').value = ""; 
+            document.getElementById('admPdfFile').value = "";
+            showNotification("🧹 Form cleared!");
+        }
+
         function _buildAdminSelectors() {
             const container = document.getElementById('dynamic-path-selectors');
             if(!container) return;
@@ -888,7 +913,7 @@
                     score: totalScore,
                     accuracy: accuracy,
                     timeStr: timeStr,
-                    attemptedQuestions: attempted, // Added parameter
+                    attemptedQuestions: attempted, 
                     timestamp: firebase.firestore.FieldValue.serverTimestamp()
                 });
             }
