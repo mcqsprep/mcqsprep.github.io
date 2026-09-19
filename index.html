@@ -56,8 +56,16 @@
         .nav-links a:hover { color: var(--primary-yellow); }
         .highlight-nav { color: var(--primary-yellow) !important; font-weight: bold; text-shadow: 0 0 8px rgba(253, 184, 19, 0.4); }
 
-        .user-badge { display: none; align-items: center; gap: 8px; background: linear-gradient(135deg, #2a2a2a, #1a1a1a); border: 1px solid var(--primary-yellow); color: var(--text-light); padding: 6px 16px; border-radius: 20px; font-size: 14px; font-weight: 600; box-shadow: 0 0 10px rgba(253, 184, 19, 0.2); transition: 0.3s; cursor: default; margin-left: 10px; }
+        /* Profile Menu Specific CSS */
+        .profile-wrapper { position: relative; display: flex; align-items: center; }
+        .user-badge { display: none; align-items: center; gap: 8px; background: linear-gradient(135deg, #2a2a2a, #1a1a1a); border: 1px solid var(--primary-yellow); color: var(--text-light); padding: 6px 16px; border-radius: 20px; font-size: 14px; font-weight: 600; box-shadow: 0 0 10px rgba(253, 184, 19, 0.2); transition: 0.3s; cursor: pointer; margin-left: 10px; }
         .user-badge img { width: 20px; height: 20px; border-radius: 50%; }
+        .profile-menu { display: none; position: absolute; top: calc(100% + 10px); right: 0; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 8px; box-shadow: 0 8px 24px rgba(0,0,0,0.8); width: 200px; z-index: 3000; overflow: hidden; }
+        .profile-menu.active { display: block; }
+        .profile-menu-item { padding: 15px 20px; color: white; display: flex; align-items: center; gap: 10px; cursor: pointer; transition: 0.2s; border-bottom: 1px solid var(--border-color); font-size: 15px; }
+        .profile-menu-item:hover { background: #333; color: var(--primary-yellow); }
+        .profile-menu-item:last-child { border-bottom: none; color: var(--wrong-red); }
+        .profile-menu-item:last-child:hover { background: rgba(244, 67, 54, 0.1); color: var(--wrong-red); }
         
         .breadcrumb { background-color: #1a1a1a; padding: 10px 40px; font-size: 14px; color: var(--text-muted); border-bottom: 1px solid var(--border-color); }
         .container { display: flex; padding: 40px; gap: 30px; max-width: 1400px; margin: 0 auto; }
@@ -205,16 +213,23 @@
             <a onclick="goHome()">Home</a>
             <a onclick="showLeaderboardOptions()" class="highlight-nav">Leaderboard</a>
             
-            <!-- Google Sign In Button -->
+            <!-- Google Sign In Button (Visible only to guests) -->
             <div id="loginNavBtn" class="user-badge" onclick="showAuthModal()" style="display:none; cursor: pointer; background: white; color: #444; border: none; padding: 6px 12px;" title="Sign in with Google">
                 <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="G" style="border-radius:0;">
                 <span style="font-weight: bold;">Sign In</span>
             </div>
 
-            <!-- Logged In User Profile -->
-            <div id="userBadge" class="user-badge" onclick="signOut()" style="cursor: pointer;" title="Click to sign out">
-                <img id="userPhotoDisplay" src="" alt="👤" style="display:none;">
-                <span id="userNameDisplay">Student</span>
+            <!-- Logged In User Profile with Dropdown -->
+            <div class="profile-wrapper">
+                <div id="userBadge" class="user-badge" onclick="toggleProfileMenu()" title="Profile Options">
+                    <img id="userPhotoDisplay" src="" alt="👤" style="display:none;">
+                    <span id="userNameDisplay">Student</span>
+                </div>
+                <div id="profileMenu" class="profile-menu">
+                    <div class="profile-menu-item" onclick="window.location.hash='#/progress'; toggleProfileMenu();">📊 Track Progress</div>
+                    <div class="profile-menu-item" onclick="window.location.hash='#/streak'; toggleProfileMenu();">🔥 My Streak</div>
+                    <div class="profile-menu-item" onclick="signOut(); toggleProfileMenu();">🚪 Sign Out</div>
+                </div>
             </div>
         </div>
     </nav>
@@ -225,14 +240,14 @@
         <div class="sidebar" id="main-sidebar">
             <div class="card">
                 <h3>Quick Links</h3>
-                <a class="action-link" onclick="jumpToSection(['NEET', 'NCERT Book'])">📚 NCERT Solutions</a>
+                <a class="action-link" onclick="jumpToSection(['NEET', 'NCERT Book'])">📚 NCERT Books</a>
                 <a class="action-link" onclick="jumpToSection(['NEET', 'PYQs'])">📄 Previous Year Papers</a>
             </div>
             <div class="card">
                 <h3>Essential Practice</h3>
                 <a class="action-link" onclick="jumpToSection(['NEET', 'MCQs Practice'])">📝 Subject-wise MCQs</a>
                 <a class="action-link" onclick="jumpToSection(['NEET', 'Mock Test'])">⏱️ Full-Length Mock Tests</a>
-                <a class="action-link" onclick="jumpToSection(['NEET', 'Practice Paper', 'Mixed'])">📅 Daily Quiz Challenge</a>
+                <a class="action-link" onclick="jumpToSection(['Daily Quiz Challenge'])">📅 Daily Quiz Challenge</a>
             </div>
         </div>
     </div>
@@ -258,6 +273,10 @@
         const CLOUDINARY_PRESET = "mcq_uploads";
 
         const appData = {
+            "Daily Quiz Challenge": { 
+                "NEET": [], 
+                "GK": [] 
+            },
             "NEET": {
                 "NCERT Book": { "Class 11": { "Zoology": [], "Botany": [], "Physics": [], "Chemistry": [] }, "Class 12": { "Zoology": [], "Botany": [], "Physics": [], "Chemistry": [] } },
                 "PYQs": { "2026": [], "2025": [], "2024": [], "2023": [], "2022": [], "2021": [], "2020": [], "2019": [], "2018": [], "2017": [], "2016": [], "2015": [], "2014": [], "2013": [], "2012": [], "2011": [] },
@@ -272,18 +291,20 @@
             }
         };
 
-        // --- AUTHENTICATION LOGIC ---
+        // --- AUTHENTICATION & PROFILE LOGIC ---
         let currentUser = null;
         let currentPath = []; 
 
-        function showAuthModal() {
-            document.getElementById('authModal').style.display = 'flex';
-        }
-
-        function skipSignIn() {
-            sessionStorage.setItem('auth_skipped', 'true');
-            document.getElementById('authModal').style.display = 'none';
-        }
+        function showAuthModal() { document.getElementById('authModal').style.display = 'flex'; }
+        function skipSignIn() { sessionStorage.setItem('auth_skipped', 'true'); document.getElementById('authModal').style.display = 'none'; }
+        
+        function toggleProfileMenu() { document.getElementById('profileMenu').classList.toggle('active'); }
+        window.addEventListener('click', function(e) {
+            if (!document.getElementById('userBadge').contains(e.target) && !document.getElementById('profileMenu').contains(e.target)) {
+                let menu = document.getElementById('profileMenu');
+                if (menu) menu.classList.remove('active');
+            }
+        });
 
         auth.onAuthStateChanged((user) => {
             currentUser = user;
@@ -313,34 +334,28 @@
                 loginNavBtn.style.display = 'flex'; 
                 
                 if (window.location.hash !== '#/admin' && window.location.hash !== '#/admin-panel') {
-                    if (!sessionStorage.getItem('auth_skipped')) {
-                        authModal.style.display = 'flex';
-                    }
+                    if (!sessionStorage.getItem('auth_skipped')) { authModal.style.display = 'flex'; }
                 }
             }
             if (!window.location.hash) window.location.hash = '#/home';
             handleRouting();
         });
 
-        function signInWithGoogle() {
-            auth.signInWithPopup(provider).catch(err => {
-                showNotification("❌ Sign-in Error: " + err.message);
-            });
-        }
-        function signOut() {
-            if(confirm("Are you sure you want to sign out?")) auth.signOut();
-        }
+        function signInWithGoogle() { auth.signInWithPopup(provider).catch(err => { showNotification("❌ Sign-in Error: " + err.message); }); }
+        function signOut() { if(confirm("Are you sure you want to sign out?")) auth.signOut(); }
 
         window.addEventListener('hashchange', handleRouting);
         function handleRouting() {
             let hash = decodeURIComponent(window.location.hash.replace('#/', ''));
-            document.getElementById('main-sidebar').style.display = (hash === 'admin' || hash === 'admin-panel' || hash === 'quiz') ? 'none' : 'block';
+            document.getElementById('main-sidebar').style.display = (hash === 'admin' || hash === 'admin-panel' || hash === 'quiz' || hash === 'progress' || hash === 'streak') ? 'none' : 'block';
 
             if (!hash || hash === 'home') { currentPath = []; _renderView(); } 
             else if (hash.startsWith('path/')) { currentPath = hash.replace('path/', '').split('/'); _renderView(); } 
             else if (hash === 'leaderboard') { _renderLeaderboardOptions(); } 
             else if (hash.startsWith('board/')) { fetchLiveLeaderboard(hash.replace('board/', '')); } 
             else if (hash === 'quiz') { _initiateQuizEngine(); }
+            else if (hash === 'progress') { _renderProgress(); }
+            else if (hash === 'streak') { _renderStreak(); }
             else if (hash === 'admin') { _renderAdminLogin(); }
             else if (hash === 'admin-panel') { _renderAdminPanel(); }
         }
@@ -351,14 +366,186 @@
         function showLeaderboardOptions() { window.location.hash = '#/leaderboard'; }
         function goBack() { window.history.back(); }
 
+        // --- STREAK ENGINE ---
+        let activeTime = 0;
+        let streakLogged = false;
+        setInterval(() => {
+            if (currentUser && !streakLogged) {
+                activeTime++;
+                if (activeTime >= 300) { // 5 minutes (300 seconds)
+                    logStreakActivity();
+                    streakLogged = true;
+                }
+            }
+        }, 1000);
+
+        async function logStreakActivity() {
+            if(!currentUser) return;
+            // Get local YYYY-MM-DD
+            let today = new Date();
+            let todayStr = new Date(today.getTime() - (today.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
+            try {
+                await db.collection("users").doc(currentUser.uid).set({
+                    activeDates: firebase.firestore.FieldValue.arrayUnion(todayStr)
+                }, { merge: true });
+                showNotification("🔥 Daily Streak Updated! (+1)");
+            } catch(e) {}
+        }
+
+        function calculateStreak(datesArray) {
+            if (!datesArray || datesArray.length === 0) return 0;
+            let sorted = [...new Set(datesArray)].sort().reverse(); 
+            
+            let today = new Date();
+            let todayStr = new Date(today.getTime() - (today.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
+            
+            let yesterday = new Date(today);
+            yesterday.setDate(yesterday.getDate() - 1);
+            let yesterdayStr = new Date(yesterday.getTime() - (yesterday.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
+
+            if (!sorted.includes(todayStr) && !sorted.includes(yesterdayStr)) return 0; // Streak broken
+
+            let streak = 0;
+            let currDate = new Date();
+            if (!sorted.includes(todayStr)) { currDate.setDate(currDate.getDate() - 1); } // Start counting from yesterday
+
+            for(let i=0; i<365; i++) {
+                let dStr = new Date(currDate.getTime() - (currDate.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
+                if (sorted.includes(dStr)) {
+                    streak++;
+                    currDate.setDate(currDate.getDate() - 1);
+                } else {
+                    break;
+                }
+            }
+            return streak;
+        }
+
+        async function _renderStreak() {
+            if (!currentUser) {
+                document.getElementById('dynamic-content').innerHTML = `
+                    <div class="card" style="text-align:center; padding: 40px;">
+                        <h2 style="color:var(--wrong-red);">⚠️ Sign In Required</h2>
+                        <p style="color:var(--text-muted);">Please sign in with Google to view and track your daily streak.</p>
+                        <button class="btn-exam" onclick="goBack()" style="margin-top:20px;">&larr; Back</button>
+                    </div>`;
+                return;
+            }
+            
+            document.getElementById('breadcrumb-text').innerText = "Home / Profile / My Streak";
+            const mainContent = document.getElementById('dynamic-content');
+            mainContent.innerHTML = `<div class="card"><h2>🔥 Fetching Streak...</h2></div>`;
+            
+            try {
+                let doc = await db.collection("users").doc(currentUser.uid).get();
+                let dates = doc.exists ? (doc.data().activeDates || []) : [];
+                let streak = calculateStreak(dates);
+                
+                let datesHtml = `<ul style="list-style:none; padding:0; display:flex; flex-wrap:wrap; gap:10px;">`;
+                [...new Set(dates)].sort().reverse().slice(0, 14).forEach(d => {
+                    datesHtml += `<li style="background:#2a2a2a; padding:8px 12px; border-radius:6px; border:1px solid var(--correct-green); color:var(--correct-green); font-weight:bold;">✅ ${d}</li>`;
+                });
+                datesHtml += `</ul>`;
+
+                mainContent.innerHTML = `
+                    <div class="card" style="text-align:center;">
+                        <h2 style="color:var(--primary-yellow);">🔥 Daily Streak</h2>
+                        <p style="color:var(--text-muted);">Spend at least 5 minutes practicing on the platform daily to maintain your streak!</p>
+                        
+                        <div style="font-size: 80px; margin: 20px 0; text-shadow: 0 0 20px rgba(253,184,19,0.5);">🔥</div>
+                        <div style="font-size: 32px; font-weight: bold; margin-bottom: 30px; color: white;">${streak} Day${streak !== 1 ? 's' : ''}</div>
+                        
+                        <h3 style="text-align:left; border-bottom: 1px solid var(--border-color); padding-bottom:10px; margin-top:40px;">📅 Recent Active Days</h3>
+                        ${dates.length > 0 ? datesHtml : '<p style="text-align:left; color:var(--text-muted);">No activity recorded yet. Start practicing for 5 minutes!</p>'}
+                        <button class="btn-exam" onclick="goBack()" style="margin-top:40px; background:#333;">&larr; Exit to Dashboard</button>
+                    </div>
+                `;
+            } catch(e) { mainContent.innerHTML = `<div class="card"><h2>Error</h2><p>${e.message}</p></div>`; }
+        }
+
+        // --- PERFORMANCE ANALYTICS UI ---
+        async function _renderProgress() {
+            if (!currentUser) {
+                document.getElementById('dynamic-content').innerHTML = `
+                    <div class="card" style="text-align:center; padding: 40px;">
+                        <h2 style="color:var(--wrong-red);">⚠️ Sign In Required</h2>
+                        <p style="color:var(--text-muted);">Please sign in with Google to track your performance analytics.</p>
+                        <button class="btn-exam" onclick="goBack()" style="margin-top:20px;">&larr; Back</button>
+                    </div>`;
+                return;
+            }
+
+            document.getElementById('breadcrumb-text').innerText = "Home / Profile / Track Progress";
+            const mainContent = document.getElementById('dynamic-content');
+            mainContent.innerHTML = `<div class="card"><h2>📊 Analyzing Performance...</h2></div>`;
+
+            try {
+                const snapshot = await db.collection("leaderboards").where("userId", "==", currentUser.uid).get();
+                let stats = { NEET: {}, GK: {} };
+                
+                snapshot.forEach(doc => {
+                    let d = doc.data();
+                    if(!d.quizPath || d.quizPath.includes("Daily Quiz Challenge")) return; // Exclude daily quiz from permanent stats
+                    
+                    let isNeet = d.quizPath.includes("NEET");
+                    let isGk = d.quizPath.includes("General Knowledge");
+                    let category = isNeet ? "NEET" : (isGk ? "GK" : null);
+                    if(!category) return;
+
+                    let subtopic = d.quizPath.split(' > ').pop();
+                    
+                    if(!stats[category][subtopic]) stats[category][subtopic] = { accSum: 0, count: 0 };
+                    stats[category][subtopic].accSum += d.accuracy;
+                    stats[category][subtopic].count++;
+                });
+
+                function buildStatCards(catObj) {
+                    let str = '';
+                    let topics = Object.keys(catObj).sort();
+                    for(let topic of topics) {
+                        let avg = Math.round(catObj[topic].accSum / catObj[topic].count);
+                        let color = avg >= 70 ? 'var(--correct-green)' : (avg < 50 ? 'var(--wrong-red)' : 'var(--primary-yellow)');
+                        let label = avg >= 70 ? '💪 Strong' : (avg < 50 ? '⚠️ Needs Improvement' : '✨ Average');
+                        str += `
+                            <div style="background:#2a2a2a; border-left: 4px solid ${color}; padding:15px; border-radius:6px; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center;">
+                                <div>
+                                    <h4 style="margin:0 0 5px 0;">${topic}</h4>
+                                    <span style="font-size:12px; color:var(--text-muted);">${catObj[topic].count} Test(s) Attempted</span>
+                                </div>
+                                <div style="text-align:right;">
+                                    <div style="font-size:20px; font-weight:bold; color:${color};">${avg}%</div>
+                                    <div style="font-size:12px; color:var(--text-muted);">${label}</div>
+                                </div>
+                            </div>
+                        `;
+                    }
+                    return str || '<p style="color:var(--text-muted);">No data available for this category yet.</p>';
+                }
+
+                mainContent.innerHTML = `
+                    <div class="card">
+                        <h2 style="color:var(--primary-yellow);">📊 Performance Analytics</h2>
+                        <p style="color:var(--text-muted); margin-bottom: 25px;">Identify your strengths and target your weak areas based on your permanent leaderboard history.</p>
+                        
+                        <div style="display:flex; gap:20px; flex-wrap:wrap;">
+                            <div style="flex:1; min-width:300px;">
+                                <h3 style="border-bottom:1px solid var(--border-color); padding-bottom:10px;">🩺 NEET Tracker</h3>
+                                ${buildStatCards(stats.NEET)}
+                            </div>
+                            <div style="flex:1; min-width:300px;">
+                                <h3 style="border-bottom:1px solid var(--border-color); padding-bottom:10px;">🌍 General Knowledge</h3>
+                                ${buildStatCards(stats.GK)}
+                            </div>
+                        </div>
+                        <button class="btn-exam" onclick="goBack()" style="margin-top:30px; background:#333;">&larr; Exit to Dashboard</button>
+                    </div>
+                `;
+            } catch(e) { mainContent.innerHTML = `<div class="card"><h2>Error</h2><p>${e.message}</p></div>`; }
+        }
+
         // --- IMAGE MODAL ---
-        function expandImage(src) {
-            document.getElementById('zoomedImageSrc').src = src;
-            document.getElementById('imageZoomModal').style.display = 'flex';
-        }
-        function closeImageModal() {
-            document.getElementById('imageZoomModal').style.display = 'none';
-        }
+        function expandImage(src) { document.getElementById('zoomedImageSrc').src = src; document.getElementById('imageZoomModal').style.display = 'flex'; }
+        function closeImageModal() { document.getElementById('imageZoomModal').style.display = 'none'; }
 
         // --- 4. DYNAMIC ADMIN PANEL ---
         let adminSelectedPath = [];
@@ -820,8 +1007,16 @@
                     return;
                 }
 
+                // 🧠 DAILY QUIZ LIMITER
+                let isDailyQuiz = currentPath[0] === 'Daily Quiz Challenge';
+                
                 quizState.questions = availableQuestions;
                 quizState.questions.sort(() => Math.random() - 0.5);
+
+                if (isDailyQuiz) {
+                    quizState.questions = quizState.questions.slice(0, 20); // Force only 20 questions
+                }
+
                 quizState.currentIndex = 0; 
                 quizState.userAnswers = {}; 
                 quizState.showAnswerTriggered = {}; 
@@ -930,7 +1125,7 @@
             return `${m}:${s < 10 ? '0' : ''}${s}`;
         }
 
-        // --- NEW REVIEW TABS LOGIC ---
+        // --- REVIEW TABS LOGIC ---
         window.showReviewTab = function(tabName) {
             ['correct', 'wrong', 'skipped'].forEach(t => {
                 document.getElementById('review-' + t).style.display = 'none';
@@ -995,14 +1190,13 @@
             clearInterval(quizState.timer); 
             let attempted = 0; let totalScore = 0; let correctCount = 0; let wrongCount = 0;
             let sessionAttemptedIds = []; 
-            let skippedCount = 0; // We only track viewed but unattempted questions here now
+            let skippedCount = 0; 
+            let isDailyQuiz = currentPath[0] === 'Daily Quiz Challenge';
 
-            let correctHtml = '';
-            let wrongHtml = '';
-            let skippedHtml = '';
-            let flaggedListHtml = '';
-
-            let isNeetSection = currentPath[0] === "NEET";
+            let correctHtml = ''; let wrongHtml = ''; let skippedHtml = ''; let flaggedListHtml = '';
+            
+            // Daily Quiz Challenge uses its subtopic to determine grading rules (e.g. NEET vs GK)
+            let isNeetSection = isDailyQuiz ? (currentPath[1] === "NEET") : (currentPath[0] === "NEET");
 
             quizState.questions.forEach((q, index) => {
                 let userAnsArray = quizState.userAnswers[index] || [];
@@ -1021,7 +1215,6 @@
 
                 if (isAttempted && !isCorrect) wrongCount++;
 
-                // Build the Review Tabs UI (Skipped now ONLY counts questions the user actually saw)
                 if (isAttempted) {
                     if (isCorrect) correctHtml += buildReviewItemHtml(q, index, 'correct', userAnsArray);
                     else wrongHtml += buildReviewItemHtml(q, index, 'wrong', userAnsArray);
@@ -1030,7 +1223,6 @@
                     skippedHtml += buildReviewItemHtml(q, index, 'skipped', []);
                 }
 
-                // Math Formula logic
                 if (isNeetSection) {
                     if (isCorrect) totalScore += 4;
                     else if (isAttempted && !isCorrect) totalScore -= 1;
@@ -1038,7 +1230,6 @@
                     if (isCorrect) totalScore += 1;
                 }
 
-                // Handle Flagged questions for Admin
                 if(quizState.flaggedDoubts[index]) {
                     flaggedListHtml += `
                         <div style="background:#2a2a2a; border-left:4px solid var(--primary-yellow); padding:15px; margin-bottom:15px; text-align:left;">
@@ -1048,18 +1239,12 @@
                     `;
                     if (currentUser) {
                         db.collection("flagged_doubts").add({
-                            studentId: currentUser.uid,
-                            studentName: currentUser.displayName,
-                            questionId: q.id,
-                            questionText: q.question,
-                            path: q.path,
-                            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                            studentId: currentUser.uid, studentName: currentUser.displayName, questionId: q.id, questionText: q.question, path: q.path, timestamp: firebase.firestore.FieldValue.serverTimestamp()
                         });
                     }
                 }
             });
 
-            // Save Progress Secretly
             if (sessionAttemptedIds.length > 0) {
                 let safePath = "prog_" + currentPath.join('_').replace(/[^a-zA-Z0-9]/g, '_');
                 if (currentUser) {
@@ -1078,20 +1263,13 @@
             let pathString = currentPath.join(' > ');
             let studentName = currentUser ? currentUser.displayName : "Anonymous";
 
-            if (currentUser && attempted > 0) {
+            // Push to Leaderboard ONLY if it is NOT a Daily Quiz Challenge
+            if (currentUser && attempted > 0 && !isDailyQuiz) {
                 db.collection("leaderboards").add({
-                    userId: currentUser.uid,
-                    userName: currentUser.displayName,
-                    quizPath: pathString,
-                    score: totalScore,
-                    accuracy: accuracy,
-                    timeStr: timeStr,
-                    attemptedQuestions: attempted, 
-                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                    userId: currentUser.uid, userName: currentUser.displayName, quizPath: pathString, score: totalScore, accuracy: accuracy, timeStr: timeStr, attemptedQuestions: attempted, timestamp: firebase.firestore.FieldValue.serverTimestamp()
                 });
             }
 
-            // Build Top Cards UI based on Category
             let scoreCardsHtml = '';
             if (isNeetSection) {
                 scoreCardsHtml = `
@@ -1120,6 +1298,7 @@
                 <div class="card" style="text-align: center;">
                     <h2 style="font-size: 32px; color: var(--primary-yellow); margin-bottom: 5px;">Test Complete!</h2>
                     <p style="color: var(--text-muted); margin-bottom: 30px;">Great effort, ${studentName.split(" ")[0]}! Here is your final breakdown.</p>
+                    ${isDailyQuiz ? `<div style="background:rgba(253, 184, 19, 0.1); border-left:4px solid var(--primary-yellow); padding:10px; margin-bottom:20px; border-radius:4px; font-size:14px; text-align:left;"><b style="color:var(--primary-yellow);">Daily Challenge Note:</b> This score is temporary and is not added to the global leaderboard. Come back tomorrow for 20 new questions!</div>` : ''}
                     
                     <div style="display:flex; justify-content:center; gap:15px; flex-wrap:wrap; margin-bottom: 40px;">
                         ${scoreCardsHtml}
@@ -1193,7 +1372,7 @@
         
         function requiresQuizLogin(pathArray) {
             const pathString = pathArray.join(" > ").toLowerCase();
-            const triggers = ["mcqs practice", "mock test", "general knowledge", "practice paper", "current affairs", "history", "geography"];
+            const triggers = ["mcqs practice", "mock test", "general knowledge", "practice paper", "current affairs", "history", "geography", "daily quiz challenge"];
             return triggers.some(trigger => pathString.includes(trigger));
         }
 
@@ -1216,7 +1395,6 @@
                 </div>`; 
         }
         
-        // --- SECURE LEADERBOARD LOGIC WITH RANKING AND LOCKOUT ---
         async function fetchLiveLeaderboard(pathPrefix) { 
             const mainContent = document.getElementById('dynamic-content');
             
@@ -1339,8 +1517,6 @@
 
             } catch(e) { mainContent.innerHTML = `<div class="card"><h2 style="color:var(--wrong-red);">Error</h2><p>${e.message}</p></div>`; }
         }
-        
-        function startQuiz() { window.location.hash = '#/quiz'; }
         
         function openSearch() { document.getElementById('searchWrapper').classList.add('active'); document.getElementById('searchInput').focus(); }
         function closeSearch() { document.getElementById('searchWrapper').classList.remove('active'); document.getElementById('searchInput').value = ''; document.getElementById('searchSuggestions').style.display = 'none'; }
