@@ -992,8 +992,10 @@
                     if (snapshot.empty) {
                         // If no specific daily questions, grab from the entire general pool
                         let targetPrefix = currentPath[1] === "NEET" ? "NEET" : "General Knowledge";
+                        
+                        // FIX: Removed .where("type", "==", "mcq") to prevent Firebase Index Error. 
+                        // Will manually filter by type in JS loop below.
                         snapshot = await db.collection("content")
-                            .where("type", "==", "mcq")
                             .where("path", ">=", targetPrefix)
                             .where("path", "<=", targetPrefix + "\uf8ff")
                             .get();
@@ -1018,9 +1020,13 @@
                 let totalQuestionsInDB = 0;
 
                 snapshot.forEach(doc => {
-                    totalQuestionsInDB++;
-                    if (!previouslyAttemptedIds.includes(doc.id)) {
-                        availableQuestions.push({ id: doc.id, ...doc.data() });
+                    let data = doc.data();
+                    // FILTER: ensures we only grab MCQs if fallback pulled PDFs
+                    if (data.type === 'mcq') {
+                        totalQuestionsInDB++;
+                        if (!previouslyAttemptedIds.includes(doc.id)) {
+                            availableQuestions.push({ id: doc.id, ...data });
+                        }
                     }
                 });
 
@@ -1432,6 +1438,7 @@
                 </div>`; 
         }
         
+        // --- SECURE LEADERBOARD LOGIC WITH RANKING AND LOCKOUT ---
         async function fetchLiveLeaderboard(pathPrefix) { 
             const mainContent = document.getElementById('dynamic-content');
             
