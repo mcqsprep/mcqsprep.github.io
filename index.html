@@ -319,22 +319,24 @@
         const CLOUDINARY_URL = "https://api.cloudinary.com/v1_1/h5gdez7a/auto/upload";
         const CLOUDINARY_PRESET = "mcq_uploads";
 
+        // ALL INNERMOST NODES ARE NOW EMPTY OBJECTS {}. 
+        // THIS ALLOWS YOU TO STOP ANYWHERE AND ADD CUSTOM FOLDERS INSIDE THEM.
         let appData = {
             "Daily Quiz Challenge": { 
-                "NEET": [], 
-                "General Knowledge": [] 
+                "NEET": {}, 
+                "General Knowledge": {} 
             },
             "NEET": {
-                "NCERT Book": { "Class 11": { "Zoology": [], "Botany": [], "Physics": [], "Chemistry": [] }, "Class 12": { "Zoology": [], "Botany": [], "Physics": [], "Chemistry": [] } },
-                "PYQs": { "2026": [], "2025": [], "2024": [], "2023": [], "2022": [], "2021": [], "2020": [], "2019": [], "2018": [], "2017": [], "2016": [], "2015": [], "2014": [], "2013": [], "2012": [], "2011": [] },
-                "Practice Paper": { "Easy": [], "Medium": [], "Hard": [], "Mixed": [] },
-                "MCQs Practice": { "Botany": { "Easy": [], "Medium": [], "Hard": [], "Mixed": [] }, "Zoology": { "Easy": [], "Medium": [], "Hard": [], "Mixed": [] }, "Physics": { "Easy": [], "Medium": [], "Hard": [], "Mixed": [] }, "Organic Chemistry": { "Easy": [], "Medium": [], "Hard": [], "Mixed": [] }, "Physical Chemistry": { "Easy": [], "Medium": [], "Hard": [], "Mixed": [] }, "Inorganic Chemistry": { "Easy": [], "Medium": [], "Hard": [], "Mixed": [] } },
+                "NCERT Book": { "Class 11": { "Zoology": {}, "Botany": {}, "Physics": {}, "Chemistry": {} }, "Class 12": { "Zoology": {}, "Botany": {}, "Physics": {}, "Chemistry": {} } },
+                "PYQs": { "2026": {}, "2025": {}, "2024": {}, "2023": {}, "2022": {}, "2021": {}, "2020": {}, "2019": {}, "2018": {}, "2017": {}, "2016": {}, "2015": {}, "2014": {}, "2013": {}, "2012": {}, "2011": {} },
+                "Practice Paper": { "Easy": {}, "Medium": {}, "Hard": {}, "Mixed": {} },
+                "MCQs Practice": { "Botany": {}, "Zoology": {}, "Physics": {}, "Organic Chemistry": {}, "Physical Chemistry": {}, "Inorganic Chemistry": {} },
                 "Mock Test": "COMING SOON"
             },
             "General Knowledge": { 
-                "Current Affairs": { "National & International": [], "Government Schemes": [], "Sports & Tournaments": [], "Awards & Honors": [], "Appointments": [], "Science & Defense": [] },
-                "History": { "Ancient India": [], "Medieval India": [], "Modern India": [] },
-                "Geography": { "Indian Physical Geography": [], "World Geography": [], "Climate & Environment": [], "Economic Geography": [] }
+                "Current Affairs": { "National & International": {}, "Government Schemes": {}, "Sports & Tournaments": {}, "Awards & Honors": {}, "Appointments": {}, "Science & Defense": {} },
+                "History": { "Ancient India": {}, "Medieval India": {}, "Modern India": {} },
+                "Geography": { "Indian Physical Geography": {}, "World Geography": {}, "Climate & Environment": {}, "Economic Geography": {} }
             }
         };
 
@@ -343,8 +345,9 @@
 
         // Fetch user-created topics and merge into appData before rendering
         async function loadCustomTopics() {
+            customTopicTypes = {};
             try {
-                const snapshot = await db.collection("custom_topics").get();
+                const snapshot = await db.collection("custom_topics").orderBy("timestamp").get();
                 snapshot.forEach(doc => {
                     let data = doc.data();
                     let pathArr = data.parentPath.split(' > ');
@@ -356,9 +359,9 @@
                         current = current[p];
                     }
                     
-                    // Append new folder if it's a valid object
+                    // Append new folder as an OBJECT so it can contain children!
                     if (typeof current === 'object' && !Array.isArray(current)) {
-                        current[data.name] = [];
+                        if (!current[data.name]) current[data.name] = {}; 
                         let fullPath = data.parentPath + " > " + data.name;
                         customTopicTypes[fullPath] = data.type; // Store 'mcq' or 'pdf'
                     }
@@ -369,7 +372,7 @@
         // --- AUTHENTICATION & PROFILE LOGIC ---
         let currentUser = null;
         let currentPath = []; 
-        let dataLoaded = false; // Prevents routing before custom topics load
+        let dataLoaded = false; 
 
         function showAuthModal() { document.getElementById('authModal').style.display = 'flex'; }
         function skipSignIn() { sessionStorage.setItem('auth_skipped', 'true'); document.getElementById('authModal').style.display = 'none'; }
@@ -428,7 +431,7 @@
 
         window.addEventListener('hashchange', handleRouting);
         function handleRouting() {
-            if(!dataLoaded) return; // Prevent early routing
+            if(!dataLoaded) return; 
             let hash = decodeURIComponent(window.location.hash.replace('#/', ''));
             document.getElementById('main-sidebar').style.display = (hash === 'admin' || hash === 'admin-panel' || hash === 'quiz' || hash === 'progress' || hash === 'streak') ? 'none' : 'block';
 
@@ -720,9 +723,9 @@
                             </h4>
                             <div id="create-folder-ui" style="display:none; margin-top:15px;">
                                 <label style="color:white; font-size:13px;">1. Select Parent Path (Where to create):</label>
-                                <div id="dynamic-new-path-selectors" style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:15px;"></div>
+                                <div id="dynamic-new-path-selectors" style="display:flex; gap:10px; flex-wrap:wrap;"></div>
                                 
-                                <div class="admin-row">
+                                <div class="admin-row" style="margin-top: 15px;">
                                     <div>
                                         <label style="color:white; font-size:13px;">2. New Folder Name:</label>
                                         <input type="text" id="newFolderName" class="input-field" placeholder="e.g. Molecular Genetics">
@@ -839,25 +842,42 @@
             el.style.display = el.style.display === 'none' ? 'block' : 'none';
         }
 
-        // --- NEW FEATURE 1: CREATE CUSTOM TOPICS ---
+        // --- NEW FEATURE 1: CREATE CUSTOM TOPICS WITH ULTIMATE FLEXIBILITY ---
         function _buildAdminNewTopicSelectors() {
             const container = document.getElementById('dynamic-new-path-selectors');
             if(!container) return;
             let html = ''; let currentObj = appData;
+            
             for (let i = 0; i <= adminNewTopicPath.length; i++) {
-                if (Array.isArray(currentObj) || typeof currentObj === 'string') break; 
+                if (typeof currentObj === 'string' || Array.isArray(currentObj)) break; 
+                
+                // Stop rendering if it's an empty object and we are at the very end
+                if (currentObj && Object.keys(currentObj).length === 0 && i === adminNewTopicPath.length) break;
+
                 html += `<select class="input-field" style="flex:1; min-width:150px; margin-bottom:0;" onchange="handleAdminNewTopicPathChange(event, ${i})">`;
-                html += `<option value="" ${!adminNewTopicPath[i] ? 'selected' : ''}>-- Select --</option>`;
+                html += `<option value="" ${!adminNewTopicPath[i] ? 'selected' : ''}>-- Stop Here / Select Child --</option>`;
                 for (let key in currentObj) { 
-                    if (key === "Daily Quiz Challenge") continue; // Hide from admin creation
+                    if (key === "Daily Quiz Challenge") continue; 
                     html += `<option value="${key}" ${adminNewTopicPath[i] === key ? 'selected' : ''}>${key}</option>`; 
                 }
                 html += `</select>`;
-                if (adminNewTopicPath[i] && currentObj[adminNewTopicPath[i]]) { currentObj = currentObj[adminNewTopicPath[i]]; } else { break; }
+                if (adminNewTopicPath[i] && currentObj[adminNewTopicPath[i]]) { 
+                    currentObj = currentObj[adminNewTopicPath[i]]; 
+                } else { break; }
             }
             container.innerHTML = html;
+
+            // Visual Path Indicator
+            let pathDisplay = document.getElementById('new-topic-path-display');
+            if(!pathDisplay) {
+                container.insertAdjacentHTML('afterend', `<div id="new-topic-path-display" style="margin-top:10px; font-size:14px; color:var(--primary-yellow);"><b>Selected Parent Path:</b> <span id="new-topic-path-text" style="color:white;">None</span></div>`);
+                pathDisplay = document.getElementById('new-topic-path-display');
+            }
+            document.getElementById('new-topic-path-text').innerText = adminNewTopicPath.length > 0 ? adminNewTopicPath.join(' > ') : 'Root (Please select at least one)';
         }
+
         function handleAdminNewTopicPathChange(event, depth) {
+            // Selecting "-- Stop Here --" truncates the array exactly to this depth
             if(event.target.value === "") adminNewTopicPath = adminNewTopicPath.slice(0, depth);
             else { adminNewTopicPath = adminNewTopicPath.slice(0, depth); adminNewTopicPath.push(event.target.value); }
             _buildAdminNewTopicSelectors(); 
@@ -916,7 +936,7 @@
                                 <p style="margin:5px 0 0 0; font-size:12px; color:var(--text-muted);">Reported by: ${data.studentName}</p>
                             </div>
                             <div style="background:#1a1a1a; padding:10px; border-radius:4px; font-size:14px; margin-bottom:10px;"><b>Question Content:</b><br>${data.questionText}</div>
-                            <div style="display:flex; gap:10px;">
+                            <div style="display:flex; gap:10px; flex-wrap:wrap;">
                                 <button onclick="openEditModalFromReport('${data.questionId}')" style="padding:6px 12px; background:#2196F3; border:none; border-radius:4px; color:white; cursor:pointer;">✏️ Edit MCQ in Database</button>
                                 <button onclick="resolveReport('${doc.id}')" style="padding:6px 12px; background:var(--correct-green); border:none; border-radius:4px; color:white; cursor:pointer;">✅ Mark Resolved & Delete Report</button>
                             </div>
@@ -937,10 +957,9 @@
         
         async function openEditModalFromReport(questionId) {
             try {
-                // Fetch the actual MCQ doc
                 let doc = await db.collection("content").doc(questionId).get();
                 if (doc.exists) {
-                    loadedItemsCache[questionId] = doc.data(); // populate cache used by edit modal
+                    loadedItemsCache[questionId] = doc.data(); 
                     openEditModal(questionId);
                 } else {
                     showNotification("❌ This question no longer exists in the database.");
@@ -1026,22 +1045,44 @@
             const container = document.getElementById('dynamic-path-selectors');
             if(!container) return;
             let html = ''; let currentObj = appData;
+            
             for (let i = 0; i <= adminSelectedPath.length; i++) {
-                if (Array.isArray(currentObj) || typeof currentObj === 'string') break; 
+                if (typeof currentObj === 'string' || Array.isArray(currentObj)) break; 
+                
+                // Stop rendering if it's an empty object and we are at the very end
+                if (currentObj && Object.keys(currentObj).length === 0 && i === adminSelectedPath.length) break;
+
                 html += `<select class="input-field" style="flex:1; min-width:150px; margin-bottom:0;" onchange="handleAdminPathChange(event, ${i})">`;
-                html += `<option value="" disabled ${!adminSelectedPath[i] ? 'selected' : ''}>Select...</option>`;
+                html += `<option value="" ${!adminSelectedPath[i] ? 'selected' : ''}>-- Upload Here / Select Child --</option>`;
                 for (let key in currentObj) { 
-                    if (key === "Daily Quiz Challenge") continue; // FEATURE 3: Removed from Admin Upload Dropdowns
+                    if (key === "Daily Quiz Challenge") continue; 
                     html += `<option value="${key}" ${adminSelectedPath[i] === key ? 'selected' : ''}>${key}</option>`; 
                 }
                 html += `</select>`;
-                if (adminSelectedPath[i] && currentObj[adminSelectedPath[i]]) { currentObj = currentObj[adminSelectedPath[i]]; } else { break; }
+                if (adminSelectedPath[i] && currentObj[adminSelectedPath[i]]) { 
+                    currentObj = currentObj[adminSelectedPath[i]]; 
+                } else { break; }
             }
             container.innerHTML = html;
+            
+            // Allow Uploading to ANY selected path immediately
             const formArea = document.getElementById('upload-form-area');
-            if(formArea) formArea.style.display = (Array.isArray(currentObj) || typeof currentObj === 'string' || currentObj === undefined) ? 'block' : 'none';
+            if(formArea) formArea.style.display = (adminSelectedPath.length > 0) ? 'block' : 'none';
+
+            // Visual Path Indicator
+            let pathDisplay = document.getElementById('upload-path-display');
+            if(!pathDisplay) {
+                container.insertAdjacentHTML('afterend', `<div id="upload-path-display" style="margin-top:10px; font-size:14px; color:var(--correct-green);"><b>Uploading Content To:</b> <span id="upload-path-text" style="color:white;">None</span></div>`);
+                pathDisplay = document.getElementById('upload-path-display');
+            }
+            document.getElementById('upload-path-text').innerText = adminSelectedPath.length > 0 ? adminSelectedPath.join(' > ') : 'Please select at least one path';
         }
-        function handleAdminPathChange(event, depth) { adminSelectedPath = adminSelectedPath.slice(0, depth); adminSelectedPath.push(event.target.value); _buildAdminSelectors(); }
+
+        function handleAdminPathChange(event, depth) { 
+            if (event.target.value === "") adminSelectedPath = adminSelectedPath.slice(0, depth);
+            else { adminSelectedPath = adminSelectedPath.slice(0, depth); adminSelectedPath.push(event.target.value); }
+            _buildAdminSelectors(); 
+        }
 
         // Dropdowns for MANAGE tab
         function _buildManageSelectors() {
@@ -1049,11 +1090,11 @@
             if(!container) return;
             let html = ''; let currentObj = appData;
             for (let i = 0; i <= adminManageSelectedPath.length; i++) {
-                if (Array.isArray(currentObj) || typeof currentObj === 'string') break; 
+                if (typeof currentObj === 'string' || Array.isArray(currentObj)) break; 
                 html += `<select class="input-field" style="flex:1; min-width:150px; margin-bottom:0;" onchange="handleManagePathChange(event, ${i})">`;
                 html += `<option value="" ${!adminManageSelectedPath[i] ? 'selected' : ''}>-- All --</option>`;
                 for (let key in currentObj) { 
-                    if (key === "Daily Quiz Challenge") continue; // FEATURE 3: Remove from manage
+                    if (key === "Daily Quiz Challenge") continue; 
                     html += `<option value="${key}" ${adminManageSelectedPath[i] === key ? 'selected' : ''}>${key}</option>`; 
                 }
                 html += `</select>`;
@@ -1293,7 +1334,12 @@
 
                 } else {
                     // Standard fetching for regular practice categories
-                    let snapshot = await db.collection("content").where("type", "==", "mcq").where("path", "==", pathString).get();
+                    // Note: Now supports fetching from ROOT folders if users upload there directly!
+                    let snapshot = await db.collection("content")
+                        .where("type", "==", "mcq")
+                        .where("path", ">=", pathString)
+                        .where("path", "<=", pathString + "\uf8ff")
+                        .get();
                     
                     let safePath = "prog_" + currentPath.join('_').replace(/[^a-zA-Z0-9]/g, '_');
                     let previouslyAttemptedIds = [];
@@ -1367,7 +1413,6 @@
         function _renderQuizQuestion() {
             const mainContent = document.getElementById('dynamic-content');
             
-            // Track that user actually looked at this question
             if (!quizState.viewedQuestions.includes(quizState.currentIndex)) {
                 quizState.viewedQuestions.push(quizState.currentIndex);
             }
@@ -1403,7 +1448,7 @@
                 <div class="card">
                     <div class="quiz-header">
                         <span style="color:var(--text-muted);">Question ${quizState.currentIndex + 1} ${multiText}</span>
-                        <div style="display:flex; align-items:center; gap:15px;">
+                        <div style="display:flex; align-items:center; gap:15px; flex-wrap:wrap;">
                             <button class="report-btn" onclick="openReportModal()">🚨 Report Mistake</button>
                             <button id="flagDoubtBtn" class="flag-btn ${isFlagged ? 'flagged' : ''}" onclick="toggleFlag()">${isFlagged ? '⭐ Flagged' : '⭐ Flag for Review'}</button>
                             <span class="quiz-timer">⏱ <span id="quizTimeDisplay">${formatTime(quizState.secondsPassed)}</span></span>
@@ -1516,7 +1561,6 @@
 
             let correctHtml = ''; let wrongHtml = ''; let skippedHtml = ''; let flaggedListHtml = '';
             
-            // Daily Quiz Challenge uses its subtopic to determine grading rules (e.g. NEET vs GK)
             let isNeetSection = isDailyQuiz ? (currentPath[1] === "NEET") : (currentPath[0] === "NEET");
 
             quizState.questions.forEach((q, index) => {
@@ -1566,7 +1610,7 @@
                 }
             });
 
-            if (sessionAttemptedIds.length > 0 && !isDailyQuiz) { // Note: Daily quiz attempts are still tracked globally now via the smart fetch
+            if (sessionAttemptedIds.length > 0 && !isDailyQuiz) { 
                 let safePath = "prog_" + currentPath.join('_').replace(/[^a-zA-Z0-9]/g, '_');
                 if (currentUser) {
                     let dataToSave = {};
@@ -1578,7 +1622,6 @@
                     localStorage.setItem('mcq_progress', JSON.stringify(localProg));
                 }
             } else if (sessionAttemptedIds.length > 0 && isDailyQuiz) {
-                // For daily quiz, store it in a generic tracking bucket to prevent repeats
                 if (currentUser) {
                     db.collection("users").doc(currentUser.uid).set({ prog_daily_challenge: firebase.firestore.FieldValue.arrayUnion(...sessionAttemptedIds)}, {merge: true});
                 } else {
@@ -1593,7 +1636,6 @@
             let pathString = currentPath.join(' > ');
             let studentName = currentUser ? currentUser.displayName : "Anonymous";
 
-            // Push to Leaderboard ONLY if it is NOT a Daily Quiz Challenge
             if (currentUser && attempted > 0 && !isDailyQuiz) {
                 db.collection("leaderboards").add({
                     userId: currentUser.uid, userName: currentUser.displayName, quizPath: pathString, score: totalScore, accuracy: accuracy, timeStr: timeStr, attemptedQuestions: attempted, timestamp: firebase.firestore.FieldValue.serverTimestamp()
@@ -1679,13 +1721,24 @@
             const mainContent = document.getElementById('dynamic-content');
             const breadcrumb = document.getElementById('breadcrumb-text');
             breadcrumb.innerText = currentPath.length === 0 ? "Home / Select Exam" : "Home / " + currentPath.join(" / "); 
+            
             let currentLevel = appData;
-            for (let node of currentPath) { if(currentLevel[node]) currentLevel = currentLevel[node]; else { window.location.hash = '#/home'; return; } }
+            for (let node of currentPath) { 
+                if(currentLevel[node] !== undefined) currentLevel = currentLevel[node]; 
+                else { window.location.hash = '#/home'; return; } 
+            }
 
-            if (Array.isArray(currentLevel) || typeof currentLevel === 'string') {
-                let topicName = currentPath[currentPath.length - 1]; let isGK = currentPath[0] === "General Knowledge";
+            // Treat strings, arrays, AND entirely empty objects as endpoints (no sub-folders to show)
+            let isEndpoint = false;
+            if (typeof currentLevel === 'string' || Array.isArray(currentLevel)) {
+                isEndpoint = true;
+            } else if (typeof currentLevel === 'object' && Object.keys(currentLevel).length === 0) {
+                isEndpoint = true;
+            }
+
+            if (isEndpoint) {
+                let topicName = currentPath[currentPath.length - 1]; 
                 
-                // FEATURE 1: Detect if this is a PDF section dynamically
                 let checkPath = currentPath.join(" > ");
                 let expectedType = customTopicTypes[checkPath];
                 let isPdfSection = (expectedType === 'pdf') || (!requiresQuizLogin(currentPath) && expectedType !== 'mcq');
@@ -1700,12 +1753,20 @@
                 }
                 return;
             }
+
+            // It has sub-folders, render them:
             let title = currentPath.length === 0 ? "Select Exam:" : currentPath[currentPath.length - 1];
             let html = `<div class="card"><h2>${title}</h2><div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px;">`;
+            
+            // FEATURE: Since you can now upload to ANY level, if you uploaded MCQs to a root folder, 
+            // you can click this to take a quiz of EVERYTHING inside it!
+            if (currentPath.length > 0 && requiresQuizLogin(currentPath)) {
+                html += `<button class="btn-exam" onclick="window.location.hash='#/quiz'" style="background-color: var(--primary-yellow); color: black; border: none; grid-column: 1 / -1; margin-bottom: 10px;">▶️ Practice All in ${title}</button>`;
+            }
+
             for (let key in currentLevel) { 
-                // Hide Daily Challenge from root if empty? No, it's always accessible.
+                if (currentPath.length === 0 && key === "Daily Quiz Challenge") continue; 
                 
-                // Display Custom Content Types
                 let checkPath = currentPath.join(" > ") + (currentPath.length > 0 ? " > " : "") + key;
                 let typeLabel = "";
                 if (customTopicTypes[checkPath] === 'mcq') typeLabel = " 📝";
@@ -1713,7 +1774,7 @@
 
                 html += `<button class="btn-exam" onclick="navigateTo('${key}')">${key}${typeLabel}</button>`; 
             }
-            if (currentPath.length > 0) { html += `<button class="btn-exam" onclick="goBack()" style="grid-column: 1 / -1; background-color: #222; border-color: #444; color: #a0a0a0;">&larr; Go Back</button>`; }
+            if (currentPath.length > 0) { html += `<button class="btn-exam" onclick="goBack()" style="grid-column: 1 / -1; background-color: #222; border-color: #444; color: #a0a0a0; margin-top: 10px;">&larr; Go Back</button>`; }
             html += `</div></div>`; mainContent.innerHTML = html;
         }
         
