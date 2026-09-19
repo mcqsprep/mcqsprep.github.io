@@ -981,7 +981,27 @@
             mainContent.innerHTML = `<div class="card"><h2 style="color:var(--primary-yellow);">Loading Quiz...</h2><p>Fetching questions...</p></div>`;
 
             try {
-                const snapshot = await db.collection("content").where("type", "==", "mcq").where("path", "==", pathString).get();
+                let isDailyQuiz = currentPath[0] === 'Daily Quiz Challenge';
+                let snapshot;
+                
+                // --- SMART DAILY QUIZ FALLBACK LOGIC ---
+                if (isDailyQuiz) {
+                    // Try to fetch manually uploaded daily quiz questions first
+                    snapshot = await db.collection("content").where("type", "==", "mcq").where("path", "==", pathString).get();
+                    
+                    if (snapshot.empty) {
+                        // If no specific daily questions, grab from the entire general pool
+                        let targetPrefix = currentPath[1] === "NEET" ? "NEET" : "General Knowledge";
+                        snapshot = await db.collection("content")
+                            .where("type", "==", "mcq")
+                            .where("path", ">=", targetPrefix)
+                            .where("path", "<=", targetPrefix + "\uf8ff")
+                            .get();
+                    }
+                } else {
+                    // Standard fetching
+                    snapshot = await db.collection("content").where("type", "==", "mcq").where("path", "==", pathString).get();
+                }
                 
                 let safePath = "prog_" + currentPath.join('_').replace(/[^a-zA-Z0-9]/g, '_');
                 let previouslyAttemptedIds = [];
@@ -1021,15 +1041,12 @@
                         </div>`;
                     return;
                 }
-
-                // 🧠 DAILY QUIZ LIMITER
-                let isDailyQuiz = currentPath[0] === 'Daily Quiz Challenge';
                 
                 quizState.questions = availableQuestions;
                 quizState.questions.sort(() => Math.random() - 0.5);
 
                 if (isDailyQuiz) {
-                    quizState.questions = quizState.questions.slice(0, 20); // Force only 20 questions
+                    quizState.questions = quizState.questions.slice(0, 20); // Force exactly 20 questions
                 }
 
                 quizState.currentIndex = 0; 
@@ -1372,7 +1389,9 @@
                 if (requiresQuizLogin(currentPath)) {
                     let studentName = currentUser ? currentUser.displayName.split(" ")[0] : "Student";
                     let welcomeMessage = !currentUser ? "Sign in to track your scores on the global leaderboard!" : `Ready for practice, <span style="color: var(--primary-yellow); font-weight: bold;">${studentName}</span>?`;
-                    mainContent.innerHTML = `<div class="card"><h2>${topicName} Practice</h2><p style="color: var(--text-muted); margin-bottom: 25px;">${welcomeMessage}</p><div style="display: flex; gap: 15px;"><button class="btn-exam" onclick="startQuiz()" style="background-color: var(--primary-yellow); color: black; border: none; width: 200px;">Start Quiz &rarr;</button><button class="btn-exam" onclick="goBack()" style="width: 150px; background-color: #333;">&larr; Go Back</button></div></div>`;
+                    
+                    // BYPASSED JAVASCRIPT FUNCTION FOR BULLETPROOF ROUTING
+                    mainContent.innerHTML = `<div class="card"><h2>${topicName} Practice</h2><p style="color: var(--text-muted); margin-bottom: 25px;">${welcomeMessage}</p><div style="display: flex; gap: 15px;"><button class="btn-exam" onclick="window.location.hash='#/quiz'" style="background-color: var(--primary-yellow); color: black; border: none; width: 200px;">Start Quiz &rarr;</button><button class="btn-exam" onclick="goBack()" style="width: 150px; background-color: #333;">&larr; Go Back</button></div></div>`;
                 } else {
                     mainContent.innerHTML = `<div class="card"><h2>${topicName} Resources</h2><p style="color: var(--text-muted);">Study materials will appear here once uploaded via Admin Panel.</p><button class="btn-exam" onclick="goBack()" style="width: 150px; margin-top:20px; background-color: #333;">&larr; Go Back</button></div>`;
                 }
@@ -1381,7 +1400,6 @@
             let title = currentPath.length === 0 ? "Select Exam:" : currentPath[currentPath.length - 1];
             let html = `<div class="card"><h2>${title}</h2><div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px;">`;
             for (let key in currentLevel) { 
-                // Hide Daily Quiz from home screen
                 if (currentPath.length === 0 && key === "Daily Quiz Challenge") continue;
                 html += `<button class="btn-exam" onclick="navigateTo('${key}')">${key}</button>`; 
             }
@@ -1414,7 +1432,6 @@
                 </div>`; 
         }
         
-        // --- SECURE LEADERBOARD LOGIC WITH RANKING AND LOCKOUT ---
         async function fetchLiveLeaderboard(pathPrefix) { 
             const mainContent = document.getElementById('dynamic-content');
             
