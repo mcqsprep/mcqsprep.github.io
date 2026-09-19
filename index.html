@@ -13,6 +13,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MCQsPrep - Dashboard</title>
     
+    <!-- SEO & Search Engine Tags -->
+    <meta name="description" content="MCQsPrep - A free, smart MCQ practice platform for competitive exams like NEET and General Knowledge. Track your streak and global rank.">
+    <meta property="og:title" content="MCQsPrep - Smart Exam Practice">
+    <meta property="og:description" content="Practice daily MCQs, full-length mock tests, and track your global leaderboard rankings.">
+    <meta property="og:image" content="https://images.unsplash.com/photo-1434030216411-0b793f4b4173?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80">
+    <meta property="og:url" content="https://mcqsprep.github.io">
+    
     <!-- FIREBASE LIBRARIES -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
@@ -1438,7 +1445,6 @@
                 </div>`; 
         }
         
-        // --- SECURE LEADERBOARD LOGIC WITH RANKING AND LOCKOUT ---
         async function fetchLiveLeaderboard(pathPrefix) { 
             const mainContent = document.getElementById('dynamic-content');
             
