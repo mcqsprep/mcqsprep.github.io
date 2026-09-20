@@ -288,7 +288,7 @@
             <!-- Navbar Rating Section -->
             <div class="nav-rating-badge" style="display:flex; align-items:center; gap:8px; margin-left:15px; background:#1a1a1a; padding:4px 10px; border-radius:20px; border:1px solid var(--border-color);">
                 <span class="rating-text" style="font-size:13px; color:var(--text-light); white-space:nowrap;">Overall: <span style="color:var(--primary-yellow); font-weight:bold;">⭐ <span id="global-rating-display">5.0</span>/5</span></span>
-                <button onclick="openFeedbackModal()" style="padding:4px 12px; font-size:12px; background:var(--primary-yellow); color:black; border:none; border-radius:15px; cursor:pointer; font-weight:bold; white-space:nowrap; transition: 0.2s;">Rate Us</button>
+                <button onclick="openFeedbackModal()" style="padding:4px 12px; font-size:12px; background:var(--primary-yellow); color:black; border:none; border-radius:15px; cursor:pointer; font-weight:bold; white-space:nowrap; transition: 0.2s;">⭐ Rate Us</button>
             </div>
         </div>
 
@@ -363,6 +363,7 @@
         const CLOUDINARY_URL = "https://api.cloudinary.com/v1_1/h5gdez7a/auto/upload";
         const CLOUDINARY_PRESET = "mcq_uploads";
 
+        // ALL INNERMOST NODES ARE NOW EMPTY OBJECTS {}. 
         let appData = {
             "Daily Quiz Challenge": { "NEET": {}, "General Knowledge": {} },
             "NEET": {
@@ -674,7 +675,6 @@
 
         // --- RATING / FEEDBACK SYSTEM ---
         let selectedStars = 0;
-        let userFeedbackDocId = null; 
 
         function updateStarUI(stars) {
             selectedStars = stars;
@@ -685,31 +685,29 @@
         }
         
         async function openFeedbackModal() { 
+            if (!currentUser) {
+                showNotification("⚠️ Please sign in to rate the platform.");
+                showAuthModal();
+                return;
+            }
+            
             document.getElementById('feedbackModal').style.display = 'flex'; 
             
-            if (currentUser) {
-                try {
-                    const snap = await db.collection("platform_feedback").where("studentId", "==", currentUser.uid).limit(1).get();
-                    if (!snap.empty) {
-                        let doc = snap.docs[0];
-                        userFeedbackDocId = doc.id;
-                        let data = doc.data();
-                        updateStarUI(data.rating || 0);
-                        document.getElementById('platformFeedbackText').value = data.feedback || "";
-                        document.getElementById('submitFeedbackBtn').innerText = "Update Feedback";
-                    } else {
-                        userFeedbackDocId = null;
-                        updateStarUI(0);
-                        document.getElementById('platformFeedbackText').value = "";
-                        document.getElementById('submitFeedbackBtn').innerText = "Submit Feedback";
-                    }
-                } catch(e) { console.error(e); }
-            } else {
-                userFeedbackDocId = null;
-                updateStarUI(0);
-                document.getElementById('platformFeedbackText').value = "";
-                document.getElementById('submitFeedbackBtn').innerText = "Submit Feedback";
-            }
+            try {
+                // Fetch the one and only document matching this user's ID
+                const snap = await db.collection("platform_feedback").where("studentId", "==", currentUser.uid).get();
+                
+                if (!snap.empty) {
+                    let data = snap.docs[0].data();
+                    updateStarUI(data.rating || 0);
+                    document.getElementById('platformFeedbackText').value = data.feedback || "";
+                    document.getElementById('submitFeedbackBtn').innerText = "Update Feedback";
+                } else {
+                    updateStarUI(0);
+                    document.getElementById('platformFeedbackText').value = "";
+                    document.getElementById('submitFeedbackBtn').innerText = "Submit Feedback";
+                }
+            } catch(e) { console.error(e); }
         }
 
         function closeFeedbackModal() { document.getElementById('feedbackModal').style.display = 'none'; }
@@ -728,22 +726,35 @@
             btn.innerText = "Submitting..."; btn.disabled = true;
             
             try {
-                if (userFeedbackDocId) {
-                    await db.collection("platform_feedback").doc(userFeedbackDocId).update({
+                // Find any existing records for this user to ensure we UPDATE and CLEAN UP duplicates
+                const snap = await db.collection("platform_feedback").where("studentId", "==", currentUser.uid).get();
+                
+                if (!snap.empty) {
+                    // Update the first found document
+                    let primaryDocId = snap.docs[0].id;
+                    await db.collection("platform_feedback").doc(primaryDocId).update({
                         rating: selectedStars,
                         feedback: feedbackText,
+                        studentName: currentUser.displayName,
                         timestamp: firebase.firestore.FieldValue.serverTimestamp()
                     });
+                    
+                    // Clean up any extra duplicates if they exist (fixing the issue shown in your image)
+                    if (snap.docs.length > 1) {
+                        for(let i = 1; i < snap.docs.length; i++) {
+                            await db.collection("platform_feedback").doc(snap.docs[i].id).delete();
+                        }
+                    }
                     showNotification("✅ Feedback updated successfully!");
                 } else {
-                    const newDoc = await db.collection("platform_feedback").add({
+                    // Create entirely new
+                    await db.collection("platform_feedback").add({
                         rating: selectedStars,
                         feedback: feedbackText,
                         studentName: currentUser.displayName,
                         studentId: currentUser.uid,
                         timestamp: firebase.firestore.FieldValue.serverTimestamp()
                     });
-                    userFeedbackDocId = newDoc.id;
                     showNotification("✅ Thank you for your feedback!");
                 }
                 
