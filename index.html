@@ -15,15 +15,19 @@
     
     <!-- SEO & Search Engine Tags -->
     <meta name="description" content="MCQsPrep - A free, smart MCQ practice platform for competitive exams like NEET and General Knowledge. Track your streak and global rank.">
-    <meta property="og:title" content="MCQsPrep - Smart Exam Practice">
-    <meta property="og:description" content="Practice daily MCQs, full-length mock tests, and track your global leaderboard rankings.">
-    <meta property="og:image" content="https://images.unsplash.com/photo-1434030216411-0b793f4b4173?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80">
-    <meta property="og:url" content="https://mcqsprep.github.io">
     
     <!-- FIREBASE LIBRARIES -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+
+    <!-- NEW LIBRARIES: Cropper.js, Marked.js, KaTeX -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"></script>
 
     <style>
         :root {
@@ -38,9 +42,9 @@
             --wrong-red: #F44336;
         }
 
-        body { margin: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: var(--bg-dark); color: var(--text-light); }
+        body { margin: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: var(--bg-dark); color: var(--text-light); overflow-x: hidden; }
 
-        .navbar { display: flex; justify-content: space-between; align-items: center; background-color: var(--bg-dark); padding: 15px 40px; border-bottom: 1px solid var(--border-color); position: relative; }
+        .navbar { display: flex; justify-content: space-between; align-items: center; background-color: var(--bg-dark); padding: 15px 40px; border-bottom: 1px solid var(--border-color); position: relative; z-index: 100;}
         .logo-container { display: flex; align-items: center; font-size: 24px; font-weight: bold; color: var(--text-light); cursor: pointer; white-space: nowrap; }
         .logo-container span { color: var(--primary-yellow); margin-left: 2px; }
         
@@ -57,13 +61,13 @@
         .suggestions-dropdown { display: none; position: absolute; top: calc(100% + 8px); left: 0; right: 0; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; z-index: 2000; max-height: 350px; overflow-y: auto; box-shadow: 0 8px 24px rgba(0,0,0,0.8); }
         .suggestion-item { padding: 12px 20px; cursor: pointer; border-bottom: 1px solid var(--border-color); color: white; display: flex; align-items: center; gap: 12px; font-size: 15px; white-space: normal; line-height: 1.4; word-break: break-word; }
         .suggestion-item:hover { background: #2a2a2a; color: var(--primary-yellow); }
+        .highlight-match { color: var(--primary-yellow); font-weight: bold; }
         
         .nav-links { display: flex; align-items: center; gap: 20px; white-space: nowrap; }
         .nav-links a { color: var(--text-light); text-decoration: none; font-weight: 500; transition: color 0.2s; cursor: pointer; }
         .nav-links a:hover { color: var(--primary-yellow); }
         .highlight-nav { color: var(--primary-yellow) !important; font-weight: bold; text-shadow: 0 0 8px rgba(253, 184, 19, 0.4); }
 
-        /* Profile Menu Specific CSS */
         .profile-wrapper { position: relative; display: flex; align-items: center; }
         .user-badge { display: none; align-items: center; gap: 8px; background: linear-gradient(135deg, #2a2a2a, #1a1a1a); border: 1px solid var(--primary-yellow); color: var(--text-light); padding: 6px 16px; border-radius: 20px; font-size: 14px; font-weight: 600; box-shadow: 0 0 10px rgba(253, 184, 19, 0.2); transition: 0.3s; cursor: pointer; margin-left: 10px; }
         .user-badge img { width: 20px; height: 20px; border-radius: 50%; }
@@ -79,7 +83,7 @@
         .main-content { flex: 2; }
         .sidebar { flex: 1; max-width: 400px; }
 
-        .card { background-color: var(--card-bg); border-radius: 8px; padding: 25px; margin-bottom: 25px; border: 1px solid var(--border-color); }
+        .card { background-color: var(--card-bg); border-radius: 8px; padding: 25px; margin-bottom: 25px; border: 1px solid var(--border-color); box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
         .card h2, .card h3 { margin-top: 0; margin-bottom: 20px; font-size: 20px; }
 
         .btn-exam { padding: 12px 18px; border-radius: 6px; border: 1px solid var(--border-color); background-color: #2a2a2a; color: white; font-size: 15px; font-weight: bold; cursor: pointer; transition: 0.2s; }
@@ -96,10 +100,8 @@
         .admin-row { display: flex; gap: 15px; margin-bottom: 15px; flex-wrap: wrap; }
         .admin-row > * { flex: 1; min-width: 200px; }
         .admin-checkbox-group { display: flex; gap: 15px; align-items: center; background: #2a2a2a; padding: 12px; border-radius: 6px; border: 1px solid var(--border-color); flex-wrap: wrap; }
-        .admin-checkbox-group label { display: flex; align-items: center; gap: 8px; cursor: pointer; }
         .admin-tab-btn { padding: 10px 20px; background: #2a2a2a; color: var(--text-muted); border: 1px solid var(--border-color); border-radius: 6px; cursor: pointer; font-weight: bold; margin-bottom:10px;}
         .admin-tab-btn.active { background: var(--primary-yellow); color: black; border-color: var(--primary-yellow); }
-
         .content-item-card { background: #252525; border: 1px solid var(--border-color); border-radius: 8px; padding: 15px; margin-bottom: 15px; }
         .badge-path { background: #333; color: var(--primary-yellow); padding: 4px 8px; border-radius: 4px; font-size: 12px; }
 
@@ -119,7 +121,6 @@
 
         .flag-btn { background: #333; border: 1px solid var(--border-color); color: white; padding: 5px 12px; border-radius: 4px; cursor: pointer; font-size: 14px; transition: 0.2s; }
         .flag-btn.flagged { background: #382909; border-color: var(--primary-yellow); color: var(--primary-yellow); }
-        
         .report-btn { background: rgba(244, 67, 54, 0.1); border: 1px solid var(--wrong-red); color: var(--wrong-red); padding: 5px 12px; border-radius: 4px; cursor: pointer; font-size: 14px; transition: 0.2s; }
         .report-btn:hover { background: var(--wrong-red); color: white; }
 
@@ -145,13 +146,55 @@
 
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 3000; justify-content: center; align-items: center; backdrop-filter: blur(5px); }
         .modal-content { background: var(--card-bg); padding: 30px; border-radius: 12px; border: 1px solid var(--border-color); width: 90%; max-width: 600px; position: relative; max-height: 90vh; overflow-y: auto; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-        .close-modal { position: absolute; top: 15px; right: 15px; background: none; border: none; color: var(--text-muted); font-size: 24px; cursor: pointer; transition: 0.2s; }
+        .close-modal { position: absolute; top: 15px; right: 15px; background: none; border: none; color: var(--text-muted); font-size: 24px; cursor: pointer; transition: 0.2s; z-index: 5000; }
+        .close-modal:hover { color: var(--wrong-red); transform: scale(1.1); }
         
         .full-image-modal img { max-width: 90vw; max-height: 90vh; object-fit: contain; border-radius: 8px; }
 
         .google-btn { display: flex; align-items: center; justify-content: center; gap: 10px; background: white; color: #444; width: 100%; padding: 12px; border-radius: 6px; border: none; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.2s; }
         .google-btn:hover { background: #eee; }
         .google-btn img { width: 20px; height: 20px; }
+
+        /* --- AI FULLSCREEN & WIDGET SPECIFIC CSS --- */
+        #ai-floating-btn {
+            position: fixed; bottom: 30px; right: 30px;
+            background: linear-gradient(135deg, var(--primary-yellow), #ff9800);
+            color: black; font-weight: bold; padding: 12px 24px;
+            border-radius: 30px; cursor: pointer; box-shadow: 0 4px 15px rgba(253, 184, 19, 0.4);
+            z-index: 2500; display: flex; align-items: center; gap: 8px; font-size: 16px;
+            user-select: none; touch-action: none; transition: transform 0.2s, box-shadow 0.2s;
+        }
+        #ai-floating-btn:active { transform: scale(0.95); }
+        #ai-floating-btn.draggable { box-shadow: 0 0 20px #fff; border: 2px solid white; cursor: grab; animation: pulse 1s infinite alternate; }
+        @keyframes pulse { from { transform: scale(1); } to { transform: scale(1.05); } }
+
+        /* The Fullscreen AI Modal */
+        .ai-fullscreen-modal {
+            width: 100vw !important;
+            height: 100vh !important;
+            max-width: 100vw !important;
+            max-height: 100vh !important;
+            border-radius: 0 !important;
+            border: none !important;
+            margin: 0 !important;
+            /* Dynamic animated gradient background */
+            background: linear-gradient(-45deg, #111111, #1a1a2e, #0f3460, #111111) !important;
+            background-size: 400% 400% !important;
+            animation: aiGradientBG 15s ease infinite !important;
+            display: flex;
+            flex-direction: column;
+            padding: 50px 15% !important;
+            box-sizing: border-box;
+        }
+        @keyframes aiGradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .ai-chat-bubble { background: rgba(42, 42, 42, 0.85); backdrop-filter: blur(5px); padding: 20px; border-radius: 8px; margin-bottom: 15px; font-size: 16px; line-height: 1.6; border-left: 4px solid var(--primary-yellow); overflow-x: auto; box-shadow: 0 4px 10px rgba(0,0,0,0.3); color: white;}
+        .ai-chat-bubble.user-bubble { background: rgba(30, 30, 30, 0.85); border-left: 4px solid #4CAF50; }
+        .ai-match-card { background: rgba(76, 175, 80, 0.15); border: 1px solid var(--correct-green); padding: 15px; border-radius: 8px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; backdrop-filter: blur(5px); }
 
         /* --- MOBILE RESPONSIVE FIXES --- */
         @media (max-width: 768px) {
@@ -160,30 +203,80 @@
             .breadcrumb { padding: 10px 15px; }
             .navbar { flex-wrap: wrap; padding: 15px; gap: 10px; }
             .nav-links { width: 100%; justify-content: space-between; margin-top: 15px; font-size: 14px; }
-            
-            /* Navbar Rating Fix for Mobile */
             .nav-rating-badge .rating-text { display: none; }
             .nav-rating-badge { margin-left: 10px; padding: 4px 6px; }
-            
-            /* Mobile Search Overhaul */
             .search-wrapper { position: static; margin: 0 10px; }
             .search-wrapper.active .search-icon-btn { display: none; }
-            .search-wrapper.active .search-input-container { 
-                position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
-                background: var(--bg-dark); z-index: 1000; padding: 0 15px; 
-                box-sizing: border-box; display: flex; align-items: center; justify-content: center;
-            }
+            .search-wrapper.active .search-input-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-dark); z-index: 1000; padding: 0 15px; box-sizing: border-box; display: flex; align-items: center; justify-content: center; }
             .search-input-container input { padding-right: 40px; }
             .search-close-btn { right: 25px; }
-            .suggestions-dropdown { 
-                top: 100%; left: 0; right: 0; width: 100%; 
-                max-height: calc(100vh - 70px); border-radius: 0 0 12px 12px; 
-                border-left: none; border-right: none;
-            }
+            .suggestions-dropdown { top: 100%; left: 0; right: 0; width: 100%; max-height: calc(100vh - 70px); border-radius: 0 0 12px 12px; border-left: none; border-right: none; }
+            
+            .ai-fullscreen-modal { padding: 50px 20px !important; }
         }
     </style>
 </head>
 <body>
+
+    <!-- Draggable Floating AI Button -->
+    <div id="ai-floating-btn">✨ Ask AI</div>
+
+    <!-- AI Studio Fullscreen Modal -->
+    <div id="aiModal" class="modal-overlay" style="z-index: 4000;">
+        <div class="modal-content ai-fullscreen-modal">
+            <button class="close-modal" onclick="closeAIModal()">✕</button>
+            <h2 style="margin-top:0; color: var(--primary-yellow); display:flex; align-items:center; gap:10px; text-shadow: 0 2px 4px rgba(0,0,0,0.5);">✨ AI Doubt Solver</h2>
+            
+            <!-- Input View -->
+            <div id="ai-input-view" style="display:block; flex:1; overflow-y:auto; padding-right:10px;">
+                <p style="color:var(--text-light); font-size:16px; margin-bottom:25px; text-shadow: 0 1px 2px rgba(0,0,0,0.8);">Upload a screenshot of a question or type it below. We'll search the database and provide a step-by-step solution.</p>
+                
+                <div style="border: 2px dashed rgba(253, 184, 19, 0.5); padding: 40px; text-align: center; border-radius: 12px; margin-bottom: 25px; background: rgba(26, 26, 26, 0.6); cursor: pointer; backdrop-filter: blur(5px); transition: 0.3s;" onclick="document.getElementById('aiImageInput').click()" onmouseover="this.style.background='rgba(42, 42, 42, 0.8)'" onmouseout="this.style.background='rgba(26, 26, 26, 0.6)'">
+                    <div style="font-size: 50px; margin-bottom: 15px;">📷</div>
+                    <div style="font-weight: bold; font-size: 18px; color: white;">Click to Upload Image / Screenshot</div>
+                    <div style="font-size: 14px; color: var(--text-muted); margin-top: 8px;">We will extract and solve the question automatically.</div>
+                    <input type="file" id="aiImageInput" accept="image/*" style="display:none;" onchange="handleAIImageUpload(event)">
+                </div>
+
+                <div style="text-align:center; color:var(--text-light); margin-bottom:25px; font-weight:bold; letter-spacing: 2px;">— OR —</div>
+                
+                <textarea id="aiTextInput" class="input-field" placeholder="Type or paste your question here..." style="min-height: 120px; font-size:16px; background: rgba(42, 42, 42, 0.7); border: 1px solid var(--border-color); color: white;"></textarea>
+                <button class="btn-exam" onclick="processAIText()" style="width:100%; background:var(--primary-yellow); color:black; border:none; font-size:18px; padding:18px; box-shadow: 0 4px 15px rgba(253, 184, 19, 0.3);">Solve Text Question 🚀</button>
+            </div>
+
+            <!-- Cropper View -->
+            <div id="ai-cropper-view" style="display:none; flex:1; flex-direction:column;">
+                <p style="color:var(--text-light); text-shadow: 0 1px 2px rgba(0,0,0,0.8); margin-bottom:15px;">Crop the image to highlight <b>only one question</b> for the best AI accuracy.</p>
+                <div style="flex:1; min-height:300px; max-height: 60vh; background:#000; position:relative; margin-bottom:20px; border-radius:8px; overflow:hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+                    <img id="aiCropperImage" style="max-width:100%; max-height:100%; display:block;">
+                </div>
+                <div style="display:flex; gap:15px;">
+                    <button class="btn-exam" onclick="cancelCropper()" style="flex:1; background:rgba(51, 51, 51, 0.8); color:white; border:none; padding:15px; font-size:16px;">Cancel</button>
+                    <button class="btn-exam" onclick="confirmCropAndSolve()" style="flex:2; background:var(--primary-yellow); color:black; border:none; padding:15px; font-size:16px; box-shadow: 0 4px 15px rgba(253, 184, 19, 0.3);">Crop & Solve 🚀</button>
+                </div>
+            </div>
+
+            <!-- Loading View -->
+            <div id="ai-loading-view" style="display:none; flex:1; flex-direction:column; justify-content:center; align-items:center;">
+                <div style="font-size: 60px; animation: pulse 1s infinite; margin-bottom:25px;">🤖</div>
+                <h2 style="color:var(--primary-yellow); text-shadow: 0 2px 10px rgba(253, 184, 19, 0.3);">AI is analyzing...</h2>
+                <p style="color:var(--text-light); font-size:16px;">Searching database and generating step-by-step solution.</p>
+            </div>
+
+            <!-- Results & Chat View -->
+            <div id="ai-chat-view" style="display:none; flex:1; flex-direction:column;">
+                <div id="ai-chat-history" style="flex:1; overflow-y:auto; padding-right:15px; margin-bottom:20px;">
+                    <!-- Chat bubbles injected here -->
+                </div>
+                
+                <div style="display:flex; gap:10px; background: rgba(30,30,30,0.8); padding: 15px; border-radius: 12px; backdrop-filter: blur(5px); border: 1px solid var(--border-color);">
+                    <input type="text" id="aiFollowUpInput" class="input-field" placeholder="Ask a follow-up doubt about this solution..." style="margin-bottom:0; flex:1; background: #111; border: none;">
+                    <button class="btn-exam" onclick="sendAIFollowUp()" style="background:var(--primary-yellow); color:black; border:none; padding: 0 25px; font-size: 16px;">Send</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
 
     <!-- Auth Modal (Google Sign-In) -->
     <div id="authModal" class="modal-overlay">
@@ -204,7 +297,6 @@
             <button class="close-modal" onclick="closeReportModal()">✕</button>
             <h2 style="margin-top:0; color: var(--wrong-red);">🚨 Report Mistake</h2>
             <p style="color: var(--text-muted); font-size:14px; margin-bottom:15px;">Help us keep the platform accurate. Tell us what's wrong with this question.</p>
-            
             <label style="color:var(--text-light); font-size:14px; font-weight:bold; display:block; margin-bottom:10px;">Issue Type:</label>
             <select id="reportReason" class="input-field">
                 <option value="Wrong Option Provided">Wrong Option Provided</option>
@@ -212,10 +304,8 @@
                 <option value="Explanation is Incorrect">Explanation is Incorrect</option>
                 <option value="Other">Other</option>
             </select>
-            
             <label style="color:var(--text-light); font-size:14px; font-weight:bold; display:block; margin-bottom:10px;">Additional Details:</label>
             <textarea id="reportDescription" class="input-field" placeholder="Briefly describe the issue so admins can fix it quickly..." style="min-height: 80px;"></textarea>
-            
             <button class="btn-exam" onclick="submitReport()" style="width:100%; background-color:var(--wrong-red); color:white; border:none;">Submit Report</button>
         </div>
     </div>
@@ -226,7 +316,6 @@
             <button class="close-modal" onclick="closeFeedbackModal()">✕</button>
             <h2 style="margin-top:0; color: var(--primary-yellow);">⭐ Platform Feedback</h2>
             <p style="color: var(--text-muted); font-size: 15px; margin-bottom: 20px;">Help us improve MCQsPrep! Rate your experience.</p>
-            
             <div style="background: #2a2a2a; border: 1px solid var(--border-color); padding: 25px 20px; border-radius: 8px;">
                 <div style="margin-bottom: 25px;">
                     <button id="star-1" class="star-btn" onclick="updateStarUI(1)">★</button>
@@ -235,21 +324,12 @@
                     <button id="star-4" class="star-btn" onclick="updateStarUI(4)">★</button>
                     <button id="star-5" class="star-btn" onclick="updateStarUI(5)">★</button>
                 </div>
-                
                 <div style="text-align: left; margin-bottom: 20px;">
                     <label style="color: var(--primary-yellow); font-size: 14px; font-weight: bold; display: block; margin-bottom: 10px;">📝 Write your feedback (Optional):</label>
                     <textarea id="platformFeedbackText" class="input-field" placeholder="Tell us what you like or what we can improve..." style="min-height: 100px; background: #1a1a1a; border: 1px solid rgba(253, 184, 19, 0.6); box-shadow: inset 0 0 10px rgba(0,0,0,0.3); font-size: 15px;"></textarea>
                 </div>
-                
                 <button id="submitFeedbackBtn" class="btn-exam" onclick="submitPlatformFeedback()" style="width: 100%; background: var(--primary-yellow); color: black; border: none; font-size: 16px;">Submit Feedback</button>
             </div>
-        </div>
-    </div>
-
-    <!-- Image Zoom Modal -->
-    <div id="imageZoomModal" class="modal-overlay" onclick="closeImageModal()">
-        <div class="full-image-modal">
-            <img id="zoomedImageSrc" src="">
         </div>
     </div>
 
@@ -261,11 +341,9 @@
             <input type="hidden" id="editDocId">
             <label style="color:var(--text-muted); font-size:13px;">Question:</label>
             <textarea id="editQuestion" class="input-field"></textarea>
-            
             <label style="color:var(--text-muted); font-size:13px;">Options:</label>
             <div class="admin-row"><input type="text" id="editOptA" class="input-field" placeholder="Option A"><input type="text" id="editOptB" class="input-field" placeholder="Option B"></div>
             <div class="admin-row"><input type="text" id="editOptC" class="input-field" placeholder="Option C"><input type="text" id="editOptD" class="input-field" placeholder="Option D"></div>
-            
             <label style="color:var(--text-muted); font-size:13px;">Correct Answer(s):</label>
             <div class="admin-checkbox-group" style="margin-bottom: 15px;">
                 <label><input type="checkbox" value="A" class="editCorrectCb"> A</label>
@@ -273,10 +351,8 @@
                 <label><input type="checkbox" value="C" class="editCorrectCb"> C</label>
                 <label><input type="checkbox" value="D" class="editCorrectCb"> D</label>
             </div>
-
             <label style="color:var(--text-muted); font-size:13px;">Explanation:</label>
             <textarea id="editExplanation" class="input-field" placeholder="Explanation..."></textarea>
-            
             <button class="btn-exam" onclick="saveEditedMCQ()" style="width:100%; background-color:var(--correct-green); color:white; border:none;">💾 Save Changes</button>
         </div>
     </div>
@@ -285,7 +361,6 @@
         <div style="display: flex; align-items: center; min-width: 0;">
             <div class="logo-container" onclick="goHome()">🩺 MCQsPrep<span>.</span></div>
             
-            <!-- Navbar Rating Section -->
             <div class="nav-rating-badge" style="display:flex; align-items:center; gap:8px; margin-left:15px; background:#1a1a1a; padding:4px 10px; border-radius:20px; border:1px solid var(--border-color);">
                 <span class="rating-text" style="font-size:13px; color:var(--text-light); white-space:nowrap;">Overall: <span style="color:var(--primary-yellow); font-weight:bold;">⭐ <span id="global-rating-display">5.0</span>/5</span></span>
                 <button onclick="openFeedbackModal()" style="padding:4px 12px; font-size:12px; background:var(--primary-yellow); color:black; border:none; border-radius:15px; cursor:pointer; font-weight:bold; white-space:nowrap; transition: 0.2s;">⭐ Rate Us</button>
@@ -304,13 +379,11 @@
             <a onclick="goHome()">Home</a>
             <a onclick="showLeaderboardOptions()" class="highlight-nav">Leaderboard</a>
             
-            <!-- Google Sign In Button (Visible only to guests) -->
             <div id="loginNavBtn" class="user-badge" onclick="showAuthModal()" style="display:none; cursor: pointer; background: white; color: #444; border: none; padding: 6px 12px;" title="Sign in with Google">
                 <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="G" style="border-radius:0;">
                 <span style="font-weight: bold;">Sign In</span>
             </div>
 
-            <!-- Logged In User Profile with Dropdown -->
             <div class="profile-wrapper">
                 <div id="userBadge" class="user-badge" onclick="toggleProfileMenu()" title="Profile Options">
                     <img id="userPhotoDisplay" src="" alt="👤" style="display:none;">
@@ -319,6 +392,7 @@
                 <div id="profileMenu" class="profile-menu">
                     <div class="profile-menu-item" onclick="window.location.hash='#/progress'; toggleProfileMenu();">📊 Track Progress</div>
                     <div class="profile-menu-item" onclick="window.location.hash='#/streak'; toggleProfileMenu();">🔥 My Streak</div>
+                    <div class="profile-menu-item" onclick="window.location.hash='#/diary'; toggleProfileMenu();">📔 Doubt Diary</div>
                     <div class="profile-menu-item" onclick="signOut(); toggleProfileMenu();">🚪 Sign Out</div>
                 </div>
             </div>
@@ -328,6 +402,8 @@
     <div class="breadcrumb" id="breadcrumb-text">Home / Select Exam</div>
     <div class="container">
         <div class="main-content" id="dynamic-content"></div>
+        
+        <!-- Sidebar -->
         <div class="sidebar" id="main-sidebar">
             <div class="card">
                 <h3>Quick Links</h3>
@@ -362,17 +438,13 @@
 
         const CLOUDINARY_URL = "https://api.cloudinary.com/v1_1/h5gdez7a/auto/upload";
         const CLOUDINARY_PRESET = "mcq_uploads";
+        
+        // --- CLOUDFLARE AI WORKER URL ---
+        const AI_WORKER_URL = "https://shy-waterfall-08a4.md-habibullah9957.workers.dev/";
 
-        // ALL INNERMOST NODES ARE NOW EMPTY OBJECTS {}. 
         let appData = {
             "Daily Quiz Challenge": { "NEET": {}, "General Knowledge": {} },
-            "NEET": {
-                "NCERT Book": {},
-                "PYQs": {},
-                "Practice Paper": {},
-                "MCQs Practice": { "Botany": {}, "Zoology": {}, "Physics": {}, "Organic Chemistry": {}, "Physical Chemistry": {}, "Inorganic Chemistry": {} },
-                "Mock Test": {}
-            },
+            "NEET": { "NCERT Book": {}, "PYQs": {}, "Practice Paper": {}, "MCQs Practice": { "Botany": {}, "Zoology": {}, "Physics": {}, "Organic Chemistry": {}, "Physical Chemistry": {}, "Inorganic Chemistry": {} }, "Mock Test": {} },
             "General Knowledge": { "Current Affairs": {}, "History": {}, "Geography": {} }
         };
 
@@ -386,30 +458,25 @@
                     let data = doc.data();
                     let pathArr = data.parentPath.split(' > ');
                     let current = appData;
-                    
-                    for (let p of pathArr) {
-                        if (!current[p]) current[p] = {};
-                        current = current[p];
-                    }
-                    
+                    for (let p of pathArr) { if (!current[p]) current[p] = {}; current = current[p]; }
                     if (typeof current === 'object' && !Array.isArray(current)) {
                         if (!current[data.name]) current[data.name] = {}; 
                         let fullPath = data.parentPath + " > " + data.name;
                         customTopicTypes[fullPath] = data.type; 
                     }
                 });
-            } catch(e) { console.error("Error loading custom topics:", e); }
+            } catch(e) { console.error(e); }
         }
 
-        // --- AUTHENTICATION & PROFILE LOGIC ---
+        // --- AUTHENTICATION LOGIC ---
         let currentUser = null;
         let currentPath = []; 
         let dataLoaded = false; 
 
         function showAuthModal() { document.getElementById('authModal').style.display = 'flex'; }
         function skipSignIn() { sessionStorage.setItem('auth_skipped', 'true'); document.getElementById('authModal').style.display = 'none'; }
-        
         function toggleProfileMenu() { document.getElementById('profileMenu').classList.toggle('active'); }
+        
         window.addEventListener('click', function(e) {
             if (!document.getElementById('userBadge').contains(e.target) && !document.getElementById('profileMenu').contains(e.target)) {
                 let menu = document.getElementById('profileMenu');
@@ -421,39 +488,16 @@
             currentUser = user;
             const badge = document.getElementById('userBadge');
             const loginNavBtn = document.getElementById('loginNavBtn');
-            const nameDisplay = document.getElementById('userNameDisplay');
-            const photoDisplay = document.getElementById('userPhotoDisplay');
-            const authModal = document.getElementById('authModal');
-
             if (user) {
-                nameDisplay.innerText = user.displayName.split(" ")[0];
-                if(user.photoURL) { photoDisplay.src = user.photoURL; photoDisplay.style.display = 'block'; }
-                
-                badge.style.display = 'flex';
-                loginNavBtn.style.display = 'none'; 
-                authModal.style.display = 'none';
-
-                db.collection("users").doc(user.uid).set({
-                    displayName: user.displayName,
-                    email: user.email,
-                    photoURL: user.photoURL,
-                    lastLogin: firebase.firestore.FieldValue.serverTimestamp()
-                }, { merge: true });
-
+                document.getElementById('userNameDisplay').innerText = user.displayName.split(" ")[0];
+                if(user.photoURL) { document.getElementById('userPhotoDisplay').src = user.photoURL; document.getElementById('userPhotoDisplay').style.display = 'block'; }
+                badge.style.display = 'flex'; loginNavBtn.style.display = 'none'; document.getElementById('authModal').style.display = 'none';
+                db.collection("users").doc(user.uid).set({ displayName: user.displayName, email: user.email, photoURL: user.photoURL, lastLogin: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true });
             } else {
-                badge.style.display = 'none';
-                loginNavBtn.style.display = 'flex'; 
-                
-                if (window.location.hash !== '#/admin' && window.location.hash !== '#/admin-panel') {
-                    if (!sessionStorage.getItem('auth_skipped')) { authModal.style.display = 'flex'; }
-                }
+                badge.style.display = 'none'; loginNavBtn.style.display = 'flex'; 
+                if (window.location.hash !== '#/admin' && window.location.hash !== '#/admin-panel' && !sessionStorage.getItem('auth_skipped')) { document.getElementById('authModal').style.display = 'flex'; }
             }
-
-            if (!dataLoaded) {
-                await loadCustomTopics();
-                dataLoaded = true;
-            }
-
+            if (!dataLoaded) { await loadCustomTopics(); dataLoaded = true; }
             if (!window.location.hash) window.location.hash = '#/home';
             handleRouting();
         });
@@ -465,7 +509,10 @@
         function handleRouting() {
             if(!dataLoaded) return; 
             let hash = decodeURIComponent(window.location.hash.replace('#/', ''));
-            document.getElementById('main-sidebar').style.display = (hash === 'admin' || hash === 'admin-panel' || hash === 'quiz' || hash === 'progress' || hash === 'streak') ? 'none' : 'block';
+            
+            // FIX 2: Only show Sidebar on pure 'home', hide on all deep paths so topics don't bleed on mobile.
+            let isHome = (!hash || hash === 'home');
+            document.getElementById('main-sidebar').style.display = isHome ? 'block' : 'none';
 
             if (!hash || hash === 'home') { currentPath = []; _renderView(); } 
             else if (hash.startsWith('path/')) { currentPath = hash.replace('path/', '').split('/'); _renderView(); } 
@@ -474,6 +521,7 @@
             else if (hash === 'quiz') { _initiateQuizEngine(); }
             else if (hash === 'progress') { _renderProgress(); }
             else if (hash === 'streak') { _renderStreak(); }
+            else if (hash === 'diary') { _renderDoubtDiary(); }
             else if (hash === 'admin') { _renderAdminLogin(); }
             else if (hash === 'admin-panel') { _renderAdminPanel(); }
         }
@@ -485,197 +533,306 @@
         function goBack() { window.history.back(); }
 
         // --- STREAK ENGINE ---
-        let activeTime = 0;
-        let streakLogged = false;
-        setInterval(() => {
-            if (currentUser && !streakLogged) {
-                activeTime++;
-                if (activeTime >= 300) { 
-                    logStreakActivity();
-                    streakLogged = true;
-                }
-            }
-        }, 1000);
-
+        let activeTime = 0; let streakLogged = false;
+        setInterval(() => { if (currentUser && !streakLogged) { activeTime++; if (activeTime >= 300) { logStreakActivity(); streakLogged = true; } } }, 1000);
         async function logStreakActivity() {
             if(!currentUser) return;
-            let today = new Date();
-            let todayStr = new Date(today.getTime() - (today.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
-            try {
-                await db.collection("users").doc(currentUser.uid).set({ activeDates: firebase.firestore.FieldValue.arrayUnion(todayStr) }, { merge: true });
-                showNotification("🔥 Daily Streak Updated! (+1)");
-            } catch(e) {}
+            let todayStr = new Date(new Date().getTime() - (new Date().getTimezoneOffset() * 60000)).toISOString().split('T')[0];
+            try { await db.collection("users").doc(currentUser.uid).set({ activeDates: firebase.firestore.FieldValue.arrayUnion(todayStr) }, { merge: true }); showNotification("🔥 Daily Streak Updated! (+1)"); } catch(e) {}
         }
-
         function calculateStreak(datesArray) {
             if (!datesArray || datesArray.length === 0) return 0;
             let sorted = [...new Set(datesArray)].sort().reverse(); 
-            let today = new Date();
-            let todayStr = new Date(today.getTime() - (today.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
-            let yesterday = new Date(today);
-            yesterday.setDate(yesterday.getDate() - 1);
-            let yesterdayStr = new Date(yesterday.getTime() - (yesterday.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
-
+            let todayStr = new Date(new Date().getTime() - (new Date().getTimezoneOffset() * 60000)).toISOString().split('T')[0];
+            let yDate = new Date(); yDate.setDate(yDate.getDate() - 1);
+            let yesterdayStr = new Date(yDate.getTime() - (yDate.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
             if (!sorted.includes(todayStr) && !sorted.includes(yesterdayStr)) return 0;
-
-            let streak = 0;
-            let currDate = new Date();
-            if (!sorted.includes(todayStr)) { currDate.setDate(currDate.getDate() - 1); } 
-
+            let streak = 0; let currDate = new Date();
+            if (!sorted.includes(todayStr)) currDate.setDate(currDate.getDate() - 1); 
             for(let i=0; i<365; i++) {
                 let dStr = new Date(currDate.getTime() - (currDate.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
-                if (sorted.includes(dStr)) { streak++; currDate.setDate(currDate.getDate() - 1); } 
-                else { break; }
+                if (sorted.includes(dStr)) { streak++; currDate.setDate(currDate.getDate() - 1); } else break;
             }
             return streak;
         }
 
         async function _renderStreak() {
-            if (!currentUser) {
-                document.getElementById('dynamic-content').innerHTML = `
-                    <div class="card" style="text-align:center; padding: 40px;">
-                        <h2 style="color:var(--wrong-red);">⚠️ Sign In Required</h2>
-                        <p style="color:var(--text-muted);">Please sign in with Google to view and track your daily streak.</p>
-                        <button class="btn-exam" onclick="goBack()" style="margin-top:20px;">&larr; Back</button>
-                    </div>`;
-                return;
-            }
-            
+            if (!currentUser) return document.getElementById('dynamic-content').innerHTML = `<div class="card" style="text-align:center;"><h2>⚠️ Sign In Required</h2><button class="btn-exam" onclick="goBack()">Back</button></div>`;
             document.getElementById('breadcrumb-text').innerText = "Home / Profile / My Streak";
-            const mainContent = document.getElementById('dynamic-content');
-            mainContent.innerHTML = `<div class="card"><h2>🔥 Fetching Streak...</h2></div>`;
-            
+            const mc = document.getElementById('dynamic-content'); mc.innerHTML = `<div class="card"><h2>🔥 Fetching Streak...</h2></div>`;
             try {
                 let doc = await db.collection("users").doc(currentUser.uid).get();
                 let dates = doc.exists ? (doc.data().activeDates || []) : [];
                 let streak = calculateStreak(dates);
-                
                 let datesHtml = `<ul style="list-style:none; padding:0; display:flex; flex-wrap:wrap; gap:10px;">`;
-                [...new Set(dates)].sort().reverse().slice(0, 14).forEach(d => {
-                    datesHtml += `<li style="background:#2a2a2a; padding:8px 12px; border-radius:6px; border:1px solid var(--correct-green); color:var(--correct-green); font-weight:bold;">✅ ${d}</li>`;
-                });
+                [...new Set(dates)].sort().reverse().slice(0, 14).forEach(d => { datesHtml += `<li style="background:#2a2a2a; padding:8px 12px; border-radius:6px; border:1px solid var(--correct-green); color:var(--correct-green); font-weight:bold;">✅ ${d}</li>`; });
                 datesHtml += `</ul>`;
-
-                mainContent.innerHTML = `
-                    <div class="card" style="text-align:center;">
-                        <h2 style="color:var(--primary-yellow);">🔥 Daily Streak</h2>
-                        <p style="color:var(--text-muted);">Spend at least 5 minutes practicing on the platform daily to maintain your streak!</p>
-                        <div style="font-size: 80px; margin: 20px 0; text-shadow: 0 0 20px rgba(253,184,19,0.5);">🔥</div>
-                        <div style="font-size: 32px; font-weight: bold; margin-bottom: 30px; color: white;">${streak} Day${streak !== 1 ? 's' : ''}</div>
-                        <h3 style="text-align:left; border-bottom: 1px solid var(--border-color); padding-bottom:10px; margin-top:40px;">📅 Recent Active Days</h3>
-                        ${dates.length > 0 ? datesHtml : '<p style="text-align:left; color:var(--text-muted);">No activity recorded yet. Start practicing for 5 minutes!</p>'}
-                        <button class="btn-exam" onclick="goBack()" style="margin-top:40px; background:#333;">&larr; Exit to Dashboard</button>
-                    </div>
-                `;
-            } catch(e) { mainContent.innerHTML = `<div class="card"><h2>Error</h2><p>${e.message}</p></div>`; }
+                mc.innerHTML = `<div class="card" style="text-align:center;"><h2 style="color:var(--primary-yellow);">🔥 Daily Streak</h2><div style="font-size: 80px; margin: 20px 0;">🔥</div><div style="font-size: 32px; font-weight: bold; margin-bottom: 30px;">${streak} Day${streak !== 1 ? 's' : ''}</div>${dates.length > 0 ? datesHtml : ''}<button class="btn-exam" onclick="goBack()">Back</button></div>`;
+            } catch(e) {}
         }
 
-        // --- PERFORMANCE ANALYTICS UI ---
-        async function _renderProgress() {
-            if (!currentUser) {
-                document.getElementById('dynamic-content').innerHTML = `
-                    <div class="card" style="text-align:center; padding: 40px;">
-                        <h2 style="color:var(--wrong-red);">⚠️ Sign In Required</h2>
-                        <p style="color:var(--text-muted);">Please sign in with Google to track your performance analytics.</p>
-                        <button class="btn-exam" onclick="goBack()" style="margin-top:20px;">&larr; Back</button>
-                    </div>`;
-                return;
-            }
+        // --- NEW: AI DRAGGABLE FLOATING BUTTON ---
+        const aiBtn = document.getElementById('ai-floating-btn');
+        let pressTimer; let isDragging = false; let startX, startY, initialX, initialY;
 
-            document.getElementById('breadcrumb-text').innerText = "Home / Profile / Track Progress";
-            const mainContent = document.getElementById('dynamic-content');
-            mainContent.innerHTML = `<div class="card"><h2>📊 Analyzing Performance...</h2></div>`;
+        aiBtn.addEventListener('mousedown', startPress);
+        aiBtn.addEventListener('touchstart', startPress, {passive: true});
+        document.addEventListener('mouseup', endPress);
+        document.addEventListener('touchend', endPress);
+        document.addEventListener('mousemove', drag);
+        document.addEventListener('touchmove', drag, {passive: false});
 
+        function startPress(e) {
+            if(e.type === 'touchstart') { initialX = e.touches[0].clientX - aiBtn.getBoundingClientRect().left; initialY = e.touches[0].clientY - aiBtn.getBoundingClientRect().top; }
+            else { initialX = e.clientX - aiBtn.getBoundingClientRect().left; initialY = e.clientY - aiBtn.getBoundingClientRect().top; }
+            isDragging = false;
+            pressTimer = setTimeout(() => { isDragging = true; aiBtn.classList.add('draggable'); }, 1000); // 1 sec press to drag for better UX
+        }
+        function drag(e) {
+            if (!isDragging) return;
+            e.preventDefault();
+            let currentX = e.type === 'touchmove' ? e.touches[0].clientX : e.clientX;
+            let currentY = e.type === 'touchmove' ? e.touches[0].clientY : e.clientY;
+            aiBtn.style.left = (currentX - initialX) + 'px';
+            aiBtn.style.top = (currentY - initialY) + 'px';
+            aiBtn.style.right = 'auto'; aiBtn.style.bottom = 'auto';
+        }
+        function endPress(e) {
+            clearTimeout(pressTimer);
+            if (isDragging) { isDragging = false; aiBtn.classList.remove('draggable'); } 
+            else if (e.target === aiBtn) { openAIModal(); }
+        }
+
+        // --- NEW: AI STUDIO LOGIC (OCR, CROPPER, LATEX, CHAT) ---
+        let cropper = null;
+        let aiChatHistory = [];
+        let lastExtractedQuestion = null;
+
+        function openAIModal() {
+            document.getElementById('aiModal').style.display = 'flex';
+            document.getElementById('ai-input-view').style.display = 'block';
+            document.getElementById('ai-cropper-view').style.display = 'none';
+            document.getElementById('ai-loading-view').style.display = 'none';
+            document.getElementById('ai-chat-view').style.display = 'none';
+            document.getElementById('aiTextInput').value = '';
+            document.getElementById('ai-chat-history').innerHTML = '';
+            aiChatHistory = []; lastExtractedQuestion = null;
+        }
+
+        function closeAIModal() {
+            document.getElementById('aiModal').style.display = 'none';
+            if(cropper) { cropper.destroy(); cropper = null; }
+        }
+
+        function handleAIImageUpload(e) {
+            const file = e.target.files[0];
+            if(!file) return;
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                document.getElementById('ai-input-view').style.display = 'none';
+                document.getElementById('ai-cropper-view').style.display = 'flex';
+                const imgNode = document.getElementById('aiCropperImage');
+                imgNode.src = event.target.result;
+                if(cropper) cropper.destroy();
+                cropper = new Cropper(imgNode, { viewMode: 1, autoCropArea: 0.8, background: false });
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function cancelCropper() {
+            if(cropper) { cropper.destroy(); cropper = null; }
+            document.getElementById('ai-cropper-view').style.display = 'none';
+            document.getElementById('ai-input-view').style.display = 'block';
+            document.getElementById('aiImageInput').value = "";
+        }
+
+        async function confirmCropAndSolve() {
+            if(!cropper) return;
+            const canvas = cropper.getCroppedCanvas();
+            const base64Image = canvas.toDataURL('image/jpeg').split(',')[1]; 
+            document.getElementById('ai-cropper-view').style.display = 'none';
+            await callAIWorker({ image: base64Image, mimeType: 'image/jpeg', mode: 'solve' });
+        }
+
+        async function processAIText() {
+            const text = document.getElementById('aiTextInput').value.trim();
+            if(!text) return showNotification("⚠️ Please type a question.");
+            document.getElementById('ai-input-view').style.display = 'none';
+            await callAIWorker({ text: text, mode: 'solve' });
+        }
+
+        async function callAIWorker(payload) {
+            document.getElementById('ai-loading-view').style.display = 'flex';
             try {
-                const snapshot = await db.collection("leaderboards").where("userId", "==", currentUser.uid).get();
-                let stats = { NEET: {}, GK: {} };
-                
-                snapshot.forEach(doc => {
-                    let d = doc.data();
-                    if(!d.quizPath || d.quizPath.includes("Daily Quiz Challenge")) return; 
-                    
-                    let isNeet = d.quizPath.includes("NEET");
-                    let isGk = d.quizPath.includes("General Knowledge");
-                    let category = isNeet ? "NEET" : (isGk ? "GK" : null);
-                    if(!category) return;
-
-                    let subtopic = d.quizPath.split(' > ').pop();
-                    
-                    if(!stats[category][subtopic]) stats[category][subtopic] = { accSum: 0, count: 0 };
-                    stats[category][subtopic].accSum += d.accuracy;
-                    stats[category][subtopic].count++;
+                const res = await fetch(AI_WORKER_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
                 });
+                const data = await res.json();
+                if(data.error) throw new Error(data.error);
 
-                function buildStatCards(catObj) {
-                    let str = '';
-                    let topics = Object.keys(catObj).sort();
-                    for(let topic of topics) {
-                        let avg = Math.round(catObj[topic].accSum / catObj[topic].count);
-                        let color = avg >= 70 ? 'var(--correct-green)' : (avg < 50 ? 'var(--wrong-red)' : 'var(--primary-yellow)');
-                        let label = avg >= 70 ? '💪 Strong' : (avg < 50 ? '⚠️ Needs Improvement' : '✨ Average');
-                        str += `
-                            <div style="background:#2a2a2a; border-left: 4px solid ${color}; padding:15px; border-radius:6px; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center;">
-                                <div>
-                                    <h4 style="margin:0 0 5px 0;">${topic}</h4>
-                                    <span style="font-size:12px; color:var(--text-muted);">${catObj[topic].count} Test(s) Attempted</span>
-                                </div>
-                                <div style="text-align:right;">
-                                    <div style="font-size:20px; font-weight:bold; color:${color};">${avg}%</div>
-                                    <div style="font-size:12px; color:var(--text-muted);">${label}</div>
-                                </div>
+                document.getElementById('ai-loading-view').style.display = 'none';
+                document.getElementById('ai-chat-view').style.display = 'flex';
+
+                if (payload.mode === 'solve') {
+                    lastExtractedQuestion = data;
+                    aiChatHistory = [{ role: 'user', text: "Solve this: " + data.extractedQuestion }];
+                    
+                    // 1. Search Database First
+                    const isFound = await checkDatabaseForQuestion(data.searchKeywords);
+                    
+                    let html = `<div class="ai-chat-bubble user-bubble"><b>Extracted Question:</b><br>${data.extractedQuestion}</div>`;
+                    
+                    if (isFound) {
+                        html += `
+                        <div class="ai-match-card">
+                            <div>
+                                <b style="color:var(--correct-green);">✅ Match Found in Database!</b><br>
+                                <span style="font-size:13px; color:var(--text-light);">Path: ${isFound.path}</span>
                             </div>
-                        `;
+                            <button class="btn-exam" onclick="closeAIModal(); jumpToSection(${JSON.stringify(isFound.path.split(' > ')).replace(/"/g, "'")}); window.location.hash='#/quiz';" style="background:var(--correct-green); border:none; padding:8px 12px; color:white; box-shadow: 0 4px 10px rgba(76, 175, 80, 0.4);">Go Practice 🚀</button>
+                        </div>`;
                     }
-                    return str || '<p style="color:var(--text-muted);">No data available for this category yet.</p>';
+                    
+                    // 2. Add AI Solution with Markdown + KaTeX Support
+                    let solutionMarkdown = `**Subject:** ${data.subject}\n\n**Key Concept:** ${data.solution.keyConcept}\n\n**Step-by-Step Solution:**\n${data.solution.stepByStep}\n\n**Final Answer:** ${data.solution.finalAnswer}`;
+                    aiChatHistory.push({ role: 'model', text: solutionMarkdown });
+                    
+                    let parsedHTML = marked.parse(solutionMarkdown);
+                    html += `<div class="ai-chat-bubble" id="ai-sol-bubble">${parsedHTML}</div>`;
+                    
+                    // 3. Add "Save to Diary" Button
+                    html += `<button class="btn-exam" onclick="saveToDoubtDiary()" style="background:rgba(42, 42, 42, 0.8); color:var(--primary-yellow); width:100%; margin-bottom:15px; border: 1px solid var(--primary-yellow); transition:0.3s;">📔 Save Explanation to Doubt Diary</button>`;
+
+                    const historyContainer = document.getElementById('ai-chat-history');
+                    historyContainer.innerHTML = html;
+                    
+                    // Render Math formulas perfectly
+                    renderMathInElement(document.getElementById('ai-sol-bubble'), {
+                        delimiters: [ 
+                            {left: '$$', right: '$$', display: true}, 
+                            {left: '$', right: '$', display: false},
+                            {left: '\\(', right: '\\)', display: false},
+                            {left: '\\[', right: '\\]', display: true}
+                        ]
+                    });
+
+                } else {
+                    // Chat follow-up mode
+                    aiChatHistory.push({ role: 'model', text: data.reply });
+                    let parsedHTML = marked.parse(data.reply);
+                    const chatDiv = document.createElement('div');
+                    chatDiv.className = 'ai-chat-bubble';
+                    chatDiv.innerHTML = parsedHTML;
+                    document.getElementById('ai-chat-history').appendChild(chatDiv);
+                    
+                    renderMathInElement(chatDiv, { delimiters: [ {left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}, {left: '\\(', right: '\\)', display: false}, {left: '\\[', right: '\\]', display: true} ] });
+                    document.getElementById('ai-chat-history').scrollTop = document.getElementById('ai-chat-history').scrollHeight;
                 }
 
-                mainContent.innerHTML = `
-                    <div class="card">
-                        <h2 style="color:var(--primary-yellow);">📊 Performance Analytics</h2>
-                        <p style="color:var(--text-muted); margin-bottom: 25px;">Identify your strengths and target your weak areas based on your permanent leaderboard history.</p>
-                        
-                        <div style="display:flex; gap:20px; flex-wrap:wrap;">
-                            <div style="flex:1; min-width:300px;">
-                                <h3 style="border-bottom:1px solid var(--border-color); padding-bottom:10px;">🩺 NEET Tracker</h3>
-                                ${buildStatCards(stats.NEET)}
-                            </div>
-                            <div style="flex:1; min-width:300px;">
-                                <h3 style="border-bottom:1px solid var(--border-color); padding-bottom:10px;">🌍 General Knowledge</h3>
-                                ${buildStatCards(stats.GK)}
-                            </div>
-                        </div>
-                        <button class="btn-exam" onclick="goBack()" style="margin-top:30px; background:#333;">&larr; Exit to Dashboard</button>
-                    </div>
-                `;
-            } catch(e) { mainContent.innerHTML = `<div class="card"><h2>Error</h2><p>${e.message}</p></div>`; }
+            } catch(e) {
+                document.getElementById('ai-loading-view').style.display = 'none';
+                document.getElementById('ai-input-view').style.display = 'block';
+                showNotification("❌ AI Error: " + e.message);
+            }
         }
 
-        // --- IMAGE MODAL ---
-        function expandImage(src) { document.getElementById('zoomedImageSrc').src = src; document.getElementById('imageZoomModal').style.display = 'flex'; }
-        function closeImageModal() { document.getElementById('imageZoomModal').style.display = 'none'; }
+        async function sendAIFollowUp() {
+            const inputEl = document.getElementById('aiFollowUpInput');
+            const text = inputEl.value.trim();
+            if(!text) return;
+            
+            aiChatHistory.push({ role: 'user', text: text });
+            
+            const chatDiv = document.createElement('div');
+            chatDiv.className = 'ai-chat-bubble user-bubble';
+            chatDiv.innerText = text;
+            document.getElementById('ai-chat-history').appendChild(chatDiv);
+            document.getElementById('ai-chat-history').scrollTop = document.getElementById('ai-chat-history').scrollHeight;
+            inputEl.value = '';
 
-        // --- REPORT ERROR MODAL ---
-        function openReportModal() { document.getElementById('reportModal').style.display = 'flex'; }
-        function closeReportModal() { document.getElementById('reportModal').style.display = 'none'; document.getElementById('reportDescription').value = ""; }
-        
-        async function submitReport() {
-            const reason = document.getElementById('reportReason').value;
-            const description = document.getElementById('reportDescription').value.trim();
-            const q = quizState.questions[quizState.currentIndex];
+            const typingDiv = document.createElement('div');
+            typingDiv.className = 'ai-chat-bubble'; typingDiv.id = 'ai-typing-indicator';
+            typingDiv.innerText = "Typing...";
+            document.getElementById('ai-chat-history').appendChild(typingDiv);
 
+            await callAIWorker({ mode: 'chat', text: text, conversationHistory: aiChatHistory.slice(0, -1) });
+            document.getElementById('ai-typing-indicator')?.remove();
+        }
+
+        async function checkDatabaseForQuestion(keywords) {
+            if(!keywords || keywords.length === 0) return null;
             try {
-                await db.collection("reported_mistakes").add({
-                    questionId: q.id, questionText: q.question, path: q.path, reason: reason, description: description,
-                    studentName: currentUser ? currentUser.displayName : "Anonymous", studentId: currentUser ? currentUser.uid : "unknown",
+                const snap = await db.collection("content").where("type", "==", "mcq").limit(100).get();
+                let foundDoc = null;
+                snap.forEach(doc => {
+                    const qText = doc.data().question.toLowerCase();
+                    let matchCount = 0;
+                    keywords.forEach(k => { if (qText.includes(k.toLowerCase())) matchCount++; });
+                    if (matchCount >= Math.min(3, keywords.length)) foundDoc = doc.data();
+                });
+                return foundDoc;
+            } catch(e) { return null; }
+        }
+
+        async function saveToDoubtDiary() {
+            if (!currentUser) { showAuthModal(); return; }
+            if (!lastExtractedQuestion) return;
+            try {
+                await db.collection("ai_doubt_diary").add({
+                    userId: currentUser.uid,
+                    questionText: lastExtractedQuestion.extractedQuestion,
+                    subject: lastExtractedQuestion.subject,
+                    solution: lastExtractedQuestion.solution,
                     timestamp: firebase.firestore.FieldValue.serverTimestamp()
                 });
-                closeReportModal(); showNotification("✅ Report submitted! Admins will review it soon.");
-            } catch(e) { showNotification("❌ Failed to submit report: " + e.message); }
+                showNotification("📔 Saved to your Doubt Diary!");
+            } catch(e) { showNotification("❌ Failed to save: " + e.message); }
+        }
+
+        // --- NEW: DOUBT DIARY UI ---
+        async function _renderDoubtDiary() {
+            if (!currentUser) return document.getElementById('dynamic-content').innerHTML = `<div class="card" style="text-align:center;"><h2>⚠️ Sign In Required</h2><button class="btn-exam" onclick="goBack()">Back</button></div>`;
+            document.getElementById('breadcrumb-text').innerText = "Home / Profile / Doubt Diary";
+            const mc = document.getElementById('dynamic-content');
+            mc.innerHTML = `<div class="card"><h2>📔 Loading Doubt Diary...</h2></div>`;
+
+            try {
+                const snap = await db.collection("ai_doubt_diary").where("userId", "==", currentUser.uid).orderBy("timestamp", "desc").get();
+                if(snap.empty) { mc.innerHTML = `<div class="card" style="text-align:center;"><h2>📔 Doubt Diary Empty</h2><p style="color:var(--text-muted);">Use the ✨ Ask AI feature to scan questions and save the explanations here for revision.</p><button class="btn-exam" onclick="goBack()">Back</button></div>`; return; }
+
+                let html = `<div class="card"><h2 style="color:var(--primary-yellow);">📔 Your Saved Explanations</h2><p style="color:var(--text-muted); margin-bottom:20px;">Review your previously solved doubts here.</p>`;
+                snap.forEach(doc => {
+                    let d = doc.data();
+                    let dateStr = d.timestamp ? d.timestamp.toDate().toLocaleDateString() : '';
+                    let md = `**Key Concept:** ${d.solution.keyConcept}\n\n**Step-by-Step:**\n${d.solution.stepByStep}\n\n**Final Answer:** ${d.solution.finalAnswer}`;
+                    html += `
+                    <div style="background:#1a1a1a; border-left: 4px solid var(--primary-yellow); padding: 15px; border-radius: 6px; margin-bottom: 20px;">
+                        <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
+                            <span class="badge-path">${d.subject}</span>
+                            <span style="font-size:12px; color:var(--text-muted);">${dateStr}</span>
+                        </div>
+                        <p style="font-weight:bold; font-size:16px;">Q: ${d.questionText}</p>
+                        <button onclick="toggleViewAnswer('diary_sol_${doc.id}')" style="background:#333; color:white; border:none; padding:6px 12px; border-radius:4px; cursor:pointer;">👁️ Show AI Solution</button>
+                        <div id="diary_sol_${doc.id}" class="katex-render-target" style="display:none; margin-top:15px; padding-top:15px; border-top:1px solid #333; line-height:1.6; font-size:15px;">
+                            ${marked.parse(md)}
+                        </div>
+                    </div>`;
+                });
+                html += `<button class="btn-exam" onclick="goBack()">Back</button></div>`;
+                mc.innerHTML = html;
+
+                // Render math in all diary entries
+                document.querySelectorAll('.katex-render-target').forEach(el => {
+                    renderMathInElement(el, { delimiters: [ {left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}, {left: '\\(', right: '\\)', display: false}, {left: '\\[', right: '\\]', display: true} ] });
+                });
+
+            } catch(e) { mc.innerHTML = `<div class="card"><h2>Error</h2><p>${e.message}</p></div>`; }
         }
 
         // --- RATING / FEEDBACK SYSTEM ---
-        let selectedStars = 0;
-
+        let selectedStars = 0; let userFeedbackDocId = null; 
         function updateStarUI(stars) {
             selectedStars = stars;
             for(let i=1; i<=5; i++) {
@@ -683,86 +840,39 @@
                 if(i <= stars) document.getElementById('star-'+i).classList.add('active');
             }
         }
-        
         async function openFeedbackModal() { 
-            if (!currentUser) {
-                showNotification("⚠️ Please sign in to rate the platform.");
-                showAuthModal();
-                return;
-            }
-            
+            if (!currentUser) { showNotification("⚠️ Please sign in to rate."); showAuthModal(); return; }
             document.getElementById('feedbackModal').style.display = 'flex'; 
-            
             try {
-                // Fetch the one and only document matching this user's ID
                 const snap = await db.collection("platform_feedback").where("studentId", "==", currentUser.uid).get();
-                
                 if (!snap.empty) {
-                    let data = snap.docs[0].data();
-                    updateStarUI(data.rating || 0);
-                    document.getElementById('platformFeedbackText').value = data.feedback || "";
+                    userFeedbackDocId = snap.docs[0].id;
+                    updateStarUI(snap.docs[0].data().rating || 0);
+                    document.getElementById('platformFeedbackText').value = snap.docs[0].data().feedback || "";
                     document.getElementById('submitFeedbackBtn').innerText = "Update Feedback";
                 } else {
-                    updateStarUI(0);
-                    document.getElementById('platformFeedbackText').value = "";
-                    document.getElementById('submitFeedbackBtn').innerText = "Submit Feedback";
+                    userFeedbackDocId = null; updateStarUI(0); document.getElementById('platformFeedbackText').value = ""; document.getElementById('submitFeedbackBtn').innerText = "Submit Feedback";
                 }
-            } catch(e) { console.error(e); }
+            } catch(e) {}
         }
-
         function closeFeedbackModal() { document.getElementById('feedbackModal').style.display = 'none'; }
-        
         async function submitPlatformFeedback() {
-            if (!currentUser) { 
-                closeFeedbackModal();
-                showAuthModal();
-                showNotification("⚠️ Please sign in to rate the platform."); 
-                return; 
-            }
-            if (selectedStars === 0) { showNotification("⚠️ Please select a star rating first!"); return; }
-            
+            if (!currentUser) return;
+            if (selectedStars === 0) { showNotification("⚠️ Please select a star rating!"); return; }
             const feedbackText = document.getElementById('platformFeedbackText').value.trim();
-            const btn = document.getElementById('submitFeedbackBtn');
-            btn.innerText = "Submitting..."; btn.disabled = true;
-            
+            const btn = document.getElementById('submitFeedbackBtn'); btn.innerText = "Submitting..."; btn.disabled = true;
             try {
-                // Find any existing records for this user to ensure we UPDATE and CLEAN UP duplicates
                 const snap = await db.collection("platform_feedback").where("studentId", "==", currentUser.uid).get();
-                
                 if (!snap.empty) {
-                    // Update the first found document
-                    let primaryDocId = snap.docs[0].id;
-                    await db.collection("platform_feedback").doc(primaryDocId).update({
-                        rating: selectedStars,
-                        feedback: feedbackText,
-                        studentName: currentUser.displayName,
-                        timestamp: firebase.firestore.FieldValue.serverTimestamp()
-                    });
-                    
-                    // Clean up any extra duplicates if they exist (fixing the issue shown in your image)
-                    if (snap.docs.length > 1) {
-                        for(let i = 1; i < snap.docs.length; i++) {
-                            await db.collection("platform_feedback").doc(snap.docs[i].id).delete();
-                        }
-                    }
-                    showNotification("✅ Feedback updated successfully!");
+                    await db.collection("platform_feedback").doc(snap.docs[0].id).update({ rating: selectedStars, feedback: feedbackText, studentName: currentUser.displayName, timestamp: firebase.firestore.FieldValue.serverTimestamp() });
+                    if (snap.docs.length > 1) { for(let i = 1; i < snap.docs.length; i++) await db.collection("platform_feedback").doc(snap.docs[i].id).delete(); }
+                    showNotification("✅ Feedback updated!");
                 } else {
-                    // Create entirely new
-                    await db.collection("platform_feedback").add({
-                        rating: selectedStars,
-                        feedback: feedbackText,
-                        studentName: currentUser.displayName,
-                        studentId: currentUser.uid,
-                        timestamp: firebase.firestore.FieldValue.serverTimestamp()
-                    });
-                    showNotification("✅ Thank you for your feedback!");
+                    await db.collection("platform_feedback").add({ rating: selectedStars, feedback: feedbackText, studentName: currentUser.displayName, studentId: currentUser.uid, timestamp: firebase.firestore.FieldValue.serverTimestamp() });
+                    showNotification("✅ Thank you!");
                 }
-                
-                closeFeedbackModal();
-                fetchGlobalRating(); 
-            } catch(e) {
-                showNotification("❌ Error: " + e.message);
-            }
+                closeFeedbackModal(); fetchGlobalRating(); 
+            } catch(e) { showNotification("❌ Error: " + e.message); }
             btn.innerText = "Submit Feedback"; btn.disabled = false;
         }
 
@@ -774,43 +884,23 @@
                 if (snapshot.empty) { display.innerText = "5.0"; return; }
                 let total = 0; let count = 0;
                 snapshot.forEach(doc => { total += doc.data().rating; count++; });
-                let avg = (total / count).toFixed(1);
-                display.innerText = avg;
+                display.innerText = (total / count).toFixed(1);
             } catch(e) { display.innerText = "5.0"; }
         }
 
-
-        // --- 4. DYNAMIC ADMIN PANEL ---
-        let adminSelectedPath = [];
-        let adminManageSelectedPath = [];
-        let adminNewTopicPath = [];
-        let adminCurrentTab = 'upload'; 
+        // --- DYNAMIC ADMIN PANEL ---
+        let adminSelectedPath = []; let adminManageSelectedPath = []; let adminNewTopicPath = []; let adminCurrentTab = 'upload'; 
 
         function _renderAdminLogin() {
             document.getElementById('breadcrumb-text').innerText = "Security / Admin Login";
-            document.getElementById('dynamic-content').innerHTML = `
-                <div class="card" style="max-width: 400px; margin: 0 auto; text-align: center;">
-                    <h2>🔒 Restricted Access</h2>
-                    <input type="password" id="adminPassInput" class="input-field" style="margin: 0 auto 15px auto;" placeholder="Password">
-                    <button id="loginBtn" class="btn-exam" onclick="verifyAdmin()" style="width: 100%; max-width: 300px; background-color: var(--primary-yellow); color: black; border: none;">Login to Admin</button>
-                </div>`;
+            document.getElementById('dynamic-content').innerHTML = `<div class="card" style="max-width: 400px; margin: 0 auto; text-align: center;"><h2>🔒 Restricted Access</h2><input type="password" id="adminPassInput" class="input-field" style="margin: 0 auto 15px auto;" placeholder="Password"><button id="loginBtn" class="btn-exam" onclick="verifyAdmin()" style="width: 100%; max-width: 300px; background-color: var(--primary-yellow); color: black; border: none;">Login to Admin</button></div>`;
         }
-
         async function verifyAdmin() {
-            const inputPass = document.getElementById('adminPassInput').value;
-            const btn = document.getElementById('loginBtn');
-            btn.innerText = "Verifying..."; btn.disabled = true;
-
+            const inputPass = document.getElementById('adminPassInput').value; const btn = document.getElementById('loginBtn'); btn.innerText = "Verifying..."; btn.disabled = true;
             try {
                 const doc = await db.collection("settings").doc("admin_auth").get();
-                let correctPass = "mcqs2026"; 
-                if (doc.exists && doc.data().password) correctPass = doc.data().password;
-
-                if (inputPass === correctPass) {
-                    sessionStorage.setItem('admin_verified', 'true');
-                    window.location.hash = '#/admin-panel';
-                    showNotification("✅ Admin Access Granted");
-                } else { showNotification("❌ Incorrect Password"); }
+                let correctPass = "mcqs2026"; if (doc.exists && doc.data().password) correctPass = doc.data().password;
+                if (inputPass === correctPass) { sessionStorage.setItem('admin_verified', 'true'); window.location.hash = '#/admin-panel'; showNotification("✅ Admin Access Granted"); } else { showNotification("❌ Incorrect Password"); }
             } catch (e) { showNotification("❌ Verification error: " + e.message); }
             btn.innerText = "Login to Admin"; btn.disabled = false;
         }
@@ -818,7 +908,6 @@
         function _renderAdminPanel() {
             if (!sessionStorage.getItem('admin_verified')) { window.location.hash = '#/admin'; return; }
             document.getElementById('breadcrumb-text').innerText = "Admin Dashboard";
-            
             document.getElementById('dynamic-content').innerHTML = `
                 <div class="card">
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:10px;">
@@ -833,11 +922,7 @@
                             <button class="admin-tab-btn ${adminCurrentTab === 'settings' ? 'active' : ''}" onclick="switchAdminTab('settings')">⚙️ Settings</button>
                         </div>
                     </div>
-
-                    <!-- TAB 1: UPLOAD -->
                     <div id="admin-upload-view" style="display:${adminCurrentTab === 'upload' ? 'block' : 'none'};">
-                        
-                        <!-- NEW FEATURE: CREATE TOPIC UI -->
                         <div style="background: rgba(253, 184, 19, 0.05); padding: 20px; border-radius: 8px; border: 1px solid var(--primary-yellow); margin-bottom: 25px;">
                             <h4 style="margin-top:0; color:var(--primary-yellow); display:flex; justify-content:space-between; align-items:center;">
                                 <span>📁 Create New Subtopic (Dynamic Folder)</span>
@@ -846,116 +931,39 @@
                             <div id="create-folder-ui" style="display:none; margin-top:15px;">
                                 <label style="color:white; font-size:13px;">1. Select Parent Path (Where to create):</label>
                                 <div id="dynamic-new-path-selectors" style="display:flex; gap:10px; flex-wrap:wrap;"></div>
-                                
                                 <div class="admin-row" style="margin-top: 15px;">
-                                    <div>
-                                        <label style="color:white; font-size:13px;">2. New Folder Name:</label>
-                                        <input type="text" id="newFolderName" class="input-field" placeholder="e.g. Molecular Genetics">
-                                    </div>
-                                    <div>
-                                        <label style="color:white; font-size:13px;">3. Expected Content Type (For UI Tags):</label>
-                                        <select id="newFolderType" class="input-field">
-                                            <option value="mcq">📝 MCQs Practice</option>
-                                            <option value="pdf">📄 PDF / Image Material</option>
-                                        </select>
-                                    </div>
+                                    <div><label style="color:white; font-size:13px;">2. New Folder Name:</label><input type="text" id="newFolderName" class="input-field" placeholder="e.g. Molecular Genetics"></div>
+                                    <div><label style="color:white; font-size:13px;">3. Expected Content Type (For UI Tags):</label><select id="newFolderType" class="input-field"><option value="mcq">📝 MCQs Practice</option><option value="pdf">📄 PDF / Image Material</option></select></div>
                                 </div>
                                 <button class="btn-exam" onclick="createCustomTopic()" style="background-color:var(--primary-yellow); color:black; border:none; width:100%; max-width:200px;">+ Add Subtopic</button>
                             </div>
                         </div>
-
                         <div style="background: #2a2a2a; padding: 15px; border-radius: 6px; margin-bottom: 20px;">
                             <h4 style="margin-top:0; margin-bottom:10px;">Upload Content: Select Target Folder</h4>
                             <div id="dynamic-path-selectors" style="display:flex; gap:10px; flex-wrap:wrap;"></div>
                         </div>
-
                         <div id="upload-form-area" style="display:none;">
-                            <div class="admin-row" style="margin-bottom: 25px;">
-                                <span style="font-weight: bold;">Resource Type:</span>
-                                <select id="admResourceType" class="input-field" onchange="toggleAdminFormType()" style="max-width: 300px;">
-                                    <option value="mcq">Multiple Choice Question</option>
-                                    <option value="pdf">Study Material (PDF / Image)</option>
-                                </select>
-                            </div>
-
+                            <div class="admin-row" style="margin-bottom: 25px;"><span style="font-weight: bold;">Resource Type:</span><select id="admResourceType" class="input-field" onchange="toggleAdminFormType()" style="max-width: 300px;"><option value="mcq">Multiple Choice Question</option><option value="pdf">Study Material (PDF / Image)</option></select></div>
                             <div id="admin-mcq-form">
                                 <textarea id="admQuestion" class="input-field" style="max-width: 100%;" placeholder="Type your question here..."></textarea>
                                 <label style="color:var(--text-muted); font-size:14px; margin-bottom:5px; display:block;">Attach Image to Question (Optional):</label>
                                 <input type="file" id="admQImage" class="input-field" accept="image/*">
-                                
                                 <div class="admin-row"><input type="text" id="admOptA" class="input-field" placeholder="Option A"><input type="text" id="admOptB" class="input-field" placeholder="Option B"></div>
                                 <div class="admin-row"><input type="text" id="admOptC" class="input-field" placeholder="Option C"><input type="text" id="admOptD" class="input-field" placeholder="Option D"></div>
-
-                                <div class="admin-checkbox-group" style="margin-bottom: 15px;">
-                                    <span style="font-weight: bold; width: 140px;">Correct Answer(s):</span>
-                                    <label><input type="checkbox" value="A" class="admCorrectCb"> A</label>
-                                    <label><input type="checkbox" value="B" class="admCorrectCb"> B</label>
-                                    <label><input type="checkbox" value="C" class="admCorrectCb"> C</label>
-                                    <label><input type="checkbox" value="D" class="admCorrectCb"> D</label>
-                                </div>
-                                
+                                <div class="admin-checkbox-group" style="margin-bottom: 15px;"><span style="font-weight: bold; width: 140px;">Correct Answer(s):</span><label><input type="checkbox" value="A" class="admCorrectCb"> A</label><label><input type="checkbox" value="B" class="admCorrectCb"> B</label><label><input type="checkbox" value="C" class="admCorrectCb"> C</label><label><input type="checkbox" value="D" class="admCorrectCb"> D</label></div>
                                 <textarea id="admExplanation" class="input-field" style="max-width: 100%; min-height: 60px;" placeholder="Explanation for the correct answer (Optional)..."></textarea>
                             </div>
-
-                            <div id="admin-pdf-form" style="display:none; background: #2a2a2a; padding: 20px; border-radius: 8px;">
-                                <input type="text" id="admPdfTitle" class="input-field" placeholder="Document Title (e.g. Chapter 1 Notes)">
-                                <label style="color:white; display:block; margin-bottom:10px;">Select File (PDF or Image):</label>
-                                <input type="file" id="admPdfFile" class="input-field" accept=".pdf, image/*">
-                            </div>
-
-                            <div style="display: flex; gap: 15px; margin-top: 20px; max-width: 450px;">
-                                <button id="uploadBtn" class="btn-exam" onclick="processAdminUpload()" style="background-color: #4CAF50; color: white; border: none; flex: 2;">☁️ Upload to Database</button>
-                                <button class="btn-exam" onclick="clearAdminUploadForm()" style="background-color: var(--wrong-red); color: white; border: none; flex: 1;">🧹 Clear Form</button>
-                            </div>
+                            <div id="admin-pdf-form" style="display:none; background: #2a2a2a; padding: 20px; border-radius: 8px;"><input type="text" id="admPdfTitle" class="input-field" placeholder="Document Title (e.g. Chapter 1 Notes)"><label style="color:white; display:block; margin-bottom:10px;">Select File (PDF or Image):</label><input type="file" id="admPdfFile" class="input-field" accept=".pdf, image/*"></div>
+                            <div style="display: flex; gap: 15px; margin-top: 20px; max-width: 450px;"><button id="uploadBtn" class="btn-exam" onclick="processAdminUpload()" style="background-color: #4CAF50; color: white; border: none; flex: 2;">☁️ Upload to Database</button><button class="btn-exam" onclick="clearAdminUploadForm()" style="background-color: var(--wrong-red); color: white; border: none; flex: 1;">🧹 Clear Form</button></div>
                         </div>
                     </div>
-
-                    <!-- TAB 2: MANAGE -->
-                    <div id="admin-manage-view" style="display:${adminCurrentTab === 'manage' ? 'block' : 'none'};">
-                        <div style="background: #2a2a2a; padding: 15px; border-radius: 6px; margin-bottom: 20px;">
-                            <h4 style="margin-top:0; margin-bottom:10px; color:var(--text-muted);">Filter Content by Folder (Optional)</h4>
-                            <div id="manage-path-selectors" style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:15px;"></div>
-                            <button class="btn-exam" onclick="loadContentForManagement()" style="background:var(--primary-yellow); color:black; border:none; padding:10px 15px; width:100%; max-width:250px;">🔍 Fetch Filtered Content</button>
-                        </div>
-                        <div id="manage-content-list"><p style="color:var(--text-muted);">Select a folder and click Fetch to load items.</p></div>
-                    </div>
-                    
-                    <!-- TAB 3: REPORTS -->
-                    <div id="admin-reports-view" style="display:${adminCurrentTab === 'reports' ? 'block' : 'none'};">
-                        <button class="btn-exam" onclick="loadAdminReports()" style="margin-bottom:15px; background:var(--primary-yellow); color:black; border:none;">🔄 Refresh Reports</button>
-                        <div id="reports-list-container"></div>
-                    </div>
-
-                    <!-- TAB 4: FEEDBACK -->
-                    <div id="admin-feedback-view" style="display:${adminCurrentTab === 'feedback' ? 'block' : 'none'};">
-                        <button class="btn-exam" onclick="loadAdminFeedback()" style="margin-bottom:15px; background:var(--primary-yellow); color:black; border:none;">🔄 Refresh Feedback</button>
-                        <div id="feedback-list-container"></div>
-                    </div>
-
-                    <!-- TAB 5: USERS -->
-                    <div id="admin-users-view" style="display:${adminCurrentTab === 'users' ? 'block' : 'none'};">
-                        <button class="btn-exam" onclick="loadAdminUsers()" style="margin-bottom:15px; background:var(--primary-yellow); color:black; border:none;">🔄 Refresh Students List</button>
-                        <div id="users-table-container" style="overflow-x:auto;"></div>
-                    </div>
-
-                    <!-- TAB 6: DOUBTS -->
-                    <div id="admin-doubts-view" style="display:${adminCurrentTab === 'doubts' ? 'block' : 'none'};">
-                        <button class="btn-exam" onclick="loadAdminDoubts()" style="margin-bottom:15px; background:var(--primary-yellow); color:black; border:none;">🔄 Refresh Flagged Doubts</button>
-                        <div id="doubts-list-container"></div>
-                    </div>
-
-                    <!-- TAB 7: SETTINGS -->
-                    <div id="admin-settings-view" style="display:${adminCurrentTab === 'settings' ? 'block' : 'none'};">
-                        <div style="background: #2a2a2a; padding: 25px; border-radius: 6px; max-width: 400px;">
-                            <h3 style="margin-top:0; margin-bottom:20px;">Change Admin Password</h3>
-                            <input type="password" id="newAdminPass" class="input-field" placeholder="Enter New Password (Min 6 chars)">
-                            <input type="password" id="confirmAdminPass" class="input-field" placeholder="Confirm New Password">
-                            <button class="btn-exam" onclick="changeAdminPassword()" style="background:var(--primary-yellow); color:black; border:none; width:100%;">Update Password</button>
-                        </div>
-                    </div>
-                </div>
-            `;
-            
+                    <div id="admin-manage-view" style="display:${adminCurrentTab === 'manage' ? 'block' : 'none'};"><div style="background: #2a2a2a; padding: 15px; border-radius: 6px; margin-bottom: 20px;"><h4 style="margin-top:0; margin-bottom:10px; color:var(--text-muted);">Filter Content by Folder (Optional)</h4><div id="manage-path-selectors" style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:15px;"></div><button class="btn-exam" onclick="loadContentForManagement()" style="background:var(--primary-yellow); color:black; border:none; padding:10px 15px; width:100%; max-width:250px;">🔍 Fetch Filtered Content</button></div><div id="manage-content-list"><p style="color:var(--text-muted);">Select a folder and click Fetch to load items.</p></div></div>
+                    <div id="admin-reports-view" style="display:${adminCurrentTab === 'reports' ? 'block' : 'none'};"><button class="btn-exam" onclick="loadAdminReports()" style="margin-bottom:15px; background:var(--primary-yellow); color:black; border:none;">🔄 Refresh Reports</button><div id="reports-list-container"></div></div>
+                    <div id="admin-feedback-view" style="display:${adminCurrentTab === 'feedback' ? 'block' : 'none'};"><button class="btn-exam" onclick="loadAdminFeedback()" style="margin-bottom:15px; background:var(--primary-yellow); color:black; border:none;">🔄 Refresh Feedback</button><div id="feedback-list-container"></div></div>
+                    <div id="admin-users-view" style="display:${adminCurrentTab === 'users' ? 'block' : 'none'};"><button class="btn-exam" onclick="loadAdminUsers()" style="margin-bottom:15px; background:var(--primary-yellow); color:black; border:none;">🔄 Refresh Students List</button><div id="users-table-container" style="overflow-x:auto;"></div></div>
+                    <div id="admin-doubts-view" style="display:${adminCurrentTab === 'doubts' ? 'block' : 'none'};"><button class="btn-exam" onclick="loadAdminDoubts()" style="margin-bottom:15px; background:var(--primary-yellow); color:black; border:none;">🔄 Refresh Flagged Doubts</button><div id="doubts-list-container"></div></div>
+                    <div id="admin-settings-view" style="display:${adminCurrentTab === 'settings' ? 'block' : 'none'};"><div style="background: #2a2a2a; padding: 25px; border-radius: 6px; max-width: 400px;"><h3 style="margin-top:0; margin-bottom:20px;">Change Admin Password</h3><input type="password" id="newAdminPass" class="input-field" placeholder="Enter New Password (Min 6 chars)"><input type="password" id="confirmAdminPass" class="input-field" placeholder="Confirm New Password"><button class="btn-exam" onclick="changeAdminPassword()" style="background:var(--primary-yellow); color:black; border:none; width:100%;">Update Password</button></div></div>
+                </div>`;
             if (adminCurrentTab === 'upload') { _buildAdminSelectors(); _buildAdminNewTopicSelectors(); }
             else if (adminCurrentTab === 'manage') { _buildManageSelectors(); loadContentForManagement(); }
             else if (adminCurrentTab === 'reports') loadAdminReports();
@@ -965,37 +973,22 @@
         }
 
         function switchAdminTab(tab) { adminCurrentTab = tab; _renderAdminPanel(); }
-        
-        function toggleCreateFolderUI() {
-            let el = document.getElementById('create-folder-ui');
-            el.style.display = el.style.display === 'none' ? 'block' : 'none';
-        }
+        function toggleCreateFolderUI() { let el = document.getElementById('create-folder-ui'); el.style.display = el.style.display === 'none' ? 'block' : 'none'; }
 
-        // --- ADMIN NEW TOPICS ---
         function _buildAdminNewTopicSelectors() {
-            const container = document.getElementById('dynamic-new-path-selectors');
-            if(!container) return;
+            const container = document.getElementById('dynamic-new-path-selectors'); if(!container) return;
             let html = ''; let currentObj = appData;
-            
             for (let i = 0; i <= adminNewTopicPath.length; i++) {
                 if (typeof currentObj === 'string' || Array.isArray(currentObj)) break; 
                 if (currentObj && Object.keys(currentObj).length === 0 && i === adminNewTopicPath.length) break;
-
-                html += `<select class="input-field" style="flex:1; min-width:150px; margin-bottom:0;" onchange="handleAdminNewTopicPathChange(event, ${i})">`;
-                html += `<option value="" ${!adminNewTopicPath[i] ? 'selected' : ''}>-- Stop Here / Select Child --</option>`;
-                for (let key in currentObj) { 
-                    if (key === "Daily Quiz Challenge") continue; 
-                    html += `<option value="${key}" ${adminNewTopicPath[i] === key ? 'selected' : ''}>${key}</option>`; 
-                }
+                html += `<select class="input-field" style="flex:1; min-width:150px; margin-bottom:0;" onchange="handleAdminNewTopicPathChange(event, ${i})"><option value="" ${!adminNewTopicPath[i] ? 'selected' : ''}>-- Stop Here / Select Child --</option>`;
+                for (let key in currentObj) { if (key === "Daily Quiz Challenge") continue; html += `<option value="${key}" ${adminNewTopicPath[i] === key ? 'selected' : ''}>${key}</option>`; }
                 html += `</select>`;
                 if (adminNewTopicPath[i] && currentObj[adminNewTopicPath[i]]) { currentObj = currentObj[adminNewTopicPath[i]]; } else { break; }
             }
             container.innerHTML = html;
-
             let pathDisplay = document.getElementById('new-topic-path-display');
-            if(!pathDisplay) {
-                container.insertAdjacentHTML('afterend', `<div id="new-topic-path-display" style="margin-top:10px; font-size:14px; color:var(--primary-yellow);"><b>Selected Parent Path:</b> <span id="new-topic-path-text" style="color:white;">None</span></div>`);
-            }
+            if(!pathDisplay) container.insertAdjacentHTML('afterend', `<div id="new-topic-path-display" style="margin-top:10px; font-size:14px; color:var(--primary-yellow);"><b>Selected Parent Path:</b> <span id="new-topic-path-text" style="color:white;">None</span></div>`);
             document.getElementById('new-topic-path-text').innerText = adminNewTopicPath.length > 0 ? adminNewTopicPath.join(' > ') : 'Root (Please select at least one)';
         }
 
@@ -1006,110 +999,46 @@
         }
         
         async function createCustomTopic() {
-            if (adminNewTopicPath.length === 0) { showNotification("⚠️ Please select a parent path."); return; }
+            if (adminNewTopicPath.length === 0) return showNotification("⚠️ Please select a parent path.");
             const folderName = document.getElementById('newFolderName').value.trim();
-            const folderType = document.getElementById('newFolderType').value;
-            
-            if (!folderName) { showNotification("⚠️ Folder name is required."); return; }
-            
-            const parentPathStr = adminNewTopicPath.join(' > ');
-            
+            if (!folderName) return showNotification("⚠️ Folder name is required.");
             try {
-                await db.collection("custom_topics").add({
-                    parentPath: parentPathStr, name: folderName, type: folderType, timestamp: firebase.firestore.FieldValue.serverTimestamp()
-                });
-                showNotification("✅ Subtopic Created Successfully!");
-                document.getElementById('newFolderName').value = "";
-                await loadCustomTopics();
-                _buildAdminSelectors();
-                _buildAdminNewTopicSelectors();
-            } catch(e) {
-                if(e.message.toLowerCase().includes('permission')) {
-                    alert("⚠️ FIREBASE PERMISSION DENIED!\n\nYou must update your Firestore Security Rules to allow writes to new collections.");
-                } else {
-                    showNotification("❌ Error: " + e.message);
-                }
-            }
+                await db.collection("custom_topics").add({ parentPath: adminNewTopicPath.join(' > '), name: folderName, type: document.getElementById('newFolderType').value, timestamp: firebase.firestore.FieldValue.serverTimestamp() });
+                showNotification("✅ Subtopic Created Successfully!"); document.getElementById('newFolderName').value = ""; await loadCustomTopics(); _buildAdminSelectors(); _buildAdminNewTopicSelectors();
+            } catch(e) { alert("⚠️ ERROR: " + e.message); }
         }
 
-        // --- ADMIN FEEDBACK VIEW ---
         async function loadAdminFeedback() {
-            const container = document.getElementById('feedback-list-container');
-            container.innerHTML = `<p style="color:var(--primary-yellow);">Fetching user feedback...</p>`;
+            const container = document.getElementById('feedback-list-container'); container.innerHTML = `<p style="color:var(--primary-yellow);">Fetching user feedback...</p>`;
             try {
                 const snapshot = await db.collection("platform_feedback").orderBy("timestamp", "desc").get();
                 if(snapshot.empty) { container.innerHTML = "<p>No feedback received yet.</p>"; return; }
-                
-                let html = '';
-                let total = 0; let count = 0;
-                
+                let html = ''; let total = 0; let count = 0;
                 snapshot.forEach(doc => {
-                    const data = doc.data();
-                    total += data.rating; count++;
-                    let dateStr = data.timestamp ? data.timestamp.toDate().toLocaleString() : "";
-                    
-                    let starIcons = "";
-                    for(let i=1; i<=5; i++) { starIcons += (i <= data.rating) ? '⭐' : '☆'; }
-
-                    html += `
-                        <div class="content-item-card" style="border-left: 4px solid var(--primary-yellow);">
-                            <div class="content-item-header">
-                                <span class="badge-path">${starIcons} (${data.rating}/5)</span>
-                                <span style="font-size:12px; color:var(--text-muted);">${dateStr}</span>
-                            </div>
-                            <p style="color:var(--correct-green); margin:5px 0;"><b>User:</b> ${data.studentName}</p>
-                            <div style="background:#1a1a1a; padding:10px; border-radius:4px; font-size:14px;">${data.feedback || '<i>No written text provided.</i>'}</div>
-                        </div>
-                    `;
+                    const data = doc.data(); total += data.rating; count++;
+                    let starIcons = ""; for(let i=1; i<=5; i++) { starIcons += (i <= data.rating) ? '⭐' : '☆'; }
+                    html += `<div class="content-item-card" style="border-left: 4px solid var(--primary-yellow);"><div class="content-item-header"><span class="badge-path">${starIcons} (${data.rating}/5)</span><span style="font-size:12px; color:var(--text-muted);">${data.timestamp ? data.timestamp.toDate().toLocaleString() : ""}</span></div><p style="color:var(--correct-green); margin:5px 0;"><b>User:</b> ${data.studentName}</p><div style="background:#1a1a1a; padding:10px; border-radius:4px; font-size:14px;">${data.feedback || '<i>No written text provided.</i>'}</div></div>`;
                 });
-                
-                let avg = (total / count).toFixed(1);
-                let header = `<div style="margin-bottom:20px; font-size: 18px;"><b>Overall Average Platform Rating:</b> <span style="color:var(--primary-yellow); font-size:24px;">⭐ ${avg} / 5</span></div>`;
-                
-                container.innerHTML = header + html;
+                container.innerHTML = `<div style="margin-bottom:20px; font-size: 18px;"><b>Overall Average Platform Rating:</b> <span style="color:var(--primary-yellow); font-size:24px;">⭐ ${(total / count).toFixed(1)} / 5</span></div>` + html;
             } catch(e) { container.innerHTML = `<p style="color:red;">Error: ${e.message}</p>`; }
         }
 
-        // --- ADMIN REPORTS VIEW ---
         async function loadAdminReports() {
-            const container = document.getElementById('reports-list-container');
-            container.innerHTML = `<p style="color:var(--primary-yellow);">Fetching reported mistakes...</p>`;
+            const container = document.getElementById('reports-list-container'); container.innerHTML = `<p style="color:var(--primary-yellow);">Fetching reported mistakes...</p>`;
             try {
                 const snapshot = await db.collection("reported_mistakes").orderBy("timestamp", "desc").get();
                 if(snapshot.empty) { container.innerHTML = "<p style='color:var(--correct-green);'>✅ No mistakes reported! Everything is clean.</p>"; return; }
                 let html = '';
                 snapshot.forEach(doc => {
                     const data = doc.data();
-                    let dateStr = data.timestamp ? data.timestamp.toDate().toLocaleString() : "";
-                    html += `
-                        <div class="content-item-card" style="border-left: 4px solid var(--wrong-red);">
-                            <div class="content-item-header">
-                                <span class="badge-path">${data.path || 'Unknown Path'}</span>
-                                <span style="font-size:12px; color:var(--text-muted);">${dateStr}</span>
-                            </div>
-                            <div style="margin: 10px 0; padding: 10px; background: rgba(244, 67, 54, 0.1); border-radius: 4px;">
-                                <p style="color:var(--wrong-red); margin:0 0 5px 0;"><b>Issue:</b> ${data.reason}</p>
-                                <p style="margin:0; font-size:14px;"><b>Details:</b> ${data.description || 'No description provided.'}</p>
-                                <p style="margin:5px 0 0 0; font-size:12px; color:var(--text-muted);">Reported by: ${data.studentName}</p>
-                            </div>
-                            <div style="background:#1a1a1a; padding:10px; border-radius:4px; font-size:14px; margin-bottom:10px;"><b>Question Content:</b><br>${data.questionText}</div>
-                            <div style="display:flex; gap:10px; flex-wrap:wrap;">
-                                <button onclick="openEditModalFromReport('${data.questionId}')" style="padding:6px 12px; background:#2196F3; border:none; border-radius:4px; color:white; cursor:pointer;">✏️ Edit MCQ in Database</button>
-                                <button onclick="resolveReport('${doc.id}')" style="padding:6px 12px; background:var(--correct-green); border:none; border-radius:4px; color:white; cursor:pointer;">✅ Mark Resolved & Delete Report</button>
-                            </div>
-                        </div>
-                    `;
+                    html += `<div class="content-item-card" style="border-left: 4px solid var(--wrong-red);"><div class="content-item-header"><span class="badge-path">${data.path || 'Unknown Path'}</span><span style="font-size:12px; color:var(--text-muted);">${data.timestamp ? data.timestamp.toDate().toLocaleString() : ""}</span></div><div style="margin: 10px 0; padding: 10px; background: rgba(244, 67, 54, 0.1); border-radius: 4px;"><p style="color:var(--wrong-red); margin:0 0 5px 0;"><b>Issue:</b> ${data.reason}</p><p style="margin:0; font-size:14px;"><b>Details:</b> ${data.description || 'No description provided.'}</p><p style="margin:5px 0 0 0; font-size:12px; color:var(--text-muted);">Reported by: ${data.studentName}</p></div><div style="background:#1a1a1a; padding:10px; border-radius:4px; font-size:14px; margin-bottom:10px;"><b>Question Content:</b><br>${data.questionText}</div><div style="display:flex; gap:10px; flex-wrap:wrap;"><button onclick="openEditModalFromReport('${data.questionId}')" style="padding:6px 12px; background:#2196F3; border:none; border-radius:4px; color:white; cursor:pointer;">✏️ Edit MCQ in Database</button><button onclick="resolveReport('${doc.id}')" style="padding:6px 12px; background:var(--correct-green); border:none; border-radius:4px; color:white; cursor:pointer;">✅ Mark Resolved & Delete Report</button></div></div>`;
                 });
                 container.innerHTML = html;
             } catch(e) { container.innerHTML = `<p style="color:red;">Error: ${e.message}</p>`; }
         }
 
         async function resolveReport(reportDocId) {
-            if(confirm("Mark this report as resolved? It will be deleted from the list.")) {
-                await db.collection("reported_mistakes").doc(reportDocId).delete();
-                loadAdminReports();
-                showNotification("✅ Report resolved.");
-            }
+            if(confirm("Mark this report as resolved? It will be deleted from the list.")) { await db.collection("reported_mistakes").doc(reportDocId).delete(); loadAdminReports(); showNotification("✅ Report resolved."); }
         }
         
         async function openEditModalFromReport(questionId) {
@@ -1120,58 +1049,29 @@
             } catch (e) { showNotification("❌ Error fetching question: " + e.message); }
         }
 
-
-        // --- EXISTING ADMIN TABS (USERS & DOUBTS) ---
         async function loadAdminUsers() {
-            const container = document.getElementById('users-table-container');
-            container.innerHTML = `<p style="color:var(--primary-yellow);">Fetching students...</p>`;
+            const container = document.getElementById('users-table-container'); container.innerHTML = `<p style="color:var(--primary-yellow);">Fetching students...</p>`;
             try {
                 const snapshot = await db.collection("users").orderBy("lastLogin", "desc").get();
                 let html = `<table><tr><th>Name</th><th>Email</th><th>Last Login</th></tr>`;
-                snapshot.forEach(doc => {
-                    const data = doc.data();
-                    let dateStr = data.lastLogin ? data.lastLogin.toDate().toLocaleString() : "Unknown";
-                    html += `<tr><td>${data.displayName}</td><td>${data.email}</td><td>${dateStr}</td></tr>`;
-                });
-                html += `</table>`;
-                container.innerHTML = html;
+                snapshot.forEach(doc => { html += `<tr><td>${doc.data().displayName}</td><td>${doc.data().email}</td><td>${doc.data().lastLogin ? doc.data().lastLogin.toDate().toLocaleString() : "Unknown"}</td></tr>`; });
+                container.innerHTML = html + `</table>`;
             } catch(e) { container.innerHTML = `<p style="color:red;">Error: ${e.message}</p>`; }
         }
 
         async function loadAdminDoubts() {
-            const container = document.getElementById('doubts-list-container');
-            container.innerHTML = `<p style="color:var(--primary-yellow);">Fetching doubts...</p>`;
+            const container = document.getElementById('doubts-list-container'); container.innerHTML = `<p style="color:var(--primary-yellow);">Fetching doubts...</p>`;
             try {
                 const snapshot = await db.collection("flagged_doubts").orderBy("timestamp", "desc").get();
                 if(snapshot.empty) { container.innerHTML = "<p>No flagged questions!</p>"; return; }
                 let html = '';
-                snapshot.forEach(doc => {
-                    const data = doc.data();
-                    let dateStr = data.timestamp ? data.timestamp.toDate().toLocaleString() : "";
-                    html += `
-                        <div class="content-item-card">
-                            <div class="content-item-header">
-                                <span class="badge-path">${data.path}</span>
-                                <span style="font-size:12px; color:var(--text-muted);">${dateStr}</span>
-                            </div>
-                            <p style="color:var(--primary-yellow); margin:5px 0;"><b>Flagged by:</b> ${data.studentName}</p>
-                            <div style="background:#1a1a1a; padding:10px; border-radius:4px; font-size:14px;">${data.questionText}</div>
-                            <button onclick="resolveDoubt('${doc.id}')" style="margin-top:10px; padding:5px 10px; background:var(--correct-green); border:none; border-radius:4px; color:white; cursor:pointer;">Mark Resolved</button>
-                        </div>
-                    `;
-                });
+                snapshot.forEach(doc => { html += `<div class="content-item-card"><div class="content-item-header"><span class="badge-path">${doc.data().path}</span><span style="font-size:12px; color:var(--text-muted);">${doc.data().timestamp ? doc.data().timestamp.toDate().toLocaleString() : ""}</span></div><p style="color:var(--primary-yellow); margin:5px 0;"><b>Flagged by:</b> ${doc.data().studentName}</p><div style="background:#1a1a1a; padding:10px; border-radius:4px; font-size:14px;">${doc.data().questionText}</div><button onclick="resolveDoubt('${doc.id}')" style="margin-top:10px; padding:5px 10px; background:var(--correct-green); border:none; border-radius:4px; color:white; cursor:pointer;">Mark Resolved</button></div>`; });
                 container.innerHTML = html;
             } catch(e) { container.innerHTML = `<p style="color:red;">Error: ${e.message}</p>`; }
         }
 
-        async function resolveDoubt(docId) {
-            if(confirm("Mark this doubt as resolved and remove it?")) {
-                await db.collection("flagged_doubts").doc(docId).delete();
-                loadAdminDoubts();
-            }
-        }
+        async function resolveDoubt(docId) { if(confirm("Mark this doubt as resolved and remove it?")) { await db.collection("flagged_doubts").doc(docId).delete(); loadAdminDoubts(); } }
 
-        // Dropdowns & Form Logic for UPLOAD tab
         function toggleAdminFormType() {
             let val = document.getElementById('admResourceType').value;
             document.getElementById('admin-mcq-form').style.display = val === 'mcq' ? 'block' : 'none';
@@ -1180,47 +1080,27 @@
 
         function clearAdminUploadForm() {
             if(!confirm("Are you sure you want to clear all typed fields?")) return;
-            document.getElementById('admQuestion').value = ""; 
-            document.getElementById('admQImage').value = ""; 
-            document.getElementById('admExplanation').value = "";
-            document.getElementById('admOptA').value = ""; 
-            document.getElementById('admOptB').value = ""; 
-            document.getElementById('admOptC').value = ""; 
-            document.getElementById('admOptD').value = "";
-            document.querySelectorAll('.admCorrectCb').forEach(cb => cb.checked = false);
-            
-            document.getElementById('admPdfTitle').value = ""; 
-            document.getElementById('admPdfFile').value = "";
+            document.getElementById('admQuestion').value = ""; document.getElementById('admQImage').value = ""; document.getElementById('admExplanation').value = "";
+            document.getElementById('admOptA').value = ""; document.getElementById('admOptB').value = ""; document.getElementById('admOptC').value = ""; document.getElementById('admOptD').value = "";
+            document.querySelectorAll('.admCorrectCb').forEach(cb => cb.checked = false); document.getElementById('admPdfTitle').value = ""; document.getElementById('admPdfFile').value = "";
             showNotification("🧹 Form cleared!");
         }
 
         function _buildAdminSelectors() {
-            const container = document.getElementById('dynamic-path-selectors');
-            if(!container) return;
+            const container = document.getElementById('dynamic-path-selectors'); if(!container) return;
             let html = ''; let currentObj = appData;
-            
             for (let i = 0; i <= adminSelectedPath.length; i++) {
                 if (typeof currentObj === 'string' || Array.isArray(currentObj)) break; 
                 if (currentObj && Object.keys(currentObj).length === 0 && i === adminSelectedPath.length) break;
-
-                html += `<select class="input-field" style="flex:1; min-width:150px; margin-bottom:0;" onchange="handleAdminPathChange(event, ${i})">`;
-                html += `<option value="" ${!adminSelectedPath[i] ? 'selected' : ''}>-- Upload Here / Select Child --</option>`;
-                for (let key in currentObj) { 
-                    if (key === "Daily Quiz Challenge") continue; 
-                    html += `<option value="${key}" ${adminSelectedPath[i] === key ? 'selected' : ''}>${key}</option>`; 
-                }
+                html += `<select class="input-field" style="flex:1; min-width:150px; margin-bottom:0;" onchange="handleAdminPathChange(event, ${i})"><option value="" ${!adminSelectedPath[i] ? 'selected' : ''}>-- Upload Here / Select Child --</option>`;
+                for (let key in currentObj) { if (key === "Daily Quiz Challenge") continue; html += `<option value="${key}" ${adminSelectedPath[i] === key ? 'selected' : ''}>${key}</option>`; }
                 html += `</select>`;
                 if (adminSelectedPath[i] && currentObj[adminSelectedPath[i]]) { currentObj = currentObj[adminSelectedPath[i]]; } else { break; }
             }
             container.innerHTML = html;
-            
-            const formArea = document.getElementById('upload-form-area');
-            if(formArea) formArea.style.display = (adminSelectedPath.length > 0) ? 'block' : 'none';
-
+            const formArea = document.getElementById('upload-form-area'); if(formArea) formArea.style.display = (adminSelectedPath.length > 0) ? 'block' : 'none';
             let pathDisplay = document.getElementById('upload-path-display');
-            if(!pathDisplay) {
-                container.insertAdjacentHTML('afterend', `<div id="upload-path-display" style="margin-top:10px; font-size:14px; color:var(--correct-green);"><b>Uploading Content To:</b> <span id="upload-path-text" style="color:white;">None</span></div>`);
-            }
+            if(!pathDisplay) container.insertAdjacentHTML('afterend', `<div id="upload-path-display" style="margin-top:10px; font-size:14px; color:var(--correct-green);"><b>Uploading Content To:</b> <span id="upload-path-text" style="color:white;">None</span></div>`);
             document.getElementById('upload-path-text').innerText = adminSelectedPath.length > 0 ? adminSelectedPath.join(' > ') : 'Please select at least one path';
         }
 
@@ -1230,24 +1110,19 @@
             _buildAdminSelectors(); 
         }
 
-        // Dropdowns for MANAGE tab
         function _buildManageSelectors() {
-            const container = document.getElementById('manage-path-selectors');
-            if(!container) return;
+            const container = document.getElementById('manage-path-selectors'); if(!container) return;
             let html = ''; let currentObj = appData;
             for (let i = 0; i <= adminManageSelectedPath.length; i++) {
                 if (typeof currentObj === 'string' || Array.isArray(currentObj)) break; 
-                html += `<select class="input-field" style="flex:1; min-width:150px; margin-bottom:0;" onchange="handleManagePathChange(event, ${i})">`;
-                html += `<option value="" ${!adminManageSelectedPath[i] ? 'selected' : ''}>-- All --</option>`;
-                for (let key in currentObj) { 
-                    if (key === "Daily Quiz Challenge") continue; 
-                    html += `<option value="${key}" ${adminManageSelectedPath[i] === key ? 'selected' : ''}>${key}</option>`; 
-                }
+                html += `<select class="input-field" style="flex:1; min-width:150px; margin-bottom:0;" onchange="handleManagePathChange(event, ${i})"><option value="" ${!adminManageSelectedPath[i] ? 'selected' : ''}>-- All --</option>`;
+                for (let key in currentObj) { if (key === "Daily Quiz Challenge") continue; html += `<option value="${key}" ${adminManageSelectedPath[i] === key ? 'selected' : ''}>${key}</option>`; }
                 html += `</select>`;
                 if (adminManageSelectedPath[i] && currentObj[adminManageSelectedPath[i]]) { currentObj = currentObj[adminManageSelectedPath[i]]; } else { break; }
             }
             container.innerHTML = html;
         }
+
         function handleManagePathChange(event, depth) {
             if(event.target.value === "") adminManageSelectedPath = adminManageSelectedPath.slice(0, depth);
             else { adminManageSelectedPath = adminManageSelectedPath.slice(0, depth); adminManageSelectedPath.push(event.target.value); }
@@ -1255,8 +1130,7 @@
         }
 
         async function uploadFileToCloudinary(file) {
-            const formData = new FormData();
-            formData.append('file', file); formData.append('upload_preset', CLOUDINARY_PRESET);
+            const formData = new FormData(); formData.append('file', file); formData.append('upload_preset', CLOUDINARY_PRESET);
             const response = await fetch(CLOUDINARY_URL, { method: 'POST', body: formData });
             const data = await response.json();
             if (!response.ok) throw new Error(data.error?.message || 'File upload failed');
@@ -1264,92 +1138,48 @@
         }
 
         async function processAdminUpload() {
-            const type = document.getElementById('admResourceType').value;
-            const targetPathString = adminSelectedPath.join(' > '); 
-            const btn = document.getElementById('uploadBtn');
-            btn.innerText = "Uploading... Please wait"; btn.disabled = true;
+            const type = document.getElementById('admResourceType').value; const targetPathString = adminSelectedPath.join(' > '); 
+            const btn = document.getElementById('uploadBtn'); btn.innerText = "Uploading... Please wait"; btn.disabled = true;
 
             try {
                 if (type === 'mcq') {
                     const question = document.getElementById('admQuestion').value.trim();
                     const options = { A: document.getElementById('admOptA').value.trim(), B: document.getElementById('admOptB').value.trim(), C: document.getElementById('admOptC').value.trim(), D: document.getElementById('admOptD').value.trim() };
-                    const correctCbs = document.querySelectorAll('.admCorrectCb:checked');
-                    let correctAnswers = Array.from(correctCbs).map(cb => cb.value);
-                    const explanation = document.getElementById('admExplanation').value.trim();
-                    const imageFile = document.getElementById('admQImage').files[0];
-
-                    if (!question || !options.A || !options.B || correctAnswers.length === 0) { throw new Error("Question, Option A, Option B, and Correct Answer are required."); }
-
-                    let imageUrl = null;
-                    if (imageFile) { imageUrl = await uploadFileToCloudinary(imageFile); }
-
-                    await db.collection("content").add({
-                        type: 'mcq', path: targetPathString, question: question, options: options, correctAnswers: correctAnswers, 
-                        explanation: explanation, imageUrl: imageUrl, timestamp: firebase.firestore.FieldValue.serverTimestamp()
-                    });
-
-                    document.getElementById('admQuestion').value = ""; document.getElementById('admQImage').value = ""; document.getElementById('admExplanation').value = "";
-                    document.getElementById('admOptA').value = ""; document.getElementById('admOptB').value = ""; document.getElementById('admOptC').value = ""; document.getElementById('admOptD').value = "";
-                    correctCbs.forEach(cb => cb.checked = false);
+                    const correctCbs = document.querySelectorAll('.admCorrectCb:checked'); let correctAnswers = Array.from(correctCbs).map(cb => cb.value);
+                    const explanation = document.getElementById('admExplanation').value.trim(); const imageFile = document.getElementById('admQImage').files[0];
+                    if (!question || !options.A || !options.B || correctAnswers.length === 0) throw new Error("Question, Option A, Option B, and Correct Answer are required.");
+                    let imageUrl = null; if (imageFile) imageUrl = await uploadFileToCloudinary(imageFile); 
+                    await db.collection("content").add({ type: 'mcq', path: targetPathString, question: question, options: options, correctAnswers: correctAnswers, explanation: explanation, imageUrl: imageUrl, timestamp: firebase.firestore.FieldValue.serverTimestamp() });
+                    clearAdminUploadForm();
                 } else if (type === 'pdf') {
-                    const title = document.getElementById('admPdfTitle').value.trim();
-                    const file = document.getElementById('admPdfFile').files[0];
+                    const title = document.getElementById('admPdfTitle').value.trim(); const file = document.getElementById('admPdfFile').files[0];
                     if (!title || !file) throw new Error("Title and File are required for Study Materials.");
                     const fileUrl = await uploadFileToCloudinary(file);
                     await db.collection("content").add({ type: 'material', path: targetPathString, title: title, fileUrl: fileUrl, timestamp: firebase.firestore.FieldValue.serverTimestamp() });
                     document.getElementById('admPdfTitle').value = ""; document.getElementById('admPdfFile').value = "";
                 }
                 showNotification("✅ Upload Successful!");
-            } catch(error) { 
-                if(error.message.toLowerCase().includes('permission')) {
-                    alert("⚠️ FIREBASE PERMISSION DENIED!\n\nYou must update your Firestore Security Rules to allow writes to collections.");
-                } else { showNotification("❌ Error: " + error.message); }
-            }
+            } catch(error) { alert("⚠️ ERROR: " + error.message); }
             btn.innerText = "☁️ Upload to Database"; btn.disabled = false;
         }
 
         let loadedItemsCache = {};
         async function loadContentForManagement() {
-            const listEl = document.getElementById('manage-content-list');
-            listEl.innerHTML = `<p style="color:var(--primary-yellow);">Fetching items from database...</p>`;
+            const listEl = document.getElementById('manage-content-list'); listEl.innerHTML = `<p style="color:var(--primary-yellow);">Fetching items from database...</p>`;
             try {
                 let query = db.collection("content");
-                if (adminManageSelectedPath.length > 0) {
-                    const prefixPath = adminManageSelectedPath.join(' > ');
-                    query = query.where("path", ">=", prefixPath).where("path", "<=", prefixPath + "\uf8ff");
-                } else { query = query.orderBy("timestamp", "desc").limit(50); }
-
+                if (adminManageSelectedPath.length > 0) { const prefixPath = adminManageSelectedPath.join(' > '); query = query.where("path", ">=", prefixPath).where("path", "<=", prefixPath + "\uf8ff"); } 
+                else { query = query.orderBy("timestamp", "desc").limit(50); }
                 const snapshot = await query.get();
                 if(snapshot.empty) { listEl.innerHTML = `<p style="color:var(--text-muted);">No items found in this folder.</p>`; return; }
-
                 loadedItemsCache = {}; let html = '';
                 snapshot.forEach(doc => {
                     const data = doc.data(); loadedItemsCache[doc.id] = data;
                     if (data.type === 'mcq') {
                         let answersStr = (data.correctAnswers || []).join(', ');
-                        html += `
-                            <div class="content-item-card" id="item_${doc.id}">
-                                <div class="content-item-header">
-                                    <span class="badge-path">${data.path || 'Uncategorized'}</span>
-                                    <div style="display:flex; gap:8px;"><button class="btn-exam" onclick="openEditModal('${doc.id}')" style="padding:4px 10px; font-size:12px; background:#2196F3; border:none;">✏️ Edit</button><button class="btn-exam" onclick="deleteContentItem('${doc.id}')" style="padding:4px 10px; font-size:12px; background:var(--wrong-red); border:none;">🗑️ Delete</button></div>
-                                </div>
-                                <div style="font-weight:bold; margin-bottom:8px;">${data.question}</div>
-                                ${data.imageUrl ? `<img src="${data.imageUrl}" style="max-height:80px; border-radius:4px; margin-bottom:8px; display:block;">` : ''}
-                                <div style="font-size:13px; color:var(--text-muted); line-height:1.4;">A: ${data.options?.A || '-'} | B: ${data.options?.B || '-'} | C: ${data.options?.C || '-'} | D: ${data.options?.D || '-'}</div>
-                                <div style="margin-top:6px; font-size:13px; color:var(--correct-green);">Correct: ${answersStr}</div>
-                            </div>
-                        `;
+                        html += `<div class="content-item-card" id="item_${doc.id}"><div class="content-item-header"><span class="badge-path">${data.path || 'Uncategorized'}</span><div style="display:flex; gap:8px;"><button class="btn-exam" onclick="openEditModal('${doc.id}')" style="padding:4px 10px; font-size:12px; background:#2196F3; border:none;">✏️ Edit</button><button class="btn-exam" onclick="deleteContentItem('${doc.id}')" style="padding:4px 10px; font-size:12px; background:var(--wrong-red); border:none;">🗑️ Delete</button></div></div><div style="font-weight:bold; margin-bottom:8px;">${data.question}</div>${data.imageUrl ? `<img src="${data.imageUrl}" style="max-height:80px; border-radius:4px; margin-bottom:8px; display:block;">` : ''}<div style="font-size:13px; color:var(--text-muted); line-height:1.4;">A: ${data.options?.A || '-'} | B: ${data.options?.B || '-'} | C: ${data.options?.C || '-'} | D: ${data.options?.D || '-'}</div><div style="margin-top:6px; font-size:13px; color:var(--correct-green);">Correct: ${answersStr}</div></div>`;
                     } else {
-                        html += `
-                            <div class="content-item-card" id="item_${doc.id}">
-                                <div class="content-item-header">
-                                    <span class="badge-path">${data.path || 'Uncategorized'}</span>
-                                    <button class="btn-exam" onclick="deleteContentItem('${doc.id}')" style="padding:4px 10px; font-size:12px; background:var(--wrong-red); border:none;">🗑️ Delete</button>
-                                </div>
-                                <div style="font-weight:bold; margin-bottom:5px;">📄 ${data.title}</div>
-                                <a href="${data.fileUrl}" target="_blank" style="color:var(--primary-yellow); font-size:13px;">View Document &rarr;</a>
-                            </div>
-                        `;
+                        html += `<div class="content-item-card" id="item_${doc.id}"><div class="content-item-header"><span class="badge-path">${data.path || 'Uncategorized'}</span><button class="btn-exam" onclick="deleteContentItem('${doc.id}')" style="padding:4px 10px; font-size:12px; background:var(--wrong-red); border:none;">🗑️ Delete</button></div><div style="font-weight:bold; margin-bottom:5px;">📄 ${data.title}</div><a href="${data.fileUrl}" target="_blank" style="color:var(--primary-yellow); font-size:13px;">View Document &rarr;</a></div>`;
                     }
                 });
                 let titleMsg = adminManageSelectedPath.length > 0 ? `<p style="color:white; font-size:14px; margin-bottom:15px;">Showing results for: <b>${adminManageSelectedPath.join(' > ')}</b></p>` : `<p style="color:white; font-size:14px; margin-bottom:15px;">Showing 50 most recent uploads across all folders.</p>`;
@@ -1369,7 +1199,6 @@
             document.getElementById('editOptA').value = data.options?.A || ''; document.getElementById('editOptB').value = data.options?.B || '';
             document.getElementById('editOptC').value = data.options?.C || ''; document.getElementById('editOptD').value = data.options?.D || '';
             document.getElementById('editExplanation').value = data.explanation || '';
-            
             const correct = data.correctAnswers || [];
             document.querySelectorAll('.editCorrectCb').forEach(cb => { cb.checked = correct.includes(cb.value); });
             document.getElementById('editModal').style.display = 'flex';
@@ -1401,15 +1230,8 @@
         // --- PROGRESS TRACKING RESET ---
         async function resetProgress(safePath) {
             if(confirm("Are you sure you want to reset your progress? This will let you re-attempt all questions in this section from the beginning.")) {
-                if (currentUser) {
-                    let dataToSave = {};
-                    dataToSave[safePath] = firebase.firestore.FieldValue.delete();
-                    await db.collection("users").doc(currentUser.uid).update(dataToSave).catch(e=>{});
-                } else {
-                    let localProg = JSON.parse(localStorage.getItem('mcq_progress') || '{}');
-                    delete localProg[safePath];
-                    localStorage.setItem('mcq_progress', JSON.stringify(localProg));
-                }
+                if (currentUser) { let dataToSave = {}; dataToSave[safePath] = firebase.firestore.FieldValue.delete(); await db.collection("users").doc(currentUser.uid).update(dataToSave).catch(e=>{}); } 
+                else { let localProg = JSON.parse(localStorage.getItem('mcq_progress') || '{}'); delete localProg[safePath]; localStorage.setItem('mcq_progress', JSON.stringify(localProg)); }
                 _initiateQuizEngine(); 
             }
         }
@@ -1429,120 +1251,58 @@
                 let globalAttemptedIds = [];
                 if (currentUser) {
                     let userDoc = await db.collection("users").doc(currentUser.uid).get();
-                    if (userDoc.exists) {
-                        let d = userDoc.data();
-                        for (let k in d) { if (k.startsWith("prog_")) globalAttemptedIds.push(...d[k]); }
-                    }
+                    if (userDoc.exists) { let d = userDoc.data(); for (let k in d) { if (k.startsWith("prog_")) globalAttemptedIds.push(...d[k]); } }
                 } else {
                     let localProg = JSON.parse(localStorage.getItem('mcq_progress') || '{}');
                     for (let k in localProg) { globalAttemptedIds.push(...localProg[k]); }
                 }
 
-                let availableQuestions = [];
-                let totalQuestionsInDB = 0;
+                let availableQuestions = []; let totalQuestionsInDB = 0;
 
                 if (isDailyQuiz) {
                     let targetPrefix = currentPath[1] === "NEET" ? "NEET" : "General Knowledge";
-                    
-                    let snap = await db.collection("content")
-                        .where("path", ">=", targetPrefix)
-                        .where("path", "<=", targetPrefix + "\uf8ff")
-                        .get();
-                        
+                    let snap = await db.collection("content").where("path", ">=", targetPrefix).where("path", "<=", targetPrefix + "\uf8ff").get();
                     let unattempted = [];
-                    snap.forEach(doc => {
-                        let data = doc.data();
-                        if (data.type === 'mcq' && !globalAttemptedIds.includes(doc.id)) {
-                            unattempted.push({id: doc.id, ...data});
-                        }
-                    });
+                    snap.forEach(doc => { let data = doc.data(); if (data.type === 'mcq' && !globalAttemptedIds.includes(doc.id)) { unattempted.push({id: doc.id, ...data}); } });
 
                     if (currentPath[1] === "NEET") {
-                        let bot = unattempted.filter(q => q.path.includes("Botany")).sort(()=>0.5-Math.random());
-                        let zoo = unattempted.filter(q => q.path.includes("Zoology")).sort(()=>0.5-Math.random());
-                        let phy = unattempted.filter(q => q.path.includes("Physics")).sort(()=>0.5-Math.random());
-                        let pChem = unattempted.filter(q => q.path.includes("Physical Chemistry")).sort(()=>0.5-Math.random());
-                        let oChem = unattempted.filter(q => q.path.includes("Organic Chemistry")).sort(()=>0.5-Math.random());
-                        let iChem = unattempted.filter(q => q.path.includes("Inorganic Chemistry")).sort(()=>0.5-Math.random());
+                        let bot = unattempted.filter(q => q.path.includes("Botany")).sort(()=>0.5-Math.random()); let zoo = unattempted.filter(q => q.path.includes("Zoology")).sort(()=>0.5-Math.random());
+                        let phy = unattempted.filter(q => q.path.includes("Physics")).sort(()=>0.5-Math.random()); let pChem = unattempted.filter(q => q.path.includes("Physical Chemistry")).sort(()=>0.5-Math.random());
+                        let oChem = unattempted.filter(q => q.path.includes("Organic Chemistry")).sort(()=>0.5-Math.random()); let iChem = unattempted.filter(q => q.path.includes("Inorganic Chemistry")).sort(()=>0.5-Math.random());
                         
-                        availableQuestions.push(...bot.slice(0, 5));
-                        availableQuestions.push(...zoo.slice(0, 5));
-                        availableQuestions.push(...phy.slice(0, 4));
-                        availableQuestions.push(...pChem.slice(0, 2));
-                        availableQuestions.push(...oChem.slice(0, 2));
-                        availableQuestions.push(...iChem.slice(0, 2));
-                        
+                        availableQuestions.push(...bot.slice(0, 5), ...zoo.slice(0, 5), ...phy.slice(0, 4), ...pChem.slice(0, 2), ...oChem.slice(0, 2), ...iChem.slice(0, 2));
                         totalQuestionsInDB = 20; 
                     } else { 
-                        availableQuestions = unattempted.sort(()=>0.5-Math.random()).slice(0, 20);
-                        totalQuestionsInDB = 20;
+                        availableQuestions = unattempted.sort(()=>0.5-Math.random()).slice(0, 20); totalQuestionsInDB = 20;
                     }
-                    
                     quizState.questions = availableQuestions.sort(() => Math.random() - 0.5);
 
                 } else {
-                    let snapshot = await db.collection("content")
-                        .where("path", ">=", pathString)
-                        .where("path", "<=", pathString + "\uf8ff")
-                        .get();
-                    
-                    let safePath = "prog_" + currentPath.join('_').replace(/[^a-zA-Z0-9]/g, '_');
-                    let previouslyAttemptedIds = [];
-                    if (currentUser) {
-                        let userDoc = await db.collection("users").doc(currentUser.uid).get();
-                        if (userDoc.exists) previouslyAttemptedIds = userDoc.data()[safePath] || [];
-                    } else {
-                        let localProg = JSON.parse(localStorage.getItem('mcq_progress') || '{}');
-                        previouslyAttemptedIds = localProg[safePath] || [];
-                    }
+                    let snapshot = await db.collection("content").where("path", ">=", pathString).where("path", "<=", pathString + "\uf8ff").get();
+                    let safePath = "prog_" + currentPath.join('_').replace(/[^a-zA-Z0-9]/g, '_'); let previouslyAttemptedIds = [];
+                    if (currentUser) { let userDoc = await db.collection("users").doc(currentUser.uid).get(); if (userDoc.exists) previouslyAttemptedIds = userDoc.data()[safePath] || []; } 
+                    else { let localProg = JSON.parse(localStorage.getItem('mcq_progress') || '{}'); previouslyAttemptedIds = localProg[safePath] || []; }
 
                     snapshot.forEach(doc => {
                         let data = doc.data();
-                        if (data.type === 'mcq') {
-                            totalQuestionsInDB++;
-                            if (!previouslyAttemptedIds.includes(doc.id)) {
-                                availableQuestions.push({ id: doc.id, ...data });
-                            }
-                        }
+                        if (data.type === 'mcq') { totalQuestionsInDB++; if (!previouslyAttemptedIds.includes(doc.id)) { availableQuestions.push({ id: doc.id, ...data }); } }
                     });
-                    
                     quizState.questions = availableQuestions.sort(() => Math.random() - 0.5);
                 }
 
-                if (totalQuestionsInDB === 0 || (isDailyQuiz && availableQuestions.length === 0)) { 
-                    mainContent.innerHTML = `<div class="card"><h2>No Questions Available</h2><p style="color:var(--text-muted);">Not enough new questions available in the database for this section.</p><button class="btn-exam" onclick="goBack()">&larr; Go Back</button></div>`; 
-                    return; 
-                }
+                if (totalQuestionsInDB === 0 || (isDailyQuiz && availableQuestions.length === 0)) { mainContent.innerHTML = `<div class="card"><h2>No Questions Available</h2><p style="color:var(--text-muted);">Not enough new questions available in the database for this section.</p><button class="btn-exam" onclick="goBack()">&larr; Go Back</button></div>`; return; }
 
                 if (availableQuestions.length === 0 && !isDailyQuiz) {
                     let safePath = "prog_" + currentPath.join('_').replace(/[^a-zA-Z0-9]/g, '_');
-                    mainContent.innerHTML = `
-                        <div class="card" style="text-align:center; padding: 40px 20px;">
-                            <h2 style="color: var(--primary-yellow); font-size: 28px; margin-bottom: 15px;">🎉 Section Completed!</h2>
-                            <p style="color: var(--text-muted); font-size: 16px; margin-bottom: 25px;">You have successfully attempted all available questions in this section.</p>
-                            <div style="display:flex; justify-content:center; gap:15px; flex-wrap:wrap;">
-                                <button class="btn-exam" onclick="resetProgress('${safePath}')" style="background: #333; color: white; border-color: var(--border-color);">🔄 Reset My Progress</button>
-                                <button class="btn-exam" onclick="goBack()">&larr; Explore Other Topics</button>
-                            </div>
-                        </div>`;
+                    mainContent.innerHTML = `<div class="card" style="text-align:center; padding: 40px 20px;"><h2 style="color: var(--primary-yellow); font-size: 28px; margin-bottom: 15px;">🎉 Section Completed!</h2><p style="color: var(--text-muted); font-size: 16px; margin-bottom: 25px;">You have successfully attempted all available questions in this section.</p><div style="display:flex; justify-content:center; gap:15px; flex-wrap:wrap;"><button class="btn-exam" onclick="resetProgress('${safePath}')" style="background: #333; color: white; border-color: var(--border-color);">🔄 Reset My Progress</button><button class="btn-exam" onclick="goBack()">&larr; Explore Other Topics</button></div></div>`;
                     return;
                 }
                 
-                quizState.currentIndex = 0; 
-                quizState.userAnswers = {}; 
-                quizState.showAnswerTriggered = {}; 
-                quizState.flaggedDoubts = {}; 
-                quizState.viewedQuestions = [];
-                quizState.secondsPassed = 0;
-                quizState.isTimerPaused = false;
+                quizState.currentIndex = 0; quizState.userAnswers = {}; quizState.showAnswerTriggered = {}; quizState.flaggedDoubts = {}; quizState.viewedQuestions = []; quizState.secondsPassed = 0; quizState.isTimerPaused = false;
                 
                 clearInterval(quizState.timer);
                 quizState.timer = setInterval(() => {
-                    if (!quizState.isTimerPaused) {
-                        quizState.secondsPassed++;
-                        let disp = document.getElementById('quizTimeDisplay');
-                        if(disp) disp.innerText = formatTime(quizState.secondsPassed);
-                    }
+                    if (!quizState.isTimerPaused) { quizState.secondsPassed++; let disp = document.getElementById('quizTimeDisplay'); if(disp) disp.innerText = formatTime(quizState.secondsPassed); }
                 }, 1000);
                 _renderQuizQuestion();
             } catch (error) { mainContent.innerHTML = `<div class="card"><h2>Error</h2><p>${error.message}</p><button class="btn-exam" onclick="goBack()">&larr; Go Back</button></div>`; }
@@ -1557,17 +1317,12 @@
 
         function _renderQuizQuestion() {
             const mainContent = document.getElementById('dynamic-content');
-            
-            if (!quizState.viewedQuestions.includes(quizState.currentIndex)) {
-                quizState.viewedQuestions.push(quizState.currentIndex);
-            }
+            if (!quizState.viewedQuestions.includes(quizState.currentIndex)) { quizState.viewedQuestions.push(quizState.currentIndex); }
 
             const q = quizState.questions[quizState.currentIndex];
             let multiText = q.correctAnswers.length > 1 ? `<span style="color:var(--primary-yellow); font-size:12px;">(Select all that apply)</span>` : "";
             let selectedNow = quizState.userAnswers[quizState.currentIndex] || []; 
-            let hasPeeked = quizState.showAnswerTriggered[quizState.currentIndex];
-            let isFlagged = quizState.flaggedDoubts[quizState.currentIndex];
-
+            let hasPeeked = quizState.showAnswerTriggered[quizState.currentIndex]; let isFlagged = quizState.flaggedDoubts[quizState.currentIndex];
             quizState.isTimerPaused = !!hasPeeked;
 
             let paletteHtml = '<div class="question-palette">';
@@ -1585,7 +1340,7 @@
                 let isSelected = selectedNow.includes(key); let extraClass = '';
                 if (hasPeeked) { if (q.correctAnswers.includes(key)) extraClass = 'correct'; else if (isSelected) extraClass = 'wrong'; } 
                 else if (isSelected) { extraClass = 'selected'; }
-                return `<div class="quiz-option ${extraClass}" onclick="toggleOptionSelection('${key}', ${q.correctAnswers.length > 1})"><b style="margin-right:15px; color:var(--text-muted);">${key}.</b> ${q.options[key]}</div>`;
+                return `<div class="quiz-option ${extraClass}" onclick="toggleOptionSelection('${key}', ${q.correctAnswers.length > 1})"><b style="margin-right:15px; color:var(--text-muted);">${key}.</b> <span class="katex-render-target">${q.options[key]}</span></div>`;
             }).join('');
 
             let html = `
@@ -1600,15 +1355,20 @@
                     </div>
                     ${paletteHtml}
                     ${q.imageUrl ? `<img src="${q.imageUrl}" class="quiz-image" onclick="expandImage(this.src)" title="Click to enlarge">` : ''}
-                    <div class="quiz-question-text">${q.question}</div>
+                    <div class="quiz-question-text katex-render-target">${q.question}</div>
                     <div id="optionsContainer">${optionsHtml}</div>
-                    <div id="explanationBox" class="quiz-explanation" style="display:${hasPeeked ? 'block' : 'none'}"><b>Explanation:</b><br><span id="expText">${q.explanation || "No explanation provided."}</span></div>
+                    <div id="explanationBox" class="quiz-explanation katex-render-target" style="display:${hasPeeked ? 'block' : 'none'}"><b>Explanation:</b><br><span id="expText">${q.explanation || "No explanation provided."}</span></div>
                     <div class="nav-buttons-row">
                         <div style="display:flex; gap:10px;"><button class="btn-exam" onclick="_prevQuestion()" ${quizState.currentIndex === 0 ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : ''}>&larr; Prev</button><button class="btn-exam" onclick="_nextQuestion()" ${quizState.currentIndex === quizState.questions.length - 1 ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : ''}>Next / Skip &rarr;</button></div>
                         <div style="display:flex; gap:10px;"><button class="btn-exam" onclick="checkAnswer()" style="background:#333; ${hasPeeked ? 'display:none;' : ''}">Check Answer</button><button class="btn-exam" onclick="finishQuiz()" style="background:var(--wrong-red); border:none; color:white;">Finish Quiz</button></div>
                     </div>
                 </div>`;
             mainContent.innerHTML = html;
+            
+            // Render Math in Quiz Question and Explanation if any exist
+            document.querySelectorAll('.katex-render-target').forEach(el => {
+                renderMathInElement(el, { delimiters: [ {left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}, {left: '\\(', right: '\\)', display: false}, {left: '\\[', right: '\\]', display: true} ] });
+            });
         }
 
         function toggleOptionSelection(optKey, isMulti) {
@@ -1629,184 +1389,76 @@
         function jumpToQuestion(index) { quizState.currentIndex = index; _renderQuizQuestion(); }
         function _nextQuestion() { if(quizState.currentIndex < quizState.questions.length - 1) { quizState.currentIndex++; _renderQuizQuestion(); } }
         function _prevQuestion() { if(quizState.currentIndex > 0) { quizState.currentIndex--; _renderQuizQuestion(); } }
+        function formatTime(totalSeconds) { const m = Math.floor(totalSeconds / 60); const s = totalSeconds % 60; return `${m}:${s < 10 ? '0' : ''}${s}`; }
 
-        function formatTime(totalSeconds) {
-            const m = Math.floor(totalSeconds / 60); const s = totalSeconds % 60;
-            return `${m}:${s < 10 ? '0' : ''}${s}`;
-        }
-
-        // --- REVIEW TABS LOGIC ---
         window.showReviewTab = function(tabName) {
-            ['correct', 'wrong', 'skipped'].forEach(t => {
-                document.getElementById('review-' + t).style.display = 'none';
-                document.getElementById('tab-btn-' + t).classList.remove('active');
-            });
-            document.getElementById('review-' + tabName).style.display = 'block';
-            document.getElementById('tab-btn-' + tabName).classList.add('active');
+            ['correct', 'wrong', 'skipped'].forEach(t => { document.getElementById('review-' + t).style.display = 'none'; document.getElementById('tab-btn-' + t).classList.remove('active'); });
+            document.getElementById('review-' + tabName).style.display = 'block'; document.getElementById('tab-btn-' + tabName).classList.add('active');
         };
 
-        window.toggleViewAnswer = function(id) {
-            let el = document.getElementById(id);
-            el.style.display = el.style.display === 'none' ? 'block' : 'none';
-        };
+        window.toggleViewAnswer = function(id) { let el = document.getElementById(id); el.style.display = el.style.display === 'none' ? 'block' : 'none'; };
 
         function buildReviewItemHtml(q, index, type, userAnsArray) {
-            let optionsHtml = '';
-            let optKeys = Object.keys(q.options).sort();
+            let optionsHtml = ''; let optKeys = Object.keys(q.options).sort();
             for(let key of optKeys) {
-                let isUser = userAnsArray.includes(key);
-                let isCorr = q.correctAnswers.includes(key);
-                let bgClass = '';
-                let icon = '';
-                
-                if (type !== 'skipped') {
-                    if (isCorr) { bgClass = 'background: rgba(76, 175, 80, 0.1); border-color: var(--correct-green);'; icon = '✅ '; }
-                    else if (isUser && !isCorr) { bgClass = 'background: rgba(244, 67, 54, 0.1); border-color: var(--wrong-red);'; icon = '❌ '; }
-                }
-                optionsHtml += `<div style="padding: 10px; border: 1px solid var(--border-color); border-radius: 6px; margin-bottom: 8px; ${bgClass}"><b>${icon}${key}.</b> ${q.options[key]}</div>`;
+                let isUser = userAnsArray.includes(key); let isCorr = q.correctAnswers.includes(key); let bgClass = ''; let icon = '';
+                if (type !== 'skipped') { if (isCorr) { bgClass = 'background: rgba(76, 175, 80, 0.1); border-color: var(--correct-green);'; icon = '✅ '; } else if (isUser && !isCorr) { bgClass = 'background: rgba(244, 67, 54, 0.1); border-color: var(--wrong-red);'; icon = '❌ '; } }
+                optionsHtml += `<div style="padding: 10px; border: 1px solid var(--border-color); border-radius: 6px; margin-bottom: 8px; ${bgClass}"><b>${icon}${key}.</b> <span class="katex-render-target">${q.options[key]}</span></div>`;
             }
-
-            let exp = q.explanation ? `<div style="margin-top:10px; color:var(--text-muted); font-size:14px;"><b>Explanation:</b> ${q.explanation}</div>` : '';
+            let exp = q.explanation ? `<div class="katex-render-target" style="margin-top:10px; color:var(--text-muted); font-size:14px;"><b>Explanation:</b> ${q.explanation}</div>` : '';
             let img = q.imageUrl ? `<img src="${q.imageUrl}" style="max-height:150px; border-radius:6px; margin-bottom:10px; display:block;">` : '';
             
-            if (type === 'skipped') {
-                return `
-                    <div class="review-item" style="border-left: 4px solid var(--primary-yellow);">
-                        <p style="margin-top:0; font-size: 16px;"><b>Q${index + 1}:</b> ${q.question}</p>
-                        ${img}
-                        ${optionsHtml}
-                        <button onclick="toggleViewAnswer('ans_div_${q.id}')" style="background:#333; color:white; border:none; padding:8px 15px; border-radius:4px; cursor:pointer; margin-top:10px;">👁️ View Answer</button>
-                        <div id="ans_div_${q.id}" style="display:none; margin-top:15px; padding-top:15px; border-top:1px solid #333;">
-                            <p style="color:var(--correct-green); margin:0 0 10px 0;"><b>Correct Answer:</b> ${q.correctAnswers.join(', ')}</p>
-                            ${exp}
-                        </div>
-                    </div>
-                `;
-            } else {
-                let borderColor = type === 'correct' ? 'var(--correct-green)' : 'var(--wrong-red)';
-                return `
-                    <div class="review-item" style="border-left: 4px solid ${borderColor};">
-                        <p style="margin-top:0; font-size: 16px;"><b>Q${index + 1}:</b> ${q.question}</p>
-                        ${img}
-                        ${optionsHtml}
-                        <p style="color:var(--correct-green); margin:15px 0 5px 0;"><b>Correct Answer:</b> ${q.correctAnswers.join(', ')}</p>
-                        ${exp}
-                    </div>
-                `;
-            }
+            let borderColor = type === 'correct' ? 'var(--correct-green)' : (type === 'wrong' ? 'var(--wrong-red)' : 'var(--primary-yellow)');
+            return `
+                <div class="review-item" style="border-left: 4px solid ${borderColor};">
+                    <p style="margin-top:0; font-size: 16px;"><b>Q${index + 1}:</b> <span class="katex-render-target">${q.question}</span></p>
+                    ${img} ${optionsHtml}
+                    ${type === 'skipped' ? `<button onclick="toggleViewAnswer('ans_div_${q.id}')" style="background:#333; color:white; border:none; padding:8px 15px; border-radius:4px; cursor:pointer; margin-top:10px;">👁️ View Answer</button><div id="ans_div_${q.id}" style="display:none; margin-top:15px; padding-top:15px; border-top:1px solid #333;"><p style="color:var(--correct-green); margin:0 0 10px 0;"><b>Correct Answer:</b> ${q.correctAnswers.join(', ')}</p>${exp}</div>` : `<p style="color:var(--correct-green); margin:15px 0 5px 0;"><b>Correct Answer:</b> ${q.correctAnswers.join(', ')}</p>${exp}`}
+                </div>
+            `;
         }
 
         async function finishQuiz() {
             clearInterval(quizState.timer); 
             let attempted = 0; let totalScore = 0; let correctCount = 0; let wrongCount = 0;
-            let sessionAttemptedIds = []; 
-            let skippedCount = 0; 
-            let isDailyQuiz = currentPath[0] === 'Daily Quiz Challenge';
-
+            let sessionAttemptedIds = []; let skippedCount = 0; let isDailyQuiz = currentPath[0] === 'Daily Quiz Challenge';
             let correctHtml = ''; let wrongHtml = ''; let skippedHtml = ''; let flaggedListHtml = '';
-            
             let isNeetSection = isDailyQuiz ? (currentPath[1] === "NEET") : (currentPath[0] === "NEET");
 
             quizState.questions.forEach((q, index) => {
-                let userAnsArray = quizState.userAnswers[index] || [];
-                let isAttempted = userAnsArray.length > 0;
-                let isCorrect = false;
-                let isViewed = quizState.viewedQuestions.includes(index);
-
-                if (isAttempted) {
-                    attempted++;
-                    sessionAttemptedIds.push(q.id); 
-                    
-                    let userAnsStr = userAnsArray.sort().join(','); 
-                    let correctAnsStr = q.correctAnswers.sort().join(','); 
-                    if (userAnsStr === correctAnsStr) { isCorrect = true; correctCount++; }
-                }
-
+                let userAnsArray = quizState.userAnswers[index] || []; let isAttempted = userAnsArray.length > 0; let isCorrect = false; let isViewed = quizState.viewedQuestions.includes(index);
+                if (isAttempted) { attempted++; sessionAttemptedIds.push(q.id); let userAnsStr = userAnsArray.sort().join(','); let correctAnsStr = q.correctAnswers.sort().join(','); if (userAnsStr === correctAnsStr) { isCorrect = true; correctCount++; } }
                 if (isAttempted && !isCorrect) wrongCount++;
+                if (isAttempted) { if (isCorrect) correctHtml += buildReviewItemHtml(q, index, 'correct', userAnsArray); else wrongHtml += buildReviewItemHtml(q, index, 'wrong', userAnsArray); } 
+                else if (isViewed) { skippedCount++; skippedHtml += buildReviewItemHtml(q, index, 'skipped', []); }
 
-                if (isAttempted) {
-                    if (isCorrect) correctHtml += buildReviewItemHtml(q, index, 'correct', userAnsArray);
-                    else wrongHtml += buildReviewItemHtml(q, index, 'wrong', userAnsArray);
-                } else if (isViewed) {
-                    skippedCount++;
-                    skippedHtml += buildReviewItemHtml(q, index, 'skipped', []);
-                }
-
-                if (isNeetSection) {
-                    if (isCorrect) totalScore += 4;
-                    else if (isAttempted && !isCorrect) totalScore -= 1;
-                } else {
-                    if (isCorrect) totalScore += 1;
-                }
+                if (isNeetSection) { if (isCorrect) totalScore += 4; else if (isAttempted && !isCorrect) totalScore -= 1; } else { if (isCorrect) totalScore += 1; }
 
                 if(quizState.flaggedDoubts[index]) {
-                    flaggedListHtml += `
-                        <div style="background:#2a2a2a; border-left:4px solid var(--primary-yellow); padding:15px; margin-bottom:15px; text-align:left;">
-                            <p style="margin-top:0;"><b>Q:</b> ${q.question}</p>
-                            <p style="color:var(--text-muted); font-size:14px;"><b>Explanation:</b> ${q.explanation || 'None'}</p>
-                        </div>
-                    `;
-                    if (currentUser) {
-                        db.collection("flagged_doubts").add({
-                            studentId: currentUser.uid, studentName: currentUser.displayName, questionId: q.id, questionText: q.question, path: q.path, timestamp: firebase.firestore.FieldValue.serverTimestamp()
-                        });
-                    }
+                    flaggedListHtml += `<div style="background:#2a2a2a; border-left:4px solid var(--primary-yellow); padding:15px; margin-bottom:15px; text-align:left;"><p style="margin-top:0;"><b>Q:</b> ${q.question}</p><p style="color:var(--text-muted); font-size:14px;"><b>Explanation:</b> ${q.explanation || 'None'}</p></div>`;
+                    if (currentUser) { db.collection("flagged_doubts").add({ studentId: currentUser.uid, studentName: currentUser.displayName, questionId: q.id, questionText: q.question, path: q.path, timestamp: firebase.firestore.FieldValue.serverTimestamp() }); }
                 }
             });
 
             if (sessionAttemptedIds.length > 0 && !isDailyQuiz) { 
                 let safePath = "prog_" + currentPath.join('_').replace(/[^a-zA-Z0-9]/g, '_');
-                if (currentUser) {
-                    let dataToSave = {};
-                    dataToSave[safePath] = firebase.firestore.FieldValue.arrayUnion(...sessionAttemptedIds);
-                    db.collection("users").doc(currentUser.uid).set(dataToSave, {merge: true});
-                } else {
-                    let localProg = JSON.parse(localStorage.getItem('mcq_progress') || '{}');
-                    localProg[safePath] = [...(localProg[safePath] || []), ...sessionAttemptedIds];
-                    localStorage.setItem('mcq_progress', JSON.stringify(localProg));
-                }
+                if (currentUser) { let dataToSave = {}; dataToSave[safePath] = firebase.firestore.FieldValue.arrayUnion(...sessionAttemptedIds); db.collection("users").doc(currentUser.uid).set(dataToSave, {merge: true}); } 
+                else { let localProg = JSON.parse(localStorage.getItem('mcq_progress') || '{}'); localProg[safePath] = [...(localProg[safePath] || []), ...sessionAttemptedIds]; localStorage.setItem('mcq_progress', JSON.stringify(localProg)); }
             } else if (sessionAttemptedIds.length > 0 && isDailyQuiz) {
-                if (currentUser) {
-                    db.collection("users").doc(currentUser.uid).set({ prog_daily_challenge: firebase.firestore.FieldValue.arrayUnion(...sessionAttemptedIds)}, {merge: true});
-                } else {
-                    let localProg = JSON.parse(localStorage.getItem('mcq_progress') || '{}');
-                    localProg["prog_daily_challenge"] = [...(localProg["prog_daily_challenge"] || []), ...sessionAttemptedIds];
-                    localStorage.setItem('mcq_progress', JSON.stringify(localProg));
-                }
+                if (currentUser) { db.collection("users").doc(currentUser.uid).set({ prog_daily_challenge: firebase.firestore.FieldValue.arrayUnion(...sessionAttemptedIds)}, {merge: true}); } 
+                else { let localProg = JSON.parse(localStorage.getItem('mcq_progress') || '{}'); localProg["prog_daily_challenge"] = [...(localProg["prog_daily_challenge"] || []), ...sessionAttemptedIds]; localStorage.setItem('mcq_progress', JSON.stringify(localProg)); }
             }
 
             let accuracy = attempted === 0 ? 0 : Math.round((correctCount / attempted) * 100); 
-            let timeStr = formatTime(quizState.secondsPassed);
-            let pathString = currentPath.join(' > ');
-            let studentName = currentUser ? currentUser.displayName : "Anonymous";
+            let timeStr = formatTime(quizState.secondsPassed); let pathString = currentPath.join(' > '); let studentName = currentUser ? currentUser.displayName : "Anonymous";
 
-            if (currentUser && attempted > 0 && !isDailyQuiz) {
-                db.collection("leaderboards").add({
-                    userId: currentUser.uid, userName: currentUser.displayName, quizPath: pathString, score: totalScore, accuracy: accuracy, timeStr: timeStr, attemptedQuestions: attempted, timestamp: firebase.firestore.FieldValue.serverTimestamp()
-                });
-            }
+            if (currentUser && attempted > 0 && !isDailyQuiz) { db.collection("leaderboards").add({ userId: currentUser.uid, userName: currentUser.displayName, quizPath: pathString, score: totalScore, accuracy: accuracy, timeStr: timeStr, attemptedQuestions: attempted, timestamp: firebase.firestore.FieldValue.serverTimestamp() }); }
 
             let scoreCardsHtml = '';
             if (isNeetSection) {
-                scoreCardsHtml = `
-                    <div style="background:#2a2a2a; padding: 20px; border-radius: 8px; min-width: 120px; flex: 1;">
-                        <div style="font-size: 32px; color: white; font-weight: bold;">${attempted * 4}</div>
-                        <div style="color: var(--text-muted); font-size: 14px;">Total Marks</div>
-                        <div style="color: var(--text-muted); font-size: 11px; margin-top:5px;">(${attempted}x4)</div>
-                    </div>
-                    <div style="background:#2a2a2a; padding: 20px; border-radius: 8px; min-width: 120px; flex: 1; border: 1px solid var(--primary-yellow);">
-                        <div style="font-size: 32px; color: var(--primary-yellow); font-weight: bold;">${totalScore}</div>
-                        <div style="color: var(--text-muted); font-size: 14px;">Obtained Mark</div>
-                        <div style="color: var(--text-muted); font-size: 11px; margin-top:5px;">(${correctCount}x4) - ${wrongCount}</div>
-                    </div>
-                `;
+                scoreCardsHtml = `<div style="background:#2a2a2a; padding: 20px; border-radius: 8px; min-width: 120px; flex: 1;"><div style="font-size: 32px; color: white; font-weight: bold;">${attempted * 4}</div><div style="color: var(--text-muted); font-size: 14px;">Total Marks</div><div style="color: var(--text-muted); font-size: 11px; margin-top:5px;">(${attempted}x4)</div></div><div style="background:#2a2a2a; padding: 20px; border-radius: 8px; min-width: 120px; flex: 1; border: 1px solid var(--primary-yellow);"><div style="font-size: 32px; color: var(--primary-yellow); font-weight: bold;">${totalScore}</div><div style="color: var(--text-muted); font-size: 14px;">Obtained Mark</div><div style="color: var(--text-muted); font-size: 11px; margin-top:5px;">(${correctCount}x4) - ${wrongCount}</div></div>`;
             } else {
-                scoreCardsHtml = `
-                    <div style="background:#2a2a2a; padding: 20px; border-radius: 8px; min-width: 120px; flex: 1; border: 1px solid var(--primary-yellow);">
-                        <div style="font-size: 32px; color: var(--primary-yellow); font-weight: bold;">${totalScore}</div>
-                        <div style="color: var(--text-muted); font-size: 14px;">Total Score</div>
-                    </div>
-                `;
+                scoreCardsHtml = `<div style="background:#2a2a2a; padding: 20px; border-radius: 8px; min-width: 120px; flex: 1; border: 1px solid var(--primary-yellow);"><div style="font-size: 32px; color: var(--primary-yellow); font-weight: bold;">${totalScore}</div><div style="color: var(--text-muted); font-size: 14px;">Total Score</div></div>`;
             }
 
             const mainContent = document.getElementById('dynamic-content');
@@ -1815,49 +1467,25 @@
                     <h2 style="font-size: 32px; color: var(--primary-yellow); margin-bottom: 5px;">Test Complete!</h2>
                     <p style="color: var(--text-muted); margin-bottom: 30px;">Great effort, ${studentName.split(" ")[0]}! Here is your final breakdown.</p>
                     ${isDailyQuiz ? `<div style="background:rgba(253, 184, 19, 0.1); border-left:4px solid var(--primary-yellow); padding:10px; margin-bottom:20px; border-radius:4px; font-size:14px; text-align:left;"><b style="color:var(--primary-yellow);">Daily Challenge Note:</b> This score is temporary and is not added to the global leaderboard. Come back tomorrow for 20 new questions!</div>` : ''}
-                    
                     <div style="display:flex; justify-content:center; gap:15px; flex-wrap:wrap; margin-bottom: 40px;">
                         ${scoreCardsHtml}
-                        <div style="background:#2a2a2a; padding: 20px; border-radius: 8px; min-width: 100px; flex: 1;">
-                            <div style="font-size: 32px; color: white; font-weight: bold;">${attempted}</div>
-                            <div style="color: var(--text-muted); font-size: 14px;">Attempted</div>
-                        </div>
-                        <div style="background:#2a2a2a; padding: 20px; border-radius: 8px; min-width: 100px; flex: 1;">
-                            <div style="font-size: 32px; color: var(--correct-green); font-weight: bold;">${accuracy}%</div>
-                            <div style="color: var(--text-muted); font-size: 14px;">Accuracy</div>
-                        </div>
-                        <div style="background:#2a2a2a; padding: 20px; border-radius: 8px; min-width: 100px; flex: 1;">
-                            <div style="font-size: 32px; color: white; font-weight: bold;">${timeStr}</div>
-                            <div style="color: var(--text-muted); font-size: 14px;">Time Taken</div>
-                        </div>
+                        <div style="background:#2a2a2a; padding: 20px; border-radius: 8px; min-width: 100px; flex: 1;"><div style="font-size: 32px; color: white; font-weight: bold;">${attempted}</div><div style="color: var(--text-muted); font-size: 14px;">Attempted</div></div>
+                        <div style="background:#2a2a2a; padding: 20px; border-radius: 8px; min-width: 100px; flex: 1;"><div style="font-size: 32px; color: var(--correct-green); font-weight: bold;">${accuracy}%</div><div style="color: var(--text-muted); font-size: 14px;">Accuracy</div></div>
+                        <div style="background:#2a2a2a; padding: 20px; border-radius: 8px; min-width: 100px; flex: 1;"><div style="font-size: 32px; color: white; font-weight: bold;">${timeStr}</div><div style="color: var(--text-muted); font-size: 14px;">Time Taken</div></div>
                     </div>
-                    
                     <h3 style="margin-top:20px; padding-bottom: 10px; border-bottom: 1px solid var(--border-color); text-align: left;">📊 Detailed Analysis</h3>
-                    
-                    <div class="review-tabs">
-                        <button id="tab-btn-correct" class="review-tab-btn active correct" onclick="showReviewTab('correct')">✅ Correct (${correctCount})</button>
-                        <button id="tab-btn-wrong" class="review-tab-btn wrong" onclick="showReviewTab('wrong')">❌ Wrong (${wrongCount})</button>
-                        <button id="tab-btn-skipped" class="review-tab-btn skipped" onclick="showReviewTab('skipped')">⏭️ Skipped (${skippedCount})</button>
-                    </div>
-
-                    <div id="review-correct" style="display:block;">
-                        ${correctHtml || '<p style="color:var(--text-muted); margin: 20px 0;">No correct answers this time.</p>'}
-                    </div>
-                    <div id="review-wrong" style="display:none;">
-                        ${wrongHtml || '<p style="color:var(--text-muted); margin: 20px 0;">No wrong answers! Great job.</p>'}
-                    </div>
-                    <div id="review-skipped" style="display:none;">
-                        ${skippedHtml || '<p style="color:var(--text-muted); margin: 20px 0;">You did not skip any questions you viewed.</p>'}
-                    </div>
-
-                    ${flaggedListHtml !== '' ? `
-                        <h3 style="text-align:left; color:var(--primary-yellow); border-bottom:1px solid #333; padding-bottom:10px; margin-top: 40px;">⭐ Questions Sent to Admin</h3>
-                        ${flaggedListHtml}
-                    ` : ''}
-                    
+                    <div class="review-tabs"><button id="tab-btn-correct" class="review-tab-btn active correct" onclick="showReviewTab('correct')">✅ Correct (${correctCount})</button><button id="tab-btn-wrong" class="review-tab-btn wrong" onclick="showReviewTab('wrong')">❌ Wrong (${wrongCount})</button><button id="tab-btn-skipped" class="review-tab-btn skipped" onclick="showReviewTab('skipped')">⏭️ Skipped (${skippedCount})</button></div>
+                    <div id="review-correct" style="display:block;">${correctHtml || '<p style="color:var(--text-muted); margin: 20px 0;">No correct answers this time.</p>'}</div>
+                    <div id="review-wrong" style="display:none;">${wrongHtml || '<p style="color:var(--text-muted); margin: 20px 0;">No wrong answers! Great job.</p>'}</div>
+                    <div id="review-skipped" style="display:none;">${skippedHtml || '<p style="color:var(--text-muted); margin: 20px 0;">You did not skip any questions you viewed.</p>'}</div>
+                    ${flaggedListHtml !== '' ? `<h3 style="text-align:left; color:var(--primary-yellow); border-bottom:1px solid #333; padding-bottom:10px; margin-top: 40px;">⭐ Questions Sent to Admin</h3>${flaggedListHtml}` : ''}
                     <button class="btn-exam" onclick="goBack()" style="width: 250px; margin-top:30px;">&larr; Exit to Dashboard</button>
                 </div>
             `;
+            
+            document.querySelectorAll('.katex-render-target').forEach(el => {
+                renderMathInElement(el, { delimiters: [ {left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}, {left: '\\(', right: '\\)', display: false}, {left: '\\[', right: '\\]', display: true} ] });
+            });
         }
 
         // --- 6. STANDARD RENDERING & UTILS ---
@@ -1873,23 +1501,17 @@
             }
 
             let isEndpoint = false;
-            if (typeof currentLevel === 'string' || Array.isArray(currentLevel)) {
-                isEndpoint = true;
-            } else if (typeof currentLevel === 'object' && Object.keys(currentLevel).length === 0) {
-                isEndpoint = true;
-            }
+            if (typeof currentLevel === 'string' || Array.isArray(currentLevel)) { isEndpoint = true; } 
+            else if (typeof currentLevel === 'object' && Object.keys(currentLevel).length === 0) { isEndpoint = true; }
 
             if (isEndpoint) {
                 let topicName = currentPath[currentPath.length - 1]; 
-                
-                let checkPath = currentPath.join(" > ");
-                let expectedType = customTopicTypes[checkPath];
+                let checkPath = currentPath.join(" > "); let expectedType = customTopicTypes[checkPath];
                 let isPdfSection = (expectedType === 'pdf') || (!requiresQuizLogin(currentPath) && expectedType !== 'mcq');
                 
                 if (!isPdfSection) {
                     let studentName = currentUser ? currentUser.displayName.split(" ")[0] : "Student";
                     let welcomeMessage = !currentUser ? "Sign in to track your scores on the global leaderboard!" : `Ready for practice, <span style="color: var(--primary-yellow); font-weight: bold;">${studentName}</span>?`;
-                    
                     mainContent.innerHTML = `<div class="card"><h2>${topicName} Practice</h2><p style="color: var(--text-muted); margin-bottom: 25px;">${welcomeMessage}</p><div style="display: flex; gap: 15px;"><button class="btn-exam" onclick="window.location.hash='#/quiz'" style="background-color: var(--primary-yellow); color: black; border: none; width: 200px;">Start Quiz &rarr;</button><button class="btn-exam" onclick="goBack()" style="width: 150px; background-color: #333;">&larr; Go Back</button></div></div>`;
                 } else {
                     mainContent.innerHTML = `<div class="card"><h2>${topicName} Resources</h2><p style="color: var(--text-muted);">Study materials will appear here once uploaded via Admin Panel.</p><button class="btn-exam" onclick="goBack()" style="width: 150px; margin-top:20px; background-color: #333;">&larr; Go Back</button></div>`;
@@ -1900,24 +1522,16 @@
             let title = currentPath.length === 0 ? "Select Exam:" : currentPath[currentPath.length - 1];
             let html = `<div class="card"><h2>${title}</h2><div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px;">`;
 
-            if (currentPath.length > 0 && requiresQuizLogin(currentPath)) {
-                html += `<button class="btn-exam" onclick="window.location.hash='#/quiz'" style="background-color: var(--primary-yellow); color: black; border: none; grid-column: 1 / -1; margin-bottom: 10px;">▶️ Practice All in ${title}</button>`;
-            }
+            if (currentPath.length > 0 && requiresQuizLogin(currentPath)) { html += `<button class="btn-exam" onclick="window.location.hash='#/quiz'" style="background-color: var(--primary-yellow); color: black; border: none; grid-column: 1 / -1; margin-bottom: 10px;">▶️ Practice All in ${title}</button>`; }
 
             for (let key in currentLevel) { 
                 if (currentPath.length === 0 && key === "Daily Quiz Challenge") continue; 
-                
                 let checkPath = currentPath.join(" > ") + (currentPath.length > 0 ? " > " : "") + key;
-                let typeLabel = "";
-                if (customTopicTypes[checkPath] === 'mcq') typeLabel = " 📝";
-                else if (customTopicTypes[checkPath] === 'pdf') typeLabel = " 📄";
-
+                let typeLabel = ""; if (customTopicTypes[checkPath] === 'mcq') typeLabel = " 📝"; else if (customTopicTypes[checkPath] === 'pdf') typeLabel = " 📄";
                 html += `<button class="btn-exam" onclick="navigateTo('${key}')">${key}${typeLabel}</button>`; 
             }
             if (currentPath.length > 0) { html += `<button class="btn-exam" onclick="goBack()" style="grid-column: 1 / -1; background-color: #222; border-color: #444; color: #a0a0a0; margin-top: 10px;">&larr; Go Back</button>`; }
-            html += `</div></div>`; 
-            
-            mainContent.innerHTML = html;
+            html += `</div></div>`; mainContent.innerHTML = html;
         }
         
         function requiresQuizLogin(pathArray) {
@@ -1932,11 +1546,9 @@
                 <div class="card">
                     <h2>🏆 Global Leaderboards</h2>
                     <p style="color:var(--text-muted); margin-bottom: 20px;">Select a category to view the top 10 scores.</p>
-                    
                     <div style="background: rgba(244, 67, 54, 0.1); border-left: 4px solid var(--wrong-red); padding: 12px; margin-bottom: 25px; border-radius: 4px;">
                         <span style="color: var(--wrong-red); font-weight: bold;">⚠️ CAUTION:</span> <span style="color: var(--text-light); font-size: 14px;">Only signed-in users will have their scores recorded and displayed on the leaderboard.</span>
                     </div>
-
                     <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 15px;">
                         <button class="btn-exam" onclick="window.location.hash='#/board/NEET > MCQs Practice'">1. NEET PRACTICE</button>
                         <button class="btn-exam" onclick="window.location.hash='#/board/NEET > Mock Test'">2. MOCK TEST</button>
@@ -1947,121 +1559,43 @@
         
         async function fetchLiveLeaderboard(pathPrefix) { 
             const mainContent = document.getElementById('dynamic-content');
-            
-            if (!currentUser) {
-                mainContent.innerHTML = `
-                    <div class="card">
-                        <h2>🏆 Fetching Leaderboard...</h2>
-                        <div style="background: rgba(244, 67, 54, 0.1); border-left: 4px solid var(--wrong-red); padding: 15px; margin: 20px 0; border-radius: 4px;">
-                            <span style="color: var(--wrong-red); font-weight: bold;">⚠️ ACCESS DENIED:</span> <span style="color: var(--text-light); font-size: 14px;">You must be signed in with Google to view the global leaderboards.</span>
-                        </div>
-                        <button class="btn-exam" onclick="window.location.hash='#/leaderboard'">&larr; Back</button>
-                    </div>`;
-                return;
-            }
+            if (!currentUser) { mainContent.innerHTML = `<div class="card"><h2>🏆 Fetching Leaderboard...</h2><div style="background: rgba(244, 67, 54, 0.1); border-left: 4px solid var(--wrong-red); padding: 15px; margin: 20px 0; border-radius: 4px;"><span style="color: var(--wrong-red); font-weight: bold;">⚠️ ACCESS DENIED:</span> <span style="color: var(--text-light); font-size: 14px;">You must be signed in with Google to view the global leaderboards.</span></div><button class="btn-exam" onclick="window.location.hash='#/leaderboard'">&larr; Back</button></div>`; return; }
 
             mainContent.innerHTML = `<div class="card"><h2>🏆 Fetching Leaderboard...</h2></div>`;
-            
             try {
                 const userSnapshot = await db.collection("leaderboards").where("userId", "==", currentUser.uid).get();
-                let totalQuestions = 0;
-                let totalTests = 0;
-                let myBestScore = -99999;
-                let myBestData = null;
-
+                let totalQuestions = 0; let totalTests = 0; let myBestScore = -99999; let myBestData = null;
                 userSnapshot.forEach(doc => {
                     let data = doc.data();
                     if (data.quizPath && data.quizPath.startsWith(pathPrefix)) {
-                        totalTests++;
-                        totalQuestions += (data.attemptedQuestions || 0);
-                        if (data.score > myBestScore) {
-                            myBestScore = data.score;
-                            myBestData = data;
-                        }
+                        totalTests++; totalQuestions += (data.attemptedQuestions || 0);
+                        if (data.score > myBestScore) { myBestScore = data.score; myBestData = data; }
                     }
                 });
 
-                let isMockTest = pathPrefix.includes('Mock Test');
-                let thresholdMet = false;
-                let requiredText = "";
-                let progressText = "";
-
-                if (isMockTest) {
-                    thresholdMet = (totalTests >= 5);
-                    requiredText = "5 Full Mock Tests";
-                    progressText = `${totalTests} / 5 Tests Completed`;
-                } else {
-                    thresholdMet = (totalQuestions >= 100);
-                    requiredText = "100 Practice Questions";
-                    progressText = `${totalQuestions} / 100 Questions Attempted`;
-                }
+                let isMockTest = pathPrefix.includes('Mock Test'); let thresholdMet = false; let requiredText = ""; let progressText = "";
+                if (isMockTest) { thresholdMet = (totalTests >= 5); requiredText = "5 Full Mock Tests"; progressText = `${totalTests} / 5 Tests Completed`; } 
+                else { thresholdMet = (totalQuestions >= 100); requiredText = "100 Practice Questions"; progressText = `${totalQuestions} / 100 Questions Attempted`; }
 
                 if (!thresholdMet) {
-                    mainContent.innerHTML = `
-                        <div class="card" style="text-align:center; padding: 40px 20px;">
-                            <h2 style="color: var(--primary-yellow); font-size: 28px; margin-bottom: 10px;">🔒 Leaderboard Locked</h2>
-                            <p style="color: var(--text-muted); font-size: 15px; max-width: 500px; margin: 0 auto 20px auto; line-height: 1.5;">
-                                To ensure competitive integrity, you must attempt a minimum of <b style="color: white;">${requiredText}</b> in this specific category before unlocking the global rankings.
-                            </p>
-                            <div style="background: #2a2a2a; border: 1px solid var(--border-color); padding: 15px 25px; border-radius: 8px; display: inline-block; margin-bottom: 30px;">
-                                <span style="color: var(--primary-yellow); font-weight: bold; margin-right: 10px;">Your Progress:</span> 
-                                <span style="color: white; font-weight: bold;">${progressText}</span>
-                            </div>
-                            <br>
-                            <button class="btn-exam" onclick="window.location.hash='#/leaderboard'">&larr; Back to Categories</button>
-                        </div>`;
-                    return;
+                    mainContent.innerHTML = `<div class="card" style="text-align:center; padding: 40px 20px;"><h2 style="color: var(--primary-yellow); font-size: 28px; margin-bottom: 10px;">🔒 Leaderboard Locked</h2><p style="color: var(--text-muted); font-size: 15px; max-width: 500px; margin: 0 auto 20px auto; line-height: 1.5;">To ensure competitive integrity, you must attempt a minimum of <b style="color: white;">${requiredText}</b> in this specific category before unlocking the global rankings.</p><div style="background: #2a2a2a; border: 1px solid var(--border-color); padding: 15px 25px; border-radius: 8px; display: inline-block; margin-bottom: 30px;"><span style="color: var(--primary-yellow); font-weight: bold; margin-right: 10px;">Your Progress:</span> <span style="color: white; font-weight: bold;">${progressText}</span></div><br><button class="btn-exam" onclick="window.location.hash='#/leaderboard'">&larr; Back to Categories</button></div>`; return;
                 }
 
-                const boardSnapshot = await db.collection("leaderboards")
-                    .where("quizPath", ">=", pathPrefix)
-                    .where("quizPath", "<=", pathPrefix + "\uf8ff")
-                    .orderBy("quizPath") 
-                    .orderBy("score", "desc")
-                    .limit(100)
-                    .get();
-
-                let html = `<div class="card"><h2>🏆 Top 10: ${pathPrefix.split(' > ').pop()}</h2>`;
-                html += `<table><tr><th>Rank</th><th>Student</th><th>Score</th><th>Accuracy</th><th>Time</th></tr>`;
-                
-                let myRank = ">100";
-                let inTop10 = false;
-                let docs = [];
+                const boardSnapshot = await db.collection("leaderboards").where("quizPath", ">=", pathPrefix).where("quizPath", "<=", pathPrefix + "\uf8ff").orderBy("quizPath").orderBy("score", "desc").limit(100).get();
+                let html = `<div class="card"><h2>🏆 Top 10: ${pathPrefix.split(' > ').pop()}</h2><table><tr><th>Rank</th><th>Student</th><th>Score</th><th>Accuracy</th><th>Time</th></tr>`;
+                let myRank = ">100"; let inTop10 = false; let docs = [];
                 boardSnapshot.forEach(doc => docs.push(doc.data()));
 
-                for(let i = 0; i < docs.length; i++) {
-                    if (docs[i].userId === currentUser.uid && docs[i].score === myBestScore) {
-                        myRank = i + 1;
-                        if (myRank <= 10) inTop10 = true;
-                        break;
-                    }
-                }
-
+                for(let i = 0; i < docs.length; i++) { if (docs[i].userId === currentUser.uid && docs[i].score === myBestScore) { myRank = i + 1; if (myRank <= 10) inTop10 = true; break; } }
                 let displayCount = Math.min(10, docs.length);
                 for(let i = 0; i < displayCount; i++) {
-                    let data = docs[i];
-                    let medal = (i === 0) ? "🥇 " : ((i === 1) ? "🥈 " : ((i === 2) ? "🥉 " : (i + 1) + ". "));
-                    let isMe = (data.userId === currentUser.uid);
-                    let rowStyle = isMe ? `style="background: rgba(253, 184, 19, 0.15);"` : "";
-                    
+                    let data = docs[i]; let medal = (i === 0) ? "🥇 " : ((i === 1) ? "🥈 " : ((i === 2) ? "🥉 " : (i + 1) + ". "));
+                    let isMe = (data.userId === currentUser.uid); let rowStyle = isMe ? `style="background: rgba(253, 184, 19, 0.15);"` : "";
                     html += `<tr ${rowStyle}><td>${medal}</td><td><b>${data.userName}</b> ${isMe ? '<span style="color:var(--primary-yellow); font-size:12px; margin-left:5px;">(You)</span>' : ''}</td><td style="color:var(--correct-green); font-weight:bold;">${data.score}</td><td>${data.accuracy}%</td><td>${data.timeStr}</td></tr>`;
                 }
                 html += `</table>`;
 
-                if (!inTop10 && myBestData) {
-                    html += `
-                        <div style="margin-top: 30px; background: #2a2a2a; border: 1px solid var(--border-color); border-left: 4px solid var(--primary-yellow); padding: 20px; border-radius: 4px;">
-                            <h4 style="margin: 0 0 15px 0; color: var(--primary-yellow); font-size: 18px;">Your Personal Best</h4>
-                            <div style="display: flex; gap: 30px; flex-wrap: wrap;">
-                                <div><span style="color:var(--text-muted); font-size:13px;">Global Rank</span><br><b style="font-size:20px; color: white;">${myRank}</b></div>
-                                <div><span style="color:var(--text-muted); font-size:13px;">Best Score</span><br><b style="font-size:20px; color:var(--correct-green);">${myBestData.score}</b></div>
-                                <div><span style="color:var(--text-muted); font-size:13px;">Accuracy</span><br><b style="font-size:20px; color: white;">${myBestData.accuracy}%</b></div>
-                                <div><span style="color:var(--text-muted); font-size:13px;">Total Tests Attempted</span><br><b style="font-size:20px; color: white;">${totalTests}</b></div>
-                            </div>
-                        </div>
-                    `;
-                }
-
+                if (!inTop10 && myBestData) { html += `<div style="margin-top: 30px; background: #2a2a2a; border: 1px solid var(--border-color); border-left: 4px solid var(--primary-yellow); padding: 20px; border-radius: 4px;"><h4 style="margin: 0 0 15px 0; color: var(--primary-yellow); font-size: 18px;">Your Personal Best</h4><div style="display: flex; gap: 30px; flex-wrap: wrap;"><div><span style="color:var(--text-muted); font-size:13px;">Global Rank</span><br><b style="font-size:20px; color: white;">${myRank}</b></div><div><span style="color:var(--text-muted); font-size:13px;">Best Score</span><br><b style="font-size:20px; color:var(--correct-green);">${myBestData.score}</b></div><div><span style="color:var(--text-muted); font-size:13px;">Accuracy</span><br><b style="font-size:20px; color: white;">${myBestData.accuracy}%</b></div><div><span style="color:var(--text-muted); font-size:13px;">Total Tests Attempted</span><br><b style="font-size:20px; color: white;">${totalTests}</b></div></div></div>`; }
                 html += `<button class="btn-exam" onclick="window.location.hash='#/leaderboard'" style="margin-top:25px; background:#333;">&larr; Back to Categories</button></div>`;
                 mainContent.innerHTML = html;
 
@@ -2071,18 +1605,38 @@
         function openSearch() { document.getElementById('searchWrapper').classList.add('active'); document.getElementById('searchInput').focus(); }
         function closeSearch() { document.getElementById('searchWrapper').classList.remove('active'); document.getElementById('searchInput').value = ''; document.getElementById('searchSuggestions').style.display = 'none'; }
         function delayCloseSearch() { setTimeout(closeSearch, 250); }
+        
         function handleLiveSearch() { 
-            const query = document.getElementById('searchInput').value.trim().toLowerCase(); const dropdown = document.getElementById('searchSuggestions');
+            const query = document.getElementById('searchInput').value.trim().toLowerCase(); 
+            const dropdown = document.getElementById('searchSuggestions');
             if(query === "") { dropdown.style.display = 'none'; return; }
+            
             let results = [];
-            function searchDB(obj, q, path = []) { for (let key in obj) { let current = [...path, key]; if (key.toLowerCase().includes(q)) results.push(current); if (typeof obj[key] === 'object' && !Array.isArray(obj[key])) searchDB(obj[key], q, current); } }
+            function searchDB(obj, q, path = []) { 
+                for (let key in obj) { 
+                    let current = [...path, key]; 
+                    if (key.toLowerCase().includes(q)) results.push({pathArray: current, matchWord: key}); 
+                    if (typeof obj[key] === 'object' && !Array.isArray(obj[key])) searchDB(obj[key], q, current); 
+                } 
+            }
             searchDB(appData, query);
-            if(results.length > 0) { dropdown.innerHTML = results.slice(0, 8).map(pathArray => { const cleanPath = JSON.stringify(pathArray).replace(/"/g, "'"); return `<div class="suggestion-item" onclick="jumpToSection(${cleanPath}); closeSearch();">🔍 <span>${pathArray.join(" <span style='color:var(--text-muted);font-size:12px;'>&rarr;</span> ")}</span></div>`; }).join(''); } else { dropdown.innerHTML = `<div class="suggestion-item" style="color: var(--text-muted);">No results match "${query}"</div>`; }
+            
+            if(results.length > 0) { 
+                dropdown.innerHTML = results.slice(0, 8).map(res => { 
+                    const cleanPath = JSON.stringify(res.pathArray).replace(/"/g, "'"); 
+                    // Highlight the matching part
+                    let regex = new RegExp(`(${query})`, 'gi');
+                    let highlightedText = res.pathArray.join(" <span style='color:var(--text-muted);font-size:12px;'>&rarr;</span> ").replace(regex, "<span class='highlight-match'>$1</span>");
+                    return `<div class="suggestion-item" onclick="jumpToSection(${cleanPath}); closeSearch();">🔍 <span>${highlightedText}</span></div>`; 
+                }).join(''); 
+            } else { 
+                dropdown.innerHTML = `<div class="suggestion-item" style="color: var(--text-muted);">No results match "${query}"</div>`; 
+            }
             dropdown.style.display = 'block';
         }
+        
         function showNotification(message) { const notif = document.getElementById('notification'); notif.innerText = message; notif.style.display = 'block'; setTimeout(() => { notif.style.display = 'none'; }, 3000); }
 
-        // Fetch Global Rating on load
         fetchGlobalRating();
     </script>
 </body>
