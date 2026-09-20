@@ -15,10 +15,12 @@
     
     <meta name="description" content="MCQsPrep - A free, smart MCQ practice platform for competitive exams like NEET and General Knowledge. Track your streak and global rank.">
     
+    <!-- FIREBASE LIBRARIES -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
 
+    <!-- AI SUPPORT LIBRARIES: Cropper.js, Marked.js, KaTeX -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
@@ -62,12 +64,13 @@
         .nav-links { display: flex; align-items: center; gap: 20px; white-space: nowrap; }
         .nav-links a { color: var(--text-light); text-decoration: none; font-weight: 500; transition: color 0.2s; cursor: pointer; }
         .nav-links a:hover { color: var(--primary-yellow); }
-        .highlight-nav { color: var(--primary-yellow) !important; font-weight: bold; text-shadow: 0 0 8px rgba(253, 184, 19, 0.4); }
 
         .profile-wrapper { position: relative; display: flex; align-items: center; }
-        .user-badge { display: none; align-items: center; gap: 8px; background: linear-gradient(135deg, #2a2a2a, #1a1a1a); border: 1px solid var(--primary-yellow); color: var(--text-light); padding: 6px 16px; border-radius: 20px; font-size: 14px; font-weight: 600; box-shadow: 0 0 10px rgba(253, 184, 19, 0.2); transition: 0.3s; cursor: pointer; margin-left: 10px; }
+        .user-badge { display: none; align-items: center; gap: 8px; background: linear-gradient(135deg, #2a2a2a, #1a1a1a); border: 1px solid var(--primary-yellow); color: var(--text-light); padding: 6px 16px; border-radius: 20px; font-size: 14px; font-weight: 600; box-shadow: 0 0 10px rgba(253, 184, 19, 0.2); transition: 0.3s; cursor: pointer; margin-left: 10px; position: relative;}
         .user-badge img { width: 20px; height: 20px; border-radius: 50%; }
-        .profile-menu { display: none; position: absolute; top: calc(100% + 10px); right: 0; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 8px; box-shadow: 0 8px 24px rgba(0,0,0,0.8); width: 200px; z-index: 3000; overflow: hidden; }
+        .notification-dot { position: absolute; top: -2px; right: -2px; width: 10px; height: 10px; background-color: var(--wrong-red); border-radius: 50%; display: none; border: 2px solid var(--bg-dark); }
+        
+        .profile-menu { display: none; position: absolute; top: calc(100% + 10px); right: 0; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 8px; box-shadow: 0 8px 24px rgba(0,0,0,0.8); width: 220px; z-index: 3000; overflow: hidden; }
         .profile-menu.active { display: block; }
         .profile-menu-item { padding: 15px 20px; color: white; display: flex; align-items: center; gap: 10px; cursor: pointer; transition: 0.2s; border-bottom: 1px solid var(--border-color); font-size: 15px; }
         .profile-menu-item:hover { background: #333; color: var(--primary-yellow); }
@@ -75,7 +78,7 @@
         .profile-menu-item:last-child:hover { background: rgba(244, 67, 54, 0.1); color: var(--wrong-red); }
         
         .breadcrumb { background-color: #1a1a1a; padding: 10px 40px; font-size: 14px; color: var(--text-muted); border-bottom: 1px solid var(--border-color); }
-        .container { display: flex; padding: 40px; gap: 30px; max-width: 1400px; margin: 0 auto; }
+        .container { display: flex; padding: 40px; gap: 30px; max-width: 1400px; margin: 0 auto; min-height: 80vh; }
         .main-content { flex: 2; }
         .sidebar { flex: 1; max-width: 400px; }
 
@@ -84,6 +87,7 @@
 
         .btn-exam { padding: 12px 18px; border-radius: 6px; border: 1px solid var(--border-color); background-color: #2a2a2a; color: white; font-size: 15px; font-weight: bold; cursor: pointer; transition: 0.2s; }
         .btn-exam:hover { background-color: #382909; border-color: var(--primary-yellow); color: var(--primary-yellow); }
+        .btn-exam:disabled { opacity: 0.5; cursor: not-allowed; }
 
         .action-link { display: block !important; width: 100% !important; box-sizing: border-box; padding: 12px 15px; background-color: #2a2a2a; border: 1px solid var(--border-color); border-radius: 6px; color: white; text-decoration: none; margin-bottom: 10px; transition: 0.2s; cursor: pointer; }
         .action-link:hover { border-color: var(--primary-yellow); background-color: #333; }
@@ -97,7 +101,6 @@
         .admin-checkbox-group { display: flex; gap: 15px; align-items: center; background: #2a2a2a; padding: 12px; border-radius: 6px; border: 1px solid var(--border-color); flex-wrap: wrap; }
         .admin-tab-btn { padding: 10px 20px; background: #2a2a2a; color: var(--text-muted); border: 1px solid var(--border-color); border-radius: 6px; cursor: pointer; font-weight: bold; margin-bottom:10px;}
         .admin-tab-btn.active { background: var(--primary-yellow); color: black; border-color: var(--primary-yellow); }
-        .content-item-card { background: #252525; border: 1px solid var(--border-color); border-radius: 8px; padding: 15px; margin-bottom: 15px; }
         .badge-path { background: #333; color: var(--primary-yellow); padding: 4px 8px; border-radius: 4px; font-size: 12px; }
 
         .quiz-header { display: flex; justify-content: space-between; align-items: center; padding-bottom: 15px; border-bottom: 1px solid var(--border-color); margin-bottom: 15px; }
@@ -118,10 +121,6 @@
         .report-btn { background: rgba(244, 67, 54, 0.1); border: 1px solid var(--wrong-red); color: var(--wrong-red); padding: 5px 12px; border-radius: 4px; cursor: pointer; font-size: 14px; transition: 0.2s; }
         .report-btn:hover { background: var(--wrong-red); color: white; }
 
-        .star-btn { font-size: 38px; color: #444; cursor: pointer; transition: 0.2s; display: inline-block; background: none; border: none; padding: 0 8px; text-shadow: 0 0 5px rgba(0,0,0,0.5); }
-        .star-btn:hover { transform: scale(1.1); }
-        .star-btn.active { color: var(--primary-yellow); text-shadow: 0 0 15px rgba(253, 184, 19, 0.6); }
-
         .review-tabs { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; justify-content: center; }
         .review-tab-btn { background: #2a2a2a; border: 1px solid var(--border-color); color: var(--text-muted); padding: 10px 20px; border-radius: 6px; cursor: pointer; transition: 0.2s; font-weight: bold; flex: 1; min-width: 120px; }
         .review-tab-btn:hover { background: #333; }
@@ -135,18 +134,23 @@
 
         #notification { display: none; position: fixed; bottom: 20px; right: 20px; background-color: var(--primary-yellow); color: #000; padding: 15px 25px; border-radius: 5px; font-weight: bold; box-shadow: 0 4px 15px rgba(0,0,0,0.5); z-index: 9999; }
 
-        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 3000; justify-content: center; align-items: center; backdrop-filter: blur(5px); }
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.85); z-index: 3000; justify-content: center; align-items: center; backdrop-filter: blur(5px); }
         .modal-content { background: var(--card-bg); padding: 30px; border-radius: 12px; border: 1px solid var(--border-color); width: 90%; max-width: 600px; position: relative; max-height: 90vh; overflow-y: auto; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
         .close-modal { position: absolute; top: 15px; right: 15px; background: none; border: none; color: var(--text-muted); font-size: 24px; cursor: pointer; transition: 0.2s; z-index: 5000; }
         .close-modal:hover { color: var(--wrong-red); transform: scale(1.1); }
         
-        .full-image-modal img { max-width: 90vw; max-height: 90vh; object-fit: contain; border-radius: 8px; }
-
         .google-btn { display: flex; align-items: center; justify-content: center; gap: 10px; background: white; color: #444; width: 100%; padding: 12px; border-radius: 6px; border: none; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.2s; }
         .google-btn:hover { background: #eee; }
-        .google-btn img { width: 20px; height: 20px; }
 
-        /* --- AI FULLSCREEN & WIDGET SPECIFIC CSS --- */
+        .star-btn { font-size: 38px; color: #444; cursor: pointer; transition: 0.2s; display: inline-block; background: none; border: none; padding: 0 8px; text-shadow: 0 0 5px rgba(0,0,0,0.5); }
+        .star-btn:hover { transform: scale(1.1); }
+        .star-btn.active { color: var(--primary-yellow); text-shadow: 0 0 15px rgba(253, 184, 19, 0.6); }
+
+        /* --- Custom Practice Setup UI --- */
+        .custom-practice-box { background: rgba(253,184,19,0.05); border: 1px dashed var(--primary-yellow); padding: 20px; border-radius: 8px; margin-bottom: 25px; }
+        .custom-topic-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px; margin-bottom: 20px; max-height: 200px; overflow-y: auto; padding: 10px; background: #111; border-radius: 6px; border: 1px solid var(--border-color); }
+
+        /* --- NEXT-GEN GEMINI AMBIENT FULLSCREEN UI --- */
         #ai-floating-btn {
             position: fixed; bottom: 30px; right: 30px;
             background: linear-gradient(135deg, #fdb813, #ff7b00);
@@ -159,39 +163,50 @@
         #ai-floating-btn.draggable { box-shadow: 0 0 25px #ffffff; border: 2px solid white; cursor: grab; animation: pulse 1s infinite alternate; }
         @keyframes pulse { from { transform: scale(1); } to { transform: scale(1.05); } }
 
+        /* Fixed Fullscreen Modal */
         .ai-fullscreen-modal {
-            width: 100vw !important; height: 100vh !important; max-width: 100vw !important; max-height: 100vh !important;
+            width: 100% !important; height: 100% !important; max-width: 100% !important; max-height: 100% !important;
             border-radius: 0 !important; border: none !important; margin: 0 !important;
             background: linear-gradient(-45deg, #111111, #1a1a2e, #0f3460, #111111) !important;
             background-size: 400% 400% !important; animation: aiGradientBG 15s ease infinite !important;
-            display: flex; flex-direction: column; padding: 50px 15% !important; box-sizing: border-box;
+            display: flex; flex-direction: column; padding: 0 !important; box-sizing: border-box; overflow-x: hidden;
         }
         @keyframes aiGradientBG { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
 
-        .ai-gemini-canvas { position: fixed; inset: 0; overflow: hidden; display: flex; flex-direction: column; align-items: center; box-sizing: border-box; z-index: 4000; }
-        .ai-ambient-glow { position: absolute; border-radius: 50%; pointer-events: none; opacity: 0.45; filter: blur(90px); animation: ambientMotion 18s infinite alternate ease-in-out; }
-        .ai-glow-1 { top: -10%; left: -5%; width: 450px; height: 450px; background: radial-gradient(circle, #7928ca, transparent); }
-        .ai-glow-2 { bottom: -10%; right: -5%; width: 500px; height: 500px; background: radial-gradient(circle, #0070f3, transparent); animation-delay: -5s; }
-        .ai-glow-3 { top: 40%; right: 25%; width: 350px; height: 350px; background: radial-gradient(circle, #ff0080, transparent); animation-delay: -10s; opacity: 0.25; }
+        .ai-ambient-glow { position: absolute; border-radius: 50%; pointer-events: none; opacity: 0.5; filter: blur(100px); animation: ambientMotion 18s infinite alternate ease-in-out; }
+        .ai-glow-1 { top: -10%; left: -5%; width: 50vw; height: 50vh; background: radial-gradient(circle, #7928ca, transparent); }
+        .ai-glow-2 { bottom: -10%; right: -5%; width: 60vw; height: 60vh; background: radial-gradient(circle, #0070f3, transparent); animation-delay: -5s; }
+        .ai-glow-3 { top: 40%; left: 30%; width: 40vw; height: 40vh; background: radial-gradient(circle, #ff0080, transparent); animation-delay: -10s; opacity: 0.3; }
         @keyframes ambientMotion { 0% { transform: translate(0px, 0px) scale(1); } 50% { transform: translate(40px, 60px) scale(1.15); } 100% { transform: translate(-30px, 30px) scale(0.95); } }
 
         .ai-exit-btn {
-            position: fixed; top: 16px; right: 16px; width: 44px; height: 44px; border-radius: 50%;
+            position: fixed; top: 20px; right: 20px; width: 44px; height: 44px; border-radius: 50%;
             background: rgba(255, 255, 255, 0.12); border: 1px solid rgba(255, 255, 255, 0.25);
             color: #ffffff; font-size: 20px; font-weight: bold; display: flex; align-items: center;
             justify-content: center; cursor: pointer; z-index: 9999; backdrop-filter: blur(10px); transition: 0.2s ease;
         }
-        .ai-exit-btn:hover { background: rgba(244, 67, 54, 0.35); border-color: var(--wrong-red); color: var(--wrong-red); transform: scale(1.08); }
+        .ai-exit-btn:hover { background: rgba(244, 67, 54, 0.4); border-color: var(--wrong-red); color: var(--wrong-red); transform: scale(1.08); }
 
-        .ai-workspace { position: relative; z-index: 10; width: 100%; max-width: 900px; height: 100%; display: flex; flex-direction: column; padding: 40px 20px 20px 20px; box-sizing: border-box; }
+        /* Split Screen Desktop, Stacked Mobile */
+        .ai-workspace { position: relative; z-index: 10; width: 100%; max-width: 1400px; height: 100%; display: flex; flex-direction: column; padding: 40px; margin: 0 auto; box-sizing: border-box; }
+        
+        .ai-split-container { display: flex; flex-direction: column; gap: 30px; flex: 1; height: calc(100% - 80px); }
+        .ai-left-panel { flex: 1; display: flex; flex-direction: column; overflow-y: auto; padding-right: 10px; }
+        .ai-right-panel { flex: 1.5; display: flex; flex-direction: column; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 20px; }
+
+        @media (min-width: 800px) {
+            .ai-split-container { flex-direction: row; }
+            .ai-left-panel { border-right: 1px solid rgba(255,255,255,0.1); padding-right: 30px; }
+            .ai-right-panel { border-top: none; padding-top: 0; padding-left: 20px; }
+        }
+
         .ai-glass-card { background: rgba(20, 22, 30, 0.65); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-
         .ai-fuzzy-suggestions { background: rgba(25, 28, 38, 0.95); border: 1px solid rgba(253, 184, 19, 0.4); border-radius: 8px; margin-top: -10px; margin-bottom: 15px; max-height: 220px; overflow-y: auto; display: none; box-shadow: 0 8px 25px rgba(0,0,0,0.7); }
         .ai-fuzzy-item { padding: 12px 16px; cursor: pointer; border-bottom: 1px solid rgba(255,255,255,0.08); font-size: 14px; color: #ddd; display: flex; align-items: center; justify-content: space-between; }
         .ai-fuzzy-item:hover { background: rgba(253, 184, 19, 0.12); color: var(--primary-yellow); }
 
-        .ai-chat-bubble { background: rgba(30, 33, 45, 0.7); backdrop-filter: blur(12px); padding: 22px; border-radius: 14px; margin-bottom: 18px; font-size: 16px; line-height: 1.65; border: 1px solid rgba(255, 255, 255, 0.08); border-left: 5px solid var(--primary-yellow); color: #ffffff; overflow-x: auto; }
-        .ai-chat-bubble.user-bubble { background: rgba(20, 35, 25, 0.7); border-left: 5px solid #4CAF50; }
+        .ai-chat-bubble { background: rgba(30, 33, 45, 0.75); backdrop-filter: blur(12px); padding: 22px; border-radius: 14px; margin-bottom: 18px; font-size: 16px; line-height: 1.65; border: 1px solid rgba(255, 255, 255, 0.08); border-left: 5px solid var(--primary-yellow); color: #ffffff; overflow-x: auto; box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
+        .ai-chat-bubble.user-bubble { background: rgba(20, 35, 25, 0.75); border-left: 5px solid #4CAF50; }
         .ai-match-card { background: rgba(76, 175, 80, 0.15); border: 1px solid var(--correct-green); padding: 16px; border-radius: 10px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; backdrop-filter: blur(10px); }
 
         @media (max-width: 768px) {
@@ -200,26 +215,23 @@
             .breadcrumb { padding: 10px 15px; }
             .navbar { flex-wrap: wrap; padding: 15px; gap: 10px; }
             .nav-links { width: 100%; justify-content: space-between; margin-top: 15px; font-size: 14px; }
-            .nav-rating-badge .rating-text { display: none; }
-            .nav-rating-badge { margin-left: 10px; padding: 4px 6px; }
             .search-wrapper { position: static; margin: 0 10px; }
             .search-wrapper.active .search-icon-btn { display: none; }
             .search-wrapper.active .search-input-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-dark); z-index: 1000; padding: 0 15px; box-sizing: border-box; display: flex; align-items: center; justify-content: center; }
             .search-input-container input { padding-right: 40px; }
             .search-close-btn { right: 25px; }
             .suggestions-dropdown { top: 100%; left: 0; right: 0; width: 100%; max-height: calc(100vh - 70px); border-radius: 0 0 12px 12px; border-left: none; border-right: none; }
-            .ai-workspace { padding: 40px 12px 12px 12px; }
+            .ai-workspace { padding: 20px 15px; }
         }
     </style>
 </head>
 <body>
 
-    <!-- Draggable Floating AI Button -->
     <div id="ai-floating-btn">✨ Ask AI</div>
 
-    <!-- Gemini-Themed Fullscreen AI Studio Modal -->
+    <!-- AI Fullscreen Modal -->
     <div id="aiModal" class="modal-overlay" style="z-index: 4000; padding: 0;">
-        <div class="modal-content ai-gemini-canvas">
+        <div class="modal-content ai-fullscreen-modal">
             <div class="ai-ambient-glow ai-glow-1"></div>
             <div class="ai-ambient-glow ai-glow-2"></div>
             <div class="ai-ambient-glow ai-glow-3"></div>
@@ -227,67 +239,75 @@
             <button class="ai-exit-btn" onclick="closeAIModal()" title="Close Ask AI">✕</button>
 
             <div class="ai-workspace">
-                <div style="display:flex; align-items:center; gap:12px; margin-bottom: 20px;">
-                    <div style="font-size:26px;">✨</div>
+                <div style="display:flex; align-items:center; gap:12px; margin-bottom: 25px;">
+                    <div style="font-size:32px;">✨</div>
                     <div>
-                        <h2 style="margin:0; font-size:24px; color: #fff; text-shadow: 0 0 20px rgba(253,184,19,0.5);">Ask AI Tutor</h2>
-                        <span style="font-size:13px; color: rgba(255,255,255,0.6);">Powered by NCERT syllabus models & intelligent database match</span>
+                        <h2 style="margin:0; font-size:26px; color: #fff; text-shadow: 0 0 20px rgba(253,184,19,0.5);">Ask AI Tutor</h2>
+                        <span style="font-size:14px; color: rgba(255,255,255,0.7);">Powered by NCERT syllabus models & intelligent database match</span>
                     </div>
                 </div>
                 
-                <!-- Input Workspace: Type Top, Upload Bottom -->
-                <div id="ai-input-view" style="display:block; flex:1; overflow-y:auto; padding-right:6px;">
-                    <p style="color:var(--text-light); font-size:16px; margin-bottom:20px; text-shadow: 0 1px 2px rgba(0,0,0,0.8);">Type your question below, or upload a photo to get a step-by-step solution.</p>
-                    
-                    <textarea id="aiTextInput" class="input-field" placeholder="Type a formula, chapter topic, or question stem (e.g. 'Photosynthesis light reaction' or 'Coulomb law')..." oninput="handleAIFuzzySuggestions()" style="min-height: 120px; font-size:16px; background: rgba(18, 20, 28, 0.75); border: 1px solid rgba(255,255,255,0.15); border-radius: 12px; color: white; margin-bottom: 0;"></textarea>
-                    
-                    <div id="ai-fuzzy-box" class="ai-fuzzy-suggestions"></div>
+                <div class="ai-split-container">
+                    <!-- LEFT PANEL (INPUT & UPLOAD) -->
+                    <div class="ai-left-panel" id="ai-left-view">
+                        <p style="color:var(--text-light); font-size:16px; margin-top:0; margin-bottom:20px; text-shadow: 0 1px 2px rgba(0,0,0,0.8);">Type your question below, or upload a photo to get a step-by-step solution.</p>
+                        
+                        <textarea id="aiTextInput" class="input-field" placeholder="Type a formula, chapter topic, or question stem (e.g. 'Photosynthesis light reaction' or 'Coulomb law')..." oninput="handleAIFuzzySuggestions()" style="min-height: 120px; font-size:16px; background: rgba(18, 20, 28, 0.75); border: 1px solid rgba(255,255,255,0.15); border-radius: 12px; color: white; margin-bottom: 0; box-shadow: inset 0 2px 10px rgba(0,0,0,0.3);"></textarea>
+                        <div id="ai-fuzzy-box" class="ai-fuzzy-suggestions"></div>
 
-                    <button class="btn-exam" onclick="processAIText()" style="width:100%; background: linear-gradient(135deg, var(--primary-yellow), #ff9800); color:black; border:none; font-size:17px; padding:16px; border-radius: 10px; box-shadow: 0 4px 15px rgba(253, 184, 19, 0.3); margin-top: 15px; margin-bottom: 25px;">Solve Text Question 🚀</button>
+                        <button class="btn-exam" onclick="processAIText()" style="width:100%; background: linear-gradient(135deg, var(--primary-yellow), #ff9800); color:black; border:none; font-size:17px; padding:16px; border-radius: 10px; box-shadow: 0 4px 15px rgba(253, 184, 19, 0.3); margin-top: 15px; margin-bottom: 25px;">Solve Text Question 🚀</button>
 
-                    <div style="text-align:center; color:rgba(255,255,255,0.4); margin-bottom:25px; font-weight:bold; letter-spacing: 2px;">— OR —</div>
-                    
-                    <div style="display:flex; gap:15px; justify-content:center;">
-                        <div class="ai-glass-card" style="flex:1; padding: 20px; text-align: center; cursor: pointer; transition: 0.3s; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px;" onclick="document.getElementById('aiImageInput').click()" onmouseover="this.style.background='rgba(253,184,19,0.1)'" onmouseout="this.style.background='rgba(20, 22, 30, 0.65)'">
-                            <div style="font-size: 32px;">📁</div>
-                            <div style="font-weight: bold; font-size: 15px; color: white;">Upload Image</div>
+                        <div style="text-align:center; color:rgba(255,255,255,0.3); margin-bottom:25px; font-weight:bold; letter-spacing: 2px;">— OR —</div>
+                        
+                        <div style="display:flex; gap:15px; justify-content:center;">
+                            <div class="ai-glass-card" style="flex:1; padding: 20px; text-align: center; cursor: pointer; transition: 0.3s; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px;" onclick="document.getElementById('aiImageInput').click()" onmouseover="this.style.background='rgba(253,184,19,0.1)'" onmouseout="this.style.background='rgba(20, 22, 30, 0.65)'">
+                                <div style="font-size: 32px;">📁</div>
+                                <div style="font-weight: bold; font-size: 15px; color: white;">Upload Image</div>
+                            </div>
+                            <div class="ai-glass-card" style="flex:1; padding: 20px; text-align: center; cursor: pointer; transition: 0.3s; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px;" onclick="document.getElementById('aiCameraInput').click()" onmouseover="this.style.background='rgba(253,184,19,0.1)'" onmouseout="this.style.background='rgba(20, 22, 30, 0.65)'">
+                                <div style="font-size: 32px;">📸</div>
+                                <div style="font-weight: bold; font-size: 15px; color: white;">Take Photo</div>
+                            </div>
+                            <input type="file" id="aiImageInput" accept="image/*" style="display:none;" onchange="handleAIImageUpload(event)">
+                            <input type="file" id="aiCameraInput" accept="image/*" capture="environment" style="display:none;" onchange="handleAIImageUpload(event)">
                         </div>
-                        <div class="ai-glass-card" style="flex:1; padding: 20px; text-align: center; cursor: pointer; transition: 0.3s; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px;" onclick="document.getElementById('aiCameraInput').click()" onmouseover="this.style.background='rgba(253,184,19,0.1)'" onmouseout="this.style.background='rgba(20, 22, 30, 0.65)'">
-                            <div style="font-size: 32px;">📸</div>
-                            <div style="font-weight: bold; font-size: 15px; color: white;">Take Photo</div>
+                        <div style="text-align:center; font-size: 13px; color: rgba(255,255,255,0.5); margin-top: 15px;">Crop & scan any question from standard textbooks or PYQ sheets</div>
+
+                        <!-- Cropper hidden inside left panel -->
+                        <div id="ai-cropper-view" style="display:none; flex-direction:column; margin-top:20px;">
+                            <p style="color:var(--text-light); text-shadow: 0 1px 2px rgba(0,0,0,0.8); margin-bottom:15px;">Crop the image to highlight <b>only one question</b> for peak accuracy:</p>
+                            <div style="min-height:250px; max-height: 40vh; background:#000; position:relative; margin-bottom:20px; border-radius:10px; overflow:hidden; border: 1px solid rgba(255,255,255,0.2); box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+                                <img id="aiCropperImage" style="max-width:100%; max-height:100%; display:block;">
+                            </div>
+                            <div style="display:flex; gap:15px;">
+                                <button class="btn-exam" onclick="cancelCropper()" style="flex:1; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2);">Cancel</button>
+                                <button class="btn-exam" onclick="confirmCropAndSolve()" style="flex:2; background:var(--primary-yellow); color:black; border:none; box-shadow: 0 4px 15px rgba(253, 184, 19, 0.3);">Crop & Solve 🚀</button>
+                            </div>
                         </div>
-                        <input type="file" id="aiImageInput" accept="image/*" style="display:none;" onchange="handleAIImageUpload(event)">
-                        <input type="file" id="aiCameraInput" accept="image/*" capture="environment" style="display:none;" onchange="handleAIImageUpload(event)">
                     </div>
-                    <div style="text-align:center; font-size: 13px; color: var(--text-muted); margin-top: 15px;">Crop & scan any question from standard textbooks or PYQ sheets</div>
-                </div>
 
-                <!-- Cropper View -->
-                <div id="ai-cropper-view" style="display:none; flex:1; flex-direction:column;">
-                    <p style="color:var(--text-light); text-shadow: 0 1px 2px rgba(0,0,0,0.8); margin-bottom:15px;">Crop the image to highlight <b>only one question</b> for peak accuracy:</p>
-                    <div style="flex:1; min-height:280px; max-height: 55vh; background:#000; position:relative; margin-bottom:20px; border-radius:10px; overflow:hidden; border: 1px solid rgba(255,255,255,0.2); box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
-                        <img id="aiCropperImage" style="max-width:100%; max-height:100%; display:block;">
-                    </div>
-                    <div style="display:flex; gap:15px;">
-                        <button class="btn-exam" onclick="cancelCropper()" style="flex:1; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2);">Cancel</button>
-                        <button class="btn-exam" onclick="confirmCropAndSolve()" style="flex:2; background:var(--primary-yellow); color:black; border:none; box-shadow: 0 4px 15px rgba(253, 184, 19, 0.3);">Crop & Solve 🚀</button>
-                    </div>
-                </div>
+                    <!-- RIGHT PANEL (RESULTS & CHAT) -->
+                    <div class="ai-right-panel">
+                        <div id="ai-idle-view" style="display:flex; flex:1; flex-direction:column; justify-content:center; align-items:center; opacity: 0.3;">
+                            <div style="font-size: 70px; margin-bottom:15px;">🧠</div>
+                            <h3 style="margin:0; color: white;">AI is ready</h3>
+                            <p style="text-align:center;">Results will appear here.</p>
+                        </div>
 
-                <!-- Loading View -->
-                <div id="ai-loading-view" style="display:none; flex:1; flex-direction:column; justify-content:center; align-items:center;">
-                    <div style="font-size: 64px; animation: pulse 1s infinite; margin-bottom:20px;">🤖</div>
-                    <h2 style="color:var(--primary-yellow); text-shadow: 0 2px 10px rgba(253, 184, 19, 0.3); text-align:center;">Consulting Trusted Sources...</h2>
-                    <p style="color:rgba(255,255,255,0.7); font-size:15px; text-align:center; max-width:480px;">Verifying concepts against NCERT and competitive question archives...</p>
-                </div>
+                        <div id="ai-loading-view" style="display:none; flex:1; flex-direction:column; justify-content:center; align-items:center;">
+                            <div style="font-size: 64px; animation: pulse 1s infinite; margin-bottom:20px;">🤖</div>
+                            <h2 style="color:var(--primary-yellow); text-shadow: 0 2px 10px rgba(253, 184, 19, 0.3); text-align:center; margin-bottom: 8px;">Consulting Trusted Sources...</h2>
+                            <p style="color:rgba(255,255,255,0.7); font-size:15px; text-align:center; max-width:480px;">Verifying concepts against NCERT and competitive question archives...</p>
+                        </div>
 
-                <!-- Results & Chat View -->
-                <div id="ai-chat-view" style="display:none; flex:1; flex-direction:column;">
-                    <div id="ai-chat-history" style="flex:1; overflow-y:auto; padding-right:15px; margin-bottom:20px;"></div>
-                    
-                    <div style="display:flex; gap:10px; background: rgba(20,24,35,0.85); padding: 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.12);">
-                        <input type="text" id="aiFollowUpInput" class="input-field" placeholder="Ask a follow-up doubt on this solution..." style="margin-bottom:0; flex:1; background: #111; border: none; font-size:15px;">
-                        <button class="btn-exam" onclick="sendAIFollowUp()" style="background:var(--primary-yellow); color:black; border:none; padding: 0 20px;">Send</button>
+                        <div id="ai-chat-view" style="display:none; flex:1; flex-direction:column; height: 100%;">
+                            <div id="ai-chat-history" style="flex:1; overflow-y:auto; padding-right:15px; margin-bottom:20px;"></div>
+                            
+                            <div style="display:flex; gap:10px; background: rgba(15, 18, 28, 0.85); padding: 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.12); margin-top: auto;">
+                                <input type="text" id="aiFollowUpInput" class="input-field" placeholder="Ask a follow-up doubt on this solution..." style="margin-bottom:0; flex:1; background: #000; border: none; font-size:15px; border-radius: 8px;">
+                                <button class="btn-exam" onclick="sendAIFollowUp()" style="background:var(--primary-yellow); color:black; border:none; padding: 0 20px; border-radius: 8px;">Send</button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -301,6 +321,16 @@
             <h2 style="margin-top:0; color: var(--primary-yellow);">Welcome to MCQsPrep</h2>
             <p style="color: var(--text-muted); margin-bottom: 25px; font-size: 15px;">Sign in securely to save your progress, track your accuracy, and compete on the global leaderboards.</p>
             <button class="google-btn" onclick="signInWithGoogle()"><img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google">Sign in with Google</button>
+        </div>
+    </div>
+
+    <!-- User Reports/Flags Viewer Modal -->
+    <div id="userReportsModal" class="modal-overlay">
+        <div class="modal-content" style="max-width: 600px;">
+            <button class="close-modal" onclick="closeUserReportsModal()">✕</button>
+            <h2 style="margin-top:0; color: var(--primary-yellow);">🚨 My Reports & Flags</h2>
+            <p style="color: var(--text-muted); font-size:14px; margin-bottom:20px;">Track the status of mistakes or doubts you've reported to admins.</p>
+            <div id="user-reports-list" style="max-height: 50vh; overflow-y: auto; padding-right: 10px;"></div>
         </div>
     </div>
 
@@ -345,6 +375,8 @@
             <div class="admin-row"><input type="text" id="editOptC" class="input-field" placeholder="Option C"><input type="text" id="editOptD" class="input-field" placeholder="Option D"></div>
             <label style="color:var(--text-muted); font-size:13px;">Correct Answer(s):</label>
             <div class="admin-checkbox-group" style="margin-bottom: 15px;"><label><input type="checkbox" value="A" class="editCorrectCb"> A</label><label><input type="checkbox" value="B" class="editCorrectCb"> B</label><label><input type="checkbox" value="C" class="editCorrectCb"> C</label><label><input type="checkbox" value="D" class="editCorrectCb"> D</label></div>
+            <label style="color:var(--text-muted); font-size:13px;">Difficulty Level:</label>
+            <select id="editDifficulty" class="input-field"><option value="Mixed">Mixed</option><option value="Easy">Easy</option><option value="Medium">Medium</option><option value="Hard">Hard</option></select>
             <label style="color:var(--text-muted); font-size:13px;">Explanation:</label>
             <textarea id="editExplanation" class="input-field" placeholder="Explanation..."></textarea>
             <button class="btn-exam" onclick="saveEditedMCQ()" style="width:100%; background-color:var(--correct-green); color:white; border:none;">💾 Save Changes</button>
@@ -373,8 +405,18 @@
             <a onclick="showLeaderboardOptions()" class="highlight-nav">Leaderboard</a>
             <div id="loginNavBtn" class="user-badge" onclick="showAuthModal()" style="display:none; cursor: pointer; background: white; color: #444; border: none; padding: 6px 12px;" title="Sign in with Google"><img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="G" style="border-radius:0;"><span style="font-weight: bold;">Sign In</span></div>
             <div class="profile-wrapper">
-                <div id="userBadge" class="user-badge" onclick="toggleProfileMenu()" title="Profile Options"><img id="userPhotoDisplay" src="" alt="👤" style="display:none;"><span id="userNameDisplay">Student</span></div>
-                <div id="profileMenu" class="profile-menu"><div class="profile-menu-item" onclick="window.location.hash='#/progress'; toggleProfileMenu();">📊 Track Progress</div><div class="profile-menu-item" onclick="window.location.hash='#/streak'; toggleProfileMenu();">🔥 My Streak</div><div class="profile-menu-item" onclick="window.location.hash='#/diary'; toggleProfileMenu();">📔 Doubt Diary</div><div class="profile-menu-item" onclick="signOut(); toggleProfileMenu();">🚪 Sign Out</div></div>
+                <div id="userBadge" class="user-badge" onclick="toggleProfileMenu()" title="Profile Options">
+                    <img id="userPhotoDisplay" src="" alt="👤" style="display:none;">
+                    <span id="userNameDisplay">Student</span>
+                    <div id="profileNotifDot" class="notification-dot"></div>
+                </div>
+                <div id="profileMenu" class="profile-menu">
+                    <div class="profile-menu-item" onclick="window.location.hash='#/progress'; toggleProfileMenu();">📊 Track Progress</div>
+                    <div class="profile-menu-item" onclick="window.location.hash='#/streak'; toggleProfileMenu();">🔥 My Streak</div>
+                    <div class="profile-menu-item" onclick="window.location.hash='#/diary'; toggleProfileMenu();">📔 Doubt Diary</div>
+                    <div class="profile-menu-item" onclick="openUserReportsModal(); toggleProfileMenu();">🚨 My Reports <span id="reportMenuDot" style="display:none; color:var(--wrong-red); margin-left:auto;">●</span></div>
+                    <div class="profile-menu-item" onclick="signOut(); toggleProfileMenu();">🚪 Sign Out</div>
+                </div>
             </div>
         </div>
     </nav>
@@ -436,8 +478,9 @@
                 if(user.photoURL) { document.getElementById('userPhotoDisplay').src = user.photoURL; document.getElementById('userPhotoDisplay').style.display = 'block'; }
                 badge.style.display = 'flex'; loginNavBtn.style.display = 'none'; document.getElementById('authModal').style.display = 'none';
                 db.collection("users").doc(user.uid).set({ displayName: user.displayName, email: user.email, photoURL: user.photoURL, lastLogin: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true });
+                checkUserNotifications();
             } else {
-                badge.style.display = 'none'; loginNavBtn.style.display = 'flex'; 
+                badge.style.display = 'none'; loginNavBtn.style.display = 'flex'; document.getElementById('profileNotifDot').style.display = 'none';
                 if (window.location.hash !== '#/admin' && window.location.hash !== '#/admin-panel' && !sessionStorage.getItem('auth_skipped')) { document.getElementById('authModal').style.display = 'flex'; }
             }
             if (!dataLoaded) { await loadCustomTopics(); dataLoaded = true; }
@@ -452,7 +495,6 @@
         function handleRouting() {
             if(!dataLoaded) return; 
             let hash = decodeURIComponent(window.location.hash.replace('#/', ''));
-            
             let isRootHome = (!hash || hash === 'home');
             document.getElementById('main-sidebar').style.display = isRootHome ? 'block' : 'none';
 
@@ -474,25 +516,26 @@
         function showLeaderboardOptions() { window.location.hash = '#/leaderboard'; }
         function goBack() { window.history.back(); }
 
+        // --- STREAK LOGIC ---
         let activeTime = 0; let streakLogged = false;
         setInterval(() => { 
-            if (currentUser && !streakLogged) { 
+            let todayStr = new Date(new Date().getTime() - (new Date().getTimezoneOffset() * 60000)).toISOString().split('T')[0];
+            if (currentUser && !localStorage.getItem('streak_' + todayStr)) { 
                 activeTime++; 
-                if (activeTime >= 300) { streakLogged = true; logStreakActivity(); } 
+                if (activeTime >= 300) { 
+                    localStorage.setItem('streak_' + todayStr, 'true');
+                    logStreakActivity(todayStr); 
+                } 
             } 
         }, 1000);
 
-        async function logStreakActivity() {
-            if(!currentUser) return;
-            let todayStr = new Date(new Date().getTime() - (new Date().getTimezoneOffset() * 60000)).toISOString().split('T')[0];
-            let alreadyLogged = sessionStorage.getItem('streak_' + todayStr);
-            if(alreadyLogged) return;
+        async function logStreakActivity(todayStr) {
             try { 
                 await db.collection("users").doc(currentUser.uid).set({ activeDates: firebase.firestore.FieldValue.arrayUnion(todayStr) }, { merge: true }); 
-                sessionStorage.setItem('streak_' + todayStr, 'true');
                 showNotification("🔥 Daily Streak Updated! (+1)"); 
             } catch(e) {}
         }
+
         function calculateStreak(datesArray) {
             if (!datesArray || datesArray.length === 0) return 0;
             let sorted = [...new Set(datesArray)].sort().reverse(); 
@@ -520,10 +563,99 @@
                 let datesHtml = `<ul style="list-style:none; padding:0; display:flex; flex-wrap:wrap; gap:10px;">`;
                 [...new Set(dates)].sort().reverse().slice(0, 14).forEach(d => { datesHtml += `<li style="background:#2a2a2a; padding:8px 12px; border-radius:6px; border:1px solid var(--correct-green); color:var(--correct-green); font-weight:bold;">✅ ${d}</li>`; });
                 datesHtml += `</ul>`;
-                mc.innerHTML = `<div class="card" style="text-align:center;"><h2 style="color:var(--primary-yellow);">🔥 Daily Streak</h2><div style="font-size: 80px; margin: 20px 0;">🔥</div><div style="font-size: 32px; font-weight: bold; margin-bottom: 30px;">${streak} Day${streak !== 1 ? 's' : ''}</div>${dates.length > 0 ? datesHtml : ''}<button class="btn-exam" onclick="goBack()">Back</button></div>`;
+                mc.innerHTML = `<div class="card" style="text-align:center;"><h2 style="color:var(--primary-yellow);">🔥 Daily Streak</h2><div style="font-size: 80px; margin: 20px 0;">🔥</div><div style="font-size: 32px; font-weight: bold; margin-bottom: 10px;">${streak} Day${streak !== 1 ? 's' : ''}</div><p style="color:var(--text-muted); font-size:14px; margin-bottom:30px;"><i>Spend at least 5 minutes practicing daily to maintain your streak!</i></p>${dates.length > 0 ? datesHtml : ''}<button class="btn-exam" onclick="goBack()" style="margin-top:20px;">Back</button></div>`;
             } catch(e) {}
         }
 
+        // --- TRACK PROGRESS ---
+        async function _renderProgress() {
+            if (!currentUser) return document.getElementById('dynamic-content').innerHTML = `<div class="card" style="text-align:center;"><h2>⚠️ Sign In Required</h2><button class="btn-exam" onclick="goBack()">Back</button></div>`;
+            document.getElementById('breadcrumb-text').innerText = "Home / Profile / Track Progress";
+            const mc = document.getElementById('dynamic-content'); mc.innerHTML = `<div class="card"><h2>📊 Fetching Progress...</h2></div>`;
+            try {
+                const snap = await db.collection("leaderboards").where("userId", "==", currentUser.uid).get();
+                let totalScore = 0; let totalQuestions = 0; let testCount = 0; let accuracySum = 0;
+                snap.forEach(doc => {
+                    let data = doc.data(); totalScore += (data.score || 0); totalQuestions += (data.attemptedQuestions || 0);
+                    accuracySum += (data.accuracy || 0); testCount++;
+                });
+                let avgAccuracy = testCount > 0 ? Math.round(accuracySum / testCount) : 0;
+                
+                mc.innerHTML = `
+                <div class="card">
+                    <h2 style="color:var(--primary-yellow);">📊 Overall Progress</h2>
+                    <div style="display:flex; gap:15px; flex-wrap:wrap; margin-top:20px;">
+                        <div style="background:#2a2a2a; padding: 20px; border-radius: 8px; flex: 1; min-width: 150px; text-align:center; border:1px solid var(--border-color);"><div style="font-size: 32px; color: white; font-weight: bold;">${testCount}</div><div style="color: var(--text-muted); font-size: 14px;">Total Quizzes Taken</div></div>
+                        <div style="background:#2a2a2a; padding: 20px; border-radius: 8px; flex: 1; min-width: 150px; text-align:center; border:1px solid var(--border-color);"><div style="font-size: 32px; color: var(--correct-green); font-weight: bold;">${avgAccuracy}%</div><div style="color: var(--text-muted); font-size: 14px;">Avg. Accuracy</div></div>
+                        <div style="background:#2a2a2a; padding: 20px; border-radius: 8px; flex: 1; min-width: 150px; text-align:center; border:1px solid var(--primary-yellow);"><div style="font-size: 32px; color: var(--primary-yellow); font-weight: bold;">${totalQuestions}</div><div style="color: var(--text-muted); font-size: 14px;">Questions Solved</div></div>
+                    </div>
+                    <button class="btn-exam" onclick="goBack()" style="margin-top:30px;">Back</button>
+                </div>`;
+            } catch(e) { mc.innerHTML = `<div class="card"><p>Error: ${e.message}</p></div>`; }
+        }
+
+        // --- NOTIFICATIONS ---
+        async function checkUserNotifications() {
+            if(!currentUser) return;
+            try {
+                let snap = await db.collection("reported_mistakes").where("studentId", "==", currentUser.uid).where("status", "==", "resolved").where("seenByStudent", "==", false).get();
+                let snap2 = await db.collection("flagged_doubts").where("studentId", "==", currentUser.uid).where("status", "==", "resolved").where("seenByStudent", "==", false).get();
+                if(!snap.empty || !snap2.empty) { document.getElementById('profileNotifDot').style.display = 'block'; document.getElementById('reportMenuDot').style.display = 'inline'; }
+            } catch(e){}
+        }
+
+        let tempReportTarget = null;
+        function openReportModal(questionId, qText, qPath) { 
+            if(!currentUser) { showAuthModal(); return; }
+            tempReportTarget = { id: questionId, text: qText, path: qPath }; 
+            document.getElementById('reportModal').style.display = 'flex'; 
+        }
+        function closeReportModal() { document.getElementById('reportModal').style.display = 'none'; tempReportTarget = null; }
+        
+        async function submitReport() {
+            if(!currentUser || !tempReportTarget) return;
+            const reason = document.getElementById('reportReason').value; const desc = document.getElementById('reportDescription').value;
+            const btn = document.querySelector('#reportModal .btn-exam'); btn.innerText = "Submitting..."; btn.disabled = true;
+            try {
+                await db.collection("reported_mistakes").add({
+                    studentId: currentUser.uid, studentName: currentUser.displayName,
+                    questionId: tempReportTarget.id, questionText: tempReportTarget.text, path: tempReportTarget.path,
+                    reason: reason, description: desc, status: 'pending', seenByStudent: true, timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                showNotification("✅ Report submitted to admins!"); closeReportModal();
+                document.getElementById('reportDescription').value = "";
+            } catch(e) { showNotification("❌ Error: " + e.message); }
+            btn.innerText = "Submit Report"; btn.disabled = false;
+        }
+
+        async function openUserReportsModal() {
+            if(!currentUser) return;
+            document.getElementById('userReportsModal').style.display = 'flex';
+            document.getElementById('profileNotifDot').style.display = 'none'; document.getElementById('reportMenuDot').style.display = 'none';
+            const list = document.getElementById('user-reports-list'); list.innerHTML = `<p style="color:var(--primary-yellow);">Loading reports...</p>`;
+            try {
+                let html = ''; let count = 0;
+                let reports = await db.collection("reported_mistakes").where("studentId", "==", currentUser.uid).orderBy("timestamp", "desc").get();
+                reports.forEach(doc => {
+                    let d = doc.data(); count++; let badge = d.status === 'resolved' ? `<span style="background:var(--correct-green); color:white; padding:2px 6px; border-radius:4px; font-size:11px;">✅ Fixed</span>` : `<span style="background:#555; color:white; padding:2px 6px; border-radius:4px; font-size:11px;">⏳ Pending</span>`;
+                    html += `<div style="background:#1a1a1a; padding:12px; border:1px solid #333; border-radius:6px; margin-bottom:10px;"><div style="display:flex; justify-content:space-between; margin-bottom:5px;"><b>${d.reason}</b> ${badge}</div><p style="font-size:13px; color:var(--text-muted); margin:0;">${d.questionText}</p></div>`;
+                    if(d.status === 'resolved' && d.seenByStudent === false) db.collection("reported_mistakes").doc(doc.id).update({seenByStudent: true});
+                });
+                
+                let flags = await db.collection("flagged_doubts").where("studentId", "==", currentUser.uid).orderBy("timestamp", "desc").get();
+                flags.forEach(doc => {
+                    let d = doc.data(); count++; let badge = d.status === 'resolved' ? `<span style="background:var(--correct-green); color:white; padding:2px 6px; border-radius:4px; font-size:11px;">✅ Reviewed</span>` : `<span style="background:#555; color:white; padding:2px 6px; border-radius:4px; font-size:11px;">⏳ Under Review</span>`;
+                    html += `<div style="background:#1a1a1a; padding:12px; border:1px solid #333; border-radius:6px; margin-bottom:10px;"><div style="display:flex; justify-content:space-between; margin-bottom:5px;"><b>⭐ Flagged Doubt</b> ${badge}</div><p style="font-size:13px; color:var(--text-muted); margin:0;">${d.questionText}</p></div>`;
+                    if(d.status === 'resolved' && d.seenByStudent === false) db.collection("flagged_doubts").doc(doc.id).update({seenByStudent: true});
+                });
+
+                if(count === 0) list.innerHTML = `<p style="color:var(--text-muted);">You haven't reported any questions yet.</p>`;
+                else list.innerHTML = html;
+            } catch(e) { list.innerHTML = `<p>Error: ${e.message}</p>`; }
+        }
+        function closeUserReportsModal() { document.getElementById('userReportsModal').style.display = 'none'; }
+
+        // --- ASK AI LOGIC ---
         const aiBtn = document.getElementById('ai-floating-btn');
         let pressTimer; let isDragging = false; let startX, startY, initialX, initialY;
         aiBtn.addEventListener('mousedown', startPress); aiBtn.addEventListener('touchstart', startPress, {passive: true});
@@ -547,7 +679,8 @@
         function openAIModal() {
             document.getElementById('aiModal').style.display = 'flex'; document.getElementById('ai-input-view').style.display = 'block';
             document.getElementById('ai-cropper-view').style.display = 'none'; document.getElementById('ai-loading-view').style.display = 'none';
-            document.getElementById('ai-chat-view').style.display = 'none'; document.getElementById('aiTextInput').value = '';
+            document.getElementById('ai-chat-view').style.display = 'none'; document.getElementById('ai-idle-view').style.display = 'flex';
+            document.getElementById('aiTextInput').value = '';
             document.getElementById('ai-fuzzy-box').style.display = 'none'; document.getElementById('ai-chat-history').innerHTML = '';
             aiChatHistory = []; lastExtractedQuestion = null;
         }
@@ -587,45 +720,70 @@
 
         async function confirmCropAndSolve() {
             if(!cropper) return; const canvas = cropper.getCroppedCanvas(); const base64Image = canvas.toDataURL('image/jpeg').split(',')[1]; 
-            document.getElementById('ai-cropper-view').style.display = 'none'; await callAIWorker({ image: base64Image, mimeType: 'image/jpeg', mode: 'solve' });
+            document.getElementById('ai-cropper-view').style.display = 'none'; document.getElementById('ai-input-view').style.display = 'block';
+            await callAIWorker({ image: base64Image, mimeType: 'image/jpeg', mode: 'solve' });
         }
 
         async function processAIText() {
             const text = document.getElementById('aiTextInput').value.trim(); if(!text) return showNotification("⚠️ Please type a question.");
-            document.getElementById('ai-fuzzy-box').style.display = 'none'; document.getElementById('ai-input-view').style.display = 'none';
+            document.getElementById('ai-fuzzy-box').style.display = 'none';
+            document.getElementById('ai-idle-view').style.display = 'none';
+            document.getElementById('ai-loading-view').style.display = 'flex';
+            
+            try {
+                const cacheSnap = await db.collection("ai_doubt_diary").where("questionText", "==", text).limit(1).get();
+                if (!cacheSnap.empty) {
+                    const cachedData = cacheSnap.docs[0].data();
+                    const syntheticPayload = { extractedQuestion: cachedData.questionText, subject: cachedData.subject, solution: cachedData.solution, searchKeywords: [] };
+                    renderAISolution(syntheticPayload, true); return; 
+                }
+            } catch(e) { console.warn("Cache check skipped"); }
+
             await callAIWorker({ text: text, mode: 'solve' });
         }
 
         async function callAIWorker(payload) {
+            document.getElementById('ai-idle-view').style.display = 'none';
             document.getElementById('ai-loading-view').style.display = 'flex';
             try {
                 const res = await fetch(AI_WORKER_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
                 const data = await res.json(); if(data.error) throw new Error(data.error);
-                document.getElementById('ai-loading-view').style.display = 'none'; document.getElementById('ai-chat-view').style.display = 'flex';
 
-                if (payload.mode === 'solve') {
-                    lastExtractedQuestion = data; aiChatHistory = [{ role: 'user', text: "Solve this: " + data.extractedQuestion }];
-                    const isFound = await checkDatabaseForQuestion(data.searchKeywords);
-                    let html = `<div class="ai-chat-bubble user-bubble"><b>Extracted Question:</b><br>${data.extractedQuestion}</div>`;
-                    
-                    if (isFound) { html += `<div class="ai-match-card"><div><b style="color:var(--correct-green);">✅ Verified Match in MCQsPrep!</b><br><span style="font-size:13px; color:var(--text-light);">${isFound.path}</span></div><button class="btn-exam" onclick="closeAIModal(); jumpToSection(${JSON.stringify(isFound.path.split(' > ')).replace(/"/g, "'")}); window.location.hash='#/quiz';" style="background:var(--correct-green); border:none; padding:8px 14px; color:white; border-radius:6px;">Go Practice 🚀</button></div>`; } 
-                    else { html += `<div style="background: rgba(253, 184, 19, 0.1); border: 1px solid rgba(253, 184, 19, 0.4); padding: 12px 16px; border-radius: 8px; margin-bottom: 16px; font-size: 14px; color: #eee;">🌐 <b>Curriculum Knowledge Base Solution:</b> Solved autonomously using verified NCERT syllabus standards.</div>`; }
-                    
-                    let solutionMarkdown = `**Subject:** ${data.subject}\n\n**Core Concept:** ${data.solution.keyConcept}\n\n**Step-by-Step Explanation:**\n${data.solution.stepByStep}\n\n**Final Conclusion & Answer:** ${data.solution.finalAnswer}`;
-                    aiChatHistory.push({ role: 'model', text: solutionMarkdown }); let parsedHTML = marked.parse(solutionMarkdown);
-                    html += `<div class="ai-chat-bubble" id="ai-sol-bubble">${parsedHTML}</div>`;
-                    html += `<button class="btn-exam" onclick="saveToDoubtDiary()" style="background:rgba(255,255,255,0.08); color:var(--primary-yellow); width:100%; margin-bottom:15px; border: 1px solid var(--primary-yellow); border-radius:8px;">📔 Save Explanation to Doubt Diary</button>`;
-
-                    const historyContainer = document.getElementById('ai-chat-history'); historyContainer.innerHTML = html;
-                    renderMathInElement(document.getElementById('ai-sol-bubble'), { delimiters: [ {left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}, {left: '\\(', right: '\\)', display: false}, {left: '\\[', right: '\\]', display: true} ] });
-                } else {
+                if (payload.mode === 'solve') { renderAISolution(data, false); } 
+                else {
+                    document.getElementById('ai-loading-view').style.display = 'none'; document.getElementById('ai-chat-view').style.display = 'flex';
                     aiChatHistory.push({ role: 'model', text: data.reply }); let parsedHTML = marked.parse(data.reply);
                     const chatDiv = document.createElement('div'); chatDiv.className = 'ai-chat-bubble'; chatDiv.innerHTML = parsedHTML;
                     document.getElementById('ai-chat-history').appendChild(chatDiv);
                     renderMathInElement(chatDiv, { delimiters: [ {left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}, {left: '\\(', right: '\\)', display: false}, {left: '\\[', right: '\\]', display: true} ] });
                     document.getElementById('ai-chat-history').scrollTop = document.getElementById('ai-chat-history').scrollHeight;
                 }
-            } catch(e) { document.getElementById('ai-loading-view').style.display = 'none'; document.getElementById('ai-input-view').style.display = 'block'; showNotification("❌ AI Error: " + e.message); }
+            } catch(e) { document.getElementById('ai-loading-view').style.display = 'none'; document.getElementById('ai-idle-view').style.display = 'flex'; showNotification("❌ AI Error: " + e.message); }
+        }
+
+        async function renderAISolution(data, isCached = false) {
+            document.getElementById('ai-loading-view').style.display = 'none'; 
+            document.getElementById('ai-chat-view').style.display = 'flex';
+            
+            lastExtractedQuestion = data; aiChatHistory = [{ role: 'user', text: "Solve this: " + data.extractedQuestion }];
+            
+            let html = `<div class="ai-chat-bubble user-bubble"><b>Extracted Question:</b><br>${data.extractedQuestion}</div>`;
+            
+            if (isCached) {
+                html += `<div class="ai-match-card" style="border-color: var(--primary-yellow); background: rgba(253, 184, 19, 0.15);"><div><b style="color:var(--primary-yellow);">⚡ Instant Cache Match!</b><br><span style="font-size:13px; color:var(--text-light);">Served from Firebase (Zero API Cost)</span></div></div>`;
+            } else {
+                const isFound = await checkDatabaseForQuestion(data.searchKeywords);
+                if (isFound) { html += `<div class="ai-match-card"><div><b style="color:var(--correct-green);">✅ Verified Match in MCQsPrep!</b><br><span style="font-size:13px; color:var(--text-light);">${isFound.path}</span></div><button class="btn-exam" onclick="closeAIModal(); jumpToSection(${JSON.stringify(isFound.path.split(' > ')).replace(/"/g, "'")}); window.location.hash='#/quiz';" style="background:var(--correct-green); border:none; padding:8px 14px; color:white; border-radius:6px;">Go Practice 🚀</button></div>`; } 
+                else { html += `<div style="background: rgba(253, 184, 19, 0.1); border: 1px solid rgba(253, 184, 19, 0.4); padding: 12px 16px; border-radius: 8px; margin-bottom: 16px; font-size: 14px; color: #eee;">🌐 <b>Curriculum Knowledge Base Solution:</b> Solved autonomously using verified NCERT syllabus standards.</div>`; }
+            }
+            
+            let solutionMarkdown = `**Subject:** ${data.subject}\n\n**Core Concept:** ${data.solution.keyConcept}\n\n**Step-by-Step Explanation:**\n${data.solution.stepByStep}\n\n**Final Conclusion & Answer:** ${data.solution.finalAnswer}`;
+            aiChatHistory.push({ role: 'model', text: solutionMarkdown }); let parsedHTML = marked.parse(solutionMarkdown);
+            html += `<div class="ai-chat-bubble" id="ai-sol-bubble">${parsedHTML}</div>`;
+            html += `<button class="btn-exam" onclick="saveToDoubtDiary()" style="background:rgba(255,255,255,0.08); color:var(--primary-yellow); width:100%; margin-bottom:15px; border: 1px solid var(--primary-yellow); border-radius:8px;">📔 Save Explanation to Doubt Diary</button>`;
+
+            const historyContainer = document.getElementById('ai-chat-history'); historyContainer.innerHTML = html;
+            renderMathInElement(document.getElementById('ai-sol-bubble'), { delimiters: [ {left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}, {left: '\\(', right: '\\)', display: false}, {left: '\\[', right: '\\]', display: true} ] });
         }
 
         async function sendAIFollowUp() {
@@ -725,35 +883,60 @@
                 <div class="card">
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:10px;">
                         <h2 style="color: var(--primary-yellow); margin:0;">🛠️ Admin Control Center</h2>
-                        <div style="display:flex; gap:10px; flex-wrap:wrap;"><button class="admin-tab-btn ${adminCurrentTab === 'upload' ? 'active' : ''}" onclick="switchAdminTab('upload')">➕ Upload</button><button class="admin-tab-btn ${adminCurrentTab === 'manage' ? 'active' : ''}" onclick="switchAdminTab('manage')">📋 Manage</button><button class="admin-tab-btn ${adminCurrentTab === 'reports' ? 'active' : ''}" onclick="switchAdminTab('reports')">🚨 Reports</button><button class="admin-tab-btn ${adminCurrentTab === 'feedback' ? 'active' : ''}" onclick="switchAdminTab('feedback')">⭐ Feedback</button><button class="admin-tab-btn ${adminCurrentTab === 'users' ? 'active' : ''}" onclick="switchAdminTab('users')">👥 Users</button><button class="admin-tab-btn ${adminCurrentTab === 'doubts' ? 'active' : ''}" onclick="switchAdminTab('doubts')">🚩 Doubts</button><button class="admin-tab-btn ${adminCurrentTab === 'settings' ? 'active' : ''}" onclick="switchAdminTab('settings')">⚙️ Settings</button></div>
+                        <div style="display:flex; gap:10px; flex-wrap:wrap;"><button class="admin-tab-btn ${adminCurrentTab === 'upload' ? 'active' : ''}" onclick="switchAdminTab('upload')">➕ Upload</button><button class="admin-tab-btn ${adminCurrentTab === 'manage' ? 'active' : ''}" onclick="switchAdminTab('manage')">📋 Manage</button><button class="admin-tab-btn ${adminCurrentTab === 'topics' ? 'active' : ''}" onclick="switchAdminTab('topics')">📁 Folders</button><button class="admin-tab-btn ${adminCurrentTab === 'reports' ? 'active' : ''}" onclick="switchAdminTab('reports')">🚨 Reports</button><button class="admin-tab-btn ${adminCurrentTab === 'users' ? 'active' : ''}" onclick="switchAdminTab('users')">👥 Users</button><button class="admin-tab-btn ${adminCurrentTab === 'doubts' ? 'active' : ''}" onclick="switchAdminTab('doubts')">🚩 Doubts</button><button class="admin-tab-btn ${adminCurrentTab === 'settings' ? 'active' : ''}" onclick="switchAdminTab('settings')">⚙️ Settings</button></div>
                     </div>
                     <div id="admin-upload-view" style="display:${adminCurrentTab === 'upload' ? 'block' : 'none'};">
-                        <div style="background: rgba(253, 184, 19, 0.05); padding: 20px; border-radius: 8px; border: 1px solid var(--primary-yellow); margin-bottom: 25px;"><h4 style="margin-top:0; color:var(--primary-yellow); display:flex; justify-content:space-between; align-items:center;"><span>📁 Create New Subtopic (Dynamic Folder)</span><button class="btn-exam" onclick="toggleCreateFolderUI()" style="padding:4px 10px; font-size:13px;">Toggle Form</button></h4><div id="create-folder-ui" style="display:none; margin-top:15px;"><label style="color:white; font-size:13px;">1. Select Parent Path (Where to create):</label><div id="dynamic-new-path-selectors" style="display:flex; gap:10px; flex-wrap:wrap;"></div><div class="admin-row" style="margin-top: 15px;"><div><label style="color:white; font-size:13px;">2. New Folder Name:</label><input type="text" id="newFolderName" class="input-field" placeholder="e.g. Molecular Genetics"></div><div><label style="color:white; font-size:13px;">3. Expected Content Type (For UI Tags):</label><select id="newFolderType" class="input-field"><option value="mcq">📝 MCQs Practice</option><option value="pdf">📄 PDF / Image Material</option></select></div></div><button class="btn-exam" onclick="createCustomTopic()" style="background-color:var(--primary-yellow); color:black; border:none; width:100%; max-width:200px;">+ Add Subtopic</button></div></div>
                         <div style="background: #2a2a2a; padding: 15px; border-radius: 6px; margin-bottom: 20px;"><h4 style="margin-top:0; margin-bottom:10px;">Upload Content: Select Target Folder</h4><div id="dynamic-path-selectors" style="display:flex; gap:10px; flex-wrap:wrap;"></div></div>
                         <div id="upload-form-area" style="display:none;">
                             <div class="admin-row" style="margin-bottom: 25px;"><span style="font-weight: bold;">Resource Type:</span><select id="admResourceType" class="input-field" onchange="toggleAdminFormType()" style="max-width: 300px;"><option value="mcq">Multiple Choice Question</option><option value="pdf">Study Material (PDF / Image)</option></select></div>
-                            <div id="admin-mcq-form"><textarea id="admQuestion" class="input-field" style="max-width: 100%;" placeholder="Type your question here..."></textarea><label style="color:var(--text-muted); font-size:14px; margin-bottom:5px; display:block;">Attach Image to Question (Optional):</label><input type="file" id="admQImage" class="input-field" accept="image/*"><div class="admin-row"><input type="text" id="admOptA" class="input-field" placeholder="Option A"><input type="text" id="admOptB" class="input-field" placeholder="Option B"></div><div class="admin-row"><input type="text" id="admOptC" class="input-field" placeholder="Option C"><input type="text" id="admOptD" class="input-field" placeholder="Option D"></div><div class="admin-checkbox-group" style="margin-bottom: 15px;"><span style="font-weight: bold; width: 140px;">Correct Answer(s):</span><label><input type="checkbox" value="A" class="admCorrectCb"> A</label><label><input type="checkbox" value="B" class="admCorrectCb"> B</label><label><input type="checkbox" value="C" class="admCorrectCb"> C</label><label><input type="checkbox" value="D" class="admCorrectCb"> D</label></div><textarea id="admExplanation" class="input-field" style="max-width: 100%; min-height: 60px;" placeholder="Explanation for the correct answer (Optional)..."></textarea></div>
+                            <div id="admin-mcq-form">
+                                <textarea id="admQuestion" class="input-field" style="max-width: 100%;" placeholder="Type your question here..."></textarea>
+                                <div class="admin-row"><div><label style="color:var(--text-muted); font-size:14px;">Attach Image (Optional):</label><input type="file" id="admQImage" class="input-field" accept="image/*"></div><div><label style="color:var(--text-muted); font-size:14px;">Difficulty Level:</label><select id="admDifficulty" class="input-field"><option value="Mixed">Mixed (Default)</option><option value="Easy">Easy</option><option value="Medium">Medium</option><option value="Hard">Hard</option></select></div></div>
+                                <div class="admin-row"><input type="text" id="admOptA" class="input-field" placeholder="Option A"><input type="text" id="admOptB" class="input-field" placeholder="Option B"></div><div class="admin-row"><input type="text" id="admOptC" class="input-field" placeholder="Option C"><input type="text" id="admOptD" class="input-field" placeholder="Option D"></div><div class="admin-checkbox-group" style="margin-bottom: 15px;"><span style="font-weight: bold; width: 140px;">Correct Answer(s):</span><label><input type="checkbox" value="A" class="admCorrectCb"> A</label><label><input type="checkbox" value="B" class="admCorrectCb"> B</label><label><input type="checkbox" value="C" class="admCorrectCb"> C</label><label><input type="checkbox" value="D" class="admCorrectCb"> D</label></div><textarea id="admExplanation" class="input-field" style="max-width: 100%; min-height: 60px;" placeholder="Explanation for the correct answer (Optional)..."></textarea></div>
                             <div id="admin-pdf-form" style="display:none; background: #2a2a2a; padding: 20px; border-radius: 8px;"><input type="text" id="admPdfTitle" class="input-field" placeholder="Document Title (e.g. Chapter 1 Notes)"><label style="color:white; display:block; margin-bottom:10px;">Select File (PDF or Image):</label><input type="file" id="admPdfFile" class="input-field" accept=".pdf, image/*"></div>
                             <div style="display: flex; gap: 15px; margin-top: 20px; max-width: 450px;"><button id="uploadBtn" class="btn-exam" onclick="processAdminUpload()" style="background-color: #4CAF50; color: white; border: none; flex: 2;">☁️ Upload to Database</button><button class="btn-exam" onclick="clearAdminUploadForm()" style="background-color: var(--wrong-red); color: white; border: none; flex: 1;">🧹 Clear Form</button></div>
                         </div>
                     </div>
+                    
+                    <div id="admin-topics-view" style="display:${adminCurrentTab === 'topics' ? 'block' : 'none'};">
+                        <div style="background: rgba(253, 184, 19, 0.05); padding: 20px; border-radius: 8px; border: 1px solid var(--primary-yellow); margin-bottom: 25px;"><h4 style="margin-top:0; color:var(--primary-yellow);">📁 Create New Topic Folder</h4><label style="color:white; font-size:13px;">1. Select Parent Path:</label><div id="dynamic-new-path-selectors" style="display:flex; gap:10px; flex-wrap:wrap;"></div><div class="admin-row" style="margin-top: 15px;"><div><label style="color:white; font-size:13px;">2. New Folder Name:</label><input type="text" id="newFolderName" class="input-field" placeholder="e.g. Molecular Genetics"></div><div><label style="color:white; font-size:13px;">3. Expected Content Type:</label><select id="newFolderType" class="input-field"><option value="mcq">📝 MCQs Practice</option><option value="pdf">📄 PDF / Image Material</option></select></div></div><button class="btn-exam" onclick="createCustomTopic()" style="background-color:var(--primary-yellow); color:black; border:none; width:100%; max-width:200px;">+ Add Subtopic</button></div>
+                        <h4 style="color:var(--primary-yellow); margin-top:30px;">Active Custom Folders</h4><div id="admin-topic-list-container"></div>
+                    </div>
+
                     <div id="admin-manage-view" style="display:${adminCurrentTab === 'manage' ? 'block' : 'none'};"><div style="background: #2a2a2a; padding: 15px; border-radius: 6px; margin-bottom: 20px;"><h4 style="margin-top:0; margin-bottom:10px; color:var(--text-muted);">Filter Content by Folder (Optional)</h4><div id="manage-path-selectors" style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:15px;"></div><button class="btn-exam" onclick="loadContentForManagement()" style="background:var(--primary-yellow); color:black; border:none; padding:10px 15px; width:100%; max-width:250px;">🔍 Fetch Filtered Content</button></div><div id="manage-content-list"><p style="color:var(--text-muted);">Select a folder and click Fetch to load items.</p></div></div>
                     <div id="admin-reports-view" style="display:${adminCurrentTab === 'reports' ? 'block' : 'none'};"><button class="btn-exam" onclick="loadAdminReports()" style="margin-bottom:15px; background:var(--primary-yellow); color:black; border:none;">🔄 Refresh Reports</button><div id="reports-list-container"></div></div>
-                    <div id="admin-feedback-view" style="display:${adminCurrentTab === 'feedback' ? 'block' : 'none'};"><button class="btn-exam" onclick="loadAdminFeedback()" style="margin-bottom:15px; background:var(--primary-yellow); color:black; border:none;">🔄 Refresh Feedback</button><div id="feedback-list-container"></div></div>
                     <div id="admin-users-view" style="display:${adminCurrentTab === 'users' ? 'block' : 'none'};"><button class="btn-exam" onclick="loadAdminUsers()" style="margin-bottom:15px; background:var(--primary-yellow); color:black; border:none;">🔄 Refresh Students List</button><div id="users-table-container" style="overflow-x:auto;"></div></div>
                     <div id="admin-doubts-view" style="display:${adminCurrentTab === 'doubts' ? 'block' : 'none'};"><button class="btn-exam" onclick="loadAdminDoubts()" style="margin-bottom:15px; background:var(--primary-yellow); color:black; border:none;">🔄 Refresh Flagged Doubts</button><div id="doubts-list-container"></div></div>
                     <div id="admin-settings-view" style="display:${adminCurrentTab === 'settings' ? 'block' : 'none'};"><div style="background: #2a2a2a; padding: 25px; border-radius: 6px; max-width: 400px;"><h3 style="margin-top:0; margin-bottom:20px;">Change Admin Password</h3><input type="password" id="newAdminPass" class="input-field" placeholder="Enter New Password (Min 6 chars)"><input type="password" id="confirmAdminPass" class="input-field" placeholder="Confirm New Password"><button class="btn-exam" onclick="changeAdminPassword()" style="background:var(--primary-yellow); color:black; border:none; width:100%;">Update Password</button></div></div>
                 </div>`;
-            if (adminCurrentTab === 'upload') { _buildAdminSelectors(); _buildAdminNewTopicSelectors(); }
+            if (adminCurrentTab === 'upload') { _buildAdminSelectors(); }
+            else if (adminCurrentTab === 'topics') { _buildAdminNewTopicSelectors(); loadAdminTopicsList(); }
             else if (adminCurrentTab === 'manage') { _buildManageSelectors(); loadContentForManagement(); }
             else if (adminCurrentTab === 'reports') loadAdminReports();
-            else if (adminCurrentTab === 'feedback') loadAdminFeedback();
             else if (adminCurrentTab === 'users') loadAdminUsers();
             else if (adminCurrentTab === 'doubts') loadAdminDoubts();
         }
 
         function switchAdminTab(tab) { adminCurrentTab = tab; _renderAdminPanel(); }
-        function toggleCreateFolderUI() { let el = document.getElementById('create-folder-ui'); el.style.display = el.style.display === 'none' ? 'block' : 'none'; }
+
+        async function loadAdminTopicsList() {
+            const container = document.getElementById('admin-topic-list-container'); container.innerHTML = `<p>Loading folders...</p>`;
+            try {
+                const snap = await db.collection("custom_topics").orderBy("parentPath").get();
+                if(snap.empty) { container.innerHTML = `<p>No custom folders created yet.</p>`; return; }
+                let html = '';
+                snap.forEach(doc => {
+                    let d = doc.data();
+                    html += `<div style="background:#2a2a2a; border:1px solid #444; border-radius:6px; padding:12px 15px; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center;"><div><span style="color:var(--text-muted); font-size:12px;">Path: ${d.parentPath}</span><br><b style="font-size:16px;">📁 ${d.name}</b> <span style="font-size:11px; background:#444; padding:2px 6px; border-radius:4px;">${d.type}</span></div><button onclick="deleteCustomTopic('${doc.id}')" style="background:var(--wrong-red); border:none; color:white; padding:6px 12px; border-radius:4px; cursor:pointer;">Delete</button></div>`;
+                });
+                container.innerHTML = html;
+            } catch(e) { container.innerHTML = `<p>Error: ${e.message}</p>`; }
+        }
+
+        async function deleteCustomTopic(docId) {
+            if(!confirm("Are you sure? This will remove the folder from the app menu (Note: MCQs inside it won't be deleted).")) return;
+            try { await db.collection("custom_topics").doc(docId).delete(); showNotification("✅ Folder deleted"); loadAdminTopicsList(); await loadCustomTopics(); } catch(e){}
+        }
 
         function _buildAdminNewTopicSelectors() {
             const container = document.getElementById('dynamic-new-path-selectors'); if(!container) return;
@@ -784,23 +967,8 @@
             if (!folderName) return showNotification("⚠️ Folder name is required.");
             try {
                 await db.collection("custom_topics").add({ parentPath: adminNewTopicPath.join(' > '), name: folderName, type: document.getElementById('newFolderType').value, timestamp: firebase.firestore.FieldValue.serverTimestamp() });
-                showNotification("✅ Subtopic Created Successfully!"); document.getElementById('newFolderName').value = ""; await loadCustomTopics(); _buildAdminSelectors(); _buildAdminNewTopicSelectors();
+                showNotification("✅ Subtopic Created Successfully!"); document.getElementById('newFolderName').value = ""; await loadCustomTopics(); _buildAdminNewTopicSelectors(); loadAdminTopicsList();
             } catch(e) { alert("⚠️ ERROR: " + e.message); }
-        }
-
-        async function loadAdminFeedback() {
-            const container = document.getElementById('feedback-list-container'); container.innerHTML = `<p style="color:var(--primary-yellow);">Fetching user feedback...</p>`;
-            try {
-                const snapshot = await db.collection("platform_feedback").orderBy("timestamp", "desc").get();
-                if(snapshot.empty) { container.innerHTML = "<p>No feedback received yet.</p>"; return; }
-                let html = ''; let total = 0; let count = 0;
-                snapshot.forEach(doc => {
-                    const data = doc.data(); total += data.rating; count++;
-                    let starIcons = ""; for(let i=1; i<=5; i++) { starIcons += (i <= data.rating) ? '⭐' : '☆'; }
-                    html += `<div class="content-item-card" style="border-left: 4px solid var(--primary-yellow);"><div class="content-item-header"><span class="badge-path">${starIcons} (${data.rating}/5)</span><span style="font-size:12px; color:var(--text-muted);">${data.timestamp ? data.timestamp.toDate().toLocaleString() : ""}</span></div><p style="color:var(--correct-green); margin:5px 0;"><b>User:</b> ${data.studentName}</p><div style="background:#1a1a1a; padding:10px; border-radius:4px; font-size:14px;">${data.feedback || '<i>No written text provided.</i>'}</div></div>`;
-                });
-                container.innerHTML = `<div style="margin-bottom:20px; font-size: 18px;"><b>Overall Average Platform Rating:</b> <span style="color:var(--primary-yellow); font-size:24px;">⭐ ${(total / count).toFixed(1)} / 5</span></div>` + html;
-            } catch(e) { container.innerHTML = `<p style="color:red;">Error: ${e.message}</p>`; }
         }
 
         async function loadAdminReports() {
@@ -811,14 +979,18 @@
                 let html = '';
                 snapshot.forEach(doc => {
                     const data = doc.data();
-                    html += `<div class="content-item-card" style="border-left: 4px solid var(--wrong-red);"><div class="content-item-header"><span class="badge-path">${data.path || 'Unknown Path'}</span><span style="font-size:12px; color:var(--text-muted);">${data.timestamp ? data.timestamp.toDate().toLocaleString() : ""}</span></div><div style="margin: 10px 0; padding: 10px; background: rgba(244, 67, 54, 0.1); border-radius: 4px;"><p style="color:var(--wrong-red); margin:0 0 5px 0;"><b>Issue:</b> ${data.reason}</p><p style="margin:0; font-size:14px;"><b>Details:</b> ${data.description || 'No description provided.'}</p><p style="margin:5px 0 0 0; font-size:12px; color:var(--text-muted);">Reported by: ${data.studentName}</p></div><div style="background:#1a1a1a; padding:10px; border-radius:4px; font-size:14px; margin-bottom:10px;"><b>Question Content:</b><br>${data.questionText}</div><div style="display:flex; gap:10px; flex-wrap:wrap;"><button onclick="openEditModalFromReport('${data.questionId}')" style="padding:6px 12px; background:#2196F3; border:none; border-radius:4px; color:white; cursor:pointer;">✏️ Edit MCQ in Database</button><button onclick="resolveReport('${doc.id}')" style="padding:6px 12px; background:var(--correct-green); border:none; border-radius:4px; color:white; cursor:pointer;">✅ Mark Resolved & Delete Report</button></div></div>`;
+                    let stat = data.status === 'resolved' ? `<span style="background:var(--correct-green); color:white; padding:2px 8px; border-radius:12px; font-size:12px;">✅ Resolved</span>` : `<span style="background:#555; color:white; padding:2px 8px; border-radius:12px; font-size:12px;">⏳ Pending</span>`;
+                    html += `<div class="content-item-card" style="border-left: 4px solid var(--wrong-red);"><div class="content-item-header"><span class="badge-path">${data.path || 'Unknown Path'}</span><span style="font-size:12px; color:var(--text-muted);">${data.timestamp ? data.timestamp.toDate().toLocaleString() : ""}</span></div><div style="margin: 10px 0; padding: 10px; background: rgba(244, 67, 54, 0.1); border-radius: 4px; display:flex; justify-content:space-between;"><div><p style="color:var(--wrong-red); margin:0 0 5px 0;"><b>Issue:</b> ${data.reason}</p><p style="margin:0; font-size:14px;"><b>Details:</b> ${data.description || 'No description provided.'}</p></div>${stat}</div><p style="margin:5px 0 10px 0; font-size:12px; color:var(--text-muted);">Reported by: ${data.studentName}</p><div style="background:#1a1a1a; padding:10px; border-radius:4px; font-size:14px; margin-bottom:10px;"><b>Question Content:</b><br>${data.questionText}</div><div style="display:flex; gap:10px; flex-wrap:wrap;"><button onclick="openEditModalFromReport('${data.questionId}')" style="padding:6px 12px; background:#2196F3; border:none; border-radius:4px; color:white; cursor:pointer;">✏️ Edit MCQ in Database</button><button onclick="resolveReport('${doc.id}')" style="padding:6px 12px; background:var(--correct-green); border:none; border-radius:4px; color:white; cursor:pointer;" ${data.status==='resolved'?'disabled':''}>✅ Mark Resolved (Notifies User)</button></div></div>`;
                 });
                 container.innerHTML = html;
             } catch(e) { container.innerHTML = `<p style="color:red;">Error: ${e.message}</p>`; }
         }
 
         async function resolveReport(reportDocId) {
-            if(confirm("Mark this report as resolved? It will be deleted from the list.")) { await db.collection("reported_mistakes").doc(reportDocId).delete(); loadAdminReports(); showNotification("✅ Report resolved."); }
+            if(confirm("Mark this report as resolved? The student will be notified.")) { 
+                await db.collection("reported_mistakes").doc(reportDocId).update({status: 'resolved', seenByStudent: false}); 
+                loadAdminReports(); showNotification("✅ Report marked as resolved."); 
+            }
         }
         
         async function openEditModalFromReport(questionId) {
@@ -845,12 +1017,16 @@
                 const snapshot = await db.collection("flagged_doubts").orderBy("timestamp", "desc").get();
                 if(snapshot.empty) { container.innerHTML = "<p>No flagged questions!</p>"; return; }
                 let html = '';
-                snapshot.forEach(doc => { html += `<div class="content-item-card"><div class="content-item-header"><span class="badge-path">${doc.data().path}</span><span style="font-size:12px; color:var(--text-muted);">${doc.data().timestamp ? doc.data().timestamp.toDate().toLocaleString() : ""}</span></div><p style="color:var(--primary-yellow); margin:5px 0;"><b>Flagged by:</b> ${doc.data().studentName}</p><div style="background:#1a1a1a; padding:10px; border-radius:4px; font-size:14px;">${doc.data().questionText}</div><button onclick="resolveDoubt('${doc.id}')" style="margin-top:10px; padding:5px 10px; background:var(--correct-green); border:none; border-radius:4px; color:white; cursor:pointer;">Mark Resolved</button></div>`; });
+                snapshot.forEach(doc => { 
+                    let data = doc.data();
+                    let stat = data.status === 'resolved' ? `<span style="background:var(--correct-green); color:white; padding:2px 8px; border-radius:12px; font-size:12px;">✅ Reviewed</span>` : `<span style="background:#555; color:white; padding:2px 8px; border-radius:12px; font-size:12px;">⏳ Pending</span>`;
+                    html += `<div class="content-item-card"><div class="content-item-header"><span class="badge-path">${data.path}</span><span style="font-size:12px; color:var(--text-muted);">${data.timestamp ? data.timestamp.toDate().toLocaleString() : ""}</span></div><div style="display:flex; justify-content:space-between;"><p style="color:var(--primary-yellow); margin:5px 0;"><b>Flagged by:</b> ${data.studentName}</p>${stat}</div><div style="background:#1a1a1a; padding:10px; border-radius:4px; font-size:14px;">${data.questionText}</div><button onclick="resolveDoubt('${doc.id}')" style="margin-top:10px; padding:5px 10px; background:var(--correct-green); border:none; border-radius:4px; color:white; cursor:pointer;" ${data.status==='resolved'?'disabled':''}>Mark Reviewed (Notifies User)</button></div>`; 
+                });
                 container.innerHTML = html;
             } catch(e) { container.innerHTML = `<p style="color:red;">Error: ${e.message}</p>`; }
         }
 
-        async function resolveDoubt(docId) { if(confirm("Mark this doubt as resolved and remove it?")) { await db.collection("flagged_doubts").doc(docId).delete(); loadAdminDoubts(); } }
+        async function resolveDoubt(docId) { if(confirm("Mark this doubt as reviewed? Student will be notified.")) { await db.collection("flagged_doubts").doc(docId).update({status: 'resolved', seenByStudent: false}); loadAdminDoubts(); } }
 
         function toggleAdminFormType() {
             let val = document.getElementById('admResourceType').value;
@@ -862,7 +1038,7 @@
             if(!confirm("Are you sure you want to clear all typed fields?")) return;
             document.getElementById('admQuestion').value = ""; document.getElementById('admQImage').value = ""; document.getElementById('admExplanation').value = "";
             document.getElementById('admOptA').value = ""; document.getElementById('admOptB').value = ""; document.getElementById('admOptC').value = ""; document.getElementById('admOptD').value = "";
-            document.querySelectorAll('.admCorrectCb').forEach(cb => cb.checked = false); document.getElementById('admPdfTitle').value = ""; document.getElementById('admPdfFile').value = "";
+            document.querySelectorAll('.admCorrectCb').forEach(cb => cb.checked = false); document.getElementById('admPdfTitle').value = ""; document.getElementById('admPdfFile').value = ""; document.getElementById('admDifficulty').value = "Mixed";
             showNotification("🧹 Form cleared!");
         }
 
@@ -927,9 +1103,10 @@
                     const options = { A: document.getElementById('admOptA').value.trim(), B: document.getElementById('admOptB').value.trim(), C: document.getElementById('admOptC').value.trim(), D: document.getElementById('admOptD').value.trim() };
                     const correctCbs = document.querySelectorAll('.admCorrectCb:checked'); let correctAnswers = Array.from(correctCbs).map(cb => cb.value);
                     const explanation = document.getElementById('admExplanation').value.trim(); const imageFile = document.getElementById('admQImage').files[0];
+                    const level = document.getElementById('admDifficulty').value;
                     if (!question || !options.A || !options.B || correctAnswers.length === 0) throw new Error("Question, Option A, Option B, and Correct Answer are required.");
                     let imageUrl = null; if (imageFile) imageUrl = await uploadFileToCloudinary(imageFile); 
-                    await db.collection("content").add({ type: 'mcq', path: targetPathString, question: question, options: options, correctAnswers: correctAnswers, explanation: explanation, imageUrl: imageUrl, timestamp: firebase.firestore.FieldValue.serverTimestamp() });
+                    await db.collection("content").add({ type: 'mcq', path: targetPathString, level: level, question: question, options: options, correctAnswers: correctAnswers, explanation: explanation, imageUrl: imageUrl, timestamp: firebase.firestore.FieldValue.serverTimestamp() });
                     clearAdminUploadForm();
                 } else if (type === 'pdf') {
                     const title = document.getElementById('admPdfTitle').value.trim(); const file = document.getElementById('admPdfFile').files[0];
@@ -957,7 +1134,8 @@
                     const data = doc.data(); loadedItemsCache[doc.id] = data;
                     if (data.type === 'mcq') {
                         let answersStr = (data.correctAnswers || []).join(', ');
-                        html += `<div class="content-item-card" id="item_${doc.id}"><div class="content-item-header"><span class="badge-path">${data.path || 'Uncategorized'}</span><div style="display:flex; gap:8px;"><button class="btn-exam" onclick="openEditModal('${doc.id}')" style="padding:4px 10px; font-size:12px; background:#2196F3; border:none;">✏️ Edit</button><button class="btn-exam" onclick="deleteContentItem('${doc.id}')" style="padding:4px 10px; font-size:12px; background:var(--wrong-red); border:none;">🗑️ Delete</button></div></div><div style="font-weight:bold; margin-bottom:8px;">${data.question}</div>${data.imageUrl ? `<img src="${data.imageUrl}" style="max-height:80px; border-radius:4px; margin-bottom:8px; display:block;">` : ''}<div style="font-size:13px; color:var(--text-muted); line-height:1.4;">A: ${data.options?.A || '-'} | B: ${data.options?.B || '-'} | C: ${data.options?.C || '-'} | D: ${data.options?.D || '-'}</div><div style="margin-top:6px; font-size:13px; color:var(--correct-green);">Correct: ${answersStr}</div></div>`;
+                        let lvlBadge = data.level ? `<span style="margin-left:10px; background:#444; color:white; padding:2px 6px; border-radius:4px; font-size:11px;">${data.level}</span>` : '';
+                        html += `<div class="content-item-card" id="item_${doc.id}"><div class="content-item-header"><span class="badge-path">${data.path || 'Uncategorized'}</span>${lvlBadge}<div style="display:flex; gap:8px;"><button class="btn-exam" onclick="openEditModal('${doc.id}')" style="padding:4px 10px; font-size:12px; background:#2196F3; border:none;">✏️ Edit</button><button class="btn-exam" onclick="deleteContentItem('${doc.id}')" style="padding:4px 10px; font-size:12px; background:var(--wrong-red); border:none;">🗑️ Delete</button></div></div><div style="font-weight:bold; margin-bottom:8px;">${data.question}</div>${data.imageUrl ? `<img src="${data.imageUrl}" style="max-height:80px; border-radius:4px; margin-bottom:8px; display:block;">` : ''}<div style="font-size:13px; color:var(--text-muted); line-height:1.4;">A: ${data.options?.A || '-'} | B: ${data.options?.B || '-'} | C: ${data.options?.C || '-'} | D: ${data.options?.D || '-'}</div><div style="margin-top:6px; font-size:13px; color:var(--correct-green);">Correct: ${answersStr}</div></div>`;
                     } else {
                         html += `<div class="content-item-card" id="item_${doc.id}"><div class="content-item-header"><span class="badge-path">${data.path || 'Uncategorized'}</span><button class="btn-exam" onclick="deleteContentItem('${doc.id}')" style="padding:4px 10px; font-size:12px; background:var(--wrong-red); border:none;">🗑️ Delete</button></div><div style="font-weight:bold; margin-bottom:5px;">📄 ${data.title}</div><a href="${data.fileUrl}" target="_blank" style="color:var(--primary-yellow); font-size:13px;">View Document &rarr;</a></div>`;
                     }
@@ -979,6 +1157,7 @@
             document.getElementById('editOptA').value = data.options?.A || ''; document.getElementById('editOptB').value = data.options?.B || '';
             document.getElementById('editOptC').value = data.options?.C || ''; document.getElementById('editOptD').value = data.options?.D || '';
             document.getElementById('editExplanation').value = data.explanation || '';
+            if(data.level) document.getElementById('editDifficulty').value = data.level; else document.getElementById('editDifficulty').value = 'Mixed';
             const correct = data.correctAnswers || [];
             document.querySelectorAll('.editCorrectCb').forEach(cb => { cb.checked = correct.includes(cb.value); });
             document.getElementById('editModal').style.display = 'flex';
@@ -991,10 +1170,11 @@
             const options = { A: document.getElementById('editOptA').value.trim(), B: document.getElementById('editOptB').value.trim(), C: document.getElementById('editOptC').value.trim(), D: document.getElementById('editOptD').value.trim() };
             const correctAnswers = Array.from(document.querySelectorAll('.editCorrectCb:checked')).map(cb => cb.value);
             const explanation = document.getElementById('editExplanation').value.trim();
+            const level = document.getElementById('editDifficulty').value;
 
             if(!question || !options.A || !options.B || correctAnswers.length === 0) { alert("Question, Options A/B, and Correct Answer required."); return; }
             try {
-                await db.collection("content").doc(docId).update({ question: question, options: options, correctAnswers: correctAnswers, explanation: explanation });
+                await db.collection("content").doc(docId).update({ question: question, options: options, correctAnswers: correctAnswers, explanation: explanation, level: level });
                 closeEditModal(); showNotification("✅ Changes saved!"); loadContentForManagement();
             } catch(e) { showNotification("❌ Update failed: " + e.message); }
         }
@@ -1007,7 +1187,6 @@
             catch(e) { showNotification("❌ Error updating password: " + e.message); }
         }
 
-        // --- PROGRESS TRACKING RESET ---
         async function resetProgress(safePath) {
             if(confirm("Are you sure you want to reset your progress? This will let you re-attempt all questions in this section from the beginning.")) {
                 if (currentUser) { let dataToSave = {}; dataToSave[safePath] = firebase.firestore.FieldValue.delete(); await db.collection("users").doc(currentUser.uid).update(dataToSave).catch(e=>{}); } 
@@ -1016,14 +1195,13 @@
             }
         }
 
-        // --- 5. THE QUIZ ENGINE ---
-        let quizState = { questions: [], currentIndex: 0, userAnswers: {}, showAnswerTriggered: {}, flaggedDoubts: {}, viewedQuestions: [], timer: null, secondsPassed: 0, isTimerPaused: false };
+        let quizState = { questions: [], currentIndex: 0, userAnswers: {}, showAnswerTriggered: {}, flaggedDoubts: {}, viewedQuestions: [], timer: null, secondsPassed: 0, isTimerPaused: false, isCustom: false };
 
-        async function _initiateQuizEngine() {
+        async function _initiateQuizEngine(isCustomLaunch = false) {
             const pathString = currentPath.join(' > ');
-            document.getElementById('breadcrumb-text').innerText = "Home / " + pathString + " / Active Quiz"; 
+            document.getElementById('breadcrumb-text').innerText = "Home / " + (isCustomLaunch ? "Custom Quiz" : pathString + " / Active Quiz"); 
             const mainContent = document.getElementById('dynamic-content');
-            mainContent.innerHTML = `<div class="card"><h2 style="color:var(--primary-yellow);">Loading Quiz...</h2><p>Fetching questions smartly...</p></div>`;
+            mainContent.innerHTML = `<div class="card"><div style="font-size:40px; animation: pulse 1s infinite; text-align:center; margin-bottom:15px;">⚙️</div><h2 style="color:var(--primary-yellow); text-align:center;">Building Your Quiz...</h2><p style="text-align:center; color:var(--text-muted);">Fetching and filtering unattempted questions from the database...</p></div>`;
 
             try {
                 let isDailyQuiz = currentPath[0] === 'Daily Quiz Challenge';
@@ -1039,7 +1217,25 @@
 
                 let availableQuestions = []; let totalQuestionsInDB = 0;
 
-                if (isDailyQuiz) {
+                if (isCustomLaunch) {
+                    let unattempted = [];
+                    for (const p of customQuizConfig.paths) {
+                        const snap = await db.collection("content").where("path", "==", p).get();
+                        snap.forEach(doc => {
+                            let d = doc.data();
+                            if (d.type === 'mcq' && !globalAttemptedIds.includes(doc.id)) {
+                                if (customQuizConfig.level === 'Mixed' || d.level === customQuizConfig.level || (!d.level && customQuizConfig.level === 'Mixed')) {
+                                    unattempted.push({id: doc.id, ...d});
+                                }
+                            }
+                        });
+                    }
+                    totalQuestionsInDB = unattempted.length;
+                    availableQuestions = unattempted.sort(()=>0.5-Math.random()).slice(0, customQuizConfig.count);
+                    quizState.questions = availableQuestions;
+                    quizState.isCustom = true;
+
+                } else if (isDailyQuiz) {
                     let targetPrefix = currentPath[1] === "NEET" ? "NEET" : "General Knowledge";
                     let snap = await db.collection("content").where("path", ">=", targetPrefix).where("path", "<=", targetPrefix + "\uf8ff").get();
                     let unattempted = [];
@@ -1056,6 +1252,7 @@
                         availableQuestions = unattempted.sort(()=>0.5-Math.random()).slice(0, 20); totalQuestionsInDB = 20;
                     }
                     quizState.questions = availableQuestions.sort(() => Math.random() - 0.5);
+                    quizState.isCustom = false;
 
                 } else {
                     let snapshot = await db.collection("content").where("path", ">=", pathString).where("path", "<=", pathString + "\uf8ff").get();
@@ -1068,14 +1265,17 @@
                         if (data.type === 'mcq') { totalQuestionsInDB++; if (!previouslyAttemptedIds.includes(doc.id)) { availableQuestions.push({ id: doc.id, ...data }); } }
                     });
                     quizState.questions = availableQuestions.sort(() => Math.random() - 0.5);
+                    quizState.isCustom = false;
                 }
 
-                if (totalQuestionsInDB === 0 || (isDailyQuiz && availableQuestions.length === 0)) { mainContent.innerHTML = `<div class="card"><h2>No Questions Available</h2><p style="color:var(--text-muted);">Not enough new questions available in the database for this section.</p><button class="btn-exam" onclick="goBack()">&larr; Go Back</button></div>`; return; }
-
-                if (availableQuestions.length === 0 && !isDailyQuiz) {
-                    let safePath = "prog_" + currentPath.join('_').replace(/[^a-zA-Z0-9]/g, '_');
-                    mainContent.innerHTML = `<div class="card" style="text-align:center; padding: 40px 20px;"><h2 style="color: var(--primary-yellow); font-size: 28px; margin-bottom: 15px;">🎉 Section Completed!</h2><p style="color: var(--text-muted); font-size: 16px; margin-bottom: 25px;">You have successfully attempted all available questions in this section.</p><div style="display:flex; justify-content:center; gap:15px; flex-wrap:wrap;"><button class="btn-exam" onclick="resetProgress('${safePath}')" style="background: #333; color: white; border-color: var(--border-color);">🔄 Reset My Progress</button><button class="btn-exam" onclick="goBack()">&larr; Explore Other Topics</button></div></div>`;
-                    return;
+                if (availableQuestions.length === 0) { 
+                    if(isCustomLaunch) mainContent.innerHTML = `<div class="card" style="text-align:center;"><h2>No Questions Found</h2><p style="color:var(--text-muted);">We couldn't find any unattempted questions matching your selected chapters and difficulty level.</p><button class="btn-exam" onclick="goBack()">&larr; Go Back to Customizer</button></div>`;
+                    else if(totalQuestionsInDB === 0) mainContent.innerHTML = `<div class="card"><h2>No Questions Available</h2><p style="color:var(--text-muted);">Not enough questions available in the database for this section.</p><button class="btn-exam" onclick="goBack()">&larr; Go Back</button></div>`; 
+                    else {
+                        let safePath = "prog_" + currentPath.join('_').replace(/[^a-zA-Z0-9]/g, '_');
+                        mainContent.innerHTML = `<div class="card" style="text-align:center; padding: 40px 20px;"><h2 style="color: var(--primary-yellow); font-size: 28px; margin-bottom: 15px;">🎉 Section Completed!</h2><p style="color: var(--text-muted); font-size: 16px; margin-bottom: 25px;">You have successfully attempted all available questions in this section.</p><div style="display:flex; justify-content:center; gap:15px; flex-wrap:wrap;"><button class="btn-exam" onclick="resetProgress('${safePath}')" style="background: #333; color: white; border-color: var(--border-color);">🔄 Reset My Progress</button><button class="btn-exam" onclick="goBack()">&larr; Explore Other Topics</button></div></div>`;
+                    }
+                    return; 
                 }
                 
                 quizState.currentIndex = 0; quizState.userAnswers = {}; quizState.showAnswerTriggered = {}; quizState.flaggedDoubts = {}; quizState.viewedQuestions = []; quizState.secondsPassed = 0; quizState.isTimerPaused = false;
@@ -1128,12 +1328,13 @@
                     <div class="quiz-header">
                         <span style="color:var(--text-muted);">Question ${quizState.currentIndex + 1} ${multiText}</span>
                         <div style="display:flex; align-items:center; gap:15px; flex-wrap:wrap;">
-                            <button class="report-btn" onclick="openReportModal()">🚨 Report Mistake</button>
+                            <button class="report-btn" onclick="openReportModal('${q.id}', '${q.question.replace(/'/g, "\\'")}', '${q.path}')">🚨 Report Mistake</button>
                             <button id="flagDoubtBtn" class="flag-btn ${isFlagged ? 'flagged' : ''}" onclick="toggleFlag()">${isFlagged ? '⭐ Flagged' : '⭐ Flag for Review'}</button>
                             <span class="quiz-timer">⏱ <span id="quizTimeDisplay">${formatTime(quizState.secondsPassed)}</span></span>
                         </div>
                     </div>
                     ${paletteHtml}
+                    ${quizState.isCustom ? `<div style="margin-bottom:15px;"><span class="badge-path">${q.path}</span> <span style="font-size:11px; color:#aaa; margin-left:10px;">Lvl: ${q.level||'Mixed'}</span></div>` : ''}
                     ${q.imageUrl ? `<img src="${q.imageUrl}" class="quiz-image" onclick="expandImage(this.src)" title="Click to enlarge">` : ''}
                     <div class="quiz-question-text katex-render-target">${q.question}</div>
                     <div id="optionsContainer">${optionsHtml}</div>
@@ -1202,7 +1403,11 @@
             let attempted = 0; let totalScore = 0; let correctCount = 0; let wrongCount = 0;
             let sessionAttemptedIds = []; let skippedCount = 0; let isDailyQuiz = currentPath[0] === 'Daily Quiz Challenge';
             let correctHtml = ''; let wrongHtml = ''; let skippedHtml = ''; let flaggedListHtml = '';
+            
             let isNeetSection = isDailyQuiz ? (currentPath[1] === "NEET") : (currentPath[0] === "NEET");
+            if(quizState.isCustom) {
+                isNeetSection = customQuizConfig.paths.some(p => p.includes("NEET"));
+            }
 
             quizState.questions.forEach((q, index) => {
                 let userAnsArray = quizState.userAnswers[index] || []; let isAttempted = userAnsArray.length > 0; let isCorrect = false; let isViewed = quizState.viewedQuestions.includes(index);
@@ -1215,11 +1420,11 @@
 
                 if(quizState.flaggedDoubts[index]) {
                     flaggedListHtml += `<div style="background:#2a2a2a; border-left:4px solid var(--primary-yellow); padding:15px; margin-bottom:15px; text-align:left;"><p style="margin-top:0;"><b>Q:</b> ${q.question}</p><p style="color:var(--text-muted); font-size:14px;"><b>Explanation:</b> ${q.explanation || 'None'}</p></div>`;
-                    if (currentUser) { db.collection("flagged_doubts").add({ studentId: currentUser.uid, studentName: currentUser.displayName, questionId: q.id, questionText: q.question, path: q.path, timestamp: firebase.firestore.FieldValue.serverTimestamp() }); }
+                    if (currentUser) { db.collection("flagged_doubts").add({ studentId: currentUser.uid, studentName: currentUser.displayName, questionId: q.id, questionText: q.question, path: q.path, status: 'pending', seenByStudent: true, timestamp: firebase.firestore.FieldValue.serverTimestamp() }); }
                 }
             });
 
-            if (sessionAttemptedIds.length > 0 && !isDailyQuiz) { 
+            if (sessionAttemptedIds.length > 0 && !isDailyQuiz && !quizState.isCustom) { 
                 let safePath = "prog_" + currentPath.join('_').replace(/[^a-zA-Z0-9]/g, '_');
                 if (currentUser) { let dataToSave = {}; dataToSave[safePath] = firebase.firestore.FieldValue.arrayUnion(...sessionAttemptedIds); db.collection("users").doc(currentUser.uid).set(dataToSave, {merge: true}); } 
                 else { let localProg = JSON.parse(localStorage.getItem('mcq_progress') || '{}'); localProg[safePath] = [...(localProg[safePath] || []), ...sessionAttemptedIds]; localStorage.setItem('mcq_progress', JSON.stringify(localProg)); }
@@ -1229,7 +1434,7 @@
             }
 
             let accuracy = attempted === 0 ? 0 : Math.round((correctCount / attempted) * 100); 
-            let timeStr = formatTime(quizState.secondsPassed); let pathString = currentPath.join(' > '); let studentName = currentUser ? currentUser.displayName : "Anonymous";
+            let timeStr = formatTime(quizState.secondsPassed); let pathString = quizState.isCustom ? "Custom Practice" : currentPath.join(' > '); let studentName = currentUser ? currentUser.displayName : "Anonymous";
 
             if (currentUser && attempted > 0 && !isDailyQuiz) { db.collection("leaderboards").add({ userId: currentUser.uid, userName: currentUser.displayName, quizPath: pathString, score: totalScore, accuracy: accuracy, timeStr: timeStr, attemptedQuestions: attempted, timestamp: firebase.firestore.FieldValue.serverTimestamp() }); }
 
@@ -1267,6 +1472,7 @@
             });
         }
 
+        // --- BREADCRUMB AND NAVIGATION ---
         function _renderView() {
             const mainContent = document.getElementById('dynamic-content');
             const breadcrumb = document.getElementById('breadcrumb-text');
@@ -1300,6 +1506,12 @@
             let title = currentPath.length === 0 ? "Select Exam:" : currentPath[currentPath.length - 1];
             let html = `<div class="card"><h2>${title}</h2><div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px;">`;
 
+            if (currentPath.length > 0 && requiresQuizLogin(currentPath)) { 
+                let cleanObj = JSON.stringify(currentLevel).replace(/"/g, "'");
+                let cleanTitle = title.replace(/'/g, "\\'");
+                html += `<button class="btn-exam" onclick="openCustomPracticeBuilder(${cleanObj}, '${cleanTitle}')" style="background-color: var(--primary-yellow); color: black; border: none; grid-column: 1 / -1; margin-bottom: 10px;">⚙️ Custom Practice Setup</button>`; 
+            }
+
             for (let key in currentLevel) { 
                 if (currentPath.length === 0 && key === "Daily Quiz Challenge") continue; 
                 let checkPath = currentPath.join(" > ") + (currentPath.length > 0 ? " > " : "") + key;
@@ -1308,6 +1520,73 @@
             }
             if (currentPath.length > 0) { html += `<button class="btn-exam" onclick="goBack()" style="grid-column: 1 / -1; background-color: #222; border-color: #444; color: #a0a0a0; margin-top: 10px;">&larr; Go Back</button>`; }
             html += `</div></div>`; mainContent.innerHTML = html;
+        }
+
+        // CUSTOM PRACTICE BUILDER
+        let customQuizConfig = { paths: [], count: 20, level: 'Mixed' };
+
+        function openCustomPracticeBuilder(levelObj, rootTitle) {
+            let optionsHtml = '';
+            function traverseForOptions(obj, currentPathStr) {
+                for (let key in obj) {
+                    if (key === "Daily Quiz Challenge") continue;
+                    let fullPath = currentPathStr ? currentPathStr + " > " + key : key;
+                    if (customTopicTypes[fullPath] === 'mcq') {
+                        optionsHtml += `<label style="display:flex; align-items:center; gap:8px; background:#1a1a1a; padding:10px; border-radius:6px; border:1px solid var(--border-color);"><input type="checkbox" value="${fullPath}" class="custom-practice-cb" checked> <span style="font-size:14px;">${key}</span></label>`;
+                    }
+                    if (typeof obj[key] === 'object' && !Array.isArray(obj[key])) traverseForOptions(obj[key], fullPath);
+                }
+            }
+            let base = currentPath.length > 0 ? currentPath.join(" > ") : "";
+            traverseForOptions(levelObj, base);
+
+            if(optionsHtml === '') { showNotification("⚠️ No MCQ topics found inside this section."); return; }
+
+            const mc = document.getElementById('dynamic-content');
+            mc.innerHTML = `
+                <div class="card">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <h2 style="color:var(--primary-yellow); margin:0;">⚙️ Custom Practice Setup</h2>
+                        <button class="btn-exam" onclick="goBack()" style="background:#333; padding:6px 12px; font-size:13px;">Cancel</button>
+                    </div>
+                    <p style="color:var(--text-muted); margin-bottom:25px;">Mix and match subjects, select difficulty, and build your own test.</p>
+                    
+                    <div class="custom-practice-box">
+                        <h4 style="margin-top:0; color:white;">1. Select Subjects / Chapters to Include:</h4>
+                        <div class="custom-topic-list">${optionsHtml}</div>
+                        <button onclick="document.querySelectorAll('.custom-practice-cb').forEach(cb=>cb.checked=true)" style="background:none; border:none; color:var(--primary-yellow); cursor:pointer; font-size:13px;">Select All</button> | <button onclick="document.querySelectorAll('.custom-practice-cb').forEach(cb=>cb.checked=false)" style="background:none; border:none; color:var(--primary-yellow); cursor:pointer; font-size:13px;">Deselect All</button>
+                    </div>
+
+                    <div style="display:flex; gap:20px; flex-wrap:wrap; margin-bottom:30px;">
+                        <div style="flex:1; min-width:200px;">
+                            <label style="color:var(--text-muted); font-size:13px; font-weight:bold; margin-bottom:5px; display:block;">2. Number of Questions:</label>
+                            <input type="number" id="customQCount" class="input-field" value="20" min="5" max="100">
+                        </div>
+                        <div style="flex:1; min-width:200px;">
+                            <label style="color:var(--text-muted); font-size:13px; font-weight:bold; margin-bottom:5px; display:block;">3. Difficulty Level:</label>
+                            <select id="customQLevel" class="input-field">
+                                <option value="Mixed">Mixed (All Levels)</option>
+                                <option value="Easy">Easy Only</option>
+                                <option value="Medium">Medium Only</option>
+                                <option value="Hard">Hard Only</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <button class="btn-exam" onclick="launchCustomQuiz()" style="width:100%; background:var(--primary-yellow); color:black; font-size:18px; padding:15px; border:none; border-radius:8px; box-shadow:0 4px 15px rgba(253,184,19,0.3);">▶️ Generate & Start Quiz</button>
+                </div>
+            `;
+        }
+
+        async function launchCustomQuiz() {
+            const checkedPaths = Array.from(document.querySelectorAll('.custom-practice-cb:checked')).map(cb => cb.value);
+            if(checkedPaths.length === 0) return showNotification("⚠️ Select at least one chapter.");
+            
+            customQuizConfig.paths = checkedPaths;
+            customQuizConfig.count = parseInt(document.getElementById('customQCount').value) || 20;
+            customQuizConfig.level = document.getElementById('customQLevel').value;
+            
+            _initiateQuizEngine(true);
         }
         
         function requiresQuizLogin(pathArray) {
@@ -1401,7 +1680,7 @@
                 dropdown.innerHTML = results.slice(0, 8).map(res => { 
                     const cleanPath = JSON.stringify(res.pathArray).replace(/"/g, "'"); 
                     let regex = new RegExp(`(${query})`, 'gi');
-                    let highlightedText = res.pathArray.join(" <span style='color:var(--text-muted);font-size:12px;'>&rarr;</span> ").replace(regex, "<span class='highlight-match'>$1</span>");
+                    let highlightedText = res.pathArray.map(part => part.replace(regex, "<span class='highlight-match'>$1</span>")).join(" <span style='color:var(--text-muted);font-size:12px;'>&rarr;</span> ");
                     return `<div class="suggestion-item" onclick="jumpToSection(${cleanPath}); closeSearch();">🔍 <span>${highlightedText}</span></div>`; 
                 }).join(''); 
             } else { 
