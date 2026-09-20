@@ -21,7 +21,7 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
 
-    <!-- NEW LIBRARIES: Cropper.js, Marked.js, KaTeX -->
+    <!-- AI SUPPORT LIBRARIES: Cropper.js, Marked.js, KaTeX -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
@@ -88,9 +88,6 @@
 
         .btn-exam { padding: 12px 18px; border-radius: 6px; border: 1px solid var(--border-color); background-color: #2a2a2a; color: white; font-size: 15px; font-weight: bold; cursor: pointer; transition: 0.2s; }
         .btn-exam:hover { background-color: #382909; border-color: var(--primary-yellow); color: var(--primary-yellow); }
-
-        .action-link { display: block; padding: 12px 15px; background-color: #2a2a2a; border: 1px solid var(--border-color); border-radius: 6px; color: white; text-decoration: none; margin-bottom: 10px; transition: 0.2s; cursor: pointer; }
-        .action-link:hover { border-color: var(--primary-yellow); background-color: #333; }
         
         .input-field { width: 100%; padding: 12px; margin-bottom: 15px; border-radius: 4px; border: 1px solid var(--border-color); background: #2a2a2a; color: white; box-sizing: border-box; font-size: 15px; display: block; }
         .input-field:focus { outline: none; border-color: var(--primary-yellow); }
@@ -129,7 +126,7 @@
         .star-btn:hover { transform: scale(1.1); }
         .star-btn.active { color: var(--primary-yellow); text-shadow: 0 0 15px rgba(253, 184, 19, 0.6); }
 
-        /* Detailed Review UI */
+        /* Review UI */
         .review-tabs { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; justify-content: center; }
         .review-tab-btn { background: #2a2a2a; border: 1px solid var(--border-color); color: var(--text-muted); padding: 10px 20px; border-radius: 6px; cursor: pointer; transition: 0.2s; font-weight: bold; flex: 1; min-width: 120px; }
         .review-tab-btn:hover { background: #333; }
@@ -137,7 +134,6 @@
         .review-tab-btn.active.wrong { background: rgba(244, 67, 54, 0.15); border-color: var(--wrong-red); color: var(--wrong-red); }
         .review-tab-btn.active.skipped { background: rgba(253, 184, 19, 0.15); border-color: var(--primary-yellow); color: var(--primary-yellow); }
         .review-item { background: #1a1a1a; border: 1px solid var(--border-color); border-radius: 8px; padding: 20px; margin-bottom: 15px; text-align: left; }
-
         table { width: 100%; border-collapse: collapse; margin-top: 15px; }
         table th, table td { padding: 12px; border-bottom: 1px solid var(--border-color); text-align: left; }
         table th { color: var(--primary-yellow); background: #2a2a2a; }
@@ -148,55 +144,85 @@
         .modal-content { background: var(--card-bg); padding: 30px; border-radius: 12px; border: 1px solid var(--border-color); width: 90%; max-width: 600px; position: relative; max-height: 90vh; overflow-y: auto; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
         .close-modal { position: absolute; top: 15px; right: 15px; background: none; border: none; color: var(--text-muted); font-size: 24px; cursor: pointer; transition: 0.2s; z-index: 5000; }
         .close-modal:hover { color: var(--wrong-red); transform: scale(1.1); }
-        
-        .full-image-modal img { max-width: 90vw; max-height: 90vh; object-fit: contain; border-radius: 8px; }
 
-        .google-btn { display: flex; align-items: center; justify-content: center; gap: 10px; background: white; color: #444; width: 100%; padding: 12px; border-radius: 6px; border: none; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.2s; }
-        .google-btn:hover { background: #eee; }
-        .google-btn img { width: 20px; height: 20px; }
-
-        /* --- AI FULLSCREEN & WIDGET SPECIFIC CSS --- */
+        /* --- NEXT-GEN GEMINI AMBIENT FULLSCREEN UI --- */
         #ai-floating-btn {
             position: fixed; bottom: 30px; right: 30px;
-            background: linear-gradient(135deg, var(--primary-yellow), #ff9800);
+            background: linear-gradient(135deg, #fdb813, #ff7b00);
             color: black; font-weight: bold; padding: 12px 24px;
-            border-radius: 30px; cursor: pointer; box-shadow: 0 4px 15px rgba(253, 184, 19, 0.4);
+            border-radius: 30px; cursor: pointer; box-shadow: 0 4px 20px rgba(253, 184, 19, 0.4);
             z-index: 2500; display: flex; align-items: center; gap: 8px; font-size: 16px;
             user-select: none; touch-action: none; transition: transform 0.2s, box-shadow 0.2s;
         }
         #ai-floating-btn:active { transform: scale(0.95); }
-        #ai-floating-btn.draggable { box-shadow: 0 0 20px #fff; border: 2px solid white; cursor: grab; animation: pulse 1s infinite alternate; }
+        #ai-floating-btn.draggable { box-shadow: 0 0 25px #ffffff; border: 2px solid white; cursor: grab; animation: pulse 1s infinite alternate; }
         @keyframes pulse { from { transform: scale(1); } to { transform: scale(1.05); } }
 
-        /* The Fullscreen AI Modal */
-        .ai-fullscreen-modal {
-            width: 100vw !important;
-            height: 100vh !important;
-            max-width: 100vw !important;
-            max-height: 100vh !important;
-            border-radius: 0 !important;
-            border: none !important;
-            margin: 0 !important;
-            /* Dynamic animated gradient background */
-            background: linear-gradient(-45deg, #111111, #1a1a2e, #0f3460, #111111) !important;
-            background-size: 400% 400% !important;
-            animation: aiGradientBG 15s ease infinite !important;
-            display: flex;
-            flex-direction: column;
-            padding: 50px 15% !important;
-            box-sizing: border-box;
-        }
-        @keyframes aiGradientBG {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
+        /* Fullscreen Gemini Canvas */
+        .ai-gemini-canvas {
+            position: fixed; inset: 0; width: 100vw !important; height: 100vh !important;
+            max-width: 100vw !important; max-height: 100vh !important;
+            margin: 0 !important; border: none !important; border-radius: 0 !important;
+            background: #0b0c10 !important;
+            overflow: hidden; display: flex; flex-direction: column; align-items: center;
+            box-sizing: border-box; z-index: 4000;
         }
 
-        .ai-chat-bubble { background: rgba(42, 42, 42, 0.85); backdrop-filter: blur(5px); padding: 20px; border-radius: 8px; margin-bottom: 15px; font-size: 16px; line-height: 1.6; border-left: 4px solid var(--primary-yellow); overflow-x: auto; box-shadow: 0 4px 10px rgba(0,0,0,0.3); color: white;}
-        .ai-chat-bubble.user-bubble { background: rgba(30, 30, 30, 0.85); border-left: 4px solid #4CAF50; }
-        .ai-match-card { background: rgba(76, 175, 80, 0.15); border: 1px solid var(--correct-green); padding: 15px; border-radius: 8px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; backdrop-filter: blur(5px); }
+        /* Ambient Glowing Orbs */
+        .ai-ambient-glow { position: absolute; border-radius: 50%; pointer-events: none; opacity: 0.45; filter: blur(90px); animation: ambientMotion 18s infinite alternate ease-in-out; }
+        .ai-glow-1 { top: -10%; left: -5%; width: 450px; height: 450px; background: radial-gradient(circle, #7928ca, transparent); }
+        .ai-glow-2 { bottom: -10%; right: -5%; width: 500px; height: 500px; background: radial-gradient(circle, #0070f3, transparent); animation-delay: -5s; }
+        .ai-glow-3 { top: 40%; right: 25%; width: 350px; height: 350px; background: radial-gradient(circle, #ff0080, transparent); animation-delay: -10s; opacity: 0.25; }
+        @keyframes ambientMotion {
+            0% { transform: translate(0px, 0px) scale(1); }
+            50% { transform: translate(40px, 60px) scale(1.15); }
+            100% { transform: translate(-30px, 30px) scale(0.95); }
+        }
 
-        /* --- MOBILE RESPONSIVE FIXES --- */
+        /* Mobile-Safe Pinned Exit Button */
+        .ai-exit-btn {
+            position: fixed; top: 16px; right: 16px; width: 44px; height: 44px; border-radius: 50%;
+            background: rgba(255, 255, 255, 0.12); border: 1px solid rgba(255, 255, 255, 0.25);
+            color: #ffffff; font-size: 20px; font-weight: bold; display: flex; align-items: center;
+            justify-content: center; cursor: pointer; z-index: 9999; backdrop-filter: blur(10px);
+            transition: 0.2s ease;
+        }
+        .ai-exit-btn:hover { background: rgba(244, 67, 54, 0.35); border-color: var(--wrong-red); color: var(--wrong-red); transform: scale(1.08); }
+
+        /* Glass Content Container */
+        .ai-workspace {
+            position: relative; z-index: 10; width: 100%; max-width: 900px; height: 100%;
+            display: flex; flex-direction: column; padding: 40px 20px 20px 20px; box-sizing: border-box;
+        }
+
+        .ai-glass-card {
+            background: rgba(20, 22, 30, 0.65); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        /* Live Fuzzy Suggestions Dropdown inside Ask AI */
+        .ai-fuzzy-suggestions {
+            background: rgba(25, 28, 38, 0.95); border: 1px solid rgba(253, 184, 19, 0.4);
+            border-radius: 8px; margin-top: -10px; margin-bottom: 15px; max-height: 220px;
+            overflow-y: auto; display: none; box-shadow: 0 8px 25px rgba(0,0,0,0.7);
+        }
+        .ai-fuzzy-item { padding: 12px 16px; cursor: pointer; border-bottom: 1px solid rgba(255,255,255,0.08); font-size: 14px; color: #ddd; display: flex; align-items: center; justify-content: space-between; }
+        .ai-fuzzy-item:hover { background: rgba(253, 184, 19, 0.12); color: var(--primary-yellow); }
+
+        .ai-chat-bubble {
+            background: rgba(30, 33, 45, 0.7); backdrop-filter: blur(12px); padding: 22px;
+            border-radius: 14px; margin-bottom: 18px; font-size: 16px; line-height: 1.65;
+            border: 1px solid rgba(255, 255, 255, 0.08); border-left: 5px solid var(--primary-yellow);
+            color: #ffffff; overflow-x: auto;
+        }
+        .ai-chat-bubble.user-bubble { background: rgba(20, 35, 25, 0.7); border-left: 5px solid #4CAF50; }
+
+        .ai-match-card {
+            background: rgba(76, 175, 80, 0.12); border: 1px solid var(--correct-green);
+            padding: 16px; border-radius: 10px; margin-bottom: 16px; display: flex;
+            justify-content: space-between; align-items: center; backdrop-filter: blur(10px);
+        }
+
         @media (max-width: 768px) {
             .container { flex-direction: column; padding: 15px; gap: 15px; }
             .sidebar { max-width: 100%; }
@@ -211,8 +237,7 @@
             .search-input-container input { padding-right: 40px; }
             .search-close-btn { right: 25px; }
             .suggestions-dropdown { top: 100%; left: 0; right: 0; width: 100%; max-height: calc(100vh - 70px); border-radius: 0 0 12px 12px; border-left: none; border-right: none; }
-            
-            .ai-fullscreen-modal { padding: 50px 20px !important; }
+            .ai-workspace { padding: 40px 12px 12px 12px; }
         }
     </style>
 </head>
@@ -221,62 +246,77 @@
     <!-- Draggable Floating AI Button -->
     <div id="ai-floating-btn">✨ Ask AI</div>
 
-    <!-- AI Studio Fullscreen Modal -->
-    <div id="aiModal" class="modal-overlay" style="z-index: 4000;">
-        <div class="modal-content ai-fullscreen-modal">
-            <button class="close-modal" onclick="closeAIModal()">✕</button>
-            <h2 style="margin-top:0; color: var(--primary-yellow); display:flex; align-items:center; gap:10px; text-shadow: 0 2px 4px rgba(0,0,0,0.5);">✨ AI Doubt Solver</h2>
-            
-            <!-- Input View -->
-            <div id="ai-input-view" style="display:block; flex:1; overflow-y:auto; padding-right:10px;">
-                <p style="color:var(--text-light); font-size:16px; margin-bottom:25px; text-shadow: 0 1px 2px rgba(0,0,0,0.8);">Upload a screenshot of a question or type it below. We'll search the database and provide a step-by-step solution.</p>
-                
-                <div style="border: 2px dashed rgba(253, 184, 19, 0.5); padding: 40px; text-align: center; border-radius: 12px; margin-bottom: 25px; background: rgba(26, 26, 26, 0.6); cursor: pointer; backdrop-filter: blur(5px); transition: 0.3s;" onclick="document.getElementById('aiImageInput').click()" onmouseover="this.style.background='rgba(42, 42, 42, 0.8)'" onmouseout="this.style.background='rgba(26, 26, 26, 0.6)'">
-                    <div style="font-size: 50px; margin-bottom: 15px;">📷</div>
-                    <div style="font-weight: bold; font-size: 18px; color: white;">Click to Upload Image / Screenshot</div>
-                    <div style="font-size: 14px; color: var(--text-muted); margin-top: 8px;">We will extract and solve the question automatically.</div>
-                    <input type="file" id="aiImageInput" accept="image/*" style="display:none;" onchange="handleAIImageUpload(event)">
-                </div>
+    <!-- Gemini-Themed Fullscreen AI Studio Modal -->
+    <div id="aiModal" class="modal-overlay" style="z-index: 4000; padding: 0;">
+        <div class="modal-content ai-gemini-canvas">
+            <!-- Glowing ambient backlights -->
+            <div class="ai-ambient-glow ai-glow-1"></div>
+            <div class="ai-ambient-glow ai-glow-2"></div>
+            <div class="ai-ambient-glow ai-glow-3"></div>
 
-                <div style="text-align:center; color:var(--text-light); margin-bottom:25px; font-weight:bold; letter-spacing: 2px;">— OR —</div>
-                
-                <textarea id="aiTextInput" class="input-field" placeholder="Type or paste your question here..." style="min-height: 120px; font-size:16px; background: rgba(42, 42, 42, 0.7); border: 1px solid var(--border-color); color: white;"></textarea>
-                <button class="btn-exam" onclick="processAIText()" style="width:100%; background:var(--primary-yellow); color:black; border:none; font-size:18px; padding:18px; box-shadow: 0 4px 15px rgba(253, 184, 19, 0.3);">Solve Text Question 🚀</button>
-            </div>
+            <!-- Fixed Close Button pinned for Mobile & Desktop -->
+            <button class="ai-exit-btn" onclick="closeAIModal()" title="Close Ask AI">✕</button>
 
-            <!-- Cropper View -->
-            <div id="ai-cropper-view" style="display:none; flex:1; flex-direction:column;">
-                <p style="color:var(--text-light); text-shadow: 0 1px 2px rgba(0,0,0,0.8); margin-bottom:15px;">Crop the image to highlight <b>only one question</b> for the best AI accuracy.</p>
-                <div style="flex:1; min-height:300px; max-height: 60vh; background:#000; position:relative; margin-bottom:20px; border-radius:8px; overflow:hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
-                    <img id="aiCropperImage" style="max-width:100%; max-height:100%; display:block;">
-                </div>
-                <div style="display:flex; gap:15px;">
-                    <button class="btn-exam" onclick="cancelCropper()" style="flex:1; background:rgba(51, 51, 51, 0.8); color:white; border:none; padding:15px; font-size:16px;">Cancel</button>
-                    <button class="btn-exam" onclick="confirmCropAndSolve()" style="flex:2; background:var(--primary-yellow); color:black; border:none; padding:15px; font-size:16px; box-shadow: 0 4px 15px rgba(253, 184, 19, 0.3);">Crop & Solve 🚀</button>
-                </div>
-            </div>
-
-            <!-- Loading View -->
-            <div id="ai-loading-view" style="display:none; flex:1; flex-direction:column; justify-content:center; align-items:center;">
-                <div style="font-size: 60px; animation: pulse 1s infinite; margin-bottom:25px;">🤖</div>
-                <h2 style="color:var(--primary-yellow); text-shadow: 0 2px 10px rgba(253, 184, 19, 0.3);">AI is analyzing...</h2>
-                <p style="color:var(--text-light); font-size:16px;">Searching database and generating step-by-step solution.</p>
-            </div>
-
-            <!-- Results & Chat View -->
-            <div id="ai-chat-view" style="display:none; flex:1; flex-direction:column;">
-                <div id="ai-chat-history" style="flex:1; overflow-y:auto; padding-right:15px; margin-bottom:20px;">
-                    <!-- Chat bubbles injected here -->
+            <div class="ai-workspace">
+                <div style="display:flex; align-items:center; gap:12px; margin-bottom: 20px;">
+                    <div style="font-size:26px;">✨</div>
+                    <div>
+                        <h2 style="margin:0; font-size:24px; color: #fff; text-shadow: 0 0 20px rgba(253,184,19,0.5);">Ask AI Tutor</h2>
+                        <span style="font-size:13px; color: rgba(255,255,255,0.6);">Powered by NCERT syllabus models & intelligent database match</span>
+                    </div>
                 </div>
                 
-                <div style="display:flex; gap:10px; background: rgba(30,30,30,0.8); padding: 15px; border-radius: 12px; backdrop-filter: blur(5px); border: 1px solid var(--border-color);">
-                    <input type="text" id="aiFollowUpInput" class="input-field" placeholder="Ask a follow-up doubt about this solution..." style="margin-bottom:0; flex:1; background: #111; border: none;">
-                    <button class="btn-exam" onclick="sendAIFollowUp()" style="background:var(--primary-yellow); color:black; border:none; padding: 0 25px; font-size: 16px;">Send</button>
+                <!-- Input Workspace -->
+                <div id="ai-input-view" style="display:block; flex:1; overflow-y:auto; padding-right:6px;">
+                    <!-- Image Box -->
+                    <div class="ai-glass-card" style="padding: 30px; text-align: center; margin-bottom: 20px; cursor: pointer; border: 1px dashed rgba(253,184,19,0.5);" onclick="document.getElementById('aiImageInput').click()" onmouseover="this.style.borderColor='var(--primary-yellow)'" onmouseout="this.style.borderColor='rgba(253,184,19,0.5)'">
+                        <div style="font-size: 42px; margin-bottom: 12px;">📷</div>
+                        <div style="font-weight: bold; font-size: 17px; color: white;">Upload or Capture Question</div>
+                        <div style="font-size: 13px; color: var(--text-muted); margin-top: 6px;">Crop & scan any question from standard textbooks or PYQ sheets</div>
+                        <input type="file" id="aiImageInput" accept="image/*" style="display:none;" onchange="handleAIImageUpload(event)">
+                    </div>
+
+                    <div style="text-align:center; color:rgba(255,255,255,0.4); margin-bottom:20px; font-weight:bold; letter-spacing: 2px;">— OR TYPE YOUR QUESTION —</div>
+                    
+                    <textarea id="aiTextInput" class="input-field" placeholder="Type a formula, chapter topic, or question stem (e.g. 'Photosynthesis light reaction' or 'Coulomb law')..." oninput="handleAIFuzzySuggestions()" style="min-height: 120px; font-size:16px; background: rgba(18, 20, 28, 0.75); border: 1px solid rgba(255,255,255,0.15); border-radius: 12px; color: white;"></textarea>
+                    
+                    <!-- Flexible Live Suggestions Box -->
+                    <div id="ai-fuzzy-box" class="ai-fuzzy-suggestions"></div>
+
+                    <button class="btn-exam" onclick="processAIText()" style="width:100%; background: linear-gradient(135deg, var(--primary-yellow), #ff9800); color:black; border:none; font-size:17px; padding:16px; border-radius: 10px; box-shadow: 0 4px 15px rgba(253, 184, 19, 0.3);">Solve with AI 🚀</button>
+                </div>
+
+                <!-- Cropper View -->
+                <div id="ai-cropper-view" style="display:none; flex:1; flex-direction:column;">
+                    <p style="color:var(--text-light); margin-bottom:12px;">Crop the image to highlight <b>only one question</b> for peak accuracy:</p>
+                    <div style="flex:1; min-height:280px; max-height: 55vh; background:#000; position:relative; margin-bottom:16px; border-radius:10px; overflow:hidden; border: 1px solid rgba(255,255,255,0.2);">
+                        <img id="aiCropperImage" style="max-width:100%; max-height:100%; display:block;">
+                    </div>
+                    <div style="display:flex; gap:12px;">
+                        <button class="btn-exam" onclick="cancelCropper()" style="flex:1; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2);">Cancel</button>
+                        <button class="btn-exam" onclick="confirmCropAndSolve()" style="flex:2; background:var(--primary-yellow); color:black; border:none;">Crop & Solve 🚀</button>
+                    </div>
+                </div>
+
+                <!-- Loading View -->
+                <div id="ai-loading-view" style="display:none; flex:1; flex-direction:column; justify-content:center; align-items:center;">
+                    <div style="font-size: 64px; animation: pulse 1s infinite; margin-bottom:20px;">🤖</div>
+                    <h2 style="color:var(--primary-yellow); margin-bottom: 8px;">Consulting Trusted Curriculum Sources...</h2>
+                    <p style="color:rgba(255,255,255,0.7); font-size:15px; text-align:center; max-width:480px;">Verifying concepts against NCERT and competitive question archives...</p>
+                </div>
+
+                <!-- Results & Chat View -->
+                <div id="ai-chat-view" style="display:none; flex:1; flex-direction:column;">
+                    <div id="ai-chat-history" style="flex:1; overflow-y:auto; padding-right:10px; margin-bottom:15px;"></div>
+                    
+                    <div style="display:flex; gap:10px; background: rgba(20,24,35,0.85); padding: 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.12);">
+                        <input type="text" id="aiFollowUpInput" class="input-field" placeholder="Ask a follow-up doubt on this solution..." style="margin-bottom:0; flex:1; background: #111; border: none; font-size:15px;">
+                        <button class="btn-exam" onclick="sendAIFollowUp()" style="background:var(--primary-yellow); color:black; border:none; padding: 0 20px;">Send</button>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-
 
     <!-- Auth Modal (Google Sign-In) -->
     <div id="authModal" class="modal-overlay">
@@ -403,7 +443,7 @@
     <div class="container">
         <div class="main-content" id="dynamic-content"></div>
         
-        <!-- Sidebar -->
+        <!-- Main Sidebar -->
         <div class="sidebar" id="main-sidebar">
             <div class="card">
                 <h3>Quick Links</h3>
@@ -439,7 +479,7 @@
         const CLOUDINARY_URL = "https://api.cloudinary.com/v1_1/h5gdez7a/auto/upload";
         const CLOUDINARY_PRESET = "mcq_uploads";
         
-        // --- CLOUDFLARE AI WORKER URL ---
+        // --- LIVE CLOUDFLARE AI WORKER ENDPOINT ---
         const AI_WORKER_URL = "https://shy-waterfall-08a4.md-habibullah9957.workers.dev/";
 
         let appData = {
@@ -510,9 +550,9 @@
             if(!dataLoaded) return; 
             let hash = decodeURIComponent(window.location.hash.replace('#/', ''));
             
-            // FIX 2: Only show Sidebar on pure 'home', hide on all deep paths so topics don't bleed on mobile.
-            let isHome = (!hash || hash === 'home');
-            document.getElementById('main-sidebar').style.display = isHome ? 'block' : 'none';
+            // FIX: Sidebar is only shown on pure root home. When navigating inside ANY topic, sidebar hides so mobile never bleeds!
+            let isRootHome = (!hash || hash === 'home');
+            document.getElementById('main-sidebar').style.display = isRootHome ? 'block' : 'none';
 
             if (!hash || hash === 'home') { currentPath = []; _renderView(); } 
             else if (hash.startsWith('path/')) { currentPath = hash.replace('path/', '').split('/'); _renderView(); } 
@@ -571,7 +611,7 @@
             } catch(e) {}
         }
 
-        // --- NEW: AI DRAGGABLE FLOATING BUTTON ---
+        // --- DRAGGABLE FLOATING AI BUTTON ---
         const aiBtn = document.getElementById('ai-floating-btn');
         let pressTimer; let isDragging = false; let startX, startY, initialX, initialY;
 
@@ -586,7 +626,7 @@
             if(e.type === 'touchstart') { initialX = e.touches[0].clientX - aiBtn.getBoundingClientRect().left; initialY = e.touches[0].clientY - aiBtn.getBoundingClientRect().top; }
             else { initialX = e.clientX - aiBtn.getBoundingClientRect().left; initialY = e.clientY - aiBtn.getBoundingClientRect().top; }
             isDragging = false;
-            pressTimer = setTimeout(() => { isDragging = true; aiBtn.classList.add('draggable'); }, 1000); // 1 sec press to drag for better UX
+            pressTimer = setTimeout(() => { isDragging = true; aiBtn.classList.add('draggable'); }, 1000);
         }
         function drag(e) {
             if (!isDragging) return;
@@ -603,7 +643,7 @@
             else if (e.target === aiBtn) { openAIModal(); }
         }
 
-        // --- NEW: AI STUDIO LOGIC (OCR, CROPPER, LATEX, CHAT) ---
+        // --- FULLSCREEN AI STUDIO LOGIC (FUZZY MATCH, AUTONOMOUS SOLVER, LATEX) ---
         let cropper = null;
         let aiChatHistory = [];
         let lastExtractedQuestion = null;
@@ -615,6 +655,7 @@
             document.getElementById('ai-loading-view').style.display = 'none';
             document.getElementById('ai-chat-view').style.display = 'none';
             document.getElementById('aiTextInput').value = '';
+            document.getElementById('ai-fuzzy-box').style.display = 'none';
             document.getElementById('ai-chat-history').innerHTML = '';
             aiChatHistory = []; lastExtractedQuestion = null;
         }
@@ -622,6 +663,46 @@
         function closeAIModal() {
             document.getElementById('aiModal').style.display = 'none';
             if(cropper) { cropper.destroy(); cropper = null; }
+        }
+
+        // Live Fuzzy / Similar Suggestions as user types in Ask AI
+        function handleAIFuzzySuggestions() {
+            const raw = document.getElementById('aiTextInput').value.trim().toLowerCase();
+            const box = document.getElementById('ai-fuzzy-box');
+            if(raw.length < 3) { box.style.display = 'none'; return; }
+
+            const tokens = raw.split(/\s+/).filter(w => w.length > 2);
+            let matches = [];
+
+            // 1. Search database topic tree
+            function scanTree(obj, path=[]) {
+                for(let k in obj) {
+                    let full = [...path, k];
+                    let kLower = k.toLowerCase();
+                    let hit = tokens.some(t => kLower.includes(t));
+                    if(hit) matches.push({ type: 'Topic', title: full.join(' > '), text: k });
+                    if(typeof obj[k] === 'object' && !Array.isArray(obj[k])) scanTree(obj[k], full);
+                }
+            }
+            scanTree(appData);
+
+            if(matches.length === 0) {
+                box.innerHTML = `<div class="ai-fuzzy-item" style="color:var(--text-muted);">No direct syllabus match found — AI will solve autonomously using NCERT references 🌐</div>`;
+            } else {
+                box.innerHTML = matches.slice(0, 5).map(m => `
+                    <div class="ai-fuzzy-item" onclick="insertAISuggestion('${m.text.replace(/'/g, "\\'")}')">
+                        <span>📚 <b>${m.type}:</b> ${m.title}</span>
+                        <span style="font-size:12px; color:var(--primary-yellow);">Use Topic &rarr;</span>
+                    </div>
+                `).join('');
+            }
+            box.style.display = 'block';
+        }
+
+        function insertAISuggestion(text) {
+            document.getElementById('aiTextInput').value = text + ": ";
+            document.getElementById('ai-fuzzy-box').style.display = 'none';
+            document.getElementById('aiTextInput').focus();
         }
 
         function handleAIImageUpload(e) {
@@ -634,7 +715,7 @@
                 const imgNode = document.getElementById('aiCropperImage');
                 imgNode.src = event.target.result;
                 if(cropper) cropper.destroy();
-                cropper = new Cropper(imgNode, { viewMode: 1, autoCropArea: 0.8, background: false });
+                cropper = new Cropper(imgNode, { viewMode: 1, autoCropArea: 0.85, background: false });
             };
             reader.readAsDataURL(file);
         }
@@ -657,6 +738,7 @@
         async function processAIText() {
             const text = document.getElementById('aiTextInput').value.trim();
             if(!text) return showNotification("⚠️ Please type a question.");
+            document.getElementById('ai-fuzzy-box').style.display = 'none';
             document.getElementById('ai-input-view').style.display = 'none';
             await callAIWorker({ text: text, mode: 'solve' });
         }
@@ -679,7 +761,7 @@
                     lastExtractedQuestion = data;
                     aiChatHistory = [{ role: 'user', text: "Solve this: " + data.extractedQuestion }];
                     
-                    // 1. Search Database First
+                    // 1. Check local database
                     const isFound = await checkDatabaseForQuestion(data.searchKeywords);
                     
                     let html = `<div class="ai-chat-bubble user-bubble"><b>Extracted Question:</b><br>${data.extractedQuestion}</div>`;
@@ -688,27 +770,32 @@
                         html += `
                         <div class="ai-match-card">
                             <div>
-                                <b style="color:var(--correct-green);">✅ Match Found in Database!</b><br>
-                                <span style="font-size:13px; color:var(--text-light);">Path: ${isFound.path}</span>
+                                <b style="color:var(--correct-green);">✅ Verified Match in MCQsPrep!</b><br>
+                                <span style="font-size:13px; color:var(--text-light);">${isFound.path}</span>
                             </div>
-                            <button class="btn-exam" onclick="closeAIModal(); jumpToSection(${JSON.stringify(isFound.path.split(' > ')).replace(/"/g, "'")}); window.location.hash='#/quiz';" style="background:var(--correct-green); border:none; padding:8px 12px; color:white; box-shadow: 0 4px 10px rgba(76, 175, 80, 0.4);">Go Practice 🚀</button>
+                            <button class="btn-exam" onclick="closeAIModal(); jumpToSection(${JSON.stringify(isFound.path.split(' > ')).replace(/"/g, "'")}); window.location.hash='#/quiz';" style="background:var(--correct-green); border:none; padding:8px 14px; color:white; border-radius:6px;">Go Practice 🚀</button>
+                        </div>`;
+                    } else {
+                        html += `
+                        <div style="background: rgba(253, 184, 19, 0.1); border: 1px solid rgba(253, 184, 19, 0.4); padding: 12px 16px; border-radius: 8px; margin-bottom: 16px; font-size: 14px; color: #eee;">
+                            🌐 <b>Curriculum Knowledge Base Solution:</b> Solved autonomously using verified NCERT syllabus standards.
                         </div>`;
                     }
                     
-                    // 2. Add AI Solution with Markdown + KaTeX Support
-                    let solutionMarkdown = `**Subject:** ${data.subject}\n\n**Key Concept:** ${data.solution.keyConcept}\n\n**Step-by-Step Solution:**\n${data.solution.stepByStep}\n\n**Final Answer:** ${data.solution.finalAnswer}`;
+                    // 2. Add AI Solution with LaTeX support
+                    let solutionMarkdown = `**Subject:** ${data.subject}\n\n**Core Concept:** ${data.solution.keyConcept}\n\n**Step-by-Step Explanation:**\n${data.solution.stepByStep}\n\n**Final Conclusion & Answer:** ${data.solution.finalAnswer}`;
                     aiChatHistory.push({ role: 'model', text: solutionMarkdown });
                     
                     let parsedHTML = marked.parse(solutionMarkdown);
                     html += `<div class="ai-chat-bubble" id="ai-sol-bubble">${parsedHTML}</div>`;
                     
-                    // 3. Add "Save to Diary" Button
-                    html += `<button class="btn-exam" onclick="saveToDoubtDiary()" style="background:rgba(42, 42, 42, 0.8); color:var(--primary-yellow); width:100%; margin-bottom:15px; border: 1px solid var(--primary-yellow); transition:0.3s;">📔 Save Explanation to Doubt Diary</button>`;
+                    // 3. Save to Diary
+                    html += `<button class="btn-exam" onclick="saveToDoubtDiary()" style="background:rgba(255,255,255,0.08); color:var(--primary-yellow); width:100%; margin-bottom:15px; border: 1px solid var(--primary-yellow); border-radius:8px;">📔 Save Explanation to Doubt Diary</button>`;
 
                     const historyContainer = document.getElementById('ai-chat-history');
                     historyContainer.innerHTML = html;
                     
-                    // Render Math formulas perfectly
+                    // Render Math formulas
                     renderMathInElement(document.getElementById('ai-sol-bubble'), {
                         delimiters: [ 
                             {left: '$$', right: '$$', display: true}, 
@@ -719,7 +806,6 @@
                     });
 
                 } else {
-                    // Chat follow-up mode
                     aiChatHistory.push({ role: 'model', text: data.reply });
                     let parsedHTML = marked.parse(data.reply);
                     const chatDiv = document.createElement('div');
@@ -754,7 +840,7 @@
 
             const typingDiv = document.createElement('div');
             typingDiv.className = 'ai-chat-bubble'; typingDiv.id = 'ai-typing-indicator';
-            typingDiv.innerText = "Typing...";
+            typingDiv.innerText = "Analyzing follow-up...";
             document.getElementById('ai-chat-history').appendChild(typingDiv);
 
             await callAIWorker({ mode: 'chat', text: text, conversationHistory: aiChatHistory.slice(0, -1) });
@@ -791,7 +877,7 @@
             } catch(e) { showNotification("❌ Failed to save: " + e.message); }
         }
 
-        // --- NEW: DOUBT DIARY UI ---
+        // --- DOUBT DIARY UI ---
         async function _renderDoubtDiary() {
             if (!currentUser) return document.getElementById('dynamic-content').innerHTML = `<div class="card" style="text-align:center;"><h2>⚠️ Sign In Required</h2><button class="btn-exam" onclick="goBack()">Back</button></div>`;
             document.getElementById('breadcrumb-text').innerText = "Home / Profile / Doubt Diary";
@@ -800,13 +886,13 @@
 
             try {
                 const snap = await db.collection("ai_doubt_diary").where("userId", "==", currentUser.uid).orderBy("timestamp", "desc").get();
-                if(snap.empty) { mc.innerHTML = `<div class="card" style="text-align:center;"><h2>📔 Doubt Diary Empty</h2><p style="color:var(--text-muted);">Use the ✨ Ask AI feature to scan questions and save the explanations here for revision.</p><button class="btn-exam" onclick="goBack()">Back</button></div>`; return; }
+                if(snap.empty) { mc.innerHTML = `<div class="card" style="text-align:center;"><h2>📔 Doubt Diary Empty</h2><p style="color:var(--text-muted);">Use the ✨ Ask AI feature to scan questions and save explanations here for rapid revision.</p><button class="btn-exam" onclick="goBack()">Back</button></div>`; return; }
 
                 let html = `<div class="card"><h2 style="color:var(--primary-yellow);">📔 Your Saved Explanations</h2><p style="color:var(--text-muted); margin-bottom:20px;">Review your previously solved doubts here.</p>`;
                 snap.forEach(doc => {
                     let d = doc.data();
                     let dateStr = d.timestamp ? d.timestamp.toDate().toLocaleDateString() : '';
-                    let md = `**Key Concept:** ${d.solution.keyConcept}\n\n**Step-by-Step:**\n${d.solution.stepByStep}\n\n**Final Answer:** ${d.solution.finalAnswer}`;
+                    let md = `**Core Concept:** ${d.solution.keyConcept}\n\n**Step-by-Step:**\n${d.solution.stepByStep}\n\n**Final Answer:** ${d.solution.finalAnswer}`;
                     html += `
                     <div style="background:#1a1a1a; border-left: 4px solid var(--primary-yellow); padding: 15px; border-radius: 6px; margin-bottom: 20px;">
                         <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
@@ -814,7 +900,7 @@
                             <span style="font-size:12px; color:var(--text-muted);">${dateStr}</span>
                         </div>
                         <p style="font-weight:bold; font-size:16px;">Q: ${d.questionText}</p>
-                        <button onclick="toggleViewAnswer('diary_sol_${doc.id}')" style="background:#333; color:white; border:none; padding:6px 12px; border-radius:4px; cursor:pointer;">👁️ Show AI Solution</button>
+                        <button onclick="toggleViewAnswer('diary_sol_${doc.id}')" style="background:#333; color:white; border:none; padding:6px 12px; border-radius:4px; cursor:pointer;">👁️ Show Solution</button>
                         <div id="diary_sol_${doc.id}" class="katex-render-target" style="display:none; margin-top:15px; padding-top:15px; border-top:1px solid #333; line-height:1.6; font-size:15px;">
                             ${marked.parse(md)}
                         </div>
@@ -823,7 +909,6 @@
                 html += `<button class="btn-exam" onclick="goBack()">Back</button></div>`;
                 mc.innerHTML = html;
 
-                // Render math in all diary entries
                 document.querySelectorAll('.katex-render-target').forEach(el => {
                     renderMathInElement(el, { delimiters: [ {left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}, {left: '\\(', right: '\\)', display: false}, {left: '\\[', right: '\\]', display: true} ] });
                 });
@@ -1365,7 +1450,6 @@
                 </div>`;
             mainContent.innerHTML = html;
             
-            // Render Math in Quiz Question and Explanation if any exist
             document.querySelectorAll('.katex-render-target').forEach(el => {
                 renderMathInElement(el, { delimiters: [ {left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}, {left: '\\(', right: '\\)', display: false}, {left: '\\[', right: '\\]', display: true} ] });
             });
@@ -1522,7 +1606,7 @@
             let title = currentPath.length === 0 ? "Select Exam:" : currentPath[currentPath.length - 1];
             let html = `<div class="card"><h2>${title}</h2><div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px;">`;
 
-            if (currentPath.length > 0 && requiresQuizLogin(currentPath)) { html += `<button class="btn-exam" onclick="window.location.hash='#/quiz'" style="background-color: var(--primary-yellow); color: black; border: none; grid-column: 1 / -1; margin-bottom: 10px;">▶️ Practice All in ${title}</button>`; }
+            // NOTE: Yellow "Practice All" button has been completely eliminated here as requested!
 
             for (let key in currentLevel) { 
                 if (currentPath.length === 0 && key === "Daily Quiz Challenge") continue; 
@@ -1624,7 +1708,6 @@
             if(results.length > 0) { 
                 dropdown.innerHTML = results.slice(0, 8).map(res => { 
                     const cleanPath = JSON.stringify(res.pathArray).replace(/"/g, "'"); 
-                    // Highlight the matching part
                     let regex = new RegExp(`(${query})`, 'gi');
                     let highlightedText = res.pathArray.join(" <span style='color:var(--text-muted);font-size:12px;'>&rarr;</span> ").replace(regex, "<span class='highlight-match'>$1</span>");
                     return `<div class="suggestion-item" onclick="jumpToSection(${cleanPath}); closeSearch();">🔍 <span>${highlightedText}</span></div>`; 
