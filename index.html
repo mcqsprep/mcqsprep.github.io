@@ -123,6 +123,11 @@
         .report-btn { background: rgba(244, 67, 54, 0.1); border: 1px solid var(--wrong-red); color: var(--wrong-red); padding: 5px 12px; border-radius: 4px; cursor: pointer; font-size: 14px; transition: 0.2s; }
         .report-btn:hover { background: var(--wrong-red); color: white; }
 
+        /* Rating Stars UI */
+        .star-btn { font-size: 32px; color: var(--text-muted); cursor: pointer; transition: 0.2s; display: inline-block; background: none; border: none; padding: 0 5px; }
+        .star-btn:hover { transform: scale(1.1); }
+        .star-btn.active { color: var(--primary-yellow); }
+
         /* Detailed Review UI */
         .review-tabs { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; justify-content: center; }
         .review-tab-btn { background: #2a2a2a; border: 1px solid var(--border-color); color: var(--text-muted); padding: 10px 20px; border-radius: 6px; cursor: pointer; transition: 0.2s; font-weight: bold; flex: 1; min-width: 120px; }
@@ -320,23 +325,23 @@
         const CLOUDINARY_PRESET = "mcq_uploads";
 
         // ALL INNERMOST NODES ARE NOW EMPTY OBJECTS {}. 
-        // THIS ALLOWS YOU TO STOP ANYWHERE AND ADD CUSTOM FOLDERS INSIDE THEM.
+        // NO MORE HARDCODED "Easy/Medium/Hard". BUILD IT EXACTLY HOW YOU WANT IT.
         let appData = {
             "Daily Quiz Challenge": { 
                 "NEET": {}, 
                 "General Knowledge": {} 
             },
             "NEET": {
-                "NCERT Book": { "Class 11": { "Zoology": {}, "Botany": {}, "Physics": {}, "Chemistry": {} }, "Class 12": { "Zoology": {}, "Botany": {}, "Physics": {}, "Chemistry": {} } },
-                "PYQs": { "2026": {}, "2025": {}, "2024": {}, "2023": {}, "2022": {}, "2021": {}, "2020": {}, "2019": {}, "2018": {}, "2017": {}, "2016": {}, "2015": {}, "2014": {}, "2013": {}, "2012": {}, "2011": {} },
-                "Practice Paper": { "Easy": {}, "Medium": {}, "Hard": {}, "Mixed": {} },
+                "NCERT Book": {},
+                "PYQs": {},
+                "Practice Paper": {},
                 "MCQs Practice": { "Botany": {}, "Zoology": {}, "Physics": {}, "Organic Chemistry": {}, "Physical Chemistry": {}, "Inorganic Chemistry": {} },
-                "Mock Test": "COMING SOON"
+                "Mock Test": {}
             },
             "General Knowledge": { 
-                "Current Affairs": { "National & International": {}, "Government Schemes": {}, "Sports & Tournaments": {}, "Awards & Honors": {}, "Appointments": {}, "Science & Defense": {} },
-                "History": { "Ancient India": {}, "Medieval India": {}, "Modern India": {} },
-                "Geography": { "Indian Physical Geography": {}, "World Geography": {}, "Climate & Environment": {}, "Economic Geography": {} }
+                "Current Affairs": {},
+                "History": {},
+                "Geography": {}
             }
         };
 
@@ -353,13 +358,13 @@
                     let pathArr = data.parentPath.split(' > ');
                     let current = appData;
                     
-                    // Traverse and build path
+                    // Traverse and build path dynamically
                     for (let p of pathArr) {
                         if (!current[p]) current[p] = {};
                         current = current[p];
                     }
                     
-                    // Append new folder as an OBJECT so it can contain children!
+                    // Append new folder as an OBJECT so it can contain infinite children!
                     if (typeof current === 'object' && !Array.isArray(current)) {
                         if (!current[data.name]) current[data.name] = {}; 
                         let fullPath = data.parentPath + " > " + data.name;
@@ -458,7 +463,7 @@
         setInterval(() => {
             if (currentUser && !streakLogged) {
                 activeTime++;
-                if (activeTime >= 300) { // 5 minutes (300 seconds)
+                if (activeTime >= 300) { // 5 minutes
                     logStreakActivity();
                     streakLogged = true;
                 }
@@ -480,28 +485,22 @@
         function calculateStreak(datesArray) {
             if (!datesArray || datesArray.length === 0) return 0;
             let sorted = [...new Set(datesArray)].sort().reverse(); 
-            
             let today = new Date();
             let todayStr = new Date(today.getTime() - (today.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
-            
             let yesterday = new Date(today);
             yesterday.setDate(yesterday.getDate() - 1);
             let yesterdayStr = new Date(yesterday.getTime() - (yesterday.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
 
-            if (!sorted.includes(todayStr) && !sorted.includes(yesterdayStr)) return 0; // Streak broken
+            if (!sorted.includes(todayStr) && !sorted.includes(yesterdayStr)) return 0;
 
             let streak = 0;
             let currDate = new Date();
-            if (!sorted.includes(todayStr)) { currDate.setDate(currDate.getDate() - 1); } // Start counting from yesterday
+            if (!sorted.includes(todayStr)) { currDate.setDate(currDate.getDate() - 1); } 
 
             for(let i=0; i<365; i++) {
                 let dStr = new Date(currDate.getTime() - (currDate.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
-                if (sorted.includes(dStr)) {
-                    streak++;
-                    currDate.setDate(currDate.getDate() - 1);
-                } else {
-                    break;
-                }
+                if (sorted.includes(dStr)) { streak++; currDate.setDate(currDate.getDate() - 1); } 
+                else { break; }
             }
             return streak;
         }
@@ -536,10 +535,8 @@
                     <div class="card" style="text-align:center;">
                         <h2 style="color:var(--primary-yellow);">🔥 Daily Streak</h2>
                         <p style="color:var(--text-muted);">Spend at least 5 minutes practicing on the platform daily to maintain your streak!</p>
-                        
                         <div style="font-size: 80px; margin: 20px 0; text-shadow: 0 0 20px rgba(253,184,19,0.5);">🔥</div>
                         <div style="font-size: 32px; font-weight: bold; margin-bottom: 30px; color: white;">${streak} Day${streak !== 1 ? 's' : ''}</div>
-                        
                         <h3 style="text-align:left; border-bottom: 1px solid var(--border-color); padding-bottom:10px; margin-top:40px;">📅 Recent Active Days</h3>
                         ${dates.length > 0 ? datesHtml : '<p style="text-align:left; color:var(--text-muted);">No activity recorded yet. Start practicing for 5 minutes!</p>'}
                         <button class="btn-exam" onclick="goBack()" style="margin-top:40px; background:#333;">&larr; Exit to Dashboard</button>
@@ -643,21 +640,61 @@
 
             try {
                 await db.collection("reported_mistakes").add({
-                    questionId: q.id,
-                    questionText: q.question,
-                    path: q.path,
-                    reason: reason,
-                    description: description,
+                    questionId: q.id, questionText: q.question, path: q.path, reason: reason, description: description,
+                    studentName: currentUser ? currentUser.displayName : "Anonymous", studentId: currentUser ? currentUser.uid : "unknown",
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                closeReportModal(); showNotification("✅ Report submitted! Admins will review it soon.");
+            } catch(e) { showNotification("❌ Failed to submit report: " + e.message); }
+        }
+
+        // --- RATING / FEEDBACK SYSTEM ---
+        let selectedStars = 0;
+        function updateStarUI(stars) {
+            selectedStars = stars;
+            for(let i=1; i<=5; i++) {
+                document.getElementById('star-'+i).classList.remove('active');
+                if(i <= stars) document.getElementById('star-'+i).classList.add('active');
+            }
+        }
+        
+        async function submitPlatformFeedback() {
+            if (selectedStars === 0) { showNotification("⚠️ Please select a star rating first!"); return; }
+            const feedbackText = document.getElementById('platformFeedbackText').value.trim();
+            const btn = document.getElementById('submitFeedbackBtn');
+            btn.innerText = "Submitting..."; btn.disabled = true;
+            
+            try {
+                await db.collection("platform_feedback").add({
+                    rating: selectedStars,
+                    feedback: feedbackText,
                     studentName: currentUser ? currentUser.displayName : "Anonymous",
                     studentId: currentUser ? currentUser.uid : "unknown",
                     timestamp: firebase.firestore.FieldValue.serverTimestamp()
                 });
-                closeReportModal();
-                showNotification("✅ Report submitted! Admins will review it soon.");
+                showNotification("✅ Thank you for your feedback!");
+                document.getElementById('platformFeedbackText').value = "";
+                updateStarUI(0);
+                fetchGlobalRating(); // refresh average
             } catch(e) {
-                showNotification("❌ Failed to submit report: " + e.message);
+                showNotification("❌ Error: " + e.message);
             }
+            btn.innerText = "Submit Feedback"; btn.disabled = false;
         }
+
+        async function fetchGlobalRating() {
+            const display = document.getElementById('global-rating-display');
+            if(!display) return;
+            try {
+                const snapshot = await db.collection("platform_feedback").get();
+                if (snapshot.empty) { display.innerText = "5.0"; return; }
+                let total = 0; let count = 0;
+                snapshot.forEach(doc => { total += doc.data().rating; count++; });
+                let avg = (total / count).toFixed(1);
+                display.innerText = avg;
+            } catch(e) { display.innerText = "5.0"; }
+        }
+
 
         // --- 4. DYNAMIC ADMIN PANEL ---
         let adminSelectedPath = [];
@@ -706,6 +743,7 @@
                             <button class="admin-tab-btn ${adminCurrentTab === 'upload' ? 'active' : ''}" onclick="switchAdminTab('upload')">➕ Upload</button>
                             <button class="admin-tab-btn ${adminCurrentTab === 'manage' ? 'active' : ''}" onclick="switchAdminTab('manage')">📋 Manage</button>
                             <button class="admin-tab-btn ${adminCurrentTab === 'reports' ? 'active' : ''}" onclick="switchAdminTab('reports')">🚨 Reports</button>
+                            <button class="admin-tab-btn ${adminCurrentTab === 'feedback' ? 'active' : ''}" onclick="switchAdminTab('feedback')">⭐ Feedback</button>
                             <button class="admin-tab-btn ${adminCurrentTab === 'users' ? 'active' : ''}" onclick="switchAdminTab('users')">👥 Users</button>
                             <button class="admin-tab-btn ${adminCurrentTab === 'doubts' ? 'active' : ''}" onclick="switchAdminTab('doubts')">🚩 Doubts</button>
                             <button class="admin-tab-btn ${adminCurrentTab === 'settings' ? 'active' : ''}" onclick="switchAdminTab('settings')">⚙️ Settings</button>
@@ -798,25 +836,31 @@
                         <div id="manage-content-list"><p style="color:var(--text-muted);">Select a folder and click Fetch to load items.</p></div>
                     </div>
                     
-                    <!-- TAB 3: REPORTS (NEW) -->
+                    <!-- TAB 3: REPORTS -->
                     <div id="admin-reports-view" style="display:${adminCurrentTab === 'reports' ? 'block' : 'none'};">
                         <button class="btn-exam" onclick="loadAdminReports()" style="margin-bottom:15px; background:var(--primary-yellow); color:black; border:none;">🔄 Refresh Reports</button>
                         <div id="reports-list-container"></div>
                     </div>
 
-                    <!-- TAB 4: USERS -->
+                    <!-- TAB 4: FEEDBACK (NEW) -->
+                    <div id="admin-feedback-view" style="display:${adminCurrentTab === 'feedback' ? 'block' : 'none'};">
+                        <button class="btn-exam" onclick="loadAdminFeedback()" style="margin-bottom:15px; background:var(--primary-yellow); color:black; border:none;">🔄 Refresh Feedback</button>
+                        <div id="feedback-list-container"></div>
+                    </div>
+
+                    <!-- TAB 5: USERS -->
                     <div id="admin-users-view" style="display:${adminCurrentTab === 'users' ? 'block' : 'none'};">
                         <button class="btn-exam" onclick="loadAdminUsers()" style="margin-bottom:15px; background:var(--primary-yellow); color:black; border:none;">🔄 Refresh Students List</button>
                         <div id="users-table-container" style="overflow-x:auto;"></div>
                     </div>
 
-                    <!-- TAB 5: DOUBTS -->
+                    <!-- TAB 6: DOUBTS -->
                     <div id="admin-doubts-view" style="display:${adminCurrentTab === 'doubts' ? 'block' : 'none'};">
                         <button class="btn-exam" onclick="loadAdminDoubts()" style="margin-bottom:15px; background:var(--primary-yellow); color:black; border:none;">🔄 Refresh Flagged Doubts</button>
                         <div id="doubts-list-container"></div>
                     </div>
 
-                    <!-- TAB 6: SETTINGS -->
+                    <!-- TAB 7: SETTINGS -->
                     <div id="admin-settings-view" style="display:${adminCurrentTab === 'settings' ? 'block' : 'none'};">
                         <div style="background: #2a2a2a; padding: 25px; border-radius: 6px; max-width: 400px;">
                             <h3 style="margin-top:0; margin-bottom:20px;">Change Admin Password</h3>
@@ -831,6 +875,7 @@
             if (adminCurrentTab === 'upload') { _buildAdminSelectors(); _buildAdminNewTopicSelectors(); }
             else if (adminCurrentTab === 'manage') { _buildManageSelectors(); loadContentForManagement(); }
             else if (adminCurrentTab === 'reports') loadAdminReports();
+            else if (adminCurrentTab === 'feedback') loadAdminFeedback();
             else if (adminCurrentTab === 'users') loadAdminUsers();
             else if (adminCurrentTab === 'doubts') loadAdminDoubts();
         }
@@ -842,7 +887,7 @@
             el.style.display = el.style.display === 'none' ? 'block' : 'none';
         }
 
-        // --- NEW FEATURE 1: CREATE CUSTOM TOPICS WITH ULTIMATE FLEXIBILITY ---
+        // --- ADMIN NEW TOPICS (ULTIMATE FLEXIBILITY) ---
         function _buildAdminNewTopicSelectors() {
             const container = document.getElementById('dynamic-new-path-selectors');
             if(!container) return;
@@ -850,7 +895,6 @@
             
             for (let i = 0; i <= adminNewTopicPath.length; i++) {
                 if (typeof currentObj === 'string' || Array.isArray(currentObj)) break; 
-                
                 // Stop rendering if it's an empty object and we are at the very end
                 if (currentObj && Object.keys(currentObj).length === 0 && i === adminNewTopicPath.length) break;
 
@@ -861,23 +905,18 @@
                     html += `<option value="${key}" ${adminNewTopicPath[i] === key ? 'selected' : ''}>${key}</option>`; 
                 }
                 html += `</select>`;
-                if (adminNewTopicPath[i] && currentObj[adminNewTopicPath[i]]) { 
-                    currentObj = currentObj[adminNewTopicPath[i]]; 
-                } else { break; }
+                if (adminNewTopicPath[i] && currentObj[adminNewTopicPath[i]]) { currentObj = currentObj[adminNewTopicPath[i]]; } else { break; }
             }
             container.innerHTML = html;
 
-            // Visual Path Indicator
             let pathDisplay = document.getElementById('new-topic-path-display');
             if(!pathDisplay) {
                 container.insertAdjacentHTML('afterend', `<div id="new-topic-path-display" style="margin-top:10px; font-size:14px; color:var(--primary-yellow);"><b>Selected Parent Path:</b> <span id="new-topic-path-text" style="color:white;">None</span></div>`);
-                pathDisplay = document.getElementById('new-topic-path-display');
             }
             document.getElementById('new-topic-path-text').innerText = adminNewTopicPath.length > 0 ? adminNewTopicPath.join(' > ') : 'Root (Please select at least one)';
         }
 
         function handleAdminNewTopicPathChange(event, depth) {
-            // Selecting "-- Stop Here --" truncates the array exactly to this depth
             if(event.target.value === "") adminNewTopicPath = adminNewTopicPath.slice(0, depth);
             else { adminNewTopicPath = adminNewTopicPath.slice(0, depth); adminNewTopicPath.push(event.target.value); }
             _buildAdminNewTopicSelectors(); 
@@ -894,26 +933,62 @@
             
             try {
                 await db.collection("custom_topics").add({
-                    parentPath: parentPathStr,
-                    name: folderName,
-                    type: folderType,
-                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                    parentPath: parentPathStr, name: folderName, type: folderType, timestamp: firebase.firestore.FieldValue.serverTimestamp()
                 });
-                
                 showNotification("✅ Subtopic Created Successfully!");
                 document.getElementById('newFolderName').value = "";
-                
-                // Immediately refresh the in-memory appData so it appears in dropdowns
                 await loadCustomTopics();
                 _buildAdminSelectors();
                 _buildAdminNewTopicSelectors();
-                
             } catch(e) {
-                showNotification("❌ Error creating subtopic: " + e.message);
+                // EXPLICIT PERMISSION ERROR HANDLING
+                if(e.message.toLowerCase().includes('permission')) {
+                    alert("⚠️ FIREBASE PERMISSION DENIED!\n\nYou must update your Firestore Security Rules to allow writes to new collections.\n\nGo to Firebase Console > Firestore > Rules and set 'allow read, write: if true;'. Check the AI's response for exact code.");
+                } else {
+                    showNotification("❌ Error: " + e.message);
+                }
             }
         }
 
-        // --- NEW FEATURE 2: ADMIN REPORTS VIEW ---
+        // --- ADMIN FEEDBACK VIEW ---
+        async function loadAdminFeedback() {
+            const container = document.getElementById('feedback-list-container');
+            container.innerHTML = `<p style="color:var(--primary-yellow);">Fetching user feedback...</p>`;
+            try {
+                const snapshot = await db.collection("platform_feedback").orderBy("timestamp", "desc").get();
+                if(snapshot.empty) { container.innerHTML = "<p>No feedback received yet.</p>"; return; }
+                
+                let html = '';
+                let total = 0; let count = 0;
+                
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    total += data.rating; count++;
+                    let dateStr = data.timestamp ? data.timestamp.toDate().toLocaleString() : "";
+                    
+                    let starIcons = "";
+                    for(let i=1; i<=5; i++) { starIcons += (i <= data.rating) ? '⭐' : '☆'; }
+
+                    html += `
+                        <div class="content-item-card" style="border-left: 4px solid var(--primary-yellow);">
+                            <div class="content-item-header">
+                                <span class="badge-path">${starIcons} (${data.rating}/5)</span>
+                                <span style="font-size:12px; color:var(--text-muted);">${dateStr}</span>
+                            </div>
+                            <p style="color:var(--correct-green); margin:5px 0;"><b>User:</b> ${data.studentName}</p>
+                            <div style="background:#1a1a1a; padding:10px; border-radius:4px; font-size:14px;">${data.feedback || '<i>No written text provided.</i>'}</div>
+                        </div>
+                    `;
+                });
+                
+                let avg = (total / count).toFixed(1);
+                let header = `<div style="margin-bottom:20px; font-size: 18px;"><b>Overall Average Platform Rating:</b> <span style="color:var(--primary-yellow); font-size:24px;">⭐ ${avg} / 5</span></div>`;
+                
+                container.innerHTML = header + html;
+            } catch(e) { container.innerHTML = `<p style="color:red;">Error: ${e.message}</p>`; }
+        }
+
+        // --- ADMIN REPORTS VIEW ---
         async function loadAdminReports() {
             const container = document.getElementById('reports-list-container');
             container.innerHTML = `<p style="color:var(--primary-yellow);">Fetching reported mistakes...</p>`;
@@ -958,12 +1033,8 @@
         async function openEditModalFromReport(questionId) {
             try {
                 let doc = await db.collection("content").doc(questionId).get();
-                if (doc.exists) {
-                    loadedItemsCache[questionId] = doc.data(); 
-                    openEditModal(questionId);
-                } else {
-                    showNotification("❌ This question no longer exists in the database.");
-                }
+                if (doc.exists) { loadedItemsCache[questionId] = doc.data(); openEditModal(questionId); } 
+                else { showNotification("❌ This question no longer exists in the database."); }
             } catch (e) { showNotification("❌ Error fetching question: " + e.message); }
         }
 
@@ -1048,8 +1119,6 @@
             
             for (let i = 0; i <= adminSelectedPath.length; i++) {
                 if (typeof currentObj === 'string' || Array.isArray(currentObj)) break; 
-                
-                // Stop rendering if it's an empty object and we are at the very end
                 if (currentObj && Object.keys(currentObj).length === 0 && i === adminSelectedPath.length) break;
 
                 html += `<select class="input-field" style="flex:1; min-width:150px; margin-bottom:0;" onchange="handleAdminPathChange(event, ${i})">`;
@@ -1059,21 +1128,16 @@
                     html += `<option value="${key}" ${adminSelectedPath[i] === key ? 'selected' : ''}>${key}</option>`; 
                 }
                 html += `</select>`;
-                if (adminSelectedPath[i] && currentObj[adminSelectedPath[i]]) { 
-                    currentObj = currentObj[adminSelectedPath[i]]; 
-                } else { break; }
+                if (adminSelectedPath[i] && currentObj[adminSelectedPath[i]]) { currentObj = currentObj[adminSelectedPath[i]]; } else { break; }
             }
             container.innerHTML = html;
             
-            // Allow Uploading to ANY selected path immediately
             const formArea = document.getElementById('upload-form-area');
             if(formArea) formArea.style.display = (adminSelectedPath.length > 0) ? 'block' : 'none';
 
-            // Visual Path Indicator
             let pathDisplay = document.getElementById('upload-path-display');
             if(!pathDisplay) {
                 container.insertAdjacentHTML('afterend', `<div id="upload-path-display" style="margin-top:10px; font-size:14px; color:var(--correct-green);"><b>Uploading Content To:</b> <span id="upload-path-text" style="color:white;">None</span></div>`);
-                pathDisplay = document.getElementById('upload-path-display');
             }
             document.getElementById('upload-path-text').innerText = adminSelectedPath.length > 0 ? adminSelectedPath.join(' > ') : 'Please select at least one path';
         }
@@ -1154,7 +1218,11 @@
                     document.getElementById('admPdfTitle').value = ""; document.getElementById('admPdfFile').value = "";
                 }
                 showNotification("✅ Upload Successful!");
-            } catch(error) { showNotification("❌ Error: " + error.message); }
+            } catch(error) { 
+                if(error.message.toLowerCase().includes('permission')) {
+                    alert("⚠️ FIREBASE PERMISSION DENIED!\n\nYou must update your Firestore Security Rules to allow writes to collections.\n\nCheck the AI's response for the code.");
+                } else { showNotification("❌ Error: " + error.message); }
+            }
             btn.innerText = "☁️ Upload to Database"; btn.disabled = false;
         }
 
@@ -1276,7 +1344,6 @@
             try {
                 let isDailyQuiz = currentPath[0] === 'Daily Quiz Challenge';
                 
-                // Track global attempt history to ensure daily quizzes truly get unseen questions
                 let globalAttemptedIds = [];
                 if (currentUser) {
                     let userDoc = await db.collection("users").doc(currentUser.uid).get();
@@ -1296,16 +1363,18 @@
                 if (isDailyQuiz) {
                     let targetPrefix = currentPath[1] === "NEET" ? "NEET" : "General Knowledge";
                     
-                    // Fetch all MCQs for the broad category
+                    // FIX: REMOVED .where("type", "==", "mcq") to bypass Firestore index error
                     let snap = await db.collection("content")
-                        .where("type", "==", "mcq")
                         .where("path", ">=", targetPrefix)
                         .where("path", "<=", targetPrefix + "\uf8ff")
                         .get();
                         
                     let unattempted = [];
                     snap.forEach(doc => {
-                        if (!globalAttemptedIds.includes(doc.id)) unattempted.push({id: doc.id, ...doc.data()});
+                        let data = doc.data();
+                        if (data.type === 'mcq' && !globalAttemptedIds.includes(doc.id)) {
+                            unattempted.push({id: doc.id, ...data});
+                        }
                     });
 
                     if (currentPath[1] === "NEET") {
@@ -1323,20 +1392,17 @@
                         availableQuestions.push(...oChem.slice(0, 2));
                         availableQuestions.push(...iChem.slice(0, 2));
                         
-                        totalQuestionsInDB = 20; // Simulated
-                    } else { // General Knowledge
+                        totalQuestionsInDB = 20; 
+                    } else { 
                         availableQuestions = unattempted.sort(()=>0.5-Math.random()).slice(0, 20);
                         totalQuestionsInDB = 20;
                     }
                     
-                    // Final shuffle for the user
                     quizState.questions = availableQuestions.sort(() => Math.random() - 0.5);
 
                 } else {
-                    // Standard fetching for regular practice categories
-                    // Note: Now supports fetching from ROOT folders if users upload there directly!
+                    // FIX: REMOVED .where("type", "==", "mcq") to bypass Firestore index error
                     let snapshot = await db.collection("content")
-                        .where("type", "==", "mcq")
                         .where("path", ">=", pathString)
                         .where("path", "<=", pathString + "\uf8ff")
                         .get();
@@ -1423,7 +1489,6 @@
             let hasPeeked = quizState.showAnswerTriggered[quizState.currentIndex];
             let isFlagged = quizState.flaggedDoubts[quizState.currentIndex];
 
-            // 🧠 Smart Timer Pause/Resume Logic
             quizState.isTimerPaused = !!hasPeeked;
 
             let paletteHtml = '<div class="question-palette">';
@@ -1728,7 +1793,6 @@
                 else { window.location.hash = '#/home'; return; } 
             }
 
-            // Treat strings, arrays, AND entirely empty objects as endpoints (no sub-folders to show)
             let isEndpoint = false;
             if (typeof currentLevel === 'string' || Array.isArray(currentLevel)) {
                 isEndpoint = true;
@@ -1754,15 +1818,8 @@
                 return;
             }
 
-            // It has sub-folders, render them:
             let title = currentPath.length === 0 ? "Select Exam:" : currentPath[currentPath.length - 1];
             let html = `<div class="card"><h2>${title}</h2><div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px;">`;
-            
-            // FEATURE: Since you can now upload to ANY level, if you uploaded MCQs to a root folder, 
-            // you can click this to take a quiz of EVERYTHING inside it!
-            if (currentPath.length > 0 && requiresQuizLogin(currentPath)) {
-                html += `<button class="btn-exam" onclick="window.location.hash='#/quiz'" style="background-color: var(--primary-yellow); color: black; border: none; grid-column: 1 / -1; margin-bottom: 10px;">▶️ Practice All in ${title}</button>`;
-            }
 
             for (let key in currentLevel) { 
                 if (currentPath.length === 0 && key === "Daily Quiz Challenge") continue; 
@@ -1775,7 +1832,38 @@
                 html += `<button class="btn-exam" onclick="navigateTo('${key}')">${key}${typeLabel}</button>`; 
             }
             if (currentPath.length > 0) { html += `<button class="btn-exam" onclick="goBack()" style="grid-column: 1 / -1; background-color: #222; border-color: #444; color: #a0a0a0; margin-top: 10px;">&larr; Go Back</button>`; }
-            html += `</div></div>`; mainContent.innerHTML = html;
+            html += `</div></div>`; 
+            
+            // --- NEW: RATING UI ON HOMEPAGE ---
+            if (currentPath.length === 0) {
+                html += `
+                <div class="card" style="margin-top: 30px; text-align: center;">
+                    <h3 style="margin-top: 0; color: var(--primary-yellow);">⭐ Platform Feedback</h3>
+                    <p style="color: var(--text-muted); font-size: 15px;">Help us improve MCQsPrep! Rate your experience.</p>
+                    
+                    <div style="font-size: 32px; font-weight: bold; margin: 15px 0;">
+                        Overall Rating: <span id="global-rating-display" style="color: var(--primary-yellow);">...</span><span style="font-size:20px; color:var(--text-muted);">/5</span>
+                    </div>
+
+                    <div style="background: #2a2a2a; border: 1px solid var(--border-color); padding: 20px; border-radius: 8px; max-width: 400px; margin: 0 auto;">
+                        <div style="margin-bottom: 15px;">
+                            <button id="star-1" class="star-btn" onclick="updateStarUI(1)">☆</button>
+                            <button id="star-2" class="star-btn" onclick="updateStarUI(2)">☆</button>
+                            <button id="star-3" class="star-btn" onclick="updateStarUI(3)">☆</button>
+                            <button id="star-4" class="star-btn" onclick="updateStarUI(4)">☆</button>
+                            <button id="star-5" class="star-btn" onclick="updateStarUI(5)">☆</button>
+                        </div>
+                        <textarea id="platformFeedbackText" class="input-field" placeholder="Optional: Tell us what you like or what we can improve..." style="min-height: 80px;"></textarea>
+                        <button id="submitFeedbackBtn" class="btn-exam" onclick="submitPlatformFeedback()" style="width: 100%; background: var(--primary-yellow); color: black; border: none;">Submit Feedback</button>
+                    </div>
+                </div>`;
+            }
+            
+            mainContent.innerHTML = html;
+            
+            if (currentPath.length === 0) {
+                fetchGlobalRating();
+            }
         }
         
         function requiresQuizLogin(pathArray) {
