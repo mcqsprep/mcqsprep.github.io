@@ -78,7 +78,7 @@
         
         .breadcrumb { background-color: #1a1a1a; padding: 10px 40px; font-size: 14px; color: var(--text-muted); border-bottom: 1px solid var(--border-color); }
         .container { display: flex; padding: 40px; gap: 30px; max-width: 1400px; margin: 0 auto; min-height: 80vh; }
-        .main-content { flex: 2; }
+        .main-content { flex: 2; width: 100%; }
         .sidebar { flex: 1; max-width: 400px; }
 
         .card { background-color: var(--card-bg); border-radius: 8px; padding: 25px; margin-bottom: 25px; border: 1px solid var(--border-color); box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
@@ -86,8 +86,9 @@
 
         .btn-exam { padding: 12px 18px; border-radius: 6px; border: 1px solid var(--border-color); background-color: #2a2a2a; color: white; font-size: 15px; font-weight: bold; cursor: pointer; transition: 0.2s; }
         .btn-exam:hover { background-color: #382909; border-color: var(--primary-yellow); color: var(--primary-yellow); }
+        .btn-exam:disabled { opacity: 0.5; cursor: not-allowed; }
 
-        .action-link { display: block !important; width: 100% !important; box-sizing: border-box; padding: 12px 15px; background-color: #2a2a2a; border: 1px solid var(--border-color); border-radius: 6px; color: white; text-decoration: none; margin-bottom: 10px; transition: 0.2s; cursor: pointer; }
+        .action-link { display: block; width: 100%; box-sizing: border-box; padding: 12px 15px; background-color: #2a2a2a; border: 1px solid var(--border-color); border-radius: 6px; color: white; text-decoration: none; margin-bottom: 10px; transition: 0.2s; cursor: pointer; }
         .action-link:hover { border-color: var(--primary-yellow); background-color: #333; }
         
         .input-field { width: 100%; padding: 12px; margin-bottom: 15px; border-radius: 4px; border: 1px solid var(--border-color); background: #2a2a2a; color: white; box-sizing: border-box; font-size: 15px; display: block; }
@@ -144,19 +145,26 @@
         .star-btn:hover { transform: scale(1.1); }
         .star-btn.active { color: var(--primary-yellow); text-shadow: 0 0 15px rgba(253, 184, 19, 0.6); }
 
-        /* Custom Practice Box Styling */
+        /* --- Custom Practice Setup UI --- */
         .custom-practice-box { background: rgba(253,184,19,0.05); border: 1px dashed var(--primary-yellow); padding: 20px; border-radius: 8px; margin-bottom: 25px; }
-        .custom-topic-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px; margin-bottom: 20px; max-height: 200px; overflow-y: auto; padding: 10px; background: #111; border-radius: 6px; border: 1px solid var(--border-color); }
+        .custom-topic-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px; margin-bottom: 20px; max-height: 250px; overflow-y: auto; padding: 10px; background: #111; border-radius: 6px; border: 1px solid var(--border-color); }
 
-        /* FULLSCREEN AI MODAL */
+        /* --- NEXT-GEN GEMINI AMBIENT FULLSCREEN UI --- */
         #ai-floating-btn {
-            position: fixed; bottom: 30px; right: 30px; background: linear-gradient(135deg, #fdb813, #ff7b00); color: black; font-weight: bold; padding: 12px 24px; border-radius: 30px; cursor: pointer; box-shadow: 0 4px 20px rgba(253, 184, 19, 0.4); z-index: 2500; display: flex; align-items: center; gap: 8px; font-size: 16px; user-select: none; touch-action: none; transition: transform 0.2s, box-shadow 0.2s;
+            position: fixed; bottom: 30px; right: 30px;
+            background: linear-gradient(135deg, #fdb813, #ff7b00);
+            color: black; font-weight: bold; padding: 12px 24px;
+            border-radius: 30px; cursor: pointer; box-shadow: 0 4px 20px rgba(253, 184, 19, 0.4);
+            z-index: 2500; display: flex; align-items: center; gap: 8px; font-size: 16px;
+            user-select: none; touch-action: none; transition: transform 0.2s, box-shadow 0.2s;
         }
+        #ai-floating-btn:active { transform: scale(0.95); }
         #ai-floating-btn.draggable { box-shadow: 0 0 25px #ffffff; border: 2px solid white; cursor: grab; animation: pulse 1s infinite alternate; }
         @keyframes pulse { from { transform: scale(1); } to { transform: scale(1.05); } }
 
+        /* Fixed Fullscreen Modal */
         .ai-fullscreen-modal {
-            width: 100% !important; height: 100% !important; max-width: 100% !important; max-height: 100% !important;
+            width: 100vw !important; height: 100vh !important; max-width: 100vw !important; max-height: 100vh !important;
             border-radius: 0 !important; border: none !important; margin: 0 !important;
             background: linear-gradient(-45deg, #111111, #1a1a2e, #0f3460, #111111) !important;
             background-size: 400% 400% !important; animation: aiGradientBG 15s ease infinite !important;
@@ -190,7 +198,7 @@
             .ai-right-panel { border-top: none; padding-top: 0; padding-left: 20px; }
         }
 
-        .ai-glass-card { background: rgba(20, 22, 30, 0.65); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .ai-glass-card { background: rgba(20, 22, 30, 0.65); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
         .ai-fuzzy-suggestions { background: rgba(25, 28, 38, 0.95); border: 1px solid rgba(253, 184, 19, 0.4); border-radius: 8px; margin-top: -10px; margin-bottom: 15px; max-height: 220px; overflow-y: auto; display: none; box-shadow: 0 8px 25px rgba(0,0,0,0.7); }
         .ai-fuzzy-item { padding: 12px 16px; cursor: pointer; border-bottom: 1px solid rgba(255,255,255,0.08); font-size: 14px; color: #ddd; display: flex; align-items: center; justify-content: space-between; }
         .ai-fuzzy-item:hover { background: rgba(253, 184, 19, 0.12); color: var(--primary-yellow); }
@@ -428,7 +436,7 @@
         </div>
     </nav>
 
-    <!-- Main Container Layout -->
+    <!-- Main Content Area -->
     <div class="breadcrumb" id="breadcrumb-text">Home / Select Exam</div>
     <div class="container">
         <div class="main-content" id="dynamic-content"></div>
@@ -449,7 +457,7 @@
 
     <div id="notification">Action Triggered!</div>
 
-    <!-- JAVASCRIPT LOGIC -->
+    <!-- JAVASCRIPT APP LOGIC -->
     <script>
         const firebaseConfig = { apiKey: "AIzaSyDuletjxV1THjWvWLvO0XqB_z5xBBXLwL8", authDomain: "mcqsprep.firebaseapp.com", projectId: "mcqsprep", storageBucket: "mcqsprep.firebasestorage.app", messagingSenderId: "920181103186", appId: "1:920181103186:web:14c2ba261d4a6163db5d8b" };
         firebase.initializeApp(firebaseConfig); const db = firebase.firestore(); const auth = firebase.auth(); const provider = new firebase.auth.GoogleAuthProvider();
@@ -507,7 +515,6 @@
             let hash = decodeURIComponent(window.location.hash.replace('#/', ''));
             let isRootHome = (!hash || hash === 'home');
             
-            // Only show main sidebar if we are strictly on the home root.
             document.getElementById('main-sidebar').style.display = isRootHome ? 'block' : 'none';
 
             if (!hash || hash === 'home') { currentPath = []; _renderView(); } 
@@ -661,11 +668,10 @@
                 let flagsSnap = await db.collection("flagged_doubts").where("studentId", "==", currentUser.uid).get();
                 flagsSnap.forEach(doc => { allItems.push({ _id: doc.id, _type: 'flag', ...doc.data() }); });
 
-                // In-memory sort to bypass index requirements entirely
                 allItems.sort((a, b) => {
                     let tA = a.timestamp ? a.timestamp.toMillis() : 0;
                     let tB = b.timestamp ? b.timestamp.toMillis() : 0;
-                    return tB - tA; // newer first
+                    return tB - tA; 
                 });
 
                 allItems.forEach(d => {
@@ -917,7 +923,6 @@
             if (!sessionStorage.getItem('admin_verified')) { window.location.hash = '#/admin'; return; }
             document.getElementById('breadcrumb-text').innerText = "Admin Dashboard";
             
-            // Clean unminified HTML to prevent parsing crashes
             document.getElementById('dynamic-content').innerHTML = `
                 <div class="card">
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:10px;">
@@ -1174,7 +1179,7 @@
                 let html = '';
                 items.forEach(data => {
                     let stat = data.status === 'resolved' ? `<span style="background:var(--correct-green); color:white; padding:2px 8px; border-radius:12px; font-size:12px;">✅ Resolved</span>` : `<span style="background:#555; color:white; padding:2px 8px; border-radius:12px; font-size:12px;">⏳ Pending</span>`;
-                    html += `<div class="content-item-card" style="border-left: 4px solid var(--wrong-red);"><div class="content-item-header"><span class="badge-path">${data.path || 'Unknown Path'}</span><span style="font-size:12px; color:var(--text-muted);">${data.timestamp ? new Date(data.timestamp.toMillis()).toLocaleString() : ""}</span></div><div style="margin: 10px 0; padding: 10px; background: rgba(244, 67, 54, 0.1); border-radius: 4px; display:flex; justify-content:space-between;"><div><p style="color:var(--wrong-red); margin:0 0 5px 0;"><b>Issue:</b> ${data.reason}</p><p style="margin:0; font-size:14px;"><b>Details:</b> ${data.description || 'No description provided.'}</p></div>${stat}</div><p style="margin:5px 0 10px 0; font-size:12px; color:var(--text-muted);">Reported by: ${data.studentName}</p><div style="background:#1a1a1a; padding:10px; border-radius:4px; font-size:14px; margin-bottom:10px;"><b>Question Content:</b><br>${data.questionText}</div><div style="display:flex; gap:10px; flex-wrap:wrap;"><button onclick="openEditModalFromReport('${data.questionId}')" style="padding:6px 12px; background:#2196F3; border:none; border-radius:4px; color:white; cursor:pointer;">✏️ Edit MCQ in Database</button><button onclick="resolveReport('${data.id}')" style="padding:6px 12px; background:var(--correct-green); border:none; border-radius:4px; color:white; cursor:pointer;" ${data.status==='resolved'?'disabled':''}>✅ Mark Resolved (Notifies User)</button></div></div>`;
+                    html += `<div class="content-item-card" style="border-left: 4px solid var(--wrong-red);"><div class="content-item-header"><span class="badge-path">${data.path || 'Unknown Path'}</span><span style="font-size:12px; color:var(--text-muted);">${data.timestamp ? new Date(data.timestamp.toMillis()).toLocaleString() : ""}</span></div><div style="margin: 10px 0; padding: 10px; background: rgba(244, 67, 54, 0.1); border-radius: 4px; display:flex; justify-content:space-between;"><div><p style="color:var(--wrong-red); margin:0 0 5px 0;"><b>Issue:</b> ${data.reason}</p><p style="margin:0; font-size:14px;"><b>Details:</b> ${data.description \vert{}\vert{} 'No description provided.'}</p></div>${stat}</div><p style="margin:5px 0 10px 0; font-size:12px; color:var(--text-muted);">Reported by: ${data.studentName}</p><div style="background:#1a1a1a; padding:10px; border-radius:4px; font-size:14px; margin-bottom:10px;"><b>Question Content:</b><br>${data.questionText}</div><div style="display:flex; gap:10px; flex-wrap:wrap;"><button onclick="openEditModalFromReport('${data.questionId}')" style="padding:6px 12px; background:#2196F3; border:none; border-radius:4px; color:white; cursor:pointer;">✏️ Edit MCQ in Database</button><button onclick="resolveReport('${data.id}')" style="padding:6px 12px; background:var(--correct-green); border:none; border-radius:4px; color:white; cursor:pointer;" ${data.status==='resolved'?'disabled':''}>✅ Mark Resolved (Notifies User)</button></div></div>`;
                 });
                 container.innerHTML = html;
             } catch(e) { container.innerHTML = `<p style="color:red;">Error: ${e.message}</p>`; }
@@ -1333,7 +1338,7 @@
                     if (data.type === 'mcq') {
                         let answersStr = (data.correctAnswers || []).join(', ');
                         let lvlBadge = data.level ? `<span style="margin-left:10px; background:#444; color:white; padding:2px 6px; border-radius:4px; font-size:11px;">${data.level}</span>` : '';
-                        html += `<div class="content-item-card" id="item_${doc.id}"><div class="content-item-header"><span class="badge-path">${data.path || 'Uncategorized'}</span>${lvlBadge}<div style="display:flex; gap:8px;"><button class="btn-exam" onclick="openEditModal('${doc.id}')" style="padding:4px 10px; font-size:12px; background:#2196F3; border:none;">✏️ Edit</button><button class="btn-exam" onclick="deleteContentItem('${doc.id}')" style="padding:4px 10px; font-size:12px; background:var(--wrong-red); border:none;">🗑️ Delete</button></div></div><div style="font-weight:bold; margin-bottom:8px;">${data.question}</div>${data.imageUrl ? `<img src="${data.imageUrl}" style="max-height:80px; border-radius:4px; margin-bottom:8px; display:block;">` : ''}<div style="font-size:13px; color:var(--text-muted); line-height:1.4;">A: ${data.options?.A || '-'} | B: ${data.options?.B || '-'} | C: ${data.options?.C || '-'} | D: ${data.options?.D || '-'}</div><div style="margin-top:6px; font-size:13px; color:var(--correct-green);">Correct: ${answersStr}</div></div>`;
+                        html += `<div class="content-item-card" id="item_${doc.id}"><div class="content-item-header"><span class="badge-path">${data.path \vert{}\vert{} 'Uncategorized'}</span>${lvlBadge}<div style="display:flex; gap:8px;"><button class="btn-exam" onclick="openEditModal('${doc.id}')" style="padding:4px 10px; font-size:12px; background:#2196F3; border:none;">✏️ Edit</button><button class="btn-exam" onclick="deleteContentItem('${doc.id}')" style="padding:4px 10px; font-size:12px; background:var(--wrong-red); border:none;">🗑️ Delete</button></div></div><div style="font-weight:bold; margin-bottom:8px;">${data.question}</div>${data.imageUrl ? `<img src="${data.imageUrl}" style="max-height:80px; border-radius:4px; margin-bottom:8px; display:block;">` : ''}<div style="font-size:13px; color:var(--text-muted); line-height:1.4;">A: ${data.options?.A \vert{}\vert{} '-'} \vert{} B: ${data.options?.B || '-'} | C: ${data.options?.C \vert{}\vert{} '-'} \vert{} D: ${data.options?.D || '-'}</div><div style="margin-top:6px; font-size:13px; color:var(--correct-green);">Correct: ${answersStr}</div></div>`;
                     } else {
                         html += `<div class="content-item-card" id="item_${doc.id}"><div class="content-item-header"><span class="badge-path">${data.path || 'Uncategorized'}</span><button class="btn-exam" onclick="deleteContentItem('${doc.id}')" style="padding:4px 10px; font-size:12px; background:var(--wrong-red); border:none;">🗑️ Delete</button></div><div style="font-weight:bold; margin-bottom:5px;">📄 ${data.title}</div><a href="${data.fileUrl}" target="_blank" style="color:var(--primary-yellow); font-size:13px;">View Document &rarr;</a></div>`;
                     }
@@ -1384,6 +1389,322 @@
             try { await db.collection("settings").doc("admin_auth").set({ password: p1 }); document.getElementById('newAdminPass').value = ""; document.getElementById('confirmAdminPass').value = ""; showNotification("✅ Password changed successfully!"); } 
             catch(e) { showNotification("❌ Error updating password: " + e.message); }
         }
+
+        async function resetProgress(safePath) {
+            if(confirm("Are you sure you want to reset your progress? This will let you re-attempt all questions in this section from the beginning.")) {
+                if (currentUser) { let dataToSave = {}; dataToSave[safePath] = firebase.firestore.FieldValue.delete(); await db.collection("users").doc(currentUser.uid).update(dataToSave).catch(e=>{}); } 
+                else { let localProg = JSON.parse(localStorage.getItem('mcq_progress') || '{}'); delete localProg[safePath]; localStorage.setItem('mcq_progress', JSON.stringify(localProg)); }
+                _initiateQuizEngine(); 
+            }
+        }
+
+        // --- NEW CUSTOM WIZARD LOGIC ---
+        let cwState = { exam: '', subjects: [], subtopics: [], count: 20, level: 'Mixed' };
+
+        function getCustomSubjects(exam) {
+            let subjects = [];
+            let rootNode = exam === 'NEET' ? appData["NEET"]["MCQs Practice"] : appData["General Knowledge"];
+            for(let key in rootNode) { subjects.push({ name: key, path: exam === 'NEET' ? `NEET > MCQs Practice > ${key}` : `General Knowledge > ${key}` }); }
+            let rootPath = exam === 'NEET' ? "NEET > MCQs Practice" : "General Knowledge";
+            for(let customPath in customTopicTypes) {
+                if(customPath.startsWith(rootPath) && customPath.split(' > ').length === rootPath.split(' > ').length + 1) {
+                    let name = customPath.split(' > ').pop();
+                    if(!subjects.find(s => s.name === name)) subjects.push({ name: name, path: customPath });
+                }
+            }
+            return subjects;
+        }
+
+        function getAllLeafNodes(subjectPaths) {
+            let leafs = [];
+            subjectPaths.forEach(subjPath => {
+                let parts = subjPath.split(' > '); let curr = appData; let valid = true;
+                for(let p of parts) { if(curr[p]) curr = curr[p]; else {valid = false; break;} }
+                function traverse(node, pathStr) {
+                    let hasChildren = false;
+                    for(let k in node) { if(k === "Daily Quiz Challenge") continue; hasChildren = true; traverse(node[k], pathStr + " > " + k); }
+                    if(!hasChildren) leafs.push(pathStr);
+                }
+                if(valid) traverse(curr, subjPath);
+                for(let customP in customTopicTypes) {
+                    if(customP.startsWith(subjPath) && customTopicTypes[customP] === 'mcq') { if(!leafs.includes(customP)) leafs.push(customP); }
+                }
+            });
+            return [...new Set(leafs)].sort();
+        }
+
+        function cwStep1() {
+            if(!currentUser) { showAuthModal(); return; }
+            cwState = { exam: '', subjects: [], subtopics: [], count: 20, level: 'Mixed' };
+            document.getElementById('breadcrumb-text').innerText = "Home / Custom Practice Setup / Select Exam";
+            let html = `
+                <div class="card">
+                    <h2 style="color:var(--primary-yellow);">⚙️ Custom Practice Setup</h2>
+                    <p style="color:var(--text-muted); margin-bottom:25px;">Step 1: Which exam are you preparing for?</p>
+                    <div style="display:flex; gap:15px; flex-wrap:wrap;">
+                        <button class="btn-exam" onclick="cwStep2('NEET')" style="flex:1; padding:20px; font-size:18px;">🩺 NEET</button>
+                        <button class="btn-exam" onclick="cwStep2('General Knowledge')" style="flex:1; padding:20px; font-size:18px;">🌍 General Knowledge</button>
+                    </div>
+                    <button class="btn-exam" onclick="goHome()" style="margin-top:20px; background:#333;">&larr; Cancel</button>
+                </div>
+            `;
+            document.getElementById('dynamic-content').innerHTML = html;
+        }
+
+        function cwStep2(exam) {
+            cwState.exam = exam;
+            document.getElementById('breadcrumb-text').innerText = `Home / Custom Practice Setup / ${exam} / Select Subjects`;
+            let subjects = getCustomSubjects(exam);
+            let html = `
+                <div class="card">
+                    <h2 style="color:var(--primary-yellow);">📚 Select Subjects</h2>
+                    <p style="color:var(--text-muted); margin-bottom:20px;">Step 2: Choose one or more subjects from ${exam}.</p>
+                    <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap:10px; margin-bottom:25px;">
+                        ${subjects.map(s => `<label style="background:#2a2a2a; border:1px solid #444; padding:15px; border-radius:8px; cursor:pointer; display:flex; align-items:center; gap:10px; transition:0.2s;" onmouseover="this.style.borderColor='var(--primary-yellow)'" onmouseout="this.style.borderColor='#444'"><input type="checkbox" value="${s.path}" class="cw-subj-cb"> <span>${s.name}</span></label>`).join('')}
+                    </div>
+                    <div style="display:flex; justify-content:space-between;">
+                        <button class="btn-exam" onclick="cwStep1()" style="background:#333;">&larr; Back</button>
+                        <button class="btn-exam" onclick="cwProcessStep2()" style="background:var(--primary-yellow); color:black;">Next: Select Chapters &rarr;</button>
+                    </div>
+                </div>
+            `;
+            document.getElementById('dynamic-content').innerHTML = html;
+        }
+
+        function cwProcessStep2() {
+            let cbs = Array.from(document.querySelectorAll('.cw-subj-cb:checked')).map(cb => cb.value);
+            if(cbs.length === 0) return showNotification("⚠️ Select at least one subject.");
+            cwState.subjects = cbs; cwStep3();
+        }
+
+        function cwStep3() {
+            document.getElementById('breadcrumb-text').innerText = `Home / Custom Practice Setup / ${cwState.exam} / Chapters`;
+            let leafs = getAllLeafNodes(cwState.subjects);
+            let html = `
+                <div class="card">
+                    <h2 style="color:var(--primary-yellow);">📑 Select Chapters / Subtopics</h2>
+                    <p style="color:var(--text-muted); margin-bottom:20px;">Step 3: Pick the specific topics you want to practice.</p>
+                    <input type="text" id="cwSubtopicSearch" class="input-field" placeholder="🔍 Search chapters..." oninput="cwFilterSubtopics()">
+                    <div style="margin-bottom:15px;">
+                        <button onclick="cwSelectAll(true)" style="background:none; border:none; color:var(--primary-yellow); cursor:pointer; font-size:14px;">Select All</button> | 
+                        <button onclick="cwSelectAll(false)" style="background:none; border:none; color:var(--primary-yellow); cursor:pointer; font-size:14px;">Deselect All</button>
+                    </div>
+                    <div id="cw-subtopic-list" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap:10px; max-height:40vh; overflow-y:auto; padding:10px; background:#111; border-radius:8px; border:1px solid #333; margin-bottom:25px;">
+                        ${leafs.map(l => `<label class="cw-sub-lbl" style="background:#2a2a2a; border:1px solid #444; padding:12px; border-radius:6px; cursor:pointer; display:flex; align-items:flex-start; gap:10px;"><input type="checkbox" value="${l}" class="cw-sub-cb" checked> <span style="font-size:14px;">${l.split(' > ').pop()}<br><span style="font-size:11px; color:#888;">${l}</span></span></label>`).join('')}
+                    </div>
+                    <div style="display:flex; justify-content:space-between;">
+                        <button class="btn-exam" onclick="cwStep2(cwState.exam)" style="background:#333;">&larr; Back</button>
+                        <button class="btn-exam" onclick="cwProcessStep3()" style="background:var(--primary-yellow); color:black;">Next: Set Difficulty &rarr;</button>
+                    </div>
+                </div>
+            `;
+            document.getElementById('dynamic-content').innerHTML = html;
+        }
+
+        function cwFilterSubtopics() {
+            let q = document.getElementById('cwSubtopicSearch').value.toLowerCase();
+            document.querySelectorAll('.cw-sub-lbl').forEach(lbl => {
+                if(lbl.innerText.toLowerCase().includes(q)) lbl.style.display = 'flex'; else lbl.style.display = 'none';
+            });
+        }
+
+        function cwSelectAll(select) {
+            document.querySelectorAll('.cw-sub-cb').forEach(cb => { if(cb.closest('.cw-sub-lbl').style.display !== 'none') cb.checked = select; });
+        }
+
+        function cwProcessStep3() {
+            let cbs = Array.from(document.querySelectorAll('.cw-sub-cb:checked')).map(cb => cb.value);
+            if(cbs.length === 0) return showNotification("⚠️ Select at least one chapter.");
+            cwState.subtopics = cbs; cwStep4();
+        }
+
+        function cwStep4() {
+            document.getElementById('breadcrumb-text').innerText = `Home / Custom Practice Setup / Configure Quiz`;
+            let html = `
+                <div class="card">
+                    <h2 style="color:var(--primary-yellow);">🎯 Final Setup</h2>
+                    <p style="color:var(--text-muted);">Step 4: Choose difficulty and number of questions.</p>
+                    <div style="display:flex; gap:20px; flex-wrap:wrap; margin-bottom:30px; margin-top:20px;">
+                        <div style="flex:1; min-width:200px;">
+                            <label style="color:var(--text-light); font-weight:bold; margin-bottom:10px; display:block;">Difficulty Level:</label>
+                            <select id="cwLevel" class="input-field" style="padding:15px; font-size:16px;"><option value="Mixed">Mixed (All Levels)</option><option value="Easy">Easy</option><option value="Medium">Medium</option><option value="Hard">Hard</option></select>
+                        </div>
+                        <div style="flex:1; min-width:200px;">
+                            <label style="color:var(--text-light); font-weight:bold; margin-bottom:10px; display:block;">Total Questions:</label>
+                            <input type="number" id="cwCount" class="input-field" value="20" min="5" max="100" style="padding:15px; font-size:16px;">
+                        </div>
+                    </div>
+                    <div style="display:flex; justify-content:space-between;">
+                        <button class="btn-exam" onclick="cwStep3()" style="background:#333;">&larr; Back</button>
+                        <button class="btn-exam" onclick="cwLaunchQuiz()" style="background:var(--correct-green); color:white; font-size:18px; padding:15px 30px; border:none; box-shadow:0 4px 15px rgba(76,175,80,0.4);">🚀 Start Custom Quiz</button>
+                    </div>
+                </div>
+            `;
+            document.getElementById('dynamic-content').innerHTML = html;
+        }
+
+        function cwLaunchQuiz() {
+            cwState.level = document.getElementById('cwLevel').value; cwState.count = parseInt(document.getElementById('cwCount').value) || 20;
+            customQuizConfig.paths = cwState.subtopics; customQuizConfig.count = cwState.count; customQuizConfig.level = cwState.level;
+            _initiateQuizEngine(true);
+        }
+
+        // BREADCRUMB AND NAVIGATION (FIXED)
+        function _renderView() {
+            const mainContent = document.getElementById('dynamic-content');
+            const breadcrumb = document.getElementById('breadcrumb-text');
+            breadcrumb.innerText = currentPath.length === 0 ? "Home / Select Exam" : "Home / " + currentPath.join(" / "); 
+            
+            let currentLevel = appData;
+            for (let node of currentPath) { 
+                if(currentLevel[node] !== undefined) {
+                    currentLevel = currentLevel[node]; 
+                } else {
+                    // It might be a custom folder loaded dynamically
+                    currentLevel = {}; // Allow it to render the empty card which triggers the fetch fallback if needed
+                }
+            }
+
+            let isEndpoint = false;
+            if (typeof currentLevel === 'string' || Array.isArray(currentLevel)) { isEndpoint = true; } 
+            else if (typeof currentLevel === 'object' && Object.keys(currentLevel).length === 0) { isEndpoint = true; }
+
+            if (isEndpoint) {
+                let topicName = currentPath[currentPath.length - 1]; 
+                let checkPath = currentPath.join(" > "); let expectedType = customTopicTypes[checkPath];
+                let isPdfSection = (expectedType === 'pdf') || (!requiresQuizLogin(currentPath) && expectedType !== 'mcq');
+                
+                if (!isPdfSection) {
+                    let studentName = currentUser ? currentUser.displayName.split(" ")[0] : "Student";
+                    let welcomeMessage = !currentUser ? "Sign in to track your scores on the global leaderboard!" : `Ready for practice, <span style="color: var(--primary-yellow); font-weight: bold;">${studentName}</span>?`;
+                    mainContent.innerHTML = `<div class="card"><h2>${topicName} Practice</h2><p style="color: var(--text-muted); margin-bottom: 25px;">${welcomeMessage}</p><div style="display: flex; gap: 15px;"><button class="btn-exam" onclick="window.location.hash='#/quiz'" style="background-color: var(--primary-yellow); color: black; border: none; width: 200px;">Start Quiz &rarr;</button><button class="btn-exam" onclick="goBack()" style="width: 150px; background-color: #333;">&larr; Go Back</button></div></div>`;
+                } else {
+                    mainContent.innerHTML = `<div class="card"><h2>${topicName} Resources</h2><p style="color: var(--text-muted);">Study materials will appear here once uploaded via Admin Panel.</p><button class="btn-exam" onclick="goBack()" style="width: 150px; margin-top:20px; background-color: #333;">&larr; Go Back</button></div>`;
+                }
+                return;
+            }
+
+            let title = currentPath.length === 0 ? "Select Exam:" : currentPath[currentPath.length - 1];
+            let html = ``;
+
+            // HOMEPAGE CUSTOM PRACTICE BUTTON
+            if (currentPath.length === 0) {
+                html += `<div class="card" style="margin-bottom: 30px; border: 1px solid var(--primary-yellow); background: rgba(253, 184, 19, 0.05);"><div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:15px;"><div><h2 style="color:var(--primary-yellow); margin:0 0 5px 0;">⚙️ Custom Practice Engine</h2><p style="color:var(--text-muted); margin:0; font-size:14px;">Mix subjects, filter by difficulty, and build your ultimate personalized mock test.</p></div><button class="btn-exam" onclick="cwStep1()" style="background:var(--primary-yellow); color:black; font-size:16px; padding:12px 24px; box-shadow:0 4px 15px rgba(253,184,19,0.3);">Launch Setup 🚀</button></div></div>`;
+            }
+
+            html += `<div class="card"><h2>${title}</h2><div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px;">`;
+
+            for (let key in currentLevel) { 
+                if (currentPath.length === 0 && key === "Daily Quiz Challenge") continue; 
+                let checkPath = currentPath.join(" > ") + (currentPath.length > 0 ? " > " : "") + key;
+                let typeLabel = ""; if (customTopicTypes[checkPath] === 'mcq') typeLabel = " 📝"; else if (customTopicTypes[checkPath] === 'pdf') typeLabel = " 📄";
+                html += `<button class="btn-exam" onclick="navigateTo('${key}')">${key}${typeLabel}</button>`; 
+            }
+            if (currentPath.length > 0) { html += `<button class="btn-exam" onclick="goBack()" style="grid-column: 1 / -1; background-color: #222; border-color: #444; color: #a0a0a0; margin-top: 10px;">&larr; Go Back</button>`; }
+            html += `</div></div>`; mainContent.innerHTML = html;
+        }
+        
+        function requiresQuizLogin(pathArray) {
+            const pathString = pathArray.join(" > ").toLowerCase();
+            const triggers = ["mcqs practice", "mock test", "general knowledge", "practice paper", "current affairs", "history", "geography", "daily quiz challenge"];
+            return triggers.some(trigger => pathString.includes(trigger));
+        }
+
+        function _renderLeaderboardOptions() { 
+            document.getElementById('breadcrumb-text').innerText = "Home / Leaderboard"; 
+            document.getElementById('dynamic-content').innerHTML = `
+                <div class="card">
+                    <h2>🏆 Global Leaderboards</h2>
+                    <p style="color:var(--text-muted); margin-bottom: 20px;">Select a category to view the top 10 scores.</p>
+                    <div style="background: rgba(244, 67, 54, 0.1); border-left: 4px solid var(--wrong-red); padding: 12px; margin-bottom: 25px; border-radius: 4px;">
+                        <span style="color: var(--wrong-red); font-weight: bold;">⚠️ CAUTION:</span> <span style="color: var(--text-light); font-size: 14px;">Only signed-in users will have their scores recorded and displayed on the leaderboard.</span>
+                    </div>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 15px;">
+                        <button class="btn-exam" onclick="window.location.hash='#/board/NEET > MCQs Practice'">1. NEET PRACTICE</button>
+                        <button class="btn-exam" onclick="window.location.hash='#/board/NEET > Mock Test'">2. MOCK TEST</button>
+                        <button class="btn-exam" onclick="window.location.hash='#/board/General Knowledge'">3. GENERAL KNOWLEDGE</button>
+                    </div>
+                </div>`; 
+        }
+        
+        async function fetchLiveLeaderboard(pathPrefix) { 
+            const mainContent = document.getElementById('dynamic-content');
+            if (!currentUser) { mainContent.innerHTML = `<div class="card"><h2>🏆 Fetching Leaderboard...</h2><div style="background: rgba(244, 67, 54, 0.1); border-left: 4px solid var(--wrong-red); padding: 15px; margin: 20px 0; border-radius: 4px;"><span style="color: var(--wrong-red); font-weight: bold;">⚠️ ACCESS DENIED:</span> <span style="color: var(--text-light); font-size: 14px;">You must be signed in with Google to view the global leaderboards.</span></div><button class="btn-exam" onclick="window.location.hash='#/leaderboard'">&larr; Back</button></div>`; return; }
+
+            mainContent.innerHTML = `<div class="card"><h2>🏆 Fetching Leaderboard...</h2></div>`;
+            try {
+                const userSnapshot = await db.collection("leaderboards").where("userId", "==", currentUser.uid).get();
+                let totalQuestions = 0; let totalTests = 0; let myBestScore = -99999; let myBestData = null;
+                userSnapshot.forEach(doc => {
+                    let data = doc.data();
+                    if (data.quizPath && data.quizPath.startsWith(pathPrefix)) {
+                        totalTests++; totalQuestions += (data.attemptedQuestions || 0);
+                        if (data.score > myBestScore) { myBestScore = data.score; myBestData = data; }
+                    }
+                });
+
+                let isMockTest = pathPrefix.includes('Mock Test'); let thresholdMet = false; let requiredText = ""; let progressText = "";
+                if (isMockTest) { thresholdMet = (totalTests >= 5); requiredText = "5 Full Mock Tests"; progressText = `${totalTests} / 5 Tests Completed`; } 
+                else { thresholdMet = (totalQuestions >= 100); requiredText = "100 Practice Questions"; progressText = `${totalQuestions} / 100 Questions Attempted`; }
+
+                if (!thresholdMet) {
+                    mainContent.innerHTML = `<div class="card" style="text-align:center; padding: 40px 20px;"><h2 style="color: var(--primary-yellow); font-size: 28px; margin-bottom: 10px;">🔒 Leaderboard Locked</h2><p style="color: var(--text-muted); font-size: 15px; max-width: 500px; margin: 0 auto 20px auto; line-height: 1.5;">To ensure competitive integrity, you must attempt a minimum of <b style="color: white;">${requiredText}</b> in this specific category before unlocking the global rankings.</p><div style="background: #2a2a2a; border: 1px solid var(--border-color); padding: 15px 25px; border-radius: 8px; display: inline-block; margin-bottom: 30px;"><span style="color: var(--primary-yellow); font-weight: bold; margin-right: 10px;">Your Progress:</span> <span style="color: white; font-weight: bold;">${progressText}</span></div><br><button class="btn-exam" onclick="window.location.hash='#/leaderboard'">&larr; Back to Categories</button></div>`; return;
+                }
+
+                const boardSnapshot = await db.collection("leaderboards").where("quizPath", ">=", pathPrefix).where("quizPath", "<=", pathPrefix + "\uf8ff").orderBy("quizPath").orderBy("score", "desc").limit(100).get();
+                let html = `<div class="card"><h2>🏆 Top 10: ${pathPrefix.split(' > ').pop()}</h2><table><tr><th>Rank</th><th>Student</th><th>Score</th><th>Accuracy</th><th>Time</th></tr>`;
+                let myRank = ">100"; let inTop10 = false; let docs = [];
+                boardSnapshot.forEach(doc => docs.push(doc.data()));
+
+                for(let i = 0; i < docs.length; i++) { if (docs[i].userId === currentUser.uid && docs[i].score === myBestScore) { myRank = i + 1; if (myRank <= 10) inTop10 = true; break; } }
+                let displayCount = Math.min(10, docs.length);
+                for(let i = 0; i < displayCount; i++) {
+                    let data = docs[i]; let medal = (i === 0) ? "🥇 " : ((i === 1) ? "🥈 " : ((i === 2) ? "🥉 " : (i + 1) + ". "));
+                    let isMe = (data.userId === currentUser.uid); let rowStyle = isMe ? `style="background: rgba(253, 184, 19, 0.15);"` : "";
+                    html += `<tr ${rowStyle}><td>${medal}</td><td><b>${data.userName}</b> ${isMe ? '<span style="color:var(--primary-yellow); font-size:12px; margin-left:5px;">(You)</span>' : ''}</td><td style="color:var(--correct-green); font-weight:bold;">${data.score}</td><td>${data.accuracy}%</td><td>${data.timeStr}</td></tr>`;
+                }
+                html += `</table>`;
+
+                if (!inTop10 && myBestData) { html += `<div style="margin-top: 30px; background: #2a2a2a; border: 1px solid var(--border-color); border-left: 4px solid var(--primary-yellow); padding: 20px; border-radius: 4px;"><h4 style="margin: 0 0 15px 0; color: var(--primary-yellow); font-size: 18px;">Your Personal Best</h4><div style="display: flex; gap: 30px; flex-wrap: wrap;"><div><span style="color:var(--text-muted); font-size:13px;">Global Rank</span><br><b style="font-size:20px; color: white;">${myRank}</b></div><div><span style="color:var(--text-muted); font-size:13px;">Best Score</span><br><b style="font-size:20px; color:var(--correct-green);">${myBestData.score}</b></div><div><span style="color:var(--text-muted); font-size:13px;">Accuracy</span><br><b style="font-size:20px; color: white;">${myBestData.accuracy}%</b></div><div><span style="color:var(--text-muted); font-size:13px;">Total Tests Attempted</span><br><b style="font-size:20px; color: white;">${totalTests}</b></div></div></div>`; }
+                html += `<button class="btn-exam" onclick="window.location.hash='#/leaderboard'" style="margin-top:25px; background:#333;">&larr; Back to Categories</button></div>`;
+                mainContent.innerHTML = html;
+
+            } catch(e) { mainContent.innerHTML = `<div class="card"><h2 style="color:var(--wrong-red);">Error</h2><p>${e.message}</p></div>`; }
+        }
+        
+        function openSearch() { document.getElementById('searchWrapper').classList.add('active'); document.getElementById('searchInput').focus(); }
+        function closeSearch() { document.getElementById('searchWrapper').classList.remove('active'); document.getElementById('searchInput').value = ''; document.getElementById('searchSuggestions').style.display = 'none'; }
+        function delayCloseSearch() { setTimeout(closeSearch, 250); }
+        
+        function handleLiveSearch() { 
+            const query = document.getElementById('searchInput').value.trim().toLowerCase(); 
+            const dropdown = document.getElementById('searchSuggestions');
+            if(query === "") { dropdown.style.display = 'none'; return; }
+            
+            let results = [];
+            function searchDB(obj, q, path = []) { 
+                for (let key in obj) { 
+                    let current = [...path, key]; 
+                    if (key.toLowerCase().includes(q)) results.push({pathArray: current, matchWord: key}); 
+                    if (typeof obj[key] === 'object' && !Array.isArray(obj[key])) searchDB(obj[key], q, current); 
+                } 
+            }
+            searchDB(appData, query);
+            
+            if(results.length > 0) { 
+                dropdown.innerHTML = results.slice(0, 8).map(res => { 
+                    const cleanPath = JSON.stringify(res.pathArray).replace(/"/g, "'"); 
+                    let regex = new RegExp(`(${query})`, 'gi');
+                    let highlightedText = res.pathArray.map(part => part.replace(regex, "<span class='highlight-match'>$1</span>")).join(" <span style='color:var(--text-muted);font-size:12px;'>&rarr;</span> ");
+                    return `<div class="suggestion-item" onclick="jumpToSection(${cleanPath}); closeSearch();">🔍 <span>${highlightedText}</span></div>`; 
+                }).join(''); 
+            } else { 
+                dropdown.innerHTML = `<div class="suggestion-item" style="color: var(--text-muted);">No results match "${query}"</div>`; 
+            }
+            dropdown.style.display = 'block';
+        }
+        
+        function showNotification(message) { const notif = document.getElementById('notification'); notif.innerText = message; notif.style.display = 'block'; setTimeout(() => { notif.style.display = 'none'; }, 3000); }
 
         fetchGlobalRating();
     </script>
