@@ -14,7 +14,7 @@
     <title>MCQsPrep - Dashboard</title>
     <meta name="description" content="MCQsPrep - A free, smart MCQ practice platform for competitive exams.">
     
-    <!-- Link to your new CSS file -->
+    <!-- LINK TO YOUR CSS FILE -->
     <link rel="stylesheet" href="style.css">
     
     <!-- FIREBASE LIBRARIES -->
@@ -110,13 +110,12 @@
                 <div style="display:flex; align-items:center; gap:12px; margin-bottom: 25px;">
                     <div style="font-size:32px;">✨</div>
                     <div>
-                        <h2 style="margin:0; font-size:26px; color: #fff;">Ask AI Tutor</h2>
+                        <h2 style="margin:0; font-size:26px; color: #fff; text-shadow: 0 0 20px rgba(253,184,19,0.5);">Ask AI Tutor</h2>
                         <span style="font-size:14px; color: rgba(255,255,255,0.7);">Powered by NCERT syllabus models</span>
                     </div>
                 </div>
                 
                 <div class="ai-split-container">
-                    <!-- LEFT PANEL -->
                     <div class="ai-left-panel" id="ai-left-view">
                         <p style="color:var(--text-light); font-size:16px; margin-top:0; margin-bottom:20px;">Type your question below, or upload a photo to get a step-by-step solution.</p>
                         
@@ -148,20 +147,19 @@
                         </div>
                     </div>
 
-                    <!-- RIGHT PANEL -->
                     <div class="ai-right-panel">
                         <div id="ai-idle-view" style="display:flex; flex:1; flex-direction:column; justify-content:center; align-items:center; opacity: 0.3;">
                             <div style="font-size: 70px; margin-bottom:15px;">🧠</div><h3 style="margin:0; color: white;">AI is ready</h3><p>Results will appear here.</p>
                         </div>
                         <div id="ai-loading-view" style="display:none; flex:1; flex-direction:column; justify-content:center; align-items:center;">
                             <div style="font-size: 64px; animation: pulse 1s infinite; margin-bottom:20px;">🤖</div>
-                            <h2 style="color:var(--primary-yellow); text-align:center; margin-bottom: 8px;">Consulting Trusted Sources...</h2>
+                            <h2 style="color:var(--primary-yellow); text-align:center; margin-bottom: 8px;">Consulting Sources...</h2>
                         </div>
                         <div id="ai-chat-view" style="display:none; flex:1; flex-direction:column; height: 100%;">
                             <div id="ai-chat-history" style="flex:1; overflow-y:auto; padding-right:15px; margin-bottom:20px;"></div>
                             <div style="display:flex; gap:10px; background: rgba(15, 18, 28, 0.85); padding: 12px; border-radius: 12px;">
                                 <input type="text" id="aiFollowUpInput" class="input-field" placeholder="Ask a follow-up doubt..." style="margin-bottom:0; flex:1; background: #000; border: none;">
-                                <button class="btn-exam" onclick="sendAIFollowUp()" style="background:var(--primary-yellow); color:black;">Send</button>
+                                <button class="btn-exam" onclick="sendAIFollowUp()" style="background:var(--primary-yellow); color:black; padding: 0 20px;">Send</button>
                             </div>
                         </div>
                     </div>
@@ -171,16 +169,20 @@
     </div>
 
     <!-- Background Modals -->
-    <div id="authModal" class="modal-overlay"><div class="modal-content" style="text-align: center; max-width: 420px;"><button class="close-modal" onclick="skipSignIn()">✕</button><h2 style="color: var(--primary-yellow);">Welcome to MCQsPrep</h2><p style="color: var(--text-muted); margin-bottom: 25px;">Sign in securely to track your progress.</p><button class="google-btn" onclick="signInWithGoogle()"><img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google">Sign in with Google</button></div></div>
+    <div id="authModal" class="modal-overlay"><div class="modal-content" style="text-align: center; max-width: 420px;"><button class="close-modal" onclick="skipSignIn()">✕</button><h2 style="color: var(--primary-yellow);">Welcome to MCQsPrep</h2><p style="color: var(--text-muted); margin-bottom: 25px;">Sign in securely to track your progress and compete.</p><button class="google-btn" onclick="signInWithGoogle()"><img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google">Sign in with Google</button></div></div>
+    
     <div id="userReportsModal" class="modal-overlay"><div class="modal-content" style="max-width: 600px;"><button class="close-modal" onclick="closeUserReportsModal()">✕</button><h2 style="color: var(--primary-yellow);">🚨 My Reports</h2><div id="user-reports-list" style="max-height: 50vh; overflow-y: auto;"></div></div></div>
+    
     <div id="reportModal" class="modal-overlay"><div class="modal-content" style="max-width: 450px;"><button class="close-modal" onclick="closeReportModal()">✕</button><h2 style="color: var(--wrong-red);">🚨 Report Mistake</h2><select id="reportReason" class="input-field"><option value="Wrong Option Provided">Wrong Option</option><option value="Typo">Typo</option><option value="Other">Other</option></select><textarea id="reportDescription" class="input-field" placeholder="Details..."></textarea><button class="btn-exam" onclick="submitReport()" style="width:100%; background:var(--wrong-red);">Submit</button></div></div>
+    
     <div id="feedbackModal" class="modal-overlay"><div class="modal-content" style="text-align: center;"><button class="close-modal" onclick="closeFeedbackModal()">✕</button><h2 style="color: var(--primary-yellow);">⭐ Feedback</h2><div style="background: #2a2a2a; padding: 25px; border-radius: 8px;"><div style="margin-bottom: 25px;"><button id="star-1" class="star-btn" onclick="updateStarUI(1)">★</button><button id="star-2" class="star-btn" onclick="updateStarUI(2)">★</button><button id="star-3" class="star-btn" onclick="updateStarUI(3)">★</button><button id="star-4" class="star-btn" onclick="updateStarUI(4)">★</button><button id="star-5" class="star-btn" onclick="updateStarUI(5)">★</button></div><textarea id="platformFeedbackText" class="input-field" placeholder="Tell us what you like..."></textarea><button id="submitFeedbackBtn" class="btn-exam" onclick="submitPlatformFeedback()" style="width: 100%; background: var(--primary-yellow); color: black;">Submit</button></div></div></div>
     
     <!-- Admin Modals -->
     <div id="editTopicModal" class="modal-overlay"><div class="modal-content" style="max-width: 450px;"><button class="close-modal" onclick="closeEditTopicModal()">✕</button><h2 style="color: var(--primary-yellow);">✏️ Edit Folder</h2><input type="hidden" id="editTopicId"><input type="text" id="editTopicName" class="input-field"><select id="editTopicType" class="input-field"><option value="mcq">MCQs</option><option value="pdf">PDF</option></select><button class="btn-exam" onclick="saveEditedTopic()" style="width:100%; background:var(--correct-green);">Save</button></div></div>
-    <div id="editModal" class="modal-overlay"><div class="modal-content"><button class="close-modal" onclick="closeEditModal()">✕</button><h2 style="color: var(--primary-yellow);">✏️ Edit MCQ</h2><input type="hidden" id="editDocId"><textarea id="editQuestion" class="input-field"></textarea><div class="admin-row"><input type="text" id="editOptA" class="input-field" placeholder="A"><input type="text" id="editOptB" class="input-field" placeholder="B"></div><div class="admin-row"><input type="text" id="editOptC" class="input-field" placeholder="C"><input type="text" id="editOptD" class="input-field" placeholder="D"></div><div class="admin-checkbox-group"><label><input type="checkbox" value="A" class="editCorrectCb"> A</label><label><input type="checkbox" value="B" class="editCorrectCb"> B</label><label><input type="checkbox" value="C" class="editCorrectCb"> C</label><label><input type="checkbox" value="D" class="editCorrectCb"> D</label></div><select id="editDifficulty" class="input-field"><option value="Mixed">Mixed</option><option value="Easy">Easy</option><option value="Medium">Medium</option><option value="Hard">Hard</option></select><textarea id="editExplanation" class="input-field" placeholder="Explanation..."></textarea><button class="btn-exam" onclick="saveEditedMCQ()" style="width:100%; background:var(--correct-green);">Save</button></div></div>
+    
+    <div id="editModal" class="modal-overlay"><div class="modal-content"><button class="close-modal" onclick="closeEditModal()">✕</button><h2 style="color: var(--primary-yellow);">✏️ Edit MCQ</h2><input type="hidden" id="editDocId"><textarea id="editQuestion" class="input-field"></textarea><div class="admin-row"><input type="text" id="editOptA" class="input-field" placeholder="A"><input type="text" id="editOptB" class="input-field" placeholder="B"></div><div class="admin-row"><input type="text" id="editOptC" class="input-field" placeholder="C"><input type="text" id="editOptD" class="input-field" placeholder="D"></div><div class="admin-checkbox-group"><label><input type="checkbox" value="A" class="editCorrectCb"> A</label><label><input type="checkbox" value="B" class="editCorrectCb"> B</label><label><input type="checkbox" value="C" class="editCorrectCb"> C</label><label><input type="checkbox" value="D" class="editCorrectCb"> D</label></div><select id="editDifficulty" class="input-field"><option value="Mixed">Mixed</option><option value="Easy">Easy</option><option value="Medium">Medium</option><option value="Hard">Hard</option></select><textarea id="editExplanation" class="input-field" placeholder="Explanation..."></textarea><button class="btn-exam" onclick="saveEditedMCQ()" style="width:100%; background:var(--correct-green);">Save Changes</button></div></div>
 
-    <!-- Link to your new Javascript file -->
+    <!-- LINK TO YOUR JS FILE -->
     <script src="script.js"></script>
 </body>
 </html>
