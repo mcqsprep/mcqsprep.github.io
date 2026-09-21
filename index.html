@@ -144,10 +144,6 @@
         .star-btn:hover { transform: scale(1.1); }
         .star-btn.active { color: var(--primary-yellow); text-shadow: 0 0 15px rgba(253, 184, 19, 0.6); }
 
-        /* --- Custom Practice Setup UI --- */
-        .custom-practice-box { background: rgba(253,184,19,0.05); border: 1px dashed var(--primary-yellow); padding: 20px; border-radius: 8px; margin-bottom: 25px; }
-        .custom-topic-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px; margin-bottom: 20px; max-height: 200px; overflow-y: auto; padding: 10px; background: #111; border-radius: 6px; border: 1px solid var(--border-color); }
-
         /* --- NEXT-GEN GEMINI AMBIENT FULLSCREEN UI --- */
         #ai-floating-btn {
             position: fixed; bottom: 30px; right: 30px;
@@ -161,7 +157,6 @@
         #ai-floating-btn.draggable { box-shadow: 0 0 25px #ffffff; border: 2px solid white; cursor: grab; animation: pulse 1s infinite alternate; }
         @keyframes pulse { from { transform: scale(1); } to { transform: scale(1.05); } }
 
-        /* Fixed Fullscreen Modal */
         .ai-fullscreen-modal {
             width: 100% !important; height: 100% !important; max-width: 100% !important; max-height: 100% !important;
             border-radius: 0 !important; border: none !important; margin: 0 !important;
@@ -185,7 +180,6 @@
         }
         .ai-exit-btn:hover { background: rgba(244, 67, 54, 0.4); border-color: var(--wrong-red); color: var(--wrong-red); transform: scale(1.08); }
 
-        /* Split Screen Desktop, Stacked Mobile */
         .ai-workspace { position: relative; z-index: 10; width: 100%; max-width: 1400px; height: 100%; display: flex; flex-direction: column; padding: 40px; margin: 0 auto; box-sizing: border-box; }
         
         .ai-split-container { display: flex; flex-direction: column; gap: 30px; flex: 1; height: calc(100% - 80px); }
@@ -285,7 +279,6 @@
 
                     <!-- RIGHT PANEL (RESULTS & CHAT) -->
                     <div class="ai-right-panel">
-                        
                         <div id="ai-idle-view" style="display:flex; flex:1; flex-direction:column; justify-content:center; align-items:center; opacity: 0.3;">
                             <div style="font-size: 70px; margin-bottom:15px;">🧠</div>
                             <h3 style="margin:0; color: white;">AI is ready</h3>
@@ -312,6 +305,7 @@
         </div>
     </div>
 
+    <!-- Auth Modal -->
     <div id="authModal" class="modal-overlay">
         <div class="modal-content" style="text-align: center; max-width: 420px;">
             <button class="close-modal" onclick="skipSignIn()">✕</button>
@@ -331,6 +325,7 @@
         </div>
     </div>
 
+    <!-- Report Modal -->
     <div id="reportModal" class="modal-overlay">
         <div class="modal-content" style="max-width: 450px;">
             <button class="close-modal" onclick="closeReportModal()">✕</button>
@@ -344,6 +339,7 @@
         </div>
     </div>
 
+    <!-- Feedback Modal -->
     <div id="feedbackModal" class="modal-overlay">
         <div class="modal-content" style="text-align: center; max-width: 450px;">
             <button class="close-modal" onclick="closeFeedbackModal()">✕</button>
@@ -374,6 +370,7 @@
         </div>
     </div>
 
+    <!-- Edit MCQ Modal -->
     <div id="editModal" class="modal-overlay">
         <div class="modal-content">
             <button class="close-modal" onclick="closeEditModal()">✕</button>
@@ -652,7 +649,6 @@
                 let flags = await db.collection("flagged_doubts").where("studentId", "==", currentUser.uid).get();
                 flags.forEach(doc => { allItems.push({ _id: doc.id, _type: 'flag', ...doc.data() }); });
 
-                // Client-side sort to bypass Firebase composite index requirements completely
                 allItems.sort((a, b) => (b.timestamp?.toMillis() || 0) - (a.timestamp?.toMillis() || 0));
 
                 allItems.forEach(d => {
@@ -1035,7 +1031,7 @@
                 snapshot.forEach(doc => {
                     const data = doc.data();
                     let stat = data.status === 'resolved' ? `<span style="background:var(--correct-green); color:white; padding:2px 8px; border-radius:12px; font-size:12px;">✅ Resolved</span>` : `<span style="background:#555; color:white; padding:2px 8px; border-radius:12px; font-size:12px;">⏳ Pending</span>`;
-                    html += `<div class="content-item-card" style="border-left: 4px solid var(--wrong-red);"><div class="content-item-header"><span class="badge-path">${data.path || 'Unknown Path'}</span><span style="font-size:12px; color:var(--text-muted);">${data.timestamp ? data.timestamp.toDate().toLocaleString() : ""}</span></div><div style="margin: 10px 0; padding: 10px; background: rgba(244, 67, 54, 0.1); border-radius: 4px; display:flex; justify-content:space-between;"><div><p style="color:var(--wrong-red); margin:0 0 5px 0;"><b>Issue:</b> ${data.reason}</p><p style="margin:0; font-size:14px;"><b>Details:</b> ${data.description || 'No description provided.'}</p></div>${stat}</div><p style="margin:5px 0 10px 0; font-size:12px; color:var(--text-muted);">Reported by: ${data.studentName}</p><div style="background:#1a1a1a; padding:10px; border-radius:4px; font-size:14px; margin-bottom:10px;"><b>Question Content:</b><br>${data.questionText}</div><div style="display:flex; gap:10px; flex-wrap:wrap;"><button onclick="openEditModalFromReport('${data.questionId}')" style="padding:6px 12px; background:#2196F3; border:none; border-radius:4px; color:white; cursor:pointer;">✏️ Edit MCQ in Database</button><button onclick="resolveReport('${doc.id}')" style="padding:6px 12px; background:var(--correct-green); border:none; border-radius:4px; color:white; cursor:pointer;" ${data.status==='resolved'?'disabled':''}>✅ Mark Resolved (Notifies User)</button></div></div>`;
+                    html += `<div class="content-item-card" style="border-left: 4px solid var(--wrong-red);"><div class="content-item-header"><span class="badge-path">${data.path || 'Unknown Path'}</span><span style="font-size:12px; color:var(--text-muted);">${data.timestamp ? data.timestamp.toDate().toLocaleString() : ""}</span></div><div style="margin: 10px 0; padding: 10px; background: rgba(244, 67, 54, 0.1); border-radius: 4px; display:flex; justify-content:space-between;"><div><p style="color:var(--wrong-red); margin:0 0 5px 0;"><b>Issue:</b> ${data.reason}</p><p style="margin:0; font-size:14px;"><b>Details:</b> ${data.description \vert{}\vert{} 'No description provided.'}</p></div>${stat}</div><p style="margin:5px 0 10px 0; font-size:12px; color:var(--text-muted);">Reported by: ${data.studentName}</p><div style="background:#1a1a1a; padding:10px; border-radius:4px; font-size:14px; margin-bottom:10px;"><b>Question Content:</b><br>${data.questionText}</div><div style="display:flex; gap:10px; flex-wrap:wrap;"><button onclick="openEditModalFromReport('${data.questionId}')" style="padding:6px 12px; background:#2196F3; border:none; border-radius:4px; color:white; cursor:pointer;">✏️ Edit MCQ in Database</button><button onclick="resolveReport('${doc.id}')" style="padding:6px 12px; background:var(--correct-green); border:none; border-radius:4px; color:white; cursor:pointer;" ${data.status==='resolved'?'disabled':''}>✅ Mark Resolved (Notifies User)</button></div></div>`;
                 });
                 container.innerHTML = html;
             } catch(e) { container.innerHTML = `<p style="color:red;">Error: ${e.message}</p>`; }
@@ -1190,7 +1186,7 @@
                     if (data.type === 'mcq') {
                         let answersStr = (data.correctAnswers || []).join(', ');
                         let lvlBadge = data.level ? `<span style="margin-left:10px; background:#444; color:white; padding:2px 6px; border-radius:4px; font-size:11px;">${data.level}</span>` : '';
-                        html += `<div class="content-item-card" id="item_${doc.id}"><div class="content-item-header"><span class="badge-path">${data.path || 'Uncategorized'}</span>${lvlBadge}<div style="display:flex; gap:8px;"><button class="btn-exam" onclick="openEditModal('${doc.id}')" style="padding:4px 10px; font-size:12px; background:#2196F3; border:none;">✏️ Edit</button><button class="btn-exam" onclick="deleteContentItem('${doc.id}')" style="padding:4px 10px; font-size:12px; background:var(--wrong-red); border:none;">🗑️ Delete</button></div></div><div style="font-weight:bold; margin-bottom:8px;">${data.question}</div>${data.imageUrl ? `<img src="${data.imageUrl}" style="max-height:80px; border-radius:4px; margin-bottom:8px; display:block;">` : ''}<div style="font-size:13px; color:var(--text-muted); line-height:1.4;">A: ${data.options?.A || '-'} | B: ${data.options?.B || '-'} | C: ${data.options?.C || '-'} | D: ${data.options?.D || '-'}</div><div style="margin-top:6px; font-size:13px; color:var(--correct-green);">Correct: ${answersStr}</div></div>`;
+                        html += `<div class="content-item-card" id="item_${doc.id}"><div class="content-item-header"><span class="badge-path">${data.path \vert{}\vert{} 'Uncategorized'}</span>${lvlBadge}<div style="display:flex; gap:8px;"><button class="btn-exam" onclick="openEditModal('${doc.id}')" style="padding:4px 10px; font-size:12px; background:#2196F3; border:none;">✏️ Edit</button><button class="btn-exam" onclick="deleteContentItem('${doc.id}')" style="padding:4px 10px; font-size:12px; background:var(--wrong-red); border:none;">🗑️ Delete</button></div></div><div style="font-weight:bold; margin-bottom:8px;">${data.question}</div>${data.imageUrl ? `<img src="${data.imageUrl}" style="max-height:80px; border-radius:4px; margin-bottom:8px; display:block;">` : ''}<div style="font-size:13px; color:var(--text-muted); line-height:1.4;">A: ${data.options?.A \vert{}\vert{} '-'} \vert{} B: ${data.options?.B || '-'} | C: ${data.options?.C \vert{}\vert{} '-'} \vert{} D: ${data.options?.D || '-'}</div><div style="margin-top:6px; font-size:13px; color:var(--correct-green);">Correct: ${answersStr}</div></div>`;
                     } else {
                         html += `<div class="content-item-card" id="item_${doc.id}"><div class="content-item-header"><span class="badge-path">${data.path || 'Uncategorized'}</span><button class="btn-exam" onclick="deleteContentItem('${doc.id}')" style="padding:4px 10px; font-size:12px; background:var(--wrong-red); border:none;">🗑️ Delete</button></div><div style="font-weight:bold; margin-bottom:5px;">📄 ${data.title}</div><a href="${data.fileUrl}" target="_blank" style="color:var(--primary-yellow); font-size:13px;">View Document &rarr;</a></div>`;
                     }
@@ -1250,281 +1246,155 @@
             }
         }
 
-        let quizState = { questions: [], currentIndex: 0, userAnswers: {}, showAnswerTriggered: {}, flaggedDoubts: {}, viewedQuestions: [], timer: null, secondsPassed: 0, isTimerPaused: false, isCustom: false };
+        // --- NEW CUSTOM WIZARD LOGIC ---
+        let cwState = { exam: '', subjects: [], subtopics: [], count: 20, level: 'Mixed' };
 
-        async function _initiateQuizEngine(isCustomLaunch = false) {
-            const pathString = currentPath.join(' > ');
-            document.getElementById('breadcrumb-text').innerText = "Home / " + (isCustomLaunch ? "Custom Quiz" : pathString + " / Active Quiz"); 
-            const mainContent = document.getElementById('dynamic-content');
-            mainContent.innerHTML = `<div class="card"><div style="font-size:40px; animation: pulse 1s infinite; text-align:center; margin-bottom:15px;">⚙️</div><h2 style="color:var(--primary-yellow); text-align:center;">Building Your Quiz...</h2><p style="text-align:center; color:var(--text-muted);">Fetching and filtering unattempted questions from the database...</p></div>`;
-
-            try {
-                let isDailyQuiz = currentPath[0] === 'Daily Quiz Challenge';
-                
-                let globalAttemptedIds = [];
-                if (currentUser) {
-                    let userDoc = await db.collection("users").doc(currentUser.uid).get();
-                    if (userDoc.exists) { let d = userDoc.data(); for (let k in d) { if (k.startsWith("prog_")) globalAttemptedIds.push(...d[k]); } }
-                } else {
-                    let localProg = JSON.parse(localStorage.getItem('mcq_progress') || '{}');
-                    for (let k in localProg) { globalAttemptedIds.push(...localProg[k]); }
+        function getCustomSubjects(exam) {
+            let subjects = [];
+            let rootNode = exam === 'NEET' ? appData["NEET"]["MCQs Practice"] : appData["General Knowledge"];
+            for(let key in rootNode) { subjects.push({ name: key, path: exam === 'NEET' ? `NEET > MCQs Practice > ${key}` : `General Knowledge > ${key}` }); }
+            let rootPath = exam === 'NEET' ? "NEET > MCQs Practice" : "General Knowledge";
+            for(let customPath in customTopicTypes) {
+                if(customPath.startsWith(rootPath) && customPath.split(' > ').length === rootPath.split(' > ').length + 1) {
+                    let name = customPath.split(' > ').pop();
+                    if(!subjects.find(s => s.name === name)) subjects.push({ name: name, path: customPath });
                 }
-
-                let availableQuestions = []; let totalQuestionsInDB = 0;
-
-                if (isCustomLaunch) {
-                    let unattempted = [];
-                    for (const p of customQuizConfig.paths) {
-                        const snap = await db.collection("content").where("path", "==", p).get();
-                        snap.forEach(doc => {
-                            let d = doc.data();
-                            if (d.type === 'mcq' && !globalAttemptedIds.includes(doc.id)) {
-                                if (customQuizConfig.level === 'Mixed' || d.level === customQuizConfig.level || (!d.level && customQuizConfig.level === 'Mixed')) {
-                                    unattempted.push({id: doc.id, ...d});
-                                }
-                            }
-                        });
-                    }
-                    totalQuestionsInDB = unattempted.length;
-                    availableQuestions = unattempted.sort(()=>0.5-Math.random()).slice(0, customQuizConfig.count);
-                    quizState.questions = availableQuestions;
-                    quizState.isCustom = true;
-
-                } else if (isDailyQuiz) {
-                    let targetPrefix = currentPath[1] === "NEET" ? "NEET" : "General Knowledge";
-                    let snap = await db.collection("content").where("path", ">=", targetPrefix).where("path", "<=", targetPrefix + "\uf8ff").get();
-                    let unattempted = [];
-                    snap.forEach(doc => { let data = doc.data(); if (data.type === 'mcq' && !globalAttemptedIds.includes(doc.id)) { unattempted.push({id: doc.id, ...data}); } });
-
-                    if (currentPath[1] === "NEET") {
-                        let bot = unattempted.filter(q => q.path.includes("Botany")).sort(()=>0.5-Math.random()); let zoo = unattempted.filter(q => q.path.includes("Zoology")).sort(()=>0.5-Math.random());
-                        let phy = unattempted.filter(q => q.path.includes("Physics")).sort(()=>0.5-Math.random()); let pChem = unattempted.filter(q => q.path.includes("Physical Chemistry")).sort(()=>0.5-Math.random());
-                        let oChem = unattempted.filter(q => q.path.includes("Organic Chemistry")).sort(()=>0.5-Math.random()); let iChem = unattempted.filter(q => q.path.includes("Inorganic Chemistry")).sort(()=>0.5-Math.random());
-                        
-                        availableQuestions.push(...bot.slice(0, 5), ...zoo.slice(0, 5), ...phy.slice(0, 4), ...pChem.slice(0, 2), ...oChem.slice(0, 2), ...iChem.slice(0, 2));
-                        totalQuestionsInDB = 20; 
-                    } else { 
-                        availableQuestions = unattempted.sort(()=>0.5-Math.random()).slice(0, 20); totalQuestionsInDB = 20;
-                    }
-                    quizState.questions = availableQuestions.sort(() => Math.random() - 0.5);
-                    quizState.isCustom = false;
-
-                } else {
-                    let snapshot = await db.collection("content").where("path", ">=", pathString).where("path", "<=", pathString + "\uf8ff").get();
-                    let safePath = "prog_" + currentPath.join('_').replace(/[^a-zA-Z0-9]/g, '_'); let previouslyAttemptedIds = [];
-                    if (currentUser) { let userDoc = await db.collection("users").doc(currentUser.uid).get(); if (userDoc.exists) previouslyAttemptedIds = userDoc.data()[safePath] || []; } 
-                    else { let localProg = JSON.parse(localStorage.getItem('mcq_progress') || '{}'); previouslyAttemptedIds = localProg[safePath] || []; }
-
-                    snapshot.forEach(doc => {
-                        let data = doc.data();
-                        if (data.type === 'mcq') { totalQuestionsInDB++; if (!previouslyAttemptedIds.includes(doc.id)) { availableQuestions.push({ id: doc.id, ...data }); } }
-                    });
-                    quizState.questions = availableQuestions.sort(() => Math.random() - 0.5);
-                    quizState.isCustom = false;
-                }
-
-                if (availableQuestions.length === 0) { 
-                    if(isCustomLaunch) mainContent.innerHTML = `<div class="card" style="text-align:center;"><h2>No Questions Found</h2><p style="color:var(--text-muted);">We couldn't find any unattempted questions matching your selected chapters and difficulty level.</p><button class="btn-exam" onclick="goBack()">&larr; Go Back to Customizer</button></div>`;
-                    else if(totalQuestionsInDB === 0) mainContent.innerHTML = `<div class="card"><h2>No Questions Available</h2><p style="color:var(--text-muted);">Not enough questions available in the database for this section.</p><button class="btn-exam" onclick="goBack()">&larr; Go Back</button></div>`; 
-                    else {
-                        let safePath = "prog_" + currentPath.join('_').replace(/[^a-zA-Z0-9]/g, '_');
-                        mainContent.innerHTML = `<div class="card" style="text-align:center; padding: 40px 20px;"><h2 style="color: var(--primary-yellow); font-size: 28px; margin-bottom: 15px;">🎉 Section Completed!</h2><p style="color: var(--text-muted); font-size: 16px; margin-bottom: 25px;">You have successfully attempted all available questions in this section.</p><div style="display:flex; justify-content:center; gap:15px; flex-wrap:wrap;"><button class="btn-exam" onclick="resetProgress('${safePath}')" style="background: #333; color: white; border-color: var(--border-color);">🔄 Reset My Progress</button><button class="btn-exam" onclick="goBack()">&larr; Explore Other Topics</button></div></div>`;
-                    }
-                    return; 
-                }
-                
-                quizState.currentIndex = 0; quizState.userAnswers = {}; quizState.showAnswerTriggered = {}; quizState.flaggedDoubts = {}; quizState.viewedQuestions = []; quizState.secondsPassed = 0; quizState.isTimerPaused = false;
-                
-                clearInterval(quizState.timer);
-                quizState.timer = setInterval(() => {
-                    if (!quizState.isTimerPaused) { quizState.secondsPassed++; let disp = document.getElementById('quizTimeDisplay'); if(disp) disp.innerText = formatTime(quizState.secondsPassed); }
-                }, 1000);
-                _renderQuizQuestion();
-            } catch (error) { mainContent.innerHTML = `<div class="card"><h2>Error</h2><p>${error.message}</p><button class="btn-exam" onclick="goBack()">&larr; Go Back</button></div>`; }
-        }
-
-        function toggleFlag() {
-            quizState.flaggedDoubts[quizState.currentIndex] = !quizState.flaggedDoubts[quizState.currentIndex];
-            const btn = document.getElementById('flagDoubtBtn');
-            if(quizState.flaggedDoubts[quizState.currentIndex]) { btn.classList.add('flagged'); btn.innerText = '⭐ Flagged'; }
-            else { btn.classList.remove('flagged'); btn.innerText = '⭐ Flag for Review'; }
-        }
-
-        function _renderQuizQuestion() {
-            const mainContent = document.getElementById('dynamic-content');
-            if (!quizState.viewedQuestions.includes(quizState.currentIndex)) { quizState.viewedQuestions.push(quizState.currentIndex); }
-
-            const q = quizState.questions[quizState.currentIndex];
-            let multiText = q.correctAnswers.length > 1 ? `<span style="color:var(--primary-yellow); font-size:12px;">(Select all that apply)</span>` : "";
-            let selectedNow = quizState.userAnswers[quizState.currentIndex] || []; 
-            let hasPeeked = quizState.showAnswerTriggered[quizState.currentIndex]; let isFlagged = quizState.flaggedDoubts[quizState.currentIndex];
-            quizState.isTimerPaused = !!hasPeeked;
-
-            let paletteHtml = '<div class="question-palette">';
-            for(let i=0; i<quizState.questions.length; i++) {
-                let isAttempted = quizState.userAnswers[i] && quizState.userAnswers[i].length > 0;
-                let bg = quizState.currentIndex === i ? 'var(--primary-yellow)' : (isAttempted ? '#4CAF50' : '#2a2a2a');
-                let color = quizState.currentIndex === i ? '#000' : '#fff';
-                let flagStar = quizState.flaggedDoubts[i] ? '⭐' : '';
-                paletteHtml += `<button onclick="jumpToQuestion(${i})" style="width:35px; height:35px; border-radius:5px; border:1px solid var(--border-color); background:${bg}; color:${color}; font-weight:bold; cursor:pointer;">${i+1}${flagStar}</button>`;
             }
-            paletteHtml += '</div>';
+            return subjects;
+        }
 
-            let optionsHtml = Object.keys(q.options).sort().map(key => {
-                if(!q.options[key]) return ''; 
-                let isSelected = selectedNow.includes(key); let extraClass = '';
-                if (hasPeeked) { if (q.correctAnswers.includes(key)) extraClass = 'correct'; else if (isSelected) extraClass = 'wrong'; } 
-                else if (isSelected) { extraClass = 'selected'; }
-                return `<div class="quiz-option ${extraClass}" onclick="toggleOptionSelection('${key}', ${q.correctAnswers.length > 1})"><b style="margin-right:15px; color:var(--text-muted);">${key}.</b> <span class="katex-render-target">${q.options[key]}</span></div>`;
-            }).join('');
+        function getAllLeafNodes(subjectPaths) {
+            let leafs = [];
+            subjectPaths.forEach(subjPath => {
+                let parts = subjPath.split(' > '); let curr = appData; let valid = true;
+                for(let p of parts) { if(curr[p]) curr = curr[p]; else {valid = false; break;} }
+                function traverse(node, pathStr) {
+                    let hasChildren = false;
+                    for(let k in node) { if(k === "Daily Quiz Challenge") continue; hasChildren = true; traverse(node[k], pathStr + " > " + k); }
+                    if(!hasChildren) leafs.push(pathStr);
+                }
+                if(valid) traverse(curr, subjPath);
+                for(let customP in customTopicTypes) {
+                    if(customP.startsWith(subjPath) && customTopicTypes[customP] === 'mcq') { if(!leafs.includes(customP)) leafs.push(customP); }
+                }
+            });
+            return [...new Set(leafs)].sort();
+        }
 
+        function cwStep1() {
+            if(!currentUser) { showAuthModal(); return; }
+            cwState = { exam: '', subjects: [], subtopics: [], count: 20, level: 'Mixed' };
+            document.getElementById('breadcrumb-text').innerText = "Home / Custom Practice Setup / Select Exam";
             let html = `
                 <div class="card">
-                    <div class="quiz-header">
-                        <span style="color:var(--text-muted);">Question ${quizState.currentIndex + 1} ${multiText}</span>
-                        <div style="display:flex; align-items:center; gap:15px; flex-wrap:wrap;">
-                            <button class="report-btn" onclick="openReportModal('${q.id}', '${q.question.replace(/'/g, "\\'")}', '${q.path}')">🚨 Report Mistake</button>
-                            <button id="flagDoubtBtn" class="flag-btn ${isFlagged ? 'flagged' : ''}" onclick="toggleFlag()">${isFlagged ? '⭐ Flagged' : '⭐ Flag for Review'}</button>
-                            <span class="quiz-timer">⏱ <span id="quizTimeDisplay">${formatTime(quizState.secondsPassed)}</span></span>
+                    <h2 style="color:var(--primary-yellow);">⚙️ Custom Practice Setup</h2>
+                    <p style="color:var(--text-muted); margin-bottom:25px;">Step 1: Which exam are you preparing for?</p>
+                    <div style="display:flex; gap:15px; flex-wrap:wrap;">
+                        <button class="btn-exam" onclick="cwStep2('NEET')" style="flex:1; padding:20px; font-size:18px;">🩺 NEET</button>
+                        <button class="btn-exam" onclick="cwStep2('General Knowledge')" style="flex:1; padding:20px; font-size:18px;">🌍 General Knowledge</button>
+                    </div>
+                    <button class="btn-exam" onclick="goHome()" style="margin-top:20px; background:#333;">&larr; Cancel</button>
+                </div>
+            `;
+            document.getElementById('dynamic-content').innerHTML = html;
+        }
+
+        function cwStep2(exam) {
+            cwState.exam = exam;
+            document.getElementById('breadcrumb-text').innerText = `Home / Custom Practice Setup / ${exam} / Select Subjects`;
+            let subjects = getCustomSubjects(exam);
+            let html = `
+                <div class="card">
+                    <h2 style="color:var(--primary-yellow);">📚 Select Subjects</h2>
+                    <p style="color:var(--text-muted); margin-bottom:20px;">Step 2: Choose one or more subjects from ${exam}.</p>
+                    <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap:10px; margin-bottom:25px;">
+                        ${subjects.map(s => `<label style="background:#2a2a2a; border:1px solid #444; padding:15px; border-radius:8px; cursor:pointer; display:flex; align-items:center; gap:10px; transition:0.2s;" onmouseover="this.style.borderColor='var(--primary-yellow)'" onmouseout="this.style.borderColor='#444'"><input type="checkbox" value="${s.path}" class="cw-subj-cb"> <span>${s.name}</span></label>`).join('')}
+                    </div>
+                    <div style="display:flex; justify-content:space-between;">
+                        <button class="btn-exam" onclick="cwStep1()" style="background:#333;">&larr; Back</button>
+                        <button class="btn-exam" onclick="cwProcessStep2()" style="background:var(--primary-yellow); color:black;">Next: Select Chapters &rarr;</button>
+                    </div>
+                </div>
+            `;
+            document.getElementById('dynamic-content').innerHTML = html;
+        }
+
+        function cwProcessStep2() {
+            let cbs = Array.from(document.querySelectorAll('.cw-subj-cb:checked')).map(cb => cb.value);
+            if(cbs.length === 0) return showNotification("⚠️ Select at least one subject.");
+            cwState.subjects = cbs; cwStep3();
+        }
+
+        function cwStep3() {
+            document.getElementById('breadcrumb-text').innerText = `Home / Custom Practice Setup / ${cwState.exam} / Chapters`;
+            let leafs = getAllLeafNodes(cwState.subjects);
+            let html = `
+                <div class="card">
+                    <h2 style="color:var(--primary-yellow);">📑 Select Chapters / Subtopics</h2>
+                    <p style="color:var(--text-muted); margin-bottom:20px;">Step 3: Pick the specific topics you want to practice.</p>
+                    <input type="text" id="cwSubtopicSearch" class="input-field" placeholder="🔍 Search chapters..." oninput="cwFilterSubtopics()">
+                    <div style="margin-bottom:15px;">
+                        <button onclick="cwSelectAll(true)" style="background:none; border:none; color:var(--primary-yellow); cursor:pointer; font-size:14px;">Select All</button> | 
+                        <button onclick="cwSelectAll(false)" style="background:none; border:none; color:var(--primary-yellow); cursor:pointer; font-size:14px;">Deselect All</button>
+                    </div>
+                    <div id="cw-subtopic-list" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap:10px; max-height:40vh; overflow-y:auto; padding:10px; background:#111; border-radius:8px; border:1px solid #333; margin-bottom:25px;">
+                        ${leafs.map(l => `<label class="cw-sub-lbl" style="background:#2a2a2a; border:1px solid #444; padding:12px; border-radius:6px; cursor:pointer; display:flex; align-items:flex-start; gap:10px;"><input type="checkbox" value="${l}" class="cw-sub-cb" checked> <span style="font-size:14px;">${l.split(' > ').pop()}<br><span style="font-size:11px; color:#888;">${l}</span></span></label>`).join('')}
+                    </div>
+                    <div style="display:flex; justify-content:space-between;">
+                        <button class="btn-exam" onclick="cwStep2(cwState.exam)" style="background:#333;">&larr; Back</button>
+                        <button class="btn-exam" onclick="cwProcessStep3()" style="background:var(--primary-yellow); color:black;">Next: Set Difficulty &rarr;</button>
+                    </div>
+                </div>
+            `;
+            document.getElementById('dynamic-content').innerHTML = html;
+        }
+
+        function cwFilterSubtopics() {
+            let q = document.getElementById('cwSubtopicSearch').value.toLowerCase();
+            document.querySelectorAll('.cw-sub-lbl').forEach(lbl => {
+                if(lbl.innerText.toLowerCase().includes(q)) lbl.style.display = 'flex'; else lbl.style.display = 'none';
+            });
+        }
+
+        function cwSelectAll(select) {
+            document.querySelectorAll('.cw-sub-cb').forEach(cb => { if(cb.closest('.cw-sub-lbl').style.display !== 'none') cb.checked = select; });
+        }
+
+        function cwProcessStep3() {
+            let cbs = Array.from(document.querySelectorAll('.cw-sub-cb:checked')).map(cb => cb.value);
+            if(cbs.length === 0) return showNotification("⚠️ Select at least one chapter.");
+            cwState.subtopics = cbs; cwStep4();
+        }
+
+        function cwStep4() {
+            document.getElementById('breadcrumb-text').innerText = `Home / Custom Practice Setup / Configure Quiz`;
+            let html = `
+                <div class="card">
+                    <h2 style="color:var(--primary-yellow);">🎯 Final Setup</h2>
+                    <p style="color:var(--text-muted);">Step 4: Choose difficulty and number of questions.</p>
+                    <div style="display:flex; gap:20px; flex-wrap:wrap; margin-bottom:30px; margin-top:20px;">
+                        <div style="flex:1; min-width:200px;">
+                            <label style="color:var(--text-light); font-weight:bold; margin-bottom:10px; display:block;">Difficulty Level:</label>
+                            <select id="cwLevel" class="input-field" style="padding:15px; font-size:16px;"><option value="Mixed">Mixed (All Levels)</option><option value="Easy">Easy</option><option value="Medium">Medium</option><option value="Hard">Hard</option></select>
+                        </div>
+                        <div style="flex:1; min-width:200px;">
+                            <label style="color:var(--text-light); font-weight:bold; margin-bottom:10px; display:block;">Total Questions:</label>
+                            <input type="number" id="cwCount" class="input-field" value="20" min="5" max="100" style="padding:15px; font-size:16px;">
                         </div>
                     </div>
-                    ${paletteHtml}
-                    ${quizState.isCustom ? `<div style="margin-bottom:15px;"><span class="badge-path">${q.path}</span> <span style="font-size:11px; color:#aaa; margin-left:10px;">Lvl: ${q.level||'Mixed'}</span></div>` : ''}
-                    ${q.imageUrl ? `<img src="${q.imageUrl}" class="quiz-image" onclick="expandImage(this.src)" title="Click to enlarge">` : ''}
-                    <div class="quiz-question-text katex-render-target">${q.question}</div>
-                    <div id="optionsContainer">${optionsHtml}</div>
-                    <div id="explanationBox" class="quiz-explanation katex-render-target" style="display:${hasPeeked ? 'block' : 'none'}"><b>Explanation:</b><br><span id="expText">${q.explanation || "No explanation provided."}</span></div>
-                    <div class="nav-buttons-row">
-                        <div style="display:flex; gap:10px;"><button class="btn-exam" onclick="_prevQuestion()" ${quizState.currentIndex === 0 ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : ''}>&larr; Prev</button><button class="btn-exam" onclick="_nextQuestion()" ${quizState.currentIndex === quizState.questions.length - 1 ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : ''}>Next / Skip &rarr;</button></div>
-                        <div style="display:flex; gap:10px;"><button class="btn-exam" onclick="checkAnswer()" style="background:#333; ${hasPeeked ? 'display:none;' : ''}">Check Answer</button><button class="btn-exam" onclick="finishQuiz()" style="background:var(--wrong-red); border:none; color:white;">Finish Quiz</button></div>
+                    <div style="display:flex; justify-content:space-between;">
+                        <button class="btn-exam" onclick="cwStep3()" style="background:#333;">&larr; Back</button>
+                        <button class="btn-exam" onclick="cwLaunchQuiz()" style="background:var(--correct-green); color:white; font-size:18px; padding:15px 30px; border:none; box-shadow:0 4px 15px rgba(76,175,80,0.4);">🚀 Start Custom Quiz</button>
                     </div>
-                </div>`;
-            mainContent.innerHTML = html;
-            
-            document.querySelectorAll('.katex-render-target').forEach(el => {
-                renderMathInElement(el, { delimiters: [ {left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}, {left: '\\(', right: '\\)', display: false}, {left: '\\[', right: '\\]', display: true} ] });
-            });
-        }
-
-        function toggleOptionSelection(optKey, isMulti) {
-            if(quizState.showAnswerTriggered[quizState.currentIndex]) return;
-            let currentSelections = quizState.userAnswers[quizState.currentIndex] || [];
-            if (!isMulti) { currentSelections = [optKey]; } else {
-                if (currentSelections.includes(optKey)) { currentSelections = currentSelections.filter(k => k !== optKey); } else { currentSelections.push(optKey); }
-            }
-            quizState.userAnswers[quizState.currentIndex] = currentSelections; _renderQuizQuestion();
-        }
-
-        function checkAnswer() {
-            let currentSelections = quizState.userAnswers[quizState.currentIndex] || [];
-            if(currentSelections.length === 0) { showNotification("⚠️ Select an option first!"); return; }
-            quizState.showAnswerTriggered[quizState.currentIndex] = true; _renderQuizQuestion();
-        }
-
-        function jumpToQuestion(index) { quizState.currentIndex = index; _renderQuizQuestion(); }
-        function _nextQuestion() { if(quizState.currentIndex < quizState.questions.length - 1) { quizState.currentIndex++; _renderQuizQuestion(); } }
-        function _prevQuestion() { if(quizState.currentIndex > 0) { quizState.currentIndex--; _renderQuizQuestion(); } }
-        function formatTime(totalSeconds) { const m = Math.floor(totalSeconds / 60); const s = totalSeconds % 60; return `${m}:${s < 10 ? '0' : ''}${s}`; }
-
-        window.showReviewTab = function(tabName) {
-            ['correct', 'wrong', 'skipped'].forEach(t => { document.getElementById('review-' + t).style.display = 'none'; document.getElementById('tab-btn-' + t).classList.remove('active'); });
-            document.getElementById('review-' + tabName).style.display = 'block'; document.getElementById('tab-btn-' + tabName).classList.add('active');
-        };
-
-        window.toggleViewAnswer = function(id) { let el = document.getElementById(id); el.style.display = el.style.display === 'none' ? 'block' : 'none'; };
-
-        function buildReviewItemHtml(q, index, type, userAnsArray) {
-            let optionsHtml = ''; let optKeys = Object.keys(q.options).sort();
-            for(let key of optKeys) {
-                let isUser = userAnsArray.includes(key); let isCorr = q.correctAnswers.includes(key); let bgClass = ''; let icon = '';
-                if (type !== 'skipped') { if (isCorr) { bgClass = 'background: rgba(76, 175, 80, 0.1); border-color: var(--correct-green);'; icon = '✅ '; } else if (isUser && !isCorr) { bgClass = 'background: rgba(244, 67, 54, 0.1); border-color: var(--wrong-red);'; icon = '❌ '; } }
-                optionsHtml += `<div style="padding: 10px; border: 1px solid var(--border-color); border-radius: 6px; margin-bottom: 8px; ${bgClass}"><b>${icon}${key}.</b> <span class="katex-render-target">${q.options[key]}</span></div>`;
-            }
-            let exp = q.explanation ? `<div class="katex-render-target" style="margin-top:10px; color:var(--text-muted); font-size:14px;"><b>Explanation:</b> ${q.explanation}</div>` : '';
-            let img = q.imageUrl ? `<img src="${q.imageUrl}" style="max-height:150px; border-radius:6px; margin-bottom:10px; display:block;">` : '';
-            
-            let borderColor = type === 'correct' ? 'var(--correct-green)' : (type === 'wrong' ? 'var(--wrong-red)' : 'var(--primary-yellow)');
-            return `
-                <div class="review-item" style="border-left: 4px solid ${borderColor};">
-                    <p style="margin-top:0; font-size: 16px;"><b>Q${index + 1}:</b> <span class="katex-render-target">${q.question}</span></p>
-                    ${img} ${optionsHtml}
-                    ${type === 'skipped' ? `<button onclick="toggleViewAnswer('ans_div_${q.id}')" style="background:#333; color:white; border:none; padding:8px 15px; border-radius:4px; cursor:pointer; margin-top:10px;">👁️ View Answer</button><div id="ans_div_${q.id}" style="display:none; margin-top:15px; padding-top:15px; border-top:1px solid #333;"><p style="color:var(--correct-green); margin:0 0 10px 0;"><b>Correct Answer:</b> ${q.correctAnswers.join(', ')}</p>${exp}</div>` : `<p style="color:var(--correct-green); margin:15px 0 5px 0;"><b>Correct Answer:</b> ${q.correctAnswers.join(', ')}</p>${exp}`}
                 </div>
             `;
+            document.getElementById('dynamic-content').innerHTML = html;
         }
 
-        async function finishQuiz() {
-            clearInterval(quizState.timer); 
-            let attempted = 0; let totalScore = 0; let correctCount = 0; let wrongCount = 0;
-            let sessionAttemptedIds = []; let skippedCount = 0; let isDailyQuiz = currentPath[0] === 'Daily Quiz Challenge';
-            let correctHtml = ''; let wrongHtml = ''; let skippedHtml = ''; let flaggedListHtml = '';
-            
-            let isNeetSection = isDailyQuiz ? (currentPath[1] === "NEET") : (currentPath[0] === "NEET");
-            if(quizState.isCustom) {
-                isNeetSection = customQuizConfig.paths.some(p => p.includes("NEET"));
-            }
-
-            quizState.questions.forEach((q, index) => {
-                let userAnsArray = quizState.userAnswers[index] || []; let isAttempted = userAnsArray.length > 0; let isCorrect = false; let isViewed = quizState.viewedQuestions.includes(index);
-                if (isAttempted) { attempted++; sessionAttemptedIds.push(q.id); let userAnsStr = userAnsArray.sort().join(','); let correctAnsStr = q.correctAnswers.sort().join(','); if (userAnsStr === correctAnsStr) { isCorrect = true; correctCount++; } }
-                if (isAttempted && !isCorrect) wrongCount++;
-                if (isAttempted) { if (isCorrect) correctHtml += buildReviewItemHtml(q, index, 'correct', userAnsArray); else wrongHtml += buildReviewItemHtml(q, index, 'wrong', userAnsArray); } 
-                else if (isViewed) { skippedCount++; skippedHtml += buildReviewItemHtml(q, index, 'skipped', []); }
-
-                if (isNeetSection) { if (isCorrect) totalScore += 4; else if (isAttempted && !isCorrect) totalScore -= 1; } else { if (isCorrect) totalScore += 1; }
-
-                if(quizState.flaggedDoubts[index]) {
-                    flaggedListHtml += `<div style="background:#2a2a2a; border-left:4px solid var(--primary-yellow); padding:15px; margin-bottom:15px; text-align:left;"><p style="margin-top:0;"><b>Q:</b> ${q.question}</p><p style="color:var(--text-muted); font-size:14px;"><b>Explanation:</b> ${q.explanation || 'None'}</p></div>`;
-                    if (currentUser) { db.collection("flagged_doubts").add({ studentId: currentUser.uid, studentName: currentUser.displayName, questionId: q.id, questionText: q.question, path: q.path, status: 'pending', seenByStudent: true, timestamp: firebase.firestore.FieldValue.serverTimestamp() }); }
-                }
-            });
-
-            if (sessionAttemptedIds.length > 0 && !isDailyQuiz && !quizState.isCustom) { 
-                let safePath = "prog_" + currentPath.join('_').replace(/[^a-zA-Z0-9]/g, '_');
-                if (currentUser) { let dataToSave = {}; dataToSave[safePath] = firebase.firestore.FieldValue.arrayUnion(...sessionAttemptedIds); db.collection("users").doc(currentUser.uid).set(dataToSave, {merge: true}); } 
-                else { let localProg = JSON.parse(localStorage.getItem('mcq_progress') || '{}'); localProg[safePath] = [...(localProg[safePath] || []), ...sessionAttemptedIds]; localStorage.setItem('mcq_progress', JSON.stringify(localProg)); }
-            } else if (sessionAttemptedIds.length > 0 && isDailyQuiz) {
-                if (currentUser) { db.collection("users").doc(currentUser.uid).set({ prog_daily_challenge: firebase.firestore.FieldValue.arrayUnion(...sessionAttemptedIds)}, {merge: true}); } 
-                else { let localProg = JSON.parse(localStorage.getItem('mcq_progress') || '{}'); localProg["prog_daily_challenge"] = [...(localProg["prog_daily_challenge"] || []), ...sessionAttemptedIds]; localStorage.setItem('mcq_progress', JSON.stringify(localProg)); }
-            }
-
-            let accuracy = attempted === 0 ? 0 : Math.round((correctCount / attempted) * 100); 
-            let timeStr = formatTime(quizState.secondsPassed); let pathString = quizState.isCustom ? "Custom Practice" : currentPath.join(' > '); let studentName = currentUser ? currentUser.displayName : "Anonymous";
-
-            if (currentUser && attempted > 0 && !isDailyQuiz) { db.collection("leaderboards").add({ userId: currentUser.uid, userName: currentUser.displayName, quizPath: pathString, score: totalScore, accuracy: accuracy, timeStr: timeStr, attemptedQuestions: attempted, timestamp: firebase.firestore.FieldValue.serverTimestamp() }); }
-
-            let scoreCardsHtml = '';
-            if (isNeetSection) {
-                scoreCardsHtml = `<div style="background:#2a2a2a; padding: 20px; border-radius: 8px; min-width: 120px; flex: 1;"><div style="font-size: 32px; color: white; font-weight: bold;">${attempted * 4}</div><div style="color: var(--text-muted); font-size: 14px;">Total Marks</div><div style="color: var(--text-muted); font-size: 11px; margin-top:5px;">(${attempted}x4)</div></div><div style="background:#2a2a2a; padding: 20px; border-radius: 8px; min-width: 120px; flex: 1; border: 1px solid var(--primary-yellow);"><div style="font-size: 32px; color: var(--primary-yellow); font-weight: bold;">${totalScore}</div><div style="color: var(--text-muted); font-size: 14px;">Obtained Mark</div><div style="color: var(--text-muted); font-size: 11px; margin-top:5px;">(${correctCount}x4) - ${wrongCount}</div></div>`;
-            } else {
-                scoreCardsHtml = `<div style="background:#2a2a2a; padding: 20px; border-radius: 8px; min-width: 120px; flex: 1; border: 1px solid var(--primary-yellow);"><div style="font-size: 32px; color: var(--primary-yellow); font-weight: bold;">${totalScore}</div><div style="color: var(--text-muted); font-size: 14px;">Total Score</div></div>`;
-            }
-
-            const mainContent = document.getElementById('dynamic-content');
-            mainContent.innerHTML = `
-                <div class="card" style="text-align: center;">
-                    <h2 style="font-size: 32px; color: var(--primary-yellow); margin-bottom: 5px;">Test Complete!</h2>
-                    <p style="color: var(--text-muted); margin-bottom: 30px;">Great effort, ${studentName.split(" ")[0]}! Here is your final breakdown.</p>
-                    ${isDailyQuiz ? `<div style="background:rgba(253, 184, 19, 0.1); border-left:4px solid var(--primary-yellow); padding:10px; margin-bottom:20px; border-radius:4px; font-size:14px; text-align:left;"><b style="color:var(--primary-yellow);">Daily Challenge Note:</b> This score is temporary and is not added to the global leaderboard. Come back tomorrow for 20 new questions!</div>` : ''}
-                    <div style="display:flex; justify-content:center; gap:15px; flex-wrap:wrap; margin-bottom: 40px;">
-                        ${scoreCardsHtml}
-                        <div style="background:#2a2a2a; padding: 20px; border-radius: 8px; min-width: 100px; flex: 1;"><div style="font-size: 32px; color: white; font-weight: bold;">${attempted}</div><div style="color: var(--text-muted); font-size: 14px;">Attempted</div></div>
-                        <div style="background:#2a2a2a; padding: 20px; border-radius: 8px; min-width: 100px; flex: 1;"><div style="font-size: 32px; color: var(--correct-green); font-weight: bold;">${accuracy}%</div><div style="color: var(--text-muted); font-size: 14px;">Accuracy</div></div>
-                        <div style="background:#2a2a2a; padding: 20px; border-radius: 8px; min-width: 100px; flex: 1;"><div style="font-size: 32px; color: white; font-weight: bold;">${timeStr}</div><div style="color: var(--text-muted); font-size: 14px;">Time Taken</div></div>
-                    </div>
-                    <h3 style="margin-top:20px; padding-bottom: 10px; border-bottom: 1px solid var(--border-color); text-align: left;">📊 Detailed Analysis</h3>
-                    <div class="review-tabs"><button id="tab-btn-correct" class="review-tab-btn active correct" onclick="showReviewTab('correct')">✅ Correct (${correctCount})</button><button id="tab-btn-wrong" class="review-tab-btn wrong" onclick="showReviewTab('wrong')">❌ Wrong (${wrongCount})</button><button id="tab-btn-skipped" class="review-tab-btn skipped" onclick="showReviewTab('skipped')">⏭️ Skipped (${skippedCount})</button></div>
-                    <div id="review-correct" style="display:block;">${correctHtml || '<p style="color:var(--text-muted); margin: 20px 0;">No correct answers this time.</p>'}</div>
-                    <div id="review-wrong" style="display:none;">${wrongHtml || '<p style="color:var(--text-muted); margin: 20px 0;">No wrong answers! Great job.</p>'}</div>
-                    <div id="review-skipped" style="display:none;">${skippedHtml || '<p style="color:var(--text-muted); margin: 20px 0;">You did not skip any questions you viewed.</p>'}</div>
-                    ${flaggedListHtml !== '' ? `<h3 style="text-align:left; color:var(--primary-yellow); border-bottom:1px solid #333; padding-bottom:10px; margin-top: 40px;">⭐ Questions Sent to Admin</h3>${flaggedListHtml}` : ''}
-                    <button class="btn-exam" onclick="goBack()" style="width: 250px; margin-top:30px;">&larr; Exit to Dashboard</button>
-                </div>
-            `;
-            
-            document.querySelectorAll('.katex-render-target, .review-item').forEach(el => {
-                renderMathInElement(el, { delimiters: [ {left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}, {left: '\\(', right: '\\)', display: false}, {left: '\\[', right: '\\]', display: true} ] });
-            });
+        function cwLaunchQuiz() {
+            cwState.level = document.getElementById('cwLevel').value; cwState.count = parseInt(document.getElementById('cwCount').value) || 20;
+            customQuizConfig.paths = cwState.subtopics; customQuizConfig.count = cwState.count; customQuizConfig.level = cwState.level;
+            _initiateQuizEngine(true);
         }
 
         function _renderView() {
@@ -1558,13 +1428,14 @@
             }
 
             let title = currentPath.length === 0 ? "Select Exam:" : currentPath[currentPath.length - 1];
-            let html = `<div class="card"><h2>${title}</h2><div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px;">`;
+            let html = ``;
 
-            if (currentPath.length > 0 && requiresQuizLogin(currentPath)) { 
-                let cleanObj = JSON.stringify(currentLevel).replace(/"/g, "'");
-                let cleanTitle = title.replace(/'/g, "\\'");
-                html += `<button class="btn-exam" onclick="openCustomPracticeBuilder(${cleanObj}, '${cleanTitle}')" style="background-color: var(--primary-yellow); color: black; border: none; grid-column: 1 / -1; margin-bottom: 10px;">⚙️ Custom Practice Setup</button>`; 
+            // HOMEPAGE CUSTOM PRACTICE BUTTON
+            if (currentPath.length === 0) {
+                html += `<div class="card" style="margin-bottom: 30px; border: 1px solid var(--primary-yellow); background: rgba(253, 184, 19, 0.05);"><div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:15px;"><div><h2 style="color:var(--primary-yellow); margin:0 0 5px 0;">⚙️ Custom Practice Engine</h2><p style="color:var(--text-muted); margin:0; font-size:14px;">Mix subjects, filter by difficulty, and build your ultimate personalized mock test.</p></div><button class="btn-exam" onclick="cwStep1()" style="background:var(--primary-yellow); color:black; font-size:16px; padding:12px 24px; box-shadow:0 4px 15px rgba(253,184,19,0.3);">Launch Setup 🚀</button></div></div>`;
             }
+
+            html += `<div class="card"><h2>${title}</h2><div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px;">`;
 
             for (let key in currentLevel) { 
                 if (currentPath.length === 0 && key === "Daily Quiz Challenge") continue; 
@@ -1574,78 +1445,6 @@
             }
             if (currentPath.length > 0) { html += `<button class="btn-exam" onclick="goBack()" style="grid-column: 1 / -1; background-color: #222; border-color: #444; color: #a0a0a0; margin-top: 10px;">&larr; Go Back</button>`; }
             html += `</div></div>`; mainContent.innerHTML = html;
-        }
-
-        let customQuizConfig = { paths: [], count: 20, level: 'Mixed' };
-
-        function openCustomPracticeBuilder(levelObj, rootTitle) {
-            let optionsHtml = '';
-            function traverseForOptions(obj, currentPathStr) {
-                for (let key in obj) {
-                    if (key === "Daily Quiz Challenge") continue;
-                    let fullPath = currentPathStr ? currentPathStr + " > " + key : key;
-                    if (customTopicTypes[fullPath] === 'mcq') {
-                        optionsHtml += `<label style="display:flex; align-items:center; gap:8px; background:#1a1a1a; padding:10px; border-radius:6px; border:1px solid var(--border-color);"><input type="checkbox" value="${fullPath}" class="custom-practice-cb" checked> <span style="font-size:14px;">${key}</span></label>`;
-                    }
-                    if (typeof obj[key] === 'object' && !Array.isArray(obj[key])) traverseForOptions(obj[key], fullPath);
-                }
-            }
-            let base = currentPath.length > 0 ? currentPath.join(" > ") : "";
-            traverseForOptions(levelObj, base);
-
-            if(optionsHtml === '') { showNotification("⚠️ No MCQ topics found inside this section."); return; }
-
-            const mc = document.getElementById('dynamic-content');
-            mc.innerHTML = `
-                <div class="card">
-                    <div style="display:flex; justify-content:space-between; align-items:center;">
-                        <h2 style="color:var(--primary-yellow); margin:0;">⚙️ Custom Practice Setup</h2>
-                        <button class="btn-exam" onclick="goBack()" style="background:#333; padding:6px 12px; font-size:13px;">Cancel</button>
-                    </div>
-                    <p style="color:var(--text-muted); margin-bottom:25px;">Mix and match subjects, select difficulty, and build your own test.</p>
-                    
-                    <div class="custom-practice-box">
-                        <h4 style="margin-top:0; color:white;">1. Select Subjects / Chapters to Include:</h4>
-                        <div class="custom-topic-list">${optionsHtml}</div>
-                        <button onclick="document.querySelectorAll('.custom-practice-cb').forEach(cb=>cb.checked=true)" style="background:none; border:none; color:var(--primary-yellow); cursor:pointer; font-size:13px;">Select All</button> | <button onclick="document.querySelectorAll('.custom-practice-cb').forEach(cb=>cb.checked=false)" style="background:none; border:none; color:var(--primary-yellow); cursor:pointer; font-size:13px;">Deselect All</button>
-                    </div>
-
-                    <div style="display:flex; gap:20px; flex-wrap:wrap; margin-bottom:30px;">
-                        <div style="flex:1; min-width:200px;">
-                            <label style="color:var(--text-muted); font-size:13px; font-weight:bold; margin-bottom:5px; display:block;">2. Number of Questions:</label>
-                            <input type="number" id="customQCount" class="input-field" value="20" min="5" max="100">
-                        </div>
-                        <div style="flex:1; min-width:200px;">
-                            <label style="color:var(--text-muted); font-size:13px; font-weight:bold; margin-bottom:5px; display:block;">3. Difficulty Level:</label>
-                            <select id="customQLevel" class="input-field">
-                                <option value="Mixed">Mixed (All Levels)</option>
-                                <option value="Easy">Easy Only</option>
-                                <option value="Medium">Medium Only</option>
-                                <option value="Hard">Hard Only</option>
-                            </select>
-                        </div>
-                    </div>
-                    
-                    <button class="btn-exam" onclick="launchCustomQuiz()" style="width:100%; background:var(--primary-yellow); color:black; font-size:18px; padding:15px; border:none; border-radius:8px; box-shadow:0 4px 15px rgba(253,184,19,0.3);">▶️ Generate & Start Quiz</button>
-                </div>
-            `;
-        }
-
-        async function launchCustomQuiz() {
-            const checkedPaths = Array.from(document.querySelectorAll('.custom-practice-cb:checked')).map(cb => cb.value);
-            if(checkedPaths.length === 0) return showNotification("⚠️ Select at least one chapter.");
-            
-            customQuizConfig.paths = checkedPaths;
-            customQuizConfig.count = parseInt(document.getElementById('customQCount').value) || 20;
-            customQuizConfig.level = document.getElementById('customQLevel').value;
-            
-            _initiateQuizEngine(true);
-        }
-        
-        function requiresQuizLogin(pathArray) {
-            const pathString = pathArray.join(" > ").toLowerCase();
-            const triggers = ["mcqs practice", "mock test", "general knowledge", "practice paper", "current affairs", "history", "geography", "daily quiz challenge"];
-            return triggers.some(trigger => pathString.includes(trigger));
         }
 
         function _renderLeaderboardOptions() { 
