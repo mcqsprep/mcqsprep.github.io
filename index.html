@@ -12,13 +12,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MCQsPrep - Dashboard</title>
-    
     <meta name="description" content="MCQsPrep - A free, smart MCQ practice platform for competitive exams like NEET and General Knowledge. Track your streak and global rank.">
     
+    <!-- FIREBASE LIBRARIES -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
 
+    <!-- AI SUPPORT LIBRARIES -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
@@ -85,7 +86,6 @@
 
         .btn-exam { padding: 12px 18px; border-radius: 6px; border: 1px solid var(--border-color); background-color: #2a2a2a; color: white; font-size: 15px; font-weight: bold; cursor: pointer; transition: 0.2s; }
         .btn-exam:hover { background-color: #382909; border-color: var(--primary-yellow); color: var(--primary-yellow); }
-        .btn-exam:disabled { opacity: 0.5; cursor: not-allowed; }
 
         .action-link { display: block !important; width: 100% !important; box-sizing: border-box; padding: 12px 15px; background-color: #2a2a2a; border: 1px solid var(--border-color); border-radius: 6px; color: white; text-decoration: none; margin-bottom: 10px; transition: 0.2s; cursor: pointer; }
         .action-link:hover { border-color: var(--primary-yellow); background-color: #333; }
@@ -144,16 +144,14 @@
         .star-btn:hover { transform: scale(1.1); }
         .star-btn.active { color: var(--primary-yellow); text-shadow: 0 0 15px rgba(253, 184, 19, 0.6); }
 
-        /* --- NEXT-GEN GEMINI AMBIENT FULLSCREEN UI --- */
+        /* Custom Practice Box Styling */
+        .custom-practice-box { background: rgba(253,184,19,0.05); border: 1px dashed var(--primary-yellow); padding: 20px; border-radius: 8px; margin-bottom: 25px; }
+        .custom-topic-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px; margin-bottom: 20px; max-height: 200px; overflow-y: auto; padding: 10px; background: #111; border-radius: 6px; border: 1px solid var(--border-color); }
+
+        /* FULLSCREEN AI MODAL */
         #ai-floating-btn {
-            position: fixed; bottom: 30px; right: 30px;
-            background: linear-gradient(135deg, #fdb813, #ff7b00);
-            color: black; font-weight: bold; padding: 12px 24px;
-            border-radius: 30px; cursor: pointer; box-shadow: 0 4px 20px rgba(253, 184, 19, 0.4);
-            z-index: 2500; display: flex; align-items: center; gap: 8px; font-size: 16px;
-            user-select: none; touch-action: none; transition: transform 0.2s, box-shadow 0.2s;
+            position: fixed; bottom: 30px; right: 30px; background: linear-gradient(135deg, #fdb813, #ff7b00); color: black; font-weight: bold; padding: 12px 24px; border-radius: 30px; cursor: pointer; box-shadow: 0 4px 20px rgba(253, 184, 19, 0.4); z-index: 2500; display: flex; align-items: center; gap: 8px; font-size: 16px; user-select: none; touch-action: none; transition: transform 0.2s, box-shadow 0.2s;
         }
-        #ai-floating-btn:active { transform: scale(0.95); }
         #ai-floating-btn.draggable { box-shadow: 0 0 25px #ffffff; border: 2px solid white; cursor: grab; animation: pulse 1s infinite alternate; }
         @keyframes pulse { from { transform: scale(1); } to { transform: scale(1.05); } }
 
@@ -192,7 +190,7 @@
             .ai-right-panel { border-top: none; padding-top: 0; padding-left: 20px; }
         }
 
-        .ai-glass-card { background: rgba(20, 22, 30, 0.65); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .ai-glass-card { background: rgba(20, 22, 30, 0.65); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
         .ai-fuzzy-suggestions { background: rgba(25, 28, 38, 0.95); border: 1px solid rgba(253, 184, 19, 0.4); border-radius: 8px; margin-top: -10px; margin-bottom: 15px; max-height: 220px; overflow-y: auto; display: none; box-shadow: 0 8px 25px rgba(0,0,0,0.7); }
         .ai-fuzzy-item { padding: 12px 16px; cursor: pointer; border-bottom: 1px solid rgba(255,255,255,0.08); font-size: 14px; color: #ddd; display: flex; align-items: center; justify-content: space-between; }
         .ai-fuzzy-item:hover { background: rgba(253, 184, 19, 0.12); color: var(--primary-yellow); }
@@ -391,6 +389,7 @@
         </div>
     </div>
 
+    <!-- Navigation Bar -->
     <nav class="navbar">
         <div style="display: flex; align-items: center; min-width: 0;">
             <div class="logo-container" onclick="goHome()">🩺 MCQsPrep<span>.</span></div>
@@ -429,6 +428,7 @@
         </div>
     </nav>
 
+    <!-- Main Container Layout -->
     <div class="breadcrumb" id="breadcrumb-text">Home / Select Exam</div>
     <div class="container">
         <div class="main-content" id="dynamic-content"></div>
@@ -449,6 +449,7 @@
 
     <div id="notification">Action Triggered!</div>
 
+    <!-- JAVASCRIPT LOGIC -->
     <script>
         const firebaseConfig = { apiKey: "AIzaSyDuletjxV1THjWvWLvO0XqB_z5xBBXLwL8", authDomain: "mcqsprep.firebaseapp.com", projectId: "mcqsprep", storageBucket: "mcqsprep.firebasestorage.app", messagingSenderId: "920181103186", appId: "1:920181103186:web:14c2ba261d4a6163db5d8b" };
         firebase.initializeApp(firebaseConfig); const db = firebase.firestore(); const auth = firebase.auth(); const provider = new firebase.auth.GoogleAuthProvider();
@@ -500,10 +501,13 @@
         function signOut() { if(confirm("Are you sure you want to sign out?")) auth.signOut(); }
 
         window.addEventListener('hashchange', handleRouting);
+        
         function handleRouting() {
             if(!dataLoaded) return; 
             let hash = decodeURIComponent(window.location.hash.replace('#/', ''));
             let isRootHome = (!hash || hash === 'home');
+            
+            // Only show main sidebar if we are strictly on the home root.
             document.getElementById('main-sidebar').style.display = isRootHome ? 'block' : 'none';
 
             if (!hash || hash === 'home') { currentPath = []; _renderView(); } 
@@ -602,13 +606,18 @@
             } catch(e) { mc.innerHTML = `<div class="card"><p>Error: ${e.message}</p></div>`; }
         }
 
-        // --- NOTIFICATIONS ---
+        // --- NOTIFICATIONS & REPORTS ---
         async function checkUserNotifications() {
             if(!currentUser) return;
             try {
-                let snap = await db.collection("reported_mistakes").where("studentId", "==", currentUser.uid).where("status", "==", "resolved").where("seenByStudent", "==", false).get();
-                let snap2 = await db.collection("flagged_doubts").where("studentId", "==", currentUser.uid).where("status", "==", "resolved").where("seenByStudent", "==", false).get();
-                if(!snap.empty || !snap2.empty) { document.getElementById('profileNotifDot').style.display = 'block'; document.getElementById('reportMenuDot').style.display = 'inline'; }
+                let hasUnseen = false;
+                let reportsSnap = await db.collection("reported_mistakes").where("studentId", "==", currentUser.uid).get();
+                reportsSnap.forEach(doc => { let d = doc.data(); if(d.status === 'resolved' && d.seenByStudent === false) hasUnseen = true; });
+                
+                let flagsSnap = await db.collection("flagged_doubts").where("studentId", "==", currentUser.uid).get();
+                flagsSnap.forEach(doc => { let d = doc.data(); if(d.status === 'resolved' && d.seenByStudent === false) hasUnseen = true; });
+                
+                if(hasUnseen) { document.getElementById('profileNotifDot').style.display = 'block'; document.getElementById('reportMenuDot').style.display = 'inline'; }
             } catch(e){}
         }
 
@@ -640,16 +649,24 @@
             if(!currentUser) return;
             document.getElementById('userReportsModal').style.display = 'flex';
             document.getElementById('profileNotifDot').style.display = 'none'; document.getElementById('reportMenuDot').style.display = 'none';
-            const list = document.getElementById('user-reports-list'); list.innerHTML = `<p style="color:var(--primary-yellow);">Loading reports...</p>`;
+            const list = document.getElementById('user-reports-list'); 
+            list.innerHTML = `<p style="color:var(--primary-yellow);">Loading reports...</p>`;
+            
             try {
                 let html = ''; let count = 0; let allItems = [];
-                let reports = await db.collection("reported_mistakes").where("studentId", "==", currentUser.uid).get();
-                reports.forEach(doc => { allItems.push({ _id: doc.id, _type: 'report', ...doc.data() }); });
                 
-                let flags = await db.collection("flagged_doubts").where("studentId", "==", currentUser.uid).get();
-                flags.forEach(doc => { allItems.push({ _id: doc.id, _type: 'flag', ...doc.data() }); });
+                let reportsSnap = await db.collection("reported_mistakes").where("studentId", "==", currentUser.uid).get();
+                reportsSnap.forEach(doc => { allItems.push({ _id: doc.id, _type: 'report', ...doc.data() }); });
+                
+                let flagsSnap = await db.collection("flagged_doubts").where("studentId", "==", currentUser.uid).get();
+                flagsSnap.forEach(doc => { allItems.push({ _id: doc.id, _type: 'flag', ...doc.data() }); });
 
-                allItems.sort((a, b) => (b.timestamp?.toMillis() || 0) - (a.timestamp?.toMillis() || 0));
+                // In-memory sort to bypass index requirements entirely
+                allItems.sort((a, b) => {
+                    let tA = a.timestamp ? a.timestamp.toMillis() : 0;
+                    let tB = b.timestamp ? b.timestamp.toMillis() : 0;
+                    return tB - tA; // newer first
+                });
 
                 allItems.forEach(d => {
                     count++;
@@ -663,9 +680,9 @@
                     }
                 });
 
-                if(count === 0) list.innerHTML = `<p style="color:var(--text-muted);">You haven't reported any questions yet.</p>`;
-                else list.innerHTML = html;
-            } catch(e) { list.innerHTML = `<p>Error: ${e.message}</p>`; }
+                if(count === 0) { list.innerHTML = `<p style="color:var(--text-muted);">You haven't reported any questions yet.</p>`; } 
+                else { list.innerHTML = html; }
+            } catch(e) { list.innerHTML = `<p style="color:red;">Error: ${e.message}</p>`; }
         }
         function closeUserReportsModal() { document.getElementById('userReportsModal').style.display = 'none'; }
 
@@ -831,13 +848,18 @@
             document.getElementById('breadcrumb-text').innerText = "Home / Profile / Doubt Diary";
             const mc = document.getElementById('dynamic-content'); mc.innerHTML = `<div class="card"><h2>📔 Loading Doubt Diary...</h2></div>`;
             try {
-                const snap = await db.collection("ai_doubt_diary").where("userId", "==", currentUser.uid).orderBy("timestamp", "desc").get();
-                if(snap.empty) { mc.innerHTML = `<div class="card" style="text-align:center;"><h2>📔 Doubt Diary Empty</h2><p style="color:var(--text-muted);">Use the ✨ Ask AI feature to scan questions and save explanations here for rapid revision.</p><button class="btn-exam" onclick="goBack()">Back</button></div>`; return; }
+                const snap = await db.collection("ai_doubt_diary").where("userId", "==", currentUser.uid).get();
+                let items = [];
+                snap.forEach(doc => items.push({ id: doc.id, ...doc.data() }));
+                items.sort((a,b) => (b.timestamp?.toMillis() || 0) - (a.timestamp?.toMillis() || 0));
+
+                if(items.length === 0) { mc.innerHTML = `<div class="card" style="text-align:center;"><h2>📔 Doubt Diary Empty</h2><p style="color:var(--text-muted);">Use the ✨ Ask AI feature to scan questions and save explanations here for rapid revision.</p><button class="btn-exam" onclick="goBack()">Back</button></div>`; return; }
+                
                 let html = `<div class="card"><h2 style="color:var(--primary-yellow);">📔 Your Saved Explanations</h2><p style="color:var(--text-muted); margin-bottom:20px;">Review your previously solved doubts here.</p>`;
-                snap.forEach(doc => {
-                    let d = doc.data(); let dateStr = d.timestamp ? d.timestamp.toDate().toLocaleDateString() : '';
+                items.forEach(d => {
+                    let dateStr = d.timestamp ? new Date(d.timestamp.toMillis()).toLocaleDateString() : '';
                     let md = `**Core Concept:** ${d.solution.keyConcept}\n\n**Step-by-Step:**\n${d.solution.stepByStep}\n\n**Final Answer:** ${d.solution.finalAnswer}`;
-                    html += `<div style="background:#1a1a1a; border-left: 4px solid var(--primary-yellow); padding: 15px; border-radius: 6px; margin-bottom: 20px;"><div style="display:flex; justify-content:space-between; margin-bottom:10px;"><span class="badge-path">${d.subject}</span><span style="font-size:12px; color:var(--text-muted);">${dateStr}</span></div><p style="font-weight:bold; font-size:16px;">Q: ${d.questionText}</p><button onclick="toggleViewAnswer('diary_sol_${doc.id}')" style="background:#333; color:white; border:none; padding:6px 12px; border-radius:4px; cursor:pointer;">👁️ Show Solution</button><div id="diary_sol_${doc.id}" class="katex-render-target" style="display:none; margin-top:15px; padding-top:15px; border-top:1px solid #333; line-height:1.6; font-size:15px;">${marked.parse(md)}</div></div>`;
+                    html += `<div style="background:#1a1a1a; border-left: 4px solid var(--primary-yellow); padding: 15px; border-radius: 6px; margin-bottom: 20px;"><div style="display:flex; justify-content:space-between; margin-bottom:10px;"><span class="badge-path">${d.subject}</span><span style="font-size:12px; color:var(--text-muted);">${dateStr}</span></div><p style="font-weight:bold; font-size:16px;">Q: ${d.questionText}</p><button onclick="toggleViewAnswer('diary_sol_${d.id}')" style="background:#333; color:white; border:none; padding:6px 12px; border-radius:4px; cursor:pointer;">👁️ Show Solution</button><div id="diary_sol_${d.id}" class="katex-render-target" style="display:none; margin-top:15px; padding-top:15px; border-top:1px solid #333; line-height:1.6; font-size:15px;">${marked.parse(md)}</div></div>`;
                 });
                 html += `<button class="btn-exam" onclick="goBack()">Back</button></div>`; mc.innerHTML = html;
                 document.querySelectorAll('.katex-render-target').forEach(el => { renderMathInElement(el, { delimiters: [ {left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}, {left: '\\(', right: '\\)', display: false}, {left: '\\[', right: '\\]', display: true} ] }); });
@@ -882,6 +904,7 @@
         let adminSelectedPath = []; let adminManageSelectedPath = []; let adminNewTopicPath = []; let adminCurrentTab = 'upload'; 
 
         function _renderAdminLogin() { document.getElementById('breadcrumb-text').innerText = "Security / Admin Login"; document.getElementById('dynamic-content').innerHTML = `<div class="card" style="max-width: 400px; margin: 0 auto; text-align: center;"><h2>🔒 Restricted Access</h2><input type="password" id="adminPassInput" class="input-field" style="margin: 0 auto 15px auto;" placeholder="Password"><button id="loginBtn" class="btn-exam" onclick="verifyAdmin()" style="width: 100%; max-width: 300px; background-color: var(--primary-yellow); color: black; border: none;">Login to Admin</button></div>`; }
+        
         async function verifyAdmin() {
             const inputPass = document.getElementById('adminPassInput').value; const btn = document.getElementById('loginBtn'); btn.innerText = "Verifying..."; btn.disabled = true;
             try { const doc = await db.collection("settings").doc("admin_auth").get(); let correctPass = "mcqs2026"; if (doc.exists && doc.data().password) correctPass = doc.data().password;
@@ -893,38 +916,143 @@
         function _renderAdminPanel() {
             if (!sessionStorage.getItem('admin_verified')) { window.location.hash = '#/admin'; return; }
             document.getElementById('breadcrumb-text').innerText = "Admin Dashboard";
+            
+            // Clean unminified HTML to prevent parsing crashes
             document.getElementById('dynamic-content').innerHTML = `
                 <div class="card">
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:10px;">
                         <h2 style="color: var(--primary-yellow); margin:0;">🛠️ Admin Control Center</h2>
-                        <div style="display:flex; gap:10px; flex-wrap:wrap;"><button class="admin-tab-btn ${adminCurrentTab === 'upload' ? 'active' : ''}" onclick="switchAdminTab('upload')">➕ Upload</button><button class="admin-tab-btn ${adminCurrentTab === 'manage' ? 'active' : ''}" onclick="switchAdminTab('manage')">📋 Manage</button><button class="admin-tab-btn ${adminCurrentTab === 'topics' ? 'active' : ''}" onclick="switchAdminTab('topics')">📁 Folders</button><button class="admin-tab-btn ${adminCurrentTab === 'reports' ? 'active' : ''}" onclick="switchAdminTab('reports')">🚨 Reports</button><button class="admin-tab-btn ${adminCurrentTab === 'users' ? 'active' : ''}" onclick="switchAdminTab('users')">👥 Users</button><button class="admin-tab-btn ${adminCurrentTab === 'doubts' ? 'active' : ''}" onclick="switchAdminTab('doubts')">🚩 Doubts</button><button class="admin-tab-btn ${adminCurrentTab === 'settings' ? 'active' : ''}" onclick="switchAdminTab('settings')">⚙️ Settings</button></div>
+                        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                            <button class="admin-tab-btn ${adminCurrentTab === 'upload' ? 'active' : ''}" onclick="switchAdminTab('upload')">➕ Upload</button>
+                            <button class="admin-tab-btn ${adminCurrentTab === 'manage' ? 'active' : ''}" onclick="switchAdminTab('manage')">📋 Manage</button>
+                            <button class="admin-tab-btn ${adminCurrentTab === 'topics' ? 'active' : ''}" onclick="switchAdminTab('topics')">📁 Folders</button>
+                            <button class="admin-tab-btn ${adminCurrentTab === 'reports' ? 'active' : ''}" onclick="switchAdminTab('reports')">🚨 Reports</button>
+                            <button class="admin-tab-btn ${adminCurrentTab === 'users' ? 'active' : ''}" onclick="switchAdminTab('users')">👥 Users</button>
+                            <button class="admin-tab-btn ${adminCurrentTab === 'doubts' ? 'active' : ''}" onclick="switchAdminTab('doubts')">🚩 Doubts</button>
+                            <button class="admin-tab-btn ${adminCurrentTab === 'settings' ? 'active' : ''}" onclick="switchAdminTab('settings')">⚙️ Settings</button>
+                        </div>
                     </div>
+                    
                     <div id="admin-upload-view" style="display:${adminCurrentTab === 'upload' ? 'block' : 'none'};">
-                        <div style="background: #2a2a2a; padding: 15px; border-radius: 6px; margin-bottom: 20px;"><h4 style="margin-top:0; margin-bottom:10px;">Upload Content: Select Target Folder</h4><div id="dynamic-path-selectors" style="display:flex; gap:10px; flex-wrap:wrap;"></div></div>
+                        <div style="background: #2a2a2a; padding: 15px; border-radius: 6px; margin-bottom: 20px;">
+                            <h4 style="margin-top:0; margin-bottom:10px;">Upload Content: Select Target Folder</h4>
+                            <div id="dynamic-path-selectors" style="display:flex; gap:10px; flex-wrap:wrap;"></div>
+                        </div>
                         <div id="upload-form-area" style="display:none;">
-                            <div class="admin-row" style="margin-bottom: 25px;"><span style="font-weight: bold;">Resource Type:</span><select id="admResourceType" class="input-field" onchange="toggleAdminFormType()" style="max-width: 300px;"><option value="mcq">Multiple Choice Question</option><option value="pdf">Study Material (PDF / Image)</option></select></div>
+                            <div class="admin-row" style="margin-bottom: 25px;">
+                                <span style="font-weight: bold;">Resource Type:</span>
+                                <select id="admResourceType" class="input-field" onchange="toggleAdminFormType()" style="max-width: 300px;">
+                                    <option value="mcq">Multiple Choice Question</option>
+                                    <option value="pdf">Study Material (PDF / Image)</option>
+                                </select>
+                            </div>
                             <div id="admin-mcq-form">
                                 <textarea id="admQuestion" class="input-field" style="max-width: 100%;" placeholder="Type your question here..."></textarea>
-                                <div class="admin-row"><div><label style="color:var(--text-muted); font-size:14px;">Attach Image (Optional):</label><input type="file" id="admQImage" class="input-field" accept="image/*"></div><div><label style="color:var(--text-muted); font-size:14px;">Difficulty Level:</label><select id="admDifficulty" class="input-field"><option value="Mixed">Mixed (Default)</option><option value="Easy">Easy</option><option value="Medium">Medium</option><option value="Hard">Hard</option></select></div></div>
-                                <div class="admin-row"><input type="text" id="admOptA" class="input-field" placeholder="Option A"><input type="text" id="admOptB" class="input-field" placeholder="Option B"></div><div class="admin-row"><input type="text" id="admOptC" class="input-field" placeholder="Option C"><input type="text" id="admOptD" class="input-field" placeholder="Option D"></div><div class="admin-checkbox-group" style="margin-bottom: 15px;"><span style="font-weight: bold; width: 140px;">Correct Answer(s):</span><label><input type="checkbox" value="A" class="admCorrectCb"> A</label><label><input type="checkbox" value="B" class="admCorrectCb"> B</label><label><input type="checkbox" value="C" class="admCorrectCb"> C</label><label><input type="checkbox" value="D" class="admCorrectCb"> D</label></div><textarea id="admExplanation" class="input-field" style="max-width: 100%; min-height: 60px;" placeholder="Explanation for the correct answer (Optional)..."></textarea></div>
-                            <div id="admin-pdf-form" style="display:none; background: #2a2a2a; padding: 20px; border-radius: 8px;"><input type="text" id="admPdfTitle" class="input-field" placeholder="Document Title (e.g. Chapter 1 Notes)"><label style="color:white; display:block; margin-bottom:10px;">Select File (PDF or Image):</label><input type="file" id="admPdfFile" class="input-field" accept=".pdf, image/*"></div>
-                            <div style="display: flex; gap: 15px; margin-top: 20px; max-width: 450px;"><button id="uploadBtn" class="btn-exam" onclick="processAdminUpload()" style="background-color: #4CAF50; color: white; border: none; flex: 2;">☁️ Upload to Database</button><button class="btn-exam" onclick="clearAdminUploadForm()" style="background-color: var(--wrong-red); color: white; border: none; flex: 1;">🧹 Clear Form</button></div>
+                                <div class="admin-row">
+                                    <div>
+                                        <label style="color:var(--text-muted); font-size:14px;">Attach Image (Optional):</label>
+                                        <input type="file" id="admQImage" class="input-field" accept="image/*">
+                                    </div>
+                                    <div>
+                                        <label style="color:var(--text-muted); font-size:14px;">Difficulty Level:</label>
+                                        <select id="admDifficulty" class="input-field">
+                                            <option value="Mixed">Mixed (Default)</option>
+                                            <option value="Easy">Easy</option>
+                                            <option value="Medium">Medium</option>
+                                            <option value="Hard">Hard</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="admin-row">
+                                    <input type="text" id="admOptA" class="input-field" placeholder="Option A">
+                                    <input type="text" id="admOptB" class="input-field" placeholder="Option B">
+                                </div>
+                                <div class="admin-row">
+                                    <input type="text" id="admOptC" class="input-field" placeholder="Option C">
+                                    <input type="text" id="admOptD" class="input-field" placeholder="Option D">
+                                </div>
+                                <div class="admin-checkbox-group" style="margin-bottom: 15px;">
+                                    <span style="font-weight: bold; width: 140px;">Correct Answer(s):</span>
+                                    <label><input type="checkbox" value="A" class="admCorrectCb"> A</label>
+                                    <label><input type="checkbox" value="B" class="admCorrectCb"> B</label>
+                                    <label><input type="checkbox" value="C" class="admCorrectCb"> C</label>
+                                    <label><input type="checkbox" value="D" class="admCorrectCb"> D</label>
+                                </div>
+                                <textarea id="admExplanation" class="input-field" style="max-width: 100%; min-height: 60px;" placeholder="Explanation for the correct answer (Optional)..."></textarea>
+                            </div>
+                            <div id="admin-pdf-form" style="display:none; background: #2a2a2a; padding: 20px; border-radius: 8px;">
+                                <input type="text" id="admPdfTitle" class="input-field" placeholder="Document Title (e.g. Chapter 1 Notes)">
+                                <label style="color:white; display:block; margin-bottom:10px;">Select File (PDF or Image):</label>
+                                <input type="file" id="admPdfFile" class="input-field" accept=".pdf, image/*">
+                            </div>
+                            <div style="display: flex; gap: 15px; margin-top: 20px; max-width: 450px;">
+                                <button id="uploadBtn" class="btn-exam" onclick="processAdminUpload()" style="background-color: #4CAF50; color: white; border: none; flex: 2;">☁️ Upload to Database</button>
+                                <button class="btn-exam" onclick="clearAdminUploadForm()" style="background-color: var(--wrong-red); color: white; border: none; flex: 1;">🧹 Clear Form</button>
+                            </div>
                         </div>
                     </div>
                     
                     <div id="admin-topics-view" style="display:${adminCurrentTab === 'topics' ? 'block' : 'none'};">
-                        <div style="background: rgba(253, 184, 19, 0.05); padding: 20px; border-radius: 8px; border: 1px solid var(--primary-yellow); margin-bottom: 25px;"><h4 style="margin-top:0; color:var(--primary-yellow);">📁 Create New Topic Folder</h4><label style="color:white; font-size:13px;">1. Select Parent Path:</label><div id="dynamic-new-path-selectors" style="display:flex; gap:10px; flex-wrap:wrap;"></div><div class="admin-row" style="margin-top: 15px;"><div><label style="color:white; font-size:13px;">2. New Folder Name:</label><input type="text" id="newFolderName" class="input-field" placeholder="e.g. Molecular Genetics"></div><div><label style="color:white; font-size:13px;">3. Expected Content Type:</label><select id="newFolderType" class="input-field"><option value="mcq">📝 MCQs Practice</option><option value="pdf">📄 PDF / Image Material</option></select></div></div><button class="btn-exam" onclick="createCustomTopic()" style="background-color:var(--primary-yellow); color:black; border:none; width:100%; max-width:200px;">+ Add Subtopic</button></div>
+                        <div style="background: rgba(253, 184, 19, 0.05); padding: 20px; border-radius: 8px; border: 1px solid var(--primary-yellow); margin-bottom: 25px;">
+                            <h4 style="margin-top:0; color:var(--primary-yellow);">📁 Create New Topic Folder</h4>
+                            <label style="color:white; font-size:13px;">1. Select Parent Path:</label>
+                            <div id="dynamic-new-path-selectors" style="display:flex; gap:10px; flex-wrap:wrap;"></div>
+                            <div class="admin-row" style="margin-top: 15px;">
+                                <div>
+                                    <label style="color:white; font-size:13px;">2. New Folder Name:</label>
+                                    <input type="text" id="newFolderName" class="input-field" placeholder="e.g. Molecular Genetics">
+                                </div>
+                                <div>
+                                    <label style="color:white; font-size:13px;">3. Expected Content Type:</label>
+                                    <select id="newFolderType" class="input-field">
+                                        <option value="mcq">📝 MCQs Practice</option>
+                                        <option value="pdf">📄 PDF / Image Material</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <button class="btn-exam" onclick="createCustomTopic()" style="background-color:var(--primary-yellow); color:black; border:none; width:100%; max-width:200px;">+ Add Subtopic</button>
+                        </div>
                         <h4 style="color:var(--primary-yellow); margin-top:30px;">Active Custom Folders</h4>
                         <input type="text" id="adminTopicSearch" class="input-field" placeholder="🔍 Search folders by name or path..." oninput="filterAdminTopics()">
                         <div id="admin-topic-list-container"></div>
                     </div>
 
-                    <div id="admin-manage-view" style="display:${adminCurrentTab === 'manage' ? 'block' : 'none'};"><div style="background: #2a2a2a; padding: 15px; border-radius: 6px; margin-bottom: 20px;"><h4 style="margin-top:0; margin-bottom:10px; color:var(--text-muted);">Filter Content by Folder (Optional)</h4><div id="manage-path-selectors" style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:15px;"></div><button class="btn-exam" onclick="loadContentForManagement()" style="background:var(--primary-yellow); color:black; border:none; padding:10px 15px; width:100%; max-width:250px;">🔍 Fetch Filtered Content</button></div><div id="manage-content-list"><p style="color:var(--text-muted);">Select a folder and click Fetch to load items.</p></div></div>
-                    <div id="admin-reports-view" style="display:${adminCurrentTab === 'reports' ? 'block' : 'none'};"><button class="btn-exam" onclick="loadAdminReports()" style="margin-bottom:15px; background:var(--primary-yellow); color:black; border:none;">🔄 Refresh Reports</button><div id="reports-list-container"></div></div>
-                    <div id="admin-users-view" style="display:${adminCurrentTab === 'users' ? 'block' : 'none'};"><button class="btn-exam" onclick="loadAdminUsers()" style="margin-bottom:15px; background:var(--primary-yellow); color:black; border:none;">🔄 Refresh Students List</button><div id="users-table-container" style="overflow-x:auto;"></div></div>
-                    <div id="admin-doubts-view" style="display:${adminCurrentTab === 'doubts' ? 'block' : 'none'};"><button class="btn-exam" onclick="loadAdminDoubts()" style="margin-bottom:15px; background:var(--primary-yellow); color:black; border:none;">🔄 Refresh Flagged Doubts</button><div id="doubts-list-container"></div></div>
-                    <div id="admin-settings-view" style="display:${adminCurrentTab === 'settings' ? 'block' : 'none'};"><div style="background: #2a2a2a; padding: 25px; border-radius: 6px; max-width: 400px;"><h3 style="margin-top:0; margin-bottom:20px;">Change Admin Password</h3><input type="password" id="newAdminPass" class="input-field" placeholder="Enter New Password (Min 6 chars)"><input type="password" id="confirmAdminPass" class="input-field" placeholder="Confirm New Password"><button class="btn-exam" onclick="changeAdminPassword()" style="background:var(--primary-yellow); color:black; border:none; width:100%;">Update Password</button></div></div>
+                    <div id="admin-manage-view" style="display:${adminCurrentTab === 'manage' ? 'block' : 'none'};">
+                        <div style="background: #2a2a2a; padding: 15px; border-radius: 6px; margin-bottom: 20px;">
+                            <h4 style="margin-top:0; margin-bottom:10px; color:var(--text-muted);">Filter Content by Folder (Optional)</h4>
+                            <div id="manage-path-selectors" style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:15px;"></div>
+                            <button class="btn-exam" onclick="loadContentForManagement()" style="background:var(--primary-yellow); color:black; border:none; padding:10px 15px; width:100%; max-width:250px;">🔍 Fetch Filtered Content</button>
+                        </div>
+                        <div id="manage-content-list">
+                            <p style="color:var(--text-muted);">Select a folder and click Fetch to load items.</p>
+                        </div>
+                    </div>
+
+                    <div id="admin-reports-view" style="display:${adminCurrentTab === 'reports' ? 'block' : 'none'};">
+                        <button class="btn-exam" onclick="loadAdminReports()" style="margin-bottom:15px; background:var(--primary-yellow); color:black; border:none;">🔄 Refresh Reports</button>
+                        <div id="reports-list-container"></div>
+                    </div>
+
+                    <div id="admin-users-view" style="display:${adminCurrentTab === 'users' ? 'block' : 'none'};">
+                        <button class="btn-exam" onclick="loadAdminUsers()" style="margin-bottom:15px; background:var(--primary-yellow); color:black; border:none;">🔄 Refresh Students List</button>
+                        <div id="users-table-container" style="overflow-x:auto;"></div>
+                    </div>
+
+                    <div id="admin-doubts-view" style="display:${adminCurrentTab === 'doubts' ? 'block' : 'none'};">
+                        <button class="btn-exam" onclick="loadAdminDoubts()" style="margin-bottom:15px; background:var(--primary-yellow); color:black; border:none;">🔄 Refresh Flagged Doubts</button>
+                        <div id="doubts-list-container"></div>
+                    </div>
+
+                    <div id="admin-settings-view" style="display:${adminCurrentTab === 'settings' ? 'block' : 'none'};">
+                        <div style="background: #2a2a2a; padding: 25px; border-radius: 6px; max-width: 400px;">
+                            <h3 style="margin-top:0; margin-bottom:20px;">Change Admin Password</h3>
+                            <input type="password" id="newAdminPass" class="input-field" placeholder="Enter New Password (Min 6 chars)">
+                            <input type="password" id="confirmAdminPass" class="input-field" placeholder="Confirm New Password">
+                            <button class="btn-exam" onclick="changeAdminPassword()" style="background:var(--primary-yellow); color:black; border:none; width:100%;">Update Password</button>
+                        </div>
+                    </div>
                 </div>`;
+                
             if (adminCurrentTab === 'upload') { _buildAdminSelectors(); }
             else if (adminCurrentTab === 'topics') { _buildAdminNewTopicSelectors(); loadAdminTopicsList(); }
             else if (adminCurrentTab === 'manage') { _buildManageSelectors(); loadContentForManagement(); }
@@ -939,9 +1067,10 @@
         async function loadAdminTopicsList() {
             const container = document.getElementById('admin-topic-list-container'); container.innerHTML = `<p>Loading folders...</p>`;
             try {
-                const snap = await db.collection("custom_topics").orderBy("parentPath").get();
+                const snap = await db.collection("custom_topics").get();
                 globalTopicsData = [];
                 snap.forEach(doc => globalTopicsData.push({ id: doc.id, ...doc.data() }));
+                globalTopicsData.sort((a,b) => (a.parentPath || "").localeCompare(b.parentPath || ""));
                 renderAdminTopicsList(globalTopicsData);
             } catch(e) { container.innerHTML = `<p>Error: ${e.message}</p>`; }
         }
@@ -952,7 +1081,17 @@
             let html = '';
             topicsArray.forEach(d => {
                 let cleanName = d.name.replace(/'/g, "\\'");
-                html += `<div style="background:#2a2a2a; border:1px solid #444; border-radius:6px; padding:12px 15px; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center; flex-wrap: wrap; gap: 10px;"><div><span style="color:var(--text-muted); font-size:12px;">Path: ${d.parentPath}</span><br><b style="font-size:16px;">📁 ${d.name}</b> <span style="font-size:11px; background:#444; padding:2px 6px; border-radius:4px;">${d.type}</span></div><div style="display:flex; gap:8px;"><button onclick="openEditTopicModal('${d.id}', '${cleanName}', '${d.type}')" style="background:#2196F3; border:none; color:white; padding:6px 12px; border-radius:4px; cursor:pointer;">Edit</button><button onclick="deleteCustomTopic('${d.id}')" style="background:var(--wrong-red); border:none; color:white; padding:6px 12px; border-radius:4px; cursor:pointer;">Delete</button></div></div>`;
+                html += `
+                <div style="background:#2a2a2a; border:1px solid #444; border-radius:6px; padding:12px 15px; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center; flex-wrap: wrap; gap: 10px;">
+                    <div>
+                        <span style="color:var(--text-muted); font-size:12px;">Path: ${d.parentPath}</span><br>
+                        <b style="font-size:16px;">📁 ${d.name}</b> <span style="font-size:11px; background:#444; padding:2px 6px; border-radius:4px;">${d.type}</span>
+                    </div>
+                    <div style="display:flex; gap:8px;">
+                        <button onclick="openEditTopicModal('${d.id}', '${cleanName}', '${d.type}')" style="background:#2196F3; border:none; color:white; padding:6px 12px; border-radius:4px; cursor:pointer;">Edit</button>
+                        <button onclick="deleteCustomTopic('${d.id}')" style="background:var(--wrong-red); border:none; color:white; padding:6px 12px; border-radius:4px; cursor:pointer;">Delete</button>
+                    </div>
+                </div>`;
             });
             container.innerHTML = html;
         }
@@ -1025,13 +1164,17 @@
         async function loadAdminReports() {
             const container = document.getElementById('reports-list-container'); container.innerHTML = `<p style="color:var(--primary-yellow);">Fetching reported mistakes...</p>`;
             try {
-                const snapshot = await db.collection("reported_mistakes").orderBy("timestamp", "desc").get();
-                if(snapshot.empty) { container.innerHTML = "<p style='color:var(--correct-green);'>✅ No mistakes reported! Everything is clean.</p>"; return; }
+                const snapshot = await db.collection("reported_mistakes").get();
+                let items = [];
+                snapshot.forEach(doc => items.push({ id: doc.id, ...doc.data() }));
+                items.sort((a,b) => (b.timestamp?.toMillis() || 0) - (a.timestamp?.toMillis() || 0));
+
+                if(items.length === 0) { container.innerHTML = "<p style='color:var(--correct-green);'>✅ No mistakes reported! Everything is clean.</p>"; return; }
+                
                 let html = '';
-                snapshot.forEach(doc => {
-                    const data = doc.data();
+                items.forEach(data => {
                     let stat = data.status === 'resolved' ? `<span style="background:var(--correct-green); color:white; padding:2px 8px; border-radius:12px; font-size:12px;">✅ Resolved</span>` : `<span style="background:#555; color:white; padding:2px 8px; border-radius:12px; font-size:12px;">⏳ Pending</span>`;
-                    html += `<div class="content-item-card" style="border-left: 4px solid var(--wrong-red);"><div class="content-item-header"><span class="badge-path">${data.path || 'Unknown Path'}</span><span style="font-size:12px; color:var(--text-muted);">${data.timestamp ? data.timestamp.toDate().toLocaleString() : ""}</span></div><div style="margin: 10px 0; padding: 10px; background: rgba(244, 67, 54, 0.1); border-radius: 4px; display:flex; justify-content:space-between;"><div><p style="color:var(--wrong-red); margin:0 0 5px 0;"><b>Issue:</b> ${data.reason}</p><p style="margin:0; font-size:14px;"><b>Details:</b> ${data.description \vert{}\vert{} 'No description provided.'}</p></div>${stat}</div><p style="margin:5px 0 10px 0; font-size:12px; color:var(--text-muted);">Reported by: ${data.studentName}</p><div style="background:#1a1a1a; padding:10px; border-radius:4px; font-size:14px; margin-bottom:10px;"><b>Question Content:</b><br>${data.questionText}</div><div style="display:flex; gap:10px; flex-wrap:wrap;"><button onclick="openEditModalFromReport('${data.questionId}')" style="padding:6px 12px; background:#2196F3; border:none; border-radius:4px; color:white; cursor:pointer;">✏️ Edit MCQ in Database</button><button onclick="resolveReport('${doc.id}')" style="padding:6px 12px; background:var(--correct-green); border:none; border-radius:4px; color:white; cursor:pointer;" ${data.status==='resolved'?'disabled':''}>✅ Mark Resolved (Notifies User)</button></div></div>`;
+                    html += `<div class="content-item-card" style="border-left: 4px solid var(--wrong-red);"><div class="content-item-header"><span class="badge-path">${data.path || 'Unknown Path'}</span><span style="font-size:12px; color:var(--text-muted);">${data.timestamp ? new Date(data.timestamp.toMillis()).toLocaleString() : ""}</span></div><div style="margin: 10px 0; padding: 10px; background: rgba(244, 67, 54, 0.1); border-radius: 4px; display:flex; justify-content:space-between;"><div><p style="color:var(--wrong-red); margin:0 0 5px 0;"><b>Issue:</b> ${data.reason}</p><p style="margin:0; font-size:14px;"><b>Details:</b> ${data.description || 'No description provided.'}</p></div>${stat}</div><p style="margin:5px 0 10px 0; font-size:12px; color:var(--text-muted);">Reported by: ${data.studentName}</p><div style="background:#1a1a1a; padding:10px; border-radius:4px; font-size:14px; margin-bottom:10px;"><b>Question Content:</b><br>${data.questionText}</div><div style="display:flex; gap:10px; flex-wrap:wrap;"><button onclick="openEditModalFromReport('${data.questionId}')" style="padding:6px 12px; background:#2196F3; border:none; border-radius:4px; color:white; cursor:pointer;">✏️ Edit MCQ in Database</button><button onclick="resolveReport('${data.id}')" style="padding:6px 12px; background:var(--correct-green); border:none; border-radius:4px; color:white; cursor:pointer;" ${data.status==='resolved'?'disabled':''}>✅ Mark Resolved (Notifies User)</button></div></div>`;
                 });
                 container.innerHTML = html;
             } catch(e) { container.innerHTML = `<p style="color:red;">Error: ${e.message}</p>`; }
@@ -1065,13 +1208,17 @@
         async function loadAdminDoubts() {
             const container = document.getElementById('doubts-list-container'); container.innerHTML = `<p style="color:var(--primary-yellow);">Fetching doubts...</p>`;
             try {
-                const snapshot = await db.collection("flagged_doubts").orderBy("timestamp", "desc").get();
-                if(snapshot.empty) { container.innerHTML = "<p>No flagged questions!</p>"; return; }
+                const snapshot = await db.collection("flagged_doubts").get();
+                let items = [];
+                snapshot.forEach(doc => items.push({ id: doc.id, ...doc.data() }));
+                items.sort((a,b) => (b.timestamp?.toMillis() || 0) - (a.timestamp?.toMillis() || 0));
+
+                if(items.length === 0) { container.innerHTML = "<p>No flagged questions!</p>"; return; }
+                
                 let html = '';
-                snapshot.forEach(doc => { 
-                    let data = doc.data();
+                items.forEach(data => { 
                     let stat = data.status === 'resolved' ? `<span style="background:var(--correct-green); color:white; padding:2px 8px; border-radius:12px; font-size:12px;">✅ Reviewed</span>` : `<span style="background:#555; color:white; padding:2px 8px; border-radius:12px; font-size:12px;">⏳ Pending</span>`;
-                    html += `<div class="content-item-card"><div class="content-item-header"><span class="badge-path">${data.path}</span><span style="font-size:12px; color:var(--text-muted);">${data.timestamp ? data.timestamp.toDate().toLocaleString() : ""}</span></div><div style="display:flex; justify-content:space-between;"><p style="color:var(--primary-yellow); margin:5px 0;"><b>Flagged by:</b> ${data.studentName}</p>${stat}</div><div style="background:#1a1a1a; padding:10px; border-radius:4px; font-size:14px;">${data.questionText}</div><button onclick="resolveDoubt('${doc.id}')" style="margin-top:10px; padding:5px 10px; background:var(--correct-green); border:none; border-radius:4px; color:white; cursor:pointer;" ${data.status==='resolved'?'disabled':''}>Mark Reviewed (Notifies User)</button></div>`; 
+                    html += `<div class="content-item-card"><div class="content-item-header"><span class="badge-path">${data.path}</span><span style="font-size:12px; color:var(--text-muted);">${data.timestamp ? new Date(data.timestamp.toMillis()).toLocaleString() : ""}</span></div><div style="display:flex; justify-content:space-between;"><p style="color:var(--primary-yellow); margin:5px 0;"><b>Flagged by:</b> ${data.studentName}</p>${stat}</div><div style="background:#1a1a1a; padding:10px; border-radius:4px; font-size:14px;">${data.questionText}</div><button onclick="resolveDoubt('${data.id}')" style="margin-top:10px; padding:5px 10px; background:var(--correct-green); border:none; border-radius:4px; color:white; cursor:pointer;" ${data.status==='resolved'?'disabled':''}>Mark Reviewed (Notifies User)</button></div>`; 
                 });
                 container.innerHTML = html;
             } catch(e) { container.innerHTML = `<p style="color:red;">Error: ${e.message}</p>`; }
@@ -1186,7 +1333,7 @@
                     if (data.type === 'mcq') {
                         let answersStr = (data.correctAnswers || []).join(', ');
                         let lvlBadge = data.level ? `<span style="margin-left:10px; background:#444; color:white; padding:2px 6px; border-radius:4px; font-size:11px;">${data.level}</span>` : '';
-                        html += `<div class="content-item-card" id="item_${doc.id}"><div class="content-item-header"><span class="badge-path">${data.path \vert{}\vert{} 'Uncategorized'}</span>${lvlBadge}<div style="display:flex; gap:8px;"><button class="btn-exam" onclick="openEditModal('${doc.id}')" style="padding:4px 10px; font-size:12px; background:#2196F3; border:none;">✏️ Edit</button><button class="btn-exam" onclick="deleteContentItem('${doc.id}')" style="padding:4px 10px; font-size:12px; background:var(--wrong-red); border:none;">🗑️ Delete</button></div></div><div style="font-weight:bold; margin-bottom:8px;">${data.question}</div>${data.imageUrl ? `<img src="${data.imageUrl}" style="max-height:80px; border-radius:4px; margin-bottom:8px; display:block;">` : ''}<div style="font-size:13px; color:var(--text-muted); line-height:1.4;">A: ${data.options?.A \vert{}\vert{} '-'} \vert{} B: ${data.options?.B || '-'} | C: ${data.options?.C \vert{}\vert{} '-'} \vert{} D: ${data.options?.D || '-'}</div><div style="margin-top:6px; font-size:13px; color:var(--correct-green);">Correct: ${answersStr}</div></div>`;
+                        html += `<div class="content-item-card" id="item_${doc.id}"><div class="content-item-header"><span class="badge-path">${data.path || 'Uncategorized'}</span>${lvlBadge}<div style="display:flex; gap:8px;"><button class="btn-exam" onclick="openEditModal('${doc.id}')" style="padding:4px 10px; font-size:12px; background:#2196F3; border:none;">✏️ Edit</button><button class="btn-exam" onclick="deleteContentItem('${doc.id}')" style="padding:4px 10px; font-size:12px; background:var(--wrong-red); border:none;">🗑️ Delete</button></div></div><div style="font-weight:bold; margin-bottom:8px;">${data.question}</div>${data.imageUrl ? `<img src="${data.imageUrl}" style="max-height:80px; border-radius:4px; margin-bottom:8px; display:block;">` : ''}<div style="font-size:13px; color:var(--text-muted); line-height:1.4;">A: ${data.options?.A || '-'} | B: ${data.options?.B || '-'} | C: ${data.options?.C || '-'} | D: ${data.options?.D || '-'}</div><div style="margin-top:6px; font-size:13px; color:var(--correct-green);">Correct: ${answersStr}</div></div>`;
                     } else {
                         html += `<div class="content-item-card" id="item_${doc.id}"><div class="content-item-header"><span class="badge-path">${data.path || 'Uncategorized'}</span><button class="btn-exam" onclick="deleteContentItem('${doc.id}')" style="padding:4px 10px; font-size:12px; background:var(--wrong-red); border:none;">🗑️ Delete</button></div><div style="font-weight:bold; margin-bottom:5px;">📄 ${data.title}</div><a href="${data.fileUrl}" target="_blank" style="color:var(--primary-yellow); font-size:13px;">View Document &rarr;</a></div>`;
                     }
@@ -1237,311 +1384,6 @@
             try { await db.collection("settings").doc("admin_auth").set({ password: p1 }); document.getElementById('newAdminPass').value = ""; document.getElementById('confirmAdminPass').value = ""; showNotification("✅ Password changed successfully!"); } 
             catch(e) { showNotification("❌ Error updating password: " + e.message); }
         }
-
-        async function resetProgress(safePath) {
-            if(confirm("Are you sure you want to reset your progress? This will let you re-attempt all questions in this section from the beginning.")) {
-                if (currentUser) { let dataToSave = {}; dataToSave[safePath] = firebase.firestore.FieldValue.delete(); await db.collection("users").doc(currentUser.uid).update(dataToSave).catch(e=>{}); } 
-                else { let localProg = JSON.parse(localStorage.getItem('mcq_progress') || '{}'); delete localProg[safePath]; localStorage.setItem('mcq_progress', JSON.stringify(localProg)); }
-                _initiateQuizEngine(); 
-            }
-        }
-
-        // --- NEW CUSTOM WIZARD LOGIC ---
-        let cwState = { exam: '', subjects: [], subtopics: [], count: 20, level: 'Mixed' };
-
-        function getCustomSubjects(exam) {
-            let subjects = [];
-            let rootNode = exam === 'NEET' ? appData["NEET"]["MCQs Practice"] : appData["General Knowledge"];
-            for(let key in rootNode) { subjects.push({ name: key, path: exam === 'NEET' ? `NEET > MCQs Practice > ${key}` : `General Knowledge > ${key}` }); }
-            let rootPath = exam === 'NEET' ? "NEET > MCQs Practice" : "General Knowledge";
-            for(let customPath in customTopicTypes) {
-                if(customPath.startsWith(rootPath) && customPath.split(' > ').length === rootPath.split(' > ').length + 1) {
-                    let name = customPath.split(' > ').pop();
-                    if(!subjects.find(s => s.name === name)) subjects.push({ name: name, path: customPath });
-                }
-            }
-            return subjects;
-        }
-
-        function getAllLeafNodes(subjectPaths) {
-            let leafs = [];
-            subjectPaths.forEach(subjPath => {
-                let parts = subjPath.split(' > '); let curr = appData; let valid = true;
-                for(let p of parts) { if(curr[p]) curr = curr[p]; else {valid = false; break;} }
-                function traverse(node, pathStr) {
-                    let hasChildren = false;
-                    for(let k in node) { if(k === "Daily Quiz Challenge") continue; hasChildren = true; traverse(node[k], pathStr + " > " + k); }
-                    if(!hasChildren) leafs.push(pathStr);
-                }
-                if(valid) traverse(curr, subjPath);
-                for(let customP in customTopicTypes) {
-                    if(customP.startsWith(subjPath) && customTopicTypes[customP] === 'mcq') { if(!leafs.includes(customP)) leafs.push(customP); }
-                }
-            });
-            return [...new Set(leafs)].sort();
-        }
-
-        function cwStep1() {
-            if(!currentUser) { showAuthModal(); return; }
-            cwState = { exam: '', subjects: [], subtopics: [], count: 20, level: 'Mixed' };
-            document.getElementById('breadcrumb-text').innerText = "Home / Custom Practice Setup / Select Exam";
-            let html = `
-                <div class="card">
-                    <h2 style="color:var(--primary-yellow);">⚙️ Custom Practice Setup</h2>
-                    <p style="color:var(--text-muted); margin-bottom:25px;">Step 1: Which exam are you preparing for?</p>
-                    <div style="display:flex; gap:15px; flex-wrap:wrap;">
-                        <button class="btn-exam" onclick="cwStep2('NEET')" style="flex:1; padding:20px; font-size:18px;">🩺 NEET</button>
-                        <button class="btn-exam" onclick="cwStep2('General Knowledge')" style="flex:1; padding:20px; font-size:18px;">🌍 General Knowledge</button>
-                    </div>
-                    <button class="btn-exam" onclick="goHome()" style="margin-top:20px; background:#333;">&larr; Cancel</button>
-                </div>
-            `;
-            document.getElementById('dynamic-content').innerHTML = html;
-        }
-
-        function cwStep2(exam) {
-            cwState.exam = exam;
-            document.getElementById('breadcrumb-text').innerText = `Home / Custom Practice Setup / ${exam} / Select Subjects`;
-            let subjects = getCustomSubjects(exam);
-            let html = `
-                <div class="card">
-                    <h2 style="color:var(--primary-yellow);">📚 Select Subjects</h2>
-                    <p style="color:var(--text-muted); margin-bottom:20px;">Step 2: Choose one or more subjects from ${exam}.</p>
-                    <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap:10px; margin-bottom:25px;">
-                        ${subjects.map(s => `<label style="background:#2a2a2a; border:1px solid #444; padding:15px; border-radius:8px; cursor:pointer; display:flex; align-items:center; gap:10px; transition:0.2s;" onmouseover="this.style.borderColor='var(--primary-yellow)'" onmouseout="this.style.borderColor='#444'"><input type="checkbox" value="${s.path}" class="cw-subj-cb"> <span>${s.name}</span></label>`).join('')}
-                    </div>
-                    <div style="display:flex; justify-content:space-between;">
-                        <button class="btn-exam" onclick="cwStep1()" style="background:#333;">&larr; Back</button>
-                        <button class="btn-exam" onclick="cwProcessStep2()" style="background:var(--primary-yellow); color:black;">Next: Select Chapters &rarr;</button>
-                    </div>
-                </div>
-            `;
-            document.getElementById('dynamic-content').innerHTML = html;
-        }
-
-        function cwProcessStep2() {
-            let cbs = Array.from(document.querySelectorAll('.cw-subj-cb:checked')).map(cb => cb.value);
-            if(cbs.length === 0) return showNotification("⚠️ Select at least one subject.");
-            cwState.subjects = cbs; cwStep3();
-        }
-
-        function cwStep3() {
-            document.getElementById('breadcrumb-text').innerText = `Home / Custom Practice Setup / ${cwState.exam} / Chapters`;
-            let leafs = getAllLeafNodes(cwState.subjects);
-            let html = `
-                <div class="card">
-                    <h2 style="color:var(--primary-yellow);">📑 Select Chapters / Subtopics</h2>
-                    <p style="color:var(--text-muted); margin-bottom:20px;">Step 3: Pick the specific topics you want to practice.</p>
-                    <input type="text" id="cwSubtopicSearch" class="input-field" placeholder="🔍 Search chapters..." oninput="cwFilterSubtopics()">
-                    <div style="margin-bottom:15px;">
-                        <button onclick="cwSelectAll(true)" style="background:none; border:none; color:var(--primary-yellow); cursor:pointer; font-size:14px;">Select All</button> | 
-                        <button onclick="cwSelectAll(false)" style="background:none; border:none; color:var(--primary-yellow); cursor:pointer; font-size:14px;">Deselect All</button>
-                    </div>
-                    <div id="cw-subtopic-list" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap:10px; max-height:40vh; overflow-y:auto; padding:10px; background:#111; border-radius:8px; border:1px solid #333; margin-bottom:25px;">
-                        ${leafs.map(l => `<label class="cw-sub-lbl" style="background:#2a2a2a; border:1px solid #444; padding:12px; border-radius:6px; cursor:pointer; display:flex; align-items:flex-start; gap:10px;"><input type="checkbox" value="${l}" class="cw-sub-cb" checked> <span style="font-size:14px;">${l.split(' > ').pop()}<br><span style="font-size:11px; color:#888;">${l}</span></span></label>`).join('')}
-                    </div>
-                    <div style="display:flex; justify-content:space-between;">
-                        <button class="btn-exam" onclick="cwStep2(cwState.exam)" style="background:#333;">&larr; Back</button>
-                        <button class="btn-exam" onclick="cwProcessStep3()" style="background:var(--primary-yellow); color:black;">Next: Set Difficulty &rarr;</button>
-                    </div>
-                </div>
-            `;
-            document.getElementById('dynamic-content').innerHTML = html;
-        }
-
-        function cwFilterSubtopics() {
-            let q = document.getElementById('cwSubtopicSearch').value.toLowerCase();
-            document.querySelectorAll('.cw-sub-lbl').forEach(lbl => {
-                if(lbl.innerText.toLowerCase().includes(q)) lbl.style.display = 'flex'; else lbl.style.display = 'none';
-            });
-        }
-
-        function cwSelectAll(select) {
-            document.querySelectorAll('.cw-sub-cb').forEach(cb => { if(cb.closest('.cw-sub-lbl').style.display !== 'none') cb.checked = select; });
-        }
-
-        function cwProcessStep3() {
-            let cbs = Array.from(document.querySelectorAll('.cw-sub-cb:checked')).map(cb => cb.value);
-            if(cbs.length === 0) return showNotification("⚠️ Select at least one chapter.");
-            cwState.subtopics = cbs; cwStep4();
-        }
-
-        function cwStep4() {
-            document.getElementById('breadcrumb-text').innerText = `Home / Custom Practice Setup / Configure Quiz`;
-            let html = `
-                <div class="card">
-                    <h2 style="color:var(--primary-yellow);">🎯 Final Setup</h2>
-                    <p style="color:var(--text-muted);">Step 4: Choose difficulty and number of questions.</p>
-                    <div style="display:flex; gap:20px; flex-wrap:wrap; margin-bottom:30px; margin-top:20px;">
-                        <div style="flex:1; min-width:200px;">
-                            <label style="color:var(--text-light); font-weight:bold; margin-bottom:10px; display:block;">Difficulty Level:</label>
-                            <select id="cwLevel" class="input-field" style="padding:15px; font-size:16px;"><option value="Mixed">Mixed (All Levels)</option><option value="Easy">Easy</option><option value="Medium">Medium</option><option value="Hard">Hard</option></select>
-                        </div>
-                        <div style="flex:1; min-width:200px;">
-                            <label style="color:var(--text-light); font-weight:bold; margin-bottom:10px; display:block;">Total Questions:</label>
-                            <input type="number" id="cwCount" class="input-field" value="20" min="5" max="100" style="padding:15px; font-size:16px;">
-                        </div>
-                    </div>
-                    <div style="display:flex; justify-content:space-between;">
-                        <button class="btn-exam" onclick="cwStep3()" style="background:#333;">&larr; Back</button>
-                        <button class="btn-exam" onclick="cwLaunchQuiz()" style="background:var(--correct-green); color:white; font-size:18px; padding:15px 30px; border:none; box-shadow:0 4px 15px rgba(76,175,80,0.4);">🚀 Start Custom Quiz</button>
-                    </div>
-                </div>
-            `;
-            document.getElementById('dynamic-content').innerHTML = html;
-        }
-
-        function cwLaunchQuiz() {
-            cwState.level = document.getElementById('cwLevel').value; cwState.count = parseInt(document.getElementById('cwCount').value) || 20;
-            customQuizConfig.paths = cwState.subtopics; customQuizConfig.count = cwState.count; customQuizConfig.level = cwState.level;
-            _initiateQuizEngine(true);
-        }
-
-        function _renderView() {
-            const mainContent = document.getElementById('dynamic-content');
-            const breadcrumb = document.getElementById('breadcrumb-text');
-            breadcrumb.innerText = currentPath.length === 0 ? "Home / Select Exam" : "Home / " + currentPath.join(" / "); 
-            
-            let currentLevel = appData;
-            for (let node of currentPath) { 
-                if(currentLevel[node] !== undefined) currentLevel = currentLevel[node]; 
-                else { window.location.hash = '#/home'; return; } 
-            }
-
-            let isEndpoint = false;
-            if (typeof currentLevel === 'string' || Array.isArray(currentLevel)) { isEndpoint = true; } 
-            else if (typeof currentLevel === 'object' && Object.keys(currentLevel).length === 0) { isEndpoint = true; }
-
-            if (isEndpoint) {
-                let topicName = currentPath[currentPath.length - 1]; 
-                let checkPath = currentPath.join(" > "); let expectedType = customTopicTypes[checkPath];
-                let isPdfSection = (expectedType === 'pdf') || (!requiresQuizLogin(currentPath) && expectedType !== 'mcq');
-                
-                if (!isPdfSection) {
-                    let studentName = currentUser ? currentUser.displayName.split(" ")[0] : "Student";
-                    let welcomeMessage = !currentUser ? "Sign in to track your scores on the global leaderboard!" : `Ready for practice, <span style="color: var(--primary-yellow); font-weight: bold;">${studentName}</span>?`;
-                    mainContent.innerHTML = `<div class="card"><h2>${topicName} Practice</h2><p style="color: var(--text-muted); margin-bottom: 25px;">${welcomeMessage}</p><div style="display: flex; gap: 15px;"><button class="btn-exam" onclick="window.location.hash='#/quiz'" style="background-color: var(--primary-yellow); color: black; border: none; width: 200px;">Start Quiz &rarr;</button><button class="btn-exam" onclick="goBack()" style="width: 150px; background-color: #333;">&larr; Go Back</button></div></div>`;
-                } else {
-                    mainContent.innerHTML = `<div class="card"><h2>${topicName} Resources</h2><p style="color: var(--text-muted);">Study materials will appear here once uploaded via Admin Panel.</p><button class="btn-exam" onclick="goBack()" style="width: 150px; margin-top:20px; background-color: #333;">&larr; Go Back</button></div>`;
-                }
-                return;
-            }
-
-            let title = currentPath.length === 0 ? "Select Exam:" : currentPath[currentPath.length - 1];
-            let html = ``;
-
-            // HOMEPAGE CUSTOM PRACTICE BUTTON
-            if (currentPath.length === 0) {
-                html += `<div class="card" style="margin-bottom: 30px; border: 1px solid var(--primary-yellow); background: rgba(253, 184, 19, 0.05);"><div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:15px;"><div><h2 style="color:var(--primary-yellow); margin:0 0 5px 0;">⚙️ Custom Practice Engine</h2><p style="color:var(--text-muted); margin:0; font-size:14px;">Mix subjects, filter by difficulty, and build your ultimate personalized mock test.</p></div><button class="btn-exam" onclick="cwStep1()" style="background:var(--primary-yellow); color:black; font-size:16px; padding:12px 24px; box-shadow:0 4px 15px rgba(253,184,19,0.3);">Launch Setup 🚀</button></div></div>`;
-            }
-
-            html += `<div class="card"><h2>${title}</h2><div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px;">`;
-
-            for (let key in currentLevel) { 
-                if (currentPath.length === 0 && key === "Daily Quiz Challenge") continue; 
-                let checkPath = currentPath.join(" > ") + (currentPath.length > 0 ? " > " : "") + key;
-                let typeLabel = ""; if (customTopicTypes[checkPath] === 'mcq') typeLabel = " 📝"; else if (customTopicTypes[checkPath] === 'pdf') typeLabel = " 📄";
-                html += `<button class="btn-exam" onclick="navigateTo('${key}')">${key}${typeLabel}</button>`; 
-            }
-            if (currentPath.length > 0) { html += `<button class="btn-exam" onclick="goBack()" style="grid-column: 1 / -1; background-color: #222; border-color: #444; color: #a0a0a0; margin-top: 10px;">&larr; Go Back</button>`; }
-            html += `</div></div>`; mainContent.innerHTML = html;
-        }
-
-        function _renderLeaderboardOptions() { 
-            document.getElementById('breadcrumb-text').innerText = "Home / Leaderboard"; 
-            document.getElementById('dynamic-content').innerHTML = `
-                <div class="card">
-                    <h2>🏆 Global Leaderboards</h2>
-                    <p style="color:var(--text-muted); margin-bottom: 20px;">Select a category to view the top 10 scores.</p>
-                    <div style="background: rgba(244, 67, 54, 0.1); border-left: 4px solid var(--wrong-red); padding: 12px; margin-bottom: 25px; border-radius: 4px;">
-                        <span style="color: var(--wrong-red); font-weight: bold;">⚠️ CAUTION:</span> <span style="color: var(--text-light); font-size: 14px;">Only signed-in users will have their scores recorded and displayed on the leaderboard.</span>
-                    </div>
-                    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 15px;">
-                        <button class="btn-exam" onclick="window.location.hash='#/board/NEET > MCQs Practice'">1. NEET PRACTICE</button>
-                        <button class="btn-exam" onclick="window.location.hash='#/board/NEET > Mock Test'">2. MOCK TEST</button>
-                        <button class="btn-exam" onclick="window.location.hash='#/board/General Knowledge'">3. GENERAL KNOWLEDGE</button>
-                    </div>
-                </div>`; 
-        }
-        
-        async function fetchLiveLeaderboard(pathPrefix) { 
-            const mainContent = document.getElementById('dynamic-content');
-            if (!currentUser) { mainContent.innerHTML = `<div class="card"><h2>🏆 Fetching Leaderboard...</h2><div style="background: rgba(244, 67, 54, 0.1); border-left: 4px solid var(--wrong-red); padding: 15px; margin: 20px 0; border-radius: 4px;"><span style="color: var(--wrong-red); font-weight: bold;">⚠️ ACCESS DENIED:</span> <span style="color: var(--text-light); font-size: 14px;">You must be signed in with Google to view the global leaderboards.</span></div><button class="btn-exam" onclick="window.location.hash='#/leaderboard'">&larr; Back</button></div>`; return; }
-
-            mainContent.innerHTML = `<div class="card"><h2>🏆 Fetching Leaderboard...</h2></div>`;
-            try {
-                const userSnapshot = await db.collection("leaderboards").where("userId", "==", currentUser.uid).get();
-                let totalQuestions = 0; let totalTests = 0; let myBestScore = -99999; let myBestData = null;
-                userSnapshot.forEach(doc => {
-                    let data = doc.data();
-                    if (data.quizPath && data.quizPath.startsWith(pathPrefix)) {
-                        totalTests++; totalQuestions += (data.attemptedQuestions || 0);
-                        if (data.score > myBestScore) { myBestScore = data.score; myBestData = data; }
-                    }
-                });
-
-                let isMockTest = pathPrefix.includes('Mock Test'); let thresholdMet = false; let requiredText = ""; let progressText = "";
-                if (isMockTest) { thresholdMet = (totalTests >= 5); requiredText = "5 Full Mock Tests"; progressText = `${totalTests} / 5 Tests Completed`; } 
-                else { thresholdMet = (totalQuestions >= 100); requiredText = "100 Practice Questions"; progressText = `${totalQuestions} / 100 Questions Attempted`; }
-
-                if (!thresholdMet) {
-                    mainContent.innerHTML = `<div class="card" style="text-align:center; padding: 40px 20px;"><h2 style="color: var(--primary-yellow); font-size: 28px; margin-bottom: 10px;">🔒 Leaderboard Locked</h2><p style="color: var(--text-muted); font-size: 15px; max-width: 500px; margin: 0 auto 20px auto; line-height: 1.5;">To ensure competitive integrity, you must attempt a minimum of <b style="color: white;">${requiredText}</b> in this specific category before unlocking the global rankings.</p><div style="background: #2a2a2a; border: 1px solid var(--border-color); padding: 15px 25px; border-radius: 8px; display: inline-block; margin-bottom: 30px;"><span style="color: var(--primary-yellow); font-weight: bold; margin-right: 10px;">Your Progress:</span> <span style="color: white; font-weight: bold;">${progressText}</span></div><br><button class="btn-exam" onclick="window.location.hash='#/leaderboard'">&larr; Back to Categories</button></div>`; return;
-                }
-
-                const boardSnapshot = await db.collection("leaderboards").where("quizPath", ">=", pathPrefix).where("quizPath", "<=", pathPrefix + "\uf8ff").orderBy("quizPath").orderBy("score", "desc").limit(100).get();
-                let html = `<div class="card"><h2>🏆 Top 10: ${pathPrefix.split(' > ').pop()}</h2><table><tr><th>Rank</th><th>Student</th><th>Score</th><th>Accuracy</th><th>Time</th></tr>`;
-                let myRank = ">100"; let inTop10 = false; let docs = [];
-                boardSnapshot.forEach(doc => docs.push(doc.data()));
-
-                for(let i = 0; i < docs.length; i++) { if (docs[i].userId === currentUser.uid && docs[i].score === myBestScore) { myRank = i + 1; if (myRank <= 10) inTop10 = true; break; } }
-                let displayCount = Math.min(10, docs.length);
-                for(let i = 0; i < displayCount; i++) {
-                    let data = docs[i]; let medal = (i === 0) ? "🥇 " : ((i === 1) ? "🥈 " : ((i === 2) ? "🥉 " : (i + 1) + ". "));
-                    let isMe = (data.userId === currentUser.uid); let rowStyle = isMe ? `style="background: rgba(253, 184, 19, 0.15);"` : "";
-                    html += `<tr ${rowStyle}><td>${medal}</td><td><b>${data.userName}</b> ${isMe ? '<span style="color:var(--primary-yellow); font-size:12px; margin-left:5px;">(You)</span>' : ''}</td><td style="color:var(--correct-green); font-weight:bold;">${data.score}</td><td>${data.accuracy}%</td><td>${data.timeStr}</td></tr>`;
-                }
-                html += `</table>`;
-
-                if (!inTop10 && myBestData) { html += `<div style="margin-top: 30px; background: #2a2a2a; border: 1px solid var(--border-color); border-left: 4px solid var(--primary-yellow); padding: 20px; border-radius: 4px;"><h4 style="margin: 0 0 15px 0; color: var(--primary-yellow); font-size: 18px;">Your Personal Best</h4><div style="display: flex; gap: 30px; flex-wrap: wrap;"><div><span style="color:var(--text-muted); font-size:13px;">Global Rank</span><br><b style="font-size:20px; color: white;">${myRank}</b></div><div><span style="color:var(--text-muted); font-size:13px;">Best Score</span><br><b style="font-size:20px; color:var(--correct-green);">${myBestData.score}</b></div><div><span style="color:var(--text-muted); font-size:13px;">Accuracy</span><br><b style="font-size:20px; color: white;">${myBestData.accuracy}%</b></div><div><span style="color:var(--text-muted); font-size:13px;">Total Tests Attempted</span><br><b style="font-size:20px; color: white;">${totalTests}</b></div></div></div>`; }
-                html += `<button class="btn-exam" onclick="window.location.hash='#/leaderboard'" style="margin-top:25px; background:#333;">&larr; Back to Categories</button></div>`;
-                mainContent.innerHTML = html;
-
-            } catch(e) { mainContent.innerHTML = `<div class="card"><h2 style="color:var(--wrong-red);">Error</h2><p>${e.message}</p></div>`; }
-        }
-        
-        function openSearch() { document.getElementById('searchWrapper').classList.add('active'); document.getElementById('searchInput').focus(); }
-        function closeSearch() { document.getElementById('searchWrapper').classList.remove('active'); document.getElementById('searchInput').value = ''; document.getElementById('searchSuggestions').style.display = 'none'; }
-        function delayCloseSearch() { setTimeout(closeSearch, 250); }
-        
-        function handleLiveSearch() { 
-            const query = document.getElementById('searchInput').value.trim().toLowerCase(); 
-            const dropdown = document.getElementById('searchSuggestions');
-            if(query === "") { dropdown.style.display = 'none'; return; }
-            
-            let results = [];
-            function searchDB(obj, q, path = []) { 
-                for (let key in obj) { 
-                    let current = [...path, key]; 
-                    if (key.toLowerCase().includes(q)) results.push({pathArray: current, matchWord: key}); 
-                    if (typeof obj[key] === 'object' && !Array.isArray(obj[key])) searchDB(obj[key], q, current); 
-                } 
-            }
-            searchDB(appData, query);
-            
-            if(results.length > 0) { 
-                dropdown.innerHTML = results.slice(0, 8).map(res => { 
-                    const cleanPath = JSON.stringify(res.pathArray).replace(/"/g, "'"); 
-                    let regex = new RegExp(`(${query})`, 'gi');
-                    let highlightedText = res.pathArray.map(part => part.replace(regex, "<span class='highlight-match'>$1</span>")).join(" <span style='color:var(--text-muted);font-size:12px;'>&rarr;</span> ");
-                    return `<div class="suggestion-item" onclick="jumpToSection(${cleanPath}); closeSearch();">🔍 <span>${highlightedText}</span></div>`; 
-                }).join(''); 
-            } else { 
-                dropdown.innerHTML = `<div class="suggestion-item" style="color: var(--text-muted);">No results match "${query}"</div>`; 
-            }
-            dropdown.style.display = 'block';
-        }
-        
-        function showNotification(message) { const notif = document.getElementById('notification'); notif.innerText = message; notif.style.display = 'block'; setTimeout(() => { notif.style.display = 'none'; }, 3000); }
 
         fetchGlobalRating();
     </script>
