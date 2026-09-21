@@ -2,130 +2,46 @@
 <html lang="en">
 <head>
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-9DMLHEWB1Q"></script>
-    <script>window.dataLayer = window.dataLayer || []; function gtag(){dataLayer.push(arguments);} gtag('js', new Date()); gtag('config', 'G-9DMLHEWB1Q');</script>
-    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-9DMLHEWB1Q');
+    </script>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MCQsPrep - Dashboard</title>
+    <meta name="description" content="MCQsPrep - A free, smart MCQ practice platform for competitive exams.">
     
+    <!-- Link to your new CSS file -->
+    <link rel="stylesheet" href="style.css">
+    
+    <!-- FIREBASE LIBRARIES -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+
+    <!-- AI SUPPORT LIBRARIES -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
     <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"></script>
-
-    <style>
-        :root{--bg-dark:#121212;--card-bg:#1e1e1e;--primary-yellow:#fdb813;--text-light:#ffffff;--text-muted:#a0a0a0;--border-color:#333333;--correct-green:#4CAF50;--wrong-red:#F44336}
-        body{margin:0;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background-color:var(--bg-dark);color:var(--text-light);overflow-x:hidden}
-        .navbar{display:flex;justify-content:space-between;align-items:center;background-color:var(--bg-dark);padding:15px 40px;border-bottom:1px solid var(--border-color);position:relative;z-index:100}
-        .logo-container{display:flex;align-items:center;font-size:24px;font-weight:bold;color:var(--text-light);cursor:pointer;white-space:nowrap}
-        .logo-container span{color:var(--primary-yellow);margin-left:2px}
-        .search-wrapper{position:relative;display:flex;justify-content:flex-end;align-items:center;flex-grow:1;margin:0 30px;transition:.3s ease}
-        .search-icon-btn{background:#2a2a2a;border:1px solid var(--border-color);color:white;font-size:18px;cursor:pointer;padding:10px 15px;border-radius:50%;display:flex;align-items:center;justify-content:center}
-        .search-input-container{display:none;width:100%;max-width:600px;position:relative}
-        .search-wrapper.active .search-icon-btn{display:none}
-        .search-wrapper.active .search-input-container{display:flex;align-items:center}
-        .search-input-container input{width:100%;padding:12px 45px 12px 20px;border-radius:24px;border:1px solid var(--border-color);background:#2a2a2a;color:white;outline:none;font-size:16px}
-        .search-input-container input:focus{border-color:var(--primary-yellow);background:#1e1e1e}
-        .search-close-btn{position:absolute;right:15px;background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:20px;font-weight:bold;padding:0}
-        .suggestions-dropdown{display:none;position:absolute;top:calc(100% + 8px);left:0;right:0;background:var(--card-bg);border:1px solid var(--border-color);border-radius:12px;z-index:2000;max-height:350px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,.8)}
-        .suggestion-item{padding:12px 20px;cursor:pointer;border-bottom:1px solid var(--border-color);color:white;display:flex;align-items:center;gap:12px;font-size:15px}
-        .suggestion-item:hover{background:#2a2a2a;color:var(--primary-yellow)}
-        .nav-links{display:flex;align-items:center;gap:20px;white-space:nowrap}
-        .nav-links a{color:var(--text-light);text-decoration:none;font-weight:500;cursor:pointer}
-        .nav-links a:hover{color:var(--primary-yellow)}
-        .user-badge{display:none;align-items:center;gap:8px;background:linear-gradient(135deg,#2a2a2a,#1a1a1a);border:1px solid var(--primary-yellow);color:var(--text-light);padding:6px 16px;border-radius:20px;font-size:14px;font-weight:600;cursor:pointer;margin-left:10px;position:relative}
-        .user-badge img{width:20px;height:20px;border-radius:50%}
-        .notification-dot{position:absolute;top:-2px;right:-2px;width:10px;height:10px;background-color:var(--wrong-red);border-radius:50%;display:none;border:2px solid var(--bg-dark)}
-        .profile-menu{display:none;position:absolute;top:calc(100% + 10px);right:0;background:var(--card-bg);border:1px solid var(--border-color);border-radius:8px;width:220px;z-index:3000;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,.8)}
-        .profile-menu.active{display:block}
-        .profile-menu-item{padding:15px 20px;color:white;display:flex;align-items:center;gap:10px;cursor:pointer;border-bottom:1px solid var(--border-color);font-size:15px}
-        .profile-menu-item:hover{background:#333;color:var(--primary-yellow)}
-        .breadcrumb{background-color:#1a1a1a;padding:10px 40px;font-size:14px;color:var(--text-muted);border-bottom:1px solid var(--border-color)}
-        .container{display:flex;padding:40px;gap:30px;max-width:1400px;margin:0 auto;min-height:80vh}
-        .main-content{flex:2;width:100%}
-        .sidebar{flex:1;max-width:400px}
-        .card{background-color:var(--card-bg);border-radius:8px;padding:25px;margin-bottom:25px;border:1px solid var(--border-color);box-shadow:0 4px 6px rgba(0,0,0,.1)}
-        .card h2,.card h3{margin-top:0;margin-bottom:20px;font-size:20px}
-        .btn-exam{padding:12px 18px;border-radius:6px;border:1px solid var(--border-color);background-color:#2a2a2a;color:white;font-size:15px;font-weight:bold;cursor:pointer;transition:.2s}
-        .btn-exam:hover{background-color:#382909;border-color:var(--primary-yellow);color:var(--primary-yellow)}
-        .btn-exam:disabled{opacity:.5;cursor:not-allowed}
-        .action-link{display:block;width:100%;box-sizing:border-box;padding:12px 15px;background-color:#2a2a2a;border:1px solid var(--border-color);border-radius:6px;color:white;text-decoration:none;margin-bottom:10px;cursor:pointer}
-        .action-link:hover{border-color:var(--primary-yellow);background-color:#333}
-        .input-field{width:100%;padding:12px;margin-bottom:15px;border-radius:4px;border:1px solid var(--border-color);background:#2a2a2a;color:white;box-sizing:border-box;font-size:15px}
-        .input-field:focus{outline:none;border-color:var(--primary-yellow)}
-        .admin-row{display:flex;gap:15px;margin-bottom:15px;flex-wrap:wrap}
-        .admin-row > *{flex:1;min-width:200px}
-        .admin-checkbox-group{display:flex;gap:15px;align-items:center;background:#2a2a2a;padding:12px;border-radius:6px;border:1px solid var(--border-color);flex-wrap:wrap}
-        .admin-tab-btn{padding:10px 20px;background:#2a2a2a;color:var(--text-muted);border:1px solid var(--border-color);border-radius:6px;cursor:pointer;font-weight:bold;margin-bottom:10px}
-        .admin-tab-btn.active{background:var(--primary-yellow);color:black;border-color:var(--primary-yellow)}
-        .badge-path{background:#333;color:var(--primary-yellow);padding:4px 8px;border-radius:4px;font-size:12px}
-        .quiz-header{display:flex;justify-content:space-between;align-items:center;padding-bottom:15px;border-bottom:1px solid var(--border-color);margin-bottom:15px}
-        .quiz-timer{font-size:18px;font-weight:bold;color:var(--primary-yellow)}
-        .quiz-question-text{font-size:18px;line-height:1.5;margin-bottom:25px}
-        .quiz-image{max-width:100%;border-radius:8px;margin-bottom:20px;max-height:300px;object-fit:contain;cursor:zoom-in}
-        .quiz-option{display:flex;align-items:center;padding:15px;background:#2a2a2a;border:2px solid var(--border-color);border-radius:8px;margin-bottom:12px;cursor:pointer;font-size:16px}
-        .quiz-option.selected{border-color:var(--primary-yellow);background:rgba(253,184,19,.1)}
-        .quiz-option.correct{border-color:var(--correct-green);background:rgba(76,175,80,.1)}
-        .quiz-option.wrong{border-color:var(--wrong-red);background:rgba(244,67,54,.1)}
-        .question-palette{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px;background:#1a1a1a;padding:15px;border-radius:8px;border:1px solid var(--border-color)}
-        .nav-buttons-row{display:flex;justify-content:space-between;margin-top:25px;flex-wrap:wrap;gap:10px}
-        .flag-btn{background:#333;border:1px solid var(--border-color);color:white;padding:5px 12px;border-radius:4px;cursor:pointer;font-size:14px}
-        .flag-btn.flagged{background:#382909;border-color:var(--primary-yellow);color:var(--primary-yellow)}
-        .review-tabs{display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap;justify-content:center}
-        .review-tab-btn{background:#2a2a2a;border:1px solid var(--border-color);color:var(--text-muted);padding:10px 20px;border-radius:6px;cursor:pointer;font-weight:bold;flex:1;min-width:120px}
-        .review-tab-btn.active.correct{background:rgba(76,175,80,.15);border-color:var(--correct-green);color:var(--correct-green)}
-        .review-tab-btn.active.wrong{background:rgba(244,67,54,.15);border-color:var(--wrong-red);color:var(--wrong-red)}
-        .review-tab-btn.active.skipped{background:rgba(253,184,19,.15);border-color:var(--primary-yellow);color:var(--primary-yellow)}
-        .review-item{background:#1a1a1a;border:1px solid var(--border-color);border-radius:8px;padding:20px;margin-bottom:15px;text-align:left}
-        table{width:100%;border-collapse:collapse;margin-top:15px} table th,table td{padding:12px;border-bottom:1px solid var(--border-color);text-align:left} table th{color:var(--primary-yellow);background:#2a2a2a}
-        #notification{display:none;position:fixed;bottom:20px;right:20px;background-color:var(--primary-yellow);color:#000;padding:15px 25px;border-radius:5px;font-weight:bold;z-index:9999}
-        .modal-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.85);z-index:3000;justify-content:center;align-items:center;backdrop-filter:blur(5px)}
-        .modal-content{background:var(--card-bg);padding:30px;border-radius:12px;border:1px solid var(--border-color);width:90%;max-width:600px;position:relative;max-height:90vh;overflow-y:auto;box-shadow:0 10px 30px rgba(0,0,0,.5)}
-        .close-modal{position:absolute;top:15px;right:15px;background:none;border:none;color:var(--text-muted);font-size:24px;cursor:pointer;z-index:5000}
-        .close-modal:hover{color:var(--wrong-red);transform:scale(1.1)}
-        .star-btn{font-size:38px;color:#444;cursor:pointer;background:none;border:none;padding:0 8px} .star-btn.active{color:var(--primary-yellow)}
-
-        /* FULLSCREEN AI MODAL */
-        #ai-floating-btn{position:fixed;bottom:30px;right:30px;background:linear-gradient(135deg,#fdb813,#ff7b00);color:black;font-weight:bold;padding:12px 24px;border-radius:30px;cursor:pointer;z-index:2500;display:flex;align-items:center;gap:8px;font-size:16px;user-select:none;touch-action:none}
-        #ai-floating-btn.draggable{box-shadow:0 0 25px #fff;border:2px solid white;cursor:grab;animation:pulse 1s infinite alternate}
-        @keyframes pulse{from{transform:scale(1)}to{transform:scale(1.05)}}
-        .ai-fullscreen-modal{width:100vw !important;height:100vh !important;max-width:100vw !important;max-height:100vh !important;border-radius:0 !important;border:none !important;margin:0 !important;background:linear-gradient(-45deg,#111,#1a1a2e,#0f3460,#111) !important;background-size:400% 400% !important;animation:aiGradientBG 15s ease infinite !important;display:flex;flex-direction:column;padding:0 !important}
-        @keyframes aiGradientBG{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
-        .ai-ambient-glow{position:absolute;border-radius:50%;pointer-events:none;opacity:.5;filter:blur(100px)}
-        .ai-glow-1{top:-10%;left:-5%;width:50vw;height:50vh;background:radial-gradient(circle,#7928ca,transparent)}
-        .ai-glow-2{bottom:-10%;right:-5%;width:60vw;height:60vh;background:radial-gradient(circle,#0070f3,transparent)}
-        .ai-exit-btn{position:fixed;top:20px;right:20px;width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);color:#fff;font-size:20px;font-weight:bold;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:9999}
-        .ai-workspace{position:relative;z-index:10;width:100%;max-width:1400px;height:100%;display:flex;flex-direction:column;padding:40px;margin:0 auto;box-sizing:border-box}
-        .ai-split-container{display:flex;flex-direction:column;gap:30px;flex:1;height:calc(100% - 80px)}
-        .ai-left-panel{flex:1;display:flex;flex-direction:column;overflow-y:auto;padding-right:10px}
-        .ai-right-panel{flex:1.5;display:flex;flex-direction:column;border-top:1px solid rgba(255,255,255,.1);padding-top:20px}
-        .ai-upload-row{display:flex;gap:15px;justify-content:center;flex-wrap:wrap;}
-        .ai-upload-card{flex:1;min-width:120px;padding:20px;text-align:center;cursor:pointer;background:rgba(20,22,30,.65);border:1px solid rgba(255,255,255,.12);border-radius:16px;display:flex;flex-direction:column;align-items:center;gap:10px}
-        .ai-chat-bubble{background:rgba(30,33,45,.75);padding:22px;border-radius:14px;margin-bottom:18px;font-size:16px;line-height:1.65;border-left:5px solid var(--primary-yellow);color:#fff}
-        .ai-chat-bubble.user-bubble{background:rgba(20,35,25,.75);border-left:5px solid #4CAF50}
-        
-        @media(min-width:800px){.ai-split-container{flex-direction:row}.ai-left-panel{border-right:1px solid rgba(255,255,255,.1);padding-right:30px}.ai-right-panel{border-top:none;padding-top:0;padding-left:20px}}
-        @media(max-width:768px){
-            .container{flex-direction:column;padding:15px;gap:15px}.sidebar{max-width:100%}.navbar{flex-wrap:wrap;padding:15px;gap:10px}
-            .ai-workspace{padding:20px 15px; overflow-y:auto; height:100%; padding-bottom:80px;}
-            .ai-split-container{height:auto;flex-direction:column;overflow:visible;}
-            .ai-left-panel, .ai-right-panel {flex:none; overflow:visible;}
-        }
-    </style>
 </head>
 <body>
 
+    <!-- Main Navigation Bar -->
     <nav class="navbar">
         <div style="display: flex; align-items: center; min-width: 0;">
             <div class="logo-container" onclick="goHome()">🩺 MCQsPrep<span>.</span></div>
-            <div class="nav-rating-badge" style="display:flex; align-items:center; gap:8px; margin-left:15px; background:#1a1a1a; padding:4px 10px; border-radius:20px; border:1px solid var(--border-color);">
-                <span class="rating-text" style="font-size:13px; color:white;">Overall: <span style="color:var(--primary-yellow); font-weight:bold;">⭐ <span id="global-rating-display">5.0</span>/5</span></span>
-                <button onclick="openFeedbackModal()" style="padding:4px 12px; font-size:12px; background:var(--primary-yellow); color:black; border:none; border-radius:15px; cursor:pointer; font-weight:bold;">⭐ Rate Us</button>
+            <div class="nav-rating-badge">
+                <span class="rating-text">Overall: <span>⭐ <span id="global-rating-display">5.0</span>/5</span></span>
+                <button onclick="openFeedbackModal()">⭐ Rate Us</button>
             </div>
         </div>
+
         <div class="search-wrapper" id="searchWrapper">
             <button class="search-icon-btn" onclick="openSearch()">🔍</button>
             <div class="search-input-container">
@@ -134,13 +50,16 @@
                 <div class="suggestions-dropdown" id="searchSuggestions"></div>
             </div>
         </div>
+        
         <div class="nav-links">
             <a onclick="goHome()">Home</a>
             <a onclick="showLeaderboardOptions()">Leaderboard</a>
-            <div id="loginNavBtn" class="user-badge" onclick="showAuthModal()" style="display:none; background: white; color: #444; border: none; padding: 6px 12px;"><img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="G"><span style="font-weight: bold;">Sign In</span></div>
+            <div id="loginNavBtn" class="user-badge" onclick="showAuthModal()" style="display:none; background: white; color: #444; border: none;"><img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="G"><span>Sign In</span></div>
             <div class="profile-wrapper">
                 <div id="userBadge" class="user-badge" onclick="toggleProfileMenu()">
-                    <img id="userPhotoDisplay" src="" alt="👤" style="display:none;"><span id="userNameDisplay">Student</span><div id="profileNotifDot" class="notification-dot"></div>
+                    <img id="userPhotoDisplay" src="" alt="👤" style="display:none;">
+                    <span id="userNameDisplay">Student</span>
+                    <div id="profileNotifDot" class="notification-dot"></div>
                 </div>
                 <div id="profileMenu" class="profile-menu">
                     <div class="profile-menu-item" onclick="window.location.hash='#/progress'; toggleProfileMenu();">📊 Track Progress</div>
@@ -153,6 +72,7 @@
         </div>
     </nav>
 
+    <!-- Main Content Layout -->
     <div class="breadcrumb" id="breadcrumb-text">Home</div>
     <div class="container">
         <div class="main-content" id="dynamic-content"></div>
@@ -171,44 +91,78 @@
         </div>
     </div>
 
+    <!-- Notification Toast -->
     <div id="notification">Action Triggered!</div>
 
+    <!-- Floating AI Button -->
     <div id="ai-floating-btn">✨ Ask AI</div>
 
-    <!-- AI FULLSCREEN MODAL -->
+    <!-- AI Fullscreen Modal -->
     <div id="aiModal" class="modal-overlay" style="z-index: 4000; padding: 0;">
         <div class="modal-content ai-fullscreen-modal">
-            <div class="ai-ambient-glow ai-glow-1"></div><div class="ai-ambient-glow ai-glow-2"></div><div class="ai-ambient-glow ai-glow-3"></div>
-            <button class="ai-exit-btn" onclick="closeAIModal()">✕</button>
+            <div class="ai-ambient-glow ai-glow-1"></div>
+            <div class="ai-ambient-glow ai-glow-2"></div>
+            <div class="ai-ambient-glow ai-glow-3"></div>
+
+            <button class="ai-exit-btn" onclick="closeAIModal()" title="Close Ask AI">✕</button>
+
             <div class="ai-workspace">
                 <div style="display:flex; align-items:center; gap:12px; margin-bottom: 25px;">
-                    <div style="font-size:32px;">✨</div><div><h2 style="margin:0; font-size:26px; color: #fff;">Ask AI Tutor</h2><span style="font-size:14px; color: rgba(255,255,255,0.7);">Powered by NCERT syllabus models</span></div>
+                    <div style="font-size:32px;">✨</div>
+                    <div>
+                        <h2 style="margin:0; font-size:26px; color: #fff;">Ask AI Tutor</h2>
+                        <span style="font-size:14px; color: rgba(255,255,255,0.7);">Powered by NCERT syllabus models</span>
+                    </div>
                 </div>
+                
                 <div class="ai-split-container">
+                    <!-- LEFT PANEL -->
                     <div class="ai-left-panel" id="ai-left-view">
                         <p style="color:var(--text-light); font-size:16px; margin-top:0; margin-bottom:20px;">Type your question below, or upload a photo to get a step-by-step solution.</p>
-                        <textarea id="aiTextInput" class="input-field" placeholder="Type a formula or question stem..." style="min-height: 120px; font-size:16px; background: rgba(18, 20, 28, 0.75);"></textarea>
-                        <div id="ai-fuzzy-box" class="suggestions-dropdown" style="position:relative; display:none;"></div>
-                        <button class="btn-exam" onclick="processAIText()" style="width:100%; background: linear-gradient(135deg, var(--primary-yellow), #ff9800); color:black; font-size:17px; padding:16px; margin: 15px 0 25px 0;">Solve Text Question 🚀</button>
+                        
+                        <textarea id="aiTextInput" class="input-field" placeholder="Type a formula, chapter topic, or question stem..." style="min-height: 120px; font-size:16px; background: rgba(18, 20, 28, 0.75); margin-bottom: 0;"></textarea>
+                        <div id="ai-fuzzy-box" class="ai-fuzzy-suggestions"></div>
+
+                        <button class="btn-exam" onclick="processAIText()" style="width:100%; background: linear-gradient(135deg, var(--primary-yellow), #ff9800); color:black; font-size:17px; padding:16px; margin-top: 15px; margin-bottom: 25px;">Solve Text Question 🚀</button>
+
                         <div style="text-align:center; color:rgba(255,255,255,0.3); margin-bottom:25px; font-weight:bold;">— OR —</div>
+                        
                         <div class="ai-upload-row">
-                            <div class="ai-upload-card" onclick="document.getElementById('aiImageInput').click()"><div style="font-size: 32px;">📁</div><div style="font-weight: bold; font-size: 15px; color: white;">Upload Image</div></div>
-                            <div class="ai-upload-card" onclick="document.getElementById('aiCameraInput').click()"><div style="font-size: 32px;">📸</div><div style="font-weight: bold; font-size: 15px; color: white;">Take Photo</div></div>
+                            <div class="ai-glass-card ai-upload-card" onclick="document.getElementById('aiImageInput').click()">
+                                <div style="font-size: 32px;">📁</div><div style="font-weight: bold; font-size: 15px; color: white;">Upload Image</div>
+                            </div>
+                            <div class="ai-glass-card ai-upload-card" onclick="document.getElementById('aiCameraInput').click()">
+                                <div style="font-size: 32px;">📸</div><div style="font-weight: bold; font-size: 15px; color: white;">Take Photo</div>
+                            </div>
                             <input type="file" id="aiImageInput" accept="image/*" style="display:none;" onchange="handleAIImageUpload(event)">
                             <input type="file" id="aiCameraInput" accept="image/*" capture="environment" style="display:none;" onchange="handleAIImageUpload(event)">
                         </div>
+                        
                         <div id="ai-cropper-view" style="display:none; flex-direction:column; margin-top:20px;">
                             <p style="color:var(--text-light); margin-bottom:15px;">Crop the image to highlight <b>only one question</b>:</p>
-                            <div style="min-height:250px; max-height: 40vh; background:#000; position:relative; margin-bottom:20px; border-radius:10px; overflow:hidden;"><img id="aiCropperImage" style="max-width:100%;"></div>
-                            <div style="display:flex; gap:15px;"><button class="btn-exam" onclick="cancelCropper()" style="flex:1;">Cancel</button><button class="btn-exam" onclick="confirmCropAndSolve()" style="flex:2; background:var(--primary-yellow); color:black;">Crop & Solve 🚀</button></div>
+                            <div style="min-height:250px; max-height: 40vh; background:#000; position:relative; margin-bottom:20px; border-radius:10px; overflow:hidden;"><img id="aiCropperImage" style="max-width:100%; max-height:100%; display:block;"></div>
+                            <div style="display:flex; gap:15px;">
+                                <button class="btn-exam" onclick="cancelCropper()" style="flex:1;">Cancel</button>
+                                <button class="btn-exam" onclick="confirmCropAndSolve()" style="flex:2; background:var(--primary-yellow); color:black;">Crop & Solve 🚀</button>
+                            </div>
                         </div>
                     </div>
+
+                    <!-- RIGHT PANEL -->
                     <div class="ai-right-panel">
-                        <div id="ai-idle-view" style="display:flex; flex:1; flex-direction:column; justify-content:center; align-items:center; opacity: 0.3;"><div style="font-size: 70px; margin-bottom:15px;">🧠</div><h3 style="margin:0; color: white;">AI is ready</h3></div>
-                        <div id="ai-loading-view" style="display:none; flex:1; flex-direction:column; justify-content:center; align-items:center;"><div style="font-size: 64px; animation: pulse 1s infinite; margin-bottom:20px;">🤖</div><h2 style="color:var(--primary-yellow); text-align:center;">Consulting Sources...</h2></div>
+                        <div id="ai-idle-view" style="display:flex; flex:1; flex-direction:column; justify-content:center; align-items:center; opacity: 0.3;">
+                            <div style="font-size: 70px; margin-bottom:15px;">🧠</div><h3 style="margin:0; color: white;">AI is ready</h3><p>Results will appear here.</p>
+                        </div>
+                        <div id="ai-loading-view" style="display:none; flex:1; flex-direction:column; justify-content:center; align-items:center;">
+                            <div style="font-size: 64px; animation: pulse 1s infinite; margin-bottom:20px;">🤖</div>
+                            <h2 style="color:var(--primary-yellow); text-align:center; margin-bottom: 8px;">Consulting Trusted Sources...</h2>
+                        </div>
                         <div id="ai-chat-view" style="display:none; flex:1; flex-direction:column; height: 100%;">
                             <div id="ai-chat-history" style="flex:1; overflow-y:auto; padding-right:15px; margin-bottom:20px;"></div>
-                            <div style="display:flex; gap:10px; background: rgba(15, 18, 28, 0.85); padding: 12px; border-radius: 12px;"><input type="text" id="aiFollowUpInput" class="input-field" placeholder="Ask a follow-up doubt..." style="margin-bottom:0; flex:1; background: #000; border: none;"><button class="btn-exam" onclick="sendAIFollowUp()" style="background:var(--primary-yellow); color:black; padding: 0 20px;">Send</button></div>
+                            <div style="display:flex; gap:10px; background: rgba(15, 18, 28, 0.85); padding: 12px; border-radius: 12px;">
+                                <input type="text" id="aiFollowUpInput" class="input-field" placeholder="Ask a follow-up doubt..." style="margin-bottom:0; flex:1; background: #000; border: none;">
+                                <button class="btn-exam" onclick="sendAIFollowUp()" style="background:var(--primary-yellow); color:black;">Send</button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -216,515 +170,17 @@
         </div>
     </div>
 
-    <!-- Modals -->
-    <div id="authModal" class="modal-overlay"><div class="modal-content" style="text-align: center; max-width: 420px;"><button class="close-modal" onclick="skipSignIn()">✕</button><h2 style="color: var(--primary-yellow); margin-top:0;">Welcome to MCQsPrep</h2><p style="color: var(--text-muted); margin-bottom: 25px;">Sign in securely to track your progress.</p><button class="btn-exam" onclick="signInWithGoogle()" style="width:100%; background:white; color:#444;">Sign in with Google</button></div></div>
-    <div id="userReportsModal" class="modal-overlay"><div class="modal-content" style="max-width: 600px;"><button class="close-modal" onclick="closeUserReportsModal()">✕</button><h2 style="color: var(--primary-yellow); margin-top:0;">🚨 My Reports & Flags</h2><div id="user-reports-list" style="max-height: 50vh; overflow-y: auto;"></div></div></div>
-    <div id="reportModal" class="modal-overlay"><div class="modal-content" style="max-width: 450px;"><button class="close-modal" onclick="closeReportModal()">✕</button><h2 style="color: var(--wrong-red); margin-top:0;">🚨 Report Mistake</h2><select id="reportReason" class="input-field"><option value="Wrong Option Provided">Wrong Option Provided</option><option value="Question Mistake / Typo">Question Mistake / Typo</option><option value="Other">Other</option></select><textarea id="reportDescription" class="input-field" placeholder="Details..."></textarea><button class="btn-exam" onclick="submitReport()" style="width:100%; background-color:var(--wrong-red); color:white; border:none;">Submit</button></div></div>
-    <div id="feedbackModal" class="modal-overlay"><div class="modal-content" style="text-align: center; max-width: 450px;"><button class="close-modal" onclick="closeFeedbackModal()">✕</button><h2 style="color: var(--primary-yellow); margin-top:0;">⭐ Feedback</h2><div style="background: #2a2a2a; padding: 25px; border-radius: 8px;"><div style="margin-bottom: 25px;"><button id="star-1" class="star-btn" onclick="updateStarUI(1)">★</button><button id="star-2" class="star-btn" onclick="updateStarUI(2)">★</button><button id="star-3" class="star-btn" onclick="updateStarUI(3)">★</button><button id="star-4" class="star-btn" onclick="updateStarUI(4)">★</button><button id="star-5" class="star-btn" onclick="updateStarUI(5)">★</button></div><textarea id="platformFeedbackText" class="input-field" placeholder="Tell us what you like..."></textarea><button id="submitFeedbackBtn" class="btn-exam" onclick="submitPlatformFeedback()" style="width: 100%; background: var(--primary-yellow); color: black;">Submit</button></div></div></div>
-    <div id="editTopicModal" class="modal-overlay"><div class="modal-content" style="max-width: 450px;"><button class="close-modal" onclick="closeEditTopicModal()">✕</button><h2 style="color: var(--primary-yellow); margin-top:0;">✏️ Edit Folder</h2><input type="hidden" id="editTopicId"><input type="text" id="editTopicName" class="input-field"><select id="editTopicType" class="input-field"><option value="mcq">📝 MCQs Practice</option><option value="pdf">📄 PDF / Image Material</option></select><button class="btn-exam" onclick="saveEditedTopic()" style="width:100%; background-color:var(--correct-green); color:white;">💾 Save Changes</button></div></div>
-    <div id="editModal" class="modal-overlay"><div class="modal-content"><button class="close-modal" onclick="closeEditModal()">✕</button><h2 style="color: var(--primary-yellow); margin-top:0;">✏️ Edit MCQ</h2><input type="hidden" id="editDocId"><textarea id="editQuestion" class="input-field"></textarea><div class="admin-row"><input type="text" id="editOptA" class="input-field" placeholder="Option A"><input type="text" id="editOptB" class="input-field" placeholder="Option B"></div><div class="admin-row"><input type="text" id="editOptC" class="input-field" placeholder="Option C"><input type="text" id="editOptD" class="input-field" placeholder="Option D"></div><div class="admin-checkbox-group"><label><input type="checkbox" value="A" class="editCorrectCb"> A</label><label><input type="checkbox" value="B" class="editCorrectCb"> B</label><label><input type="checkbox" value="C" class="editCorrectCb"> C</label><label><input type="checkbox" value="D" class="editCorrectCb"> D</label></div><select id="editDifficulty" class="input-field"><option value="Mixed">Mixed</option><option value="Easy">Easy</option><option value="Medium">Medium</option><option value="Hard">Hard</option></select><textarea id="editExplanation" class="input-field" placeholder="Explanation..."></textarea><button class="btn-exam" onclick="saveEditedMCQ()" style="width:100%; background-color:var(--correct-green); color:white;">💾 Save</button></div></div>
+    <!-- Background Modals -->
+    <div id="authModal" class="modal-overlay"><div class="modal-content" style="text-align: center; max-width: 420px;"><button class="close-modal" onclick="skipSignIn()">✕</button><h2 style="color: var(--primary-yellow);">Welcome to MCQsPrep</h2><p style="color: var(--text-muted); margin-bottom: 25px;">Sign in securely to track your progress.</p><button class="google-btn" onclick="signInWithGoogle()"><img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google">Sign in with Google</button></div></div>
+    <div id="userReportsModal" class="modal-overlay"><div class="modal-content" style="max-width: 600px;"><button class="close-modal" onclick="closeUserReportsModal()">✕</button><h2 style="color: var(--primary-yellow);">🚨 My Reports</h2><div id="user-reports-list" style="max-height: 50vh; overflow-y: auto;"></div></div></div>
+    <div id="reportModal" class="modal-overlay"><div class="modal-content" style="max-width: 450px;"><button class="close-modal" onclick="closeReportModal()">✕</button><h2 style="color: var(--wrong-red);">🚨 Report Mistake</h2><select id="reportReason" class="input-field"><option value="Wrong Option Provided">Wrong Option</option><option value="Typo">Typo</option><option value="Other">Other</option></select><textarea id="reportDescription" class="input-field" placeholder="Details..."></textarea><button class="btn-exam" onclick="submitReport()" style="width:100%; background:var(--wrong-red);">Submit</button></div></div>
+    <div id="feedbackModal" class="modal-overlay"><div class="modal-content" style="text-align: center;"><button class="close-modal" onclick="closeFeedbackModal()">✕</button><h2 style="color: var(--primary-yellow);">⭐ Feedback</h2><div style="background: #2a2a2a; padding: 25px; border-radius: 8px;"><div style="margin-bottom: 25px;"><button id="star-1" class="star-btn" onclick="updateStarUI(1)">★</button><button id="star-2" class="star-btn" onclick="updateStarUI(2)">★</button><button id="star-3" class="star-btn" onclick="updateStarUI(3)">★</button><button id="star-4" class="star-btn" onclick="updateStarUI(4)">★</button><button id="star-5" class="star-btn" onclick="updateStarUI(5)">★</button></div><textarea id="platformFeedbackText" class="input-field" placeholder="Tell us what you like..."></textarea><button id="submitFeedbackBtn" class="btn-exam" onclick="submitPlatformFeedback()" style="width: 100%; background: var(--primary-yellow); color: black;">Submit</button></div></div></div>
+    
+    <!-- Admin Modals -->
+    <div id="editTopicModal" class="modal-overlay"><div class="modal-content" style="max-width: 450px;"><button class="close-modal" onclick="closeEditTopicModal()">✕</button><h2 style="color: var(--primary-yellow);">✏️ Edit Folder</h2><input type="hidden" id="editTopicId"><input type="text" id="editTopicName" class="input-field"><select id="editTopicType" class="input-field"><option value="mcq">MCQs</option><option value="pdf">PDF</option></select><button class="btn-exam" onclick="saveEditedTopic()" style="width:100%; background:var(--correct-green);">Save</button></div></div>
+    <div id="editModal" class="modal-overlay"><div class="modal-content"><button class="close-modal" onclick="closeEditModal()">✕</button><h2 style="color: var(--primary-yellow);">✏️ Edit MCQ</h2><input type="hidden" id="editDocId"><textarea id="editQuestion" class="input-field"></textarea><div class="admin-row"><input type="text" id="editOptA" class="input-field" placeholder="A"><input type="text" id="editOptB" class="input-field" placeholder="B"></div><div class="admin-row"><input type="text" id="editOptC" class="input-field" placeholder="C"><input type="text" id="editOptD" class="input-field" placeholder="D"></div><div class="admin-checkbox-group"><label><input type="checkbox" value="A" class="editCorrectCb"> A</label><label><input type="checkbox" value="B" class="editCorrectCb"> B</label><label><input type="checkbox" value="C" class="editCorrectCb"> C</label><label><input type="checkbox" value="D" class="editCorrectCb"> D</label></div><select id="editDifficulty" class="input-field"><option value="Mixed">Mixed</option><option value="Easy">Easy</option><option value="Medium">Medium</option><option value="Hard">Hard</option></select><textarea id="editExplanation" class="input-field" placeholder="Explanation..."></textarea><button class="btn-exam" onclick="saveEditedMCQ()" style="width:100%; background:var(--correct-green);">Save</button></div></div>
 
-    <!-- JAVASCRIPT -->
-    <script>
-        const firebaseConfig = { apiKey: "AIzaSyDuletjxV1THjWvWLvO0XqB_z5xBBXLwL8", authDomain: "mcqsprep.firebaseapp.com", projectId: "mcqsprep", storageBucket: "mcqsprep.firebasestorage.app", messagingSenderId: "920181103186", appId: "1:920181103186:web:14c2ba261d4a6163db5d8b" };
-        firebase.initializeApp(firebaseConfig); const db = firebase.firestore(); const auth = firebase.auth(); const provider = new firebase.auth.GoogleAuthProvider();
-        const CLOUDINARY_URL = "https://api.cloudinary.com/v1_1/h5gdez7a/auto/upload"; const CLOUDINARY_PRESET = "mcq_uploads"; const AI_WORKER_URL = "https://shy-waterfall-08a4.md-habibullah9957.workers.dev/";
-
-        let appData = { "Daily Quiz Challenge": { "NEET": {}, "General Knowledge": {} }, "NEET": { "NCERT Book": {}, "PYQs": {}, "Practice Paper": {}, "MCQs Practice": { "Botany": {}, "Zoology": {}, "Physics": {}, "Organic Chemistry": {}, "Physical Chemistry": {}, "Inorganic Chemistry": {} }, "Mock Test": {} }, "General Knowledge": { "Current Affairs": {}, "History": {}, "Geography": {} } };
-        let customTopicTypes = {}; let currentUser = null; let currentPath = []; let dataLoaded = false; 
-
-        async function loadCustomTopics() {
-            customTopicTypes = {};
-            try {
-                const snapshot = await db.collection("custom_topics").get();
-                snapshot.forEach(doc => {
-                    let data = doc.data(); let pathArr = (data.parentPath || "").split(' > '); let current = appData;
-                    for (let p of pathArr) { if (p) { if (!current[p]) current[p] = {}; current = current[p]; } }
-                    if (typeof current === 'object' && !Array.isArray(current) && data.name) {
-                        if (!current[data.name]) current[data.name] = {};
-                        customTopicTypes[data.parentPath + " > " + data.name] = data.type; 
-                    }
-                });
-            } catch(e) { console.log(e); }
-        }
-
-        function showAuthModal() { document.getElementById('authModal').style.display = 'flex'; }
-        function skipSignIn() { sessionStorage.setItem('auth_skipped', 'true'); document.getElementById('authModal').style.display = 'none'; }
-        function toggleProfileMenu() { document.getElementById('profileMenu').classList.toggle('active'); }
-        window.addEventListener('click', function(e) { if (!document.getElementById('userBadge').contains(e.target) && !document.getElementById('profileMenu').contains(e.target)) { document.getElementById('profileMenu').classList.remove('active'); } });
-
-        async function initApp() { await loadCustomTopics(); dataLoaded = true; if (!window.location.hash) window.location.hash = '#/home'; handleRouting(); }
-
-        auth.onAuthStateChanged((user) => {
-            currentUser = user; const badge = document.getElementById('userBadge'); const loginNavBtn = document.getElementById('loginNavBtn');
-            if (user) {
-                document.getElementById('userNameDisplay').innerText = user.displayName ? user.displayName.split(" ")[0] : "User";
-                if(user.photoURL) { document.getElementById('userPhotoDisplay').src = user.photoURL; document.getElementById('userPhotoDisplay').style.display = 'block'; }
-                badge.style.display = 'flex'; loginNavBtn.style.display = 'none'; document.getElementById('authModal').style.display = 'none';
-                db.collection("users").doc(user.uid).set({ displayName: user.displayName, email: user.email, photoURL: user.photoURL, lastLogin: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true });
-                checkUserNotifications();
-            } else {
-                badge.style.display = 'none'; loginNavBtn.style.display = 'flex'; document.getElementById('profileNotifDot').style.display = 'none';
-                if (window.location.hash !== '#/admin' && window.location.hash !== '#/admin-panel' && !sessionStorage.getItem('auth_skipped')) document.getElementById('authModal').style.display = 'flex';
-            }
-            if (dataLoaded) handleRouting(); 
-        });
-
-        initApp(); 
-
-        function signInWithGoogle() { auth.signInWithPopup(provider).catch(err => showNotification("❌ Sign-in Error")); }
-        function signOut() { if(confirm("Are you sure you want to sign out?")) auth.signOut(); }
-        window.addEventListener('hashchange', handleRouting);
-
-        function handleRouting() {
-            if(!dataLoaded) return; 
-            let hash = decodeURIComponent(window.location.hash.replace('#/', '')); let isRootHome = (!hash || hash === 'home');
-            document.getElementById('main-sidebar').style.display = isRootHome ? 'block' : 'none';
-            if (isRootHome) { currentPath = []; _renderView(); } 
-            else if (hash.startsWith('path/')) { currentPath = hash.replace('path/', '').split('/'); _renderView(); } 
-            else if (hash === 'leaderboard') _renderLeaderboardOptions(); 
-            else if (hash.startsWith('board/')) fetchLiveLeaderboard(hash.replace('board/', '')); 
-            else if (hash === 'quiz') _initiateQuizEngine(); 
-            else if (hash === 'progress') _renderProgress(); 
-            else if (hash === 'streak') _renderStreak(); 
-            else if (hash === 'diary') _renderDoubtDiary(); 
-            else if (hash === 'admin') _renderAdminLogin(); 
-            else if (hash === 'admin-panel') _renderAdminPanel();
-        }
-
-        function goHome() { window.location.hash = '#/home'; }
-        function navigateTo(key) { window.location.hash = '#/path/' + [...currentPath, key].join('/'); }
-        function jumpToSection(pathArray) { window.location.hash = '#/path/' + pathArray.join('/'); }
-        function showLeaderboardOptions() { window.location.hash = '#/leaderboard'; }
-        function goBack() { window.history.back(); }
-
-        // --- STREAK LOGIC ---
-        let activeTime = 0; setInterval(() => { 
-            let todayStr = new Date(new Date().getTime() - (new Date().getTimezoneOffset() * 60000)).toISOString().split('T')[0];
-            if (currentUser && !localStorage.getItem('streak_' + todayStr)) { 
-                activeTime++; if (activeTime >= 300) { localStorage.setItem('streak_' + todayStr, 'true'); db.collection("users").doc(currentUser.uid).set({ activeDates: firebase.firestore.FieldValue.arrayUnion(todayStr) }, { merge: true }); showNotification("🔥 Daily Streak Updated! (+1)"); } 
-            } 
-        }, 1000);
-
-        function calculateStreak(datesArray) {
-            if (!datesArray || datesArray.length === 0) return 0;
-            let sorted = [...new Set(datesArray)].sort().reverse(); 
-            let todayStr = new Date(new Date().getTime() - (new Date().getTimezoneOffset() * 60000)).toISOString().split('T')[0];
-            let yDate = new Date(); yDate.setDate(yDate.getDate() - 1); let yesterdayStr = new Date(yDate.getTime() - (yDate.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
-            if (!sorted.includes(todayStr) && !sorted.includes(yesterdayStr)) return 0;
-            let streak = 0; let currDate = new Date(); if (!sorted.includes(todayStr)) currDate.setDate(currDate.getDate() - 1); 
-            for(let i=0; i<365; i++) { let dStr = new Date(currDate.getTime() - (currDate.getTimezoneOffset() * 60000)).toISOString().split('T')[0]; if (sorted.includes(dStr)) { streak++; currDate.setDate(currDate.getDate() - 1); } else break; }
-            return streak;
-        }
-
-        async function _renderStreak() {
-            if (!currentUser) return document.getElementById('dynamic-content').innerHTML = `<div class="card" style="text-align:center;"><h2>⚠️ Sign In Required</h2><button class="btn-exam" onclick="goBack()">Back</button></div>`;
-            document.getElementById('breadcrumb-text').innerText = "Home / Profile / My Streak"; const mc = document.getElementById('dynamic-content'); mc.innerHTML = `<div class="card"><h2>🔥 Fetching...</h2></div>`;
-            try { let doc = await db.collection("users").doc(currentUser.uid).get(); let dates = doc.exists ? (doc.data().activeDates || []) : []; let streak = calculateStreak(dates); let datesHtml = `<ul style="list-style:none; padding:0; display:flex; flex-wrap:wrap; gap:10px;">${[...new Set(dates)].sort().reverse().slice(0, 14).map(d => `<li style="background:#2a2a2a; padding:8px 12px; border-radius:6px; border:1px solid var(--correct-green); color:var(--correct-green); font-weight:bold;">✅ ${d}</li>`).join('')}</ul>`; mc.innerHTML = `<div class="card" style="text-align:center;"><h2 style="color:var(--primary-yellow);">🔥 Daily Streak</h2><div style="font-size: 80px; margin: 20px 0;">🔥</div><div style="font-size: 32px; font-weight: bold; margin-bottom: 10px;">${streak} Day${streak !== 1 ? 's' : ''}</div><p style="color:var(--text-muted); margin-bottom:30px;"><i>Spend at least 5 minutes practicing daily to maintain your streak!</i></p>${datesHtml}<button class="btn-exam" onclick="goBack()" style="margin-top:20px;">Back</button></div>`; } catch(e) {}
-        }
-
-        async function _renderProgress() {
-            if (!currentUser) return document.getElementById('dynamic-content').innerHTML = `<div class="card" style="text-align:center;"><h2>⚠️ Sign In Required</h2><button class="btn-exam" onclick="goBack()">Back</button></div>`;
-            document.getElementById('breadcrumb-text').innerText = "Home / Profile / Track Progress"; const mc = document.getElementById('dynamic-content'); mc.innerHTML = `<div class="card"><h2>📊 Fetching Progress...</h2></div>`;
-            try { const snap = await db.collection("leaderboards").where("userId", "==", currentUser.uid).get(); let tScore = 0; let tQues = 0; let tCount = 0; let accSum = 0; snap.forEach(doc => { let d = doc.data(); tScore += (d.score || 0); tQues += (d.attemptedQuestions || 0); accSum += (d.accuracy || 0); tCount++; }); let avgAcc = tCount > 0 ? Math.round(accSum / tCount) : 0; mc.innerHTML = `<div class="card"><h2 style="color:var(--primary-yellow);">📊 Overall Progress</h2><div style="display:flex; gap:15px; flex-wrap:wrap; margin-top:20px;"><div style="background:#2a2a2a; padding: 20px; border-radius: 8px; flex: 1; text-align:center; border:1px solid var(--border-color);"><div style="font-size: 32px; color: white; font-weight: bold;">${tCount}</div><div style="color: var(--text-muted); font-size: 14px;">Quizzes Taken</div></div><div style="background:#2a2a2a; padding: 20px; border-radius: 8px; flex: 1; text-align:center; border:1px solid var(--border-color);"><div style="font-size: 32px; color: var(--correct-green); font-weight: bold;">${avgAcc}%</div><div style="color: var(--text-muted); font-size: 14px;">Avg. Accuracy</div></div><div style="background:#2a2a2a; padding: 20px; border-radius: 8px; flex: 1; text-align:center; border:1px solid var(--primary-yellow);"><div style="font-size: 32px; color: var(--primary-yellow); font-weight: bold;">${tQues}</div><div style="color: var(--text-muted); font-size: 14px;">Questions Solved</div></div></div><button class="btn-exam" onclick="goBack()" style="margin-top:30px;">Back</button></div>`; } catch(e) {}
-        }
-
-        async function checkUserNotifications() {
-            if(!currentUser) return;
-            try { let has = false; let rSnap = await db.collection("reported_mistakes").where("studentId", "==", currentUser.uid).get(); rSnap.forEach(doc => { if(doc.data().status === 'resolved' && !doc.data().seenByStudent) has = true; }); let fSnap = await db.collection("flagged_doubts").where("studentId", "==", currentUser.uid).get(); fSnap.forEach(doc => { if(doc.data().status === 'resolved' && !doc.data().seenByStudent) has = true; }); if(has) { document.getElementById('profileNotifDot').style.display = 'block'; document.getElementById('reportMenuDot').style.display = 'inline'; } } catch(e){}
-        }
-
-        let tempReportTarget = null;
-        function openReportModal(qId, qText, qPath) { if(!currentUser) return showAuthModal(); tempReportTarget = { id: qId, text: qText, path: qPath }; document.getElementById('reportModal').style.display = 'flex'; }
-        function closeReportModal() { document.getElementById('reportModal').style.display = 'none'; tempReportTarget = null; }
-        
-        async function submitReport() {
-            if(!currentUser || !tempReportTarget) return; const btn = document.querySelector('#reportModal .btn-exam'); btn.innerText = "Submitting..."; btn.disabled = true;
-            try { await db.collection("reported_mistakes").add({ studentId: currentUser.uid, studentName: currentUser.displayName, questionId: tempReportTarget.id, questionText: tempReportTarget.text, path: tempReportTarget.path, reason: document.getElementById('reportReason').value, description: document.getElementById('reportDescription').value, status: 'pending', seenByStudent: true, timestamp: firebase.firestore.FieldValue.serverTimestamp() }); showNotification("✅ Report submitted!"); closeReportModal(); document.getElementById('reportDescription').value = ""; } catch(e) {} btn.innerText = "Submit Report"; btn.disabled = false;
-        }
-
-        async function openUserReportsModal() {
-            if(!currentUser) return; document.getElementById('userReportsModal').style.display = 'flex'; document.getElementById('profileNotifDot').style.display = 'none'; document.getElementById('reportMenuDot').style.display = 'none'; const list = document.getElementById('user-reports-list'); list.innerHTML = `<p style="color:var(--primary-yellow);">Loading reports...</p>`;
-            try {
-                let html = ''; let count = 0; let allItems = []; let reportsSnap = await db.collection("reported_mistakes").where("studentId", "==", currentUser.uid).get(); reportsSnap.forEach(doc => { allItems.push({ _id: doc.id, _type: 'report', ...doc.data() }); }); let flagsSnap = await db.collection("flagged_doubts").where("studentId", "==", currentUser.uid).get(); flagsSnap.forEach(doc => { allItems.push({ _id: doc.id, _type: 'flag', ...doc.data() }); });
-                allItems.sort((a, b) => (b.timestamp?.toMillis() || 0) - (a.timestamp?.toMillis() || 0));
-                allItems.forEach(d => { count++; let badge = d.status === 'resolved' ? `<span style="background:var(--correct-green); color:white; padding:2px 6px; border-radius:4px; font-size:11px;">✅ ${d._type === 'flag' ? 'Reviewed' : 'Fixed'}</span>` : `<span style="background:#555; color:white; padding:2px 6px; border-radius:4px; font-size:11px;">⏳ Pending</span>`; let title = d._type === 'flag' ? '⭐ Flagged Doubt' : `<b>${d.reason}</b>`; html += `<div style="background:#1a1a1a; padding:12px; border:1px solid #333; border-radius:6px; margin-bottom:10px;"><div style="display:flex; justify-content:space-between; margin-bottom:5px;">${title}${badge}</div><p style="font-size:13px; color:var(--text-muted); margin:0;">${d.questionText}</p></div>`; if(d.status === 'resolved' && d.seenByStudent === false) { db.collection(d._type === 'flag' ? "flagged_doubts" : "reported_mistakes").doc(d._id).update({seenByStudent: true}); } });
-                list.innerHTML = count === 0 ? `<p style="color:var(--text-muted);">No reports yet.</p>` : html;
-            } catch(e) {}
-        }
-        function closeUserReportsModal() { document.getElementById('userReportsModal').style.display = 'none'; }
-
-        // --- ASK AI (DRAG AND DROP) LOGIC ---
-        const aiBtn = document.getElementById('ai-floating-btn'); let pressTimer; let isDragging = false; let startX, startY, initialX, initialY;
-        aiBtn.addEventListener('mousedown', startPress); aiBtn.addEventListener('touchstart', startPress, {passive: true}); document.addEventListener('mouseup', endPress); document.addEventListener('touchend', endPress); document.addEventListener('mousemove', drag); document.addEventListener('touchmove', drag, {passive: false});
-
-        function startPress(e) {
-            if(e.type === 'touchstart') { initialX = e.touches[0].clientX - aiBtn.getBoundingClientRect().left; initialY = e.touches[0].clientY - aiBtn.getBoundingClientRect().top; } else { initialX = e.clientX - aiBtn.getBoundingClientRect().left; initialY = e.clientY - aiBtn.getBoundingClientRect().top; }
-            isDragging = false; pressTimer = setTimeout(() => { isDragging = true; aiBtn.classList.add('draggable'); }, 500);
-        }
-
-        function drag(e) {
-            if (!isDragging) return; e.preventDefault();
-            let currentX = e.type === 'touchmove' ? e.touches[0].clientX : e.clientX; let currentY = e.type === 'touchmove' ? e.touches[0].clientY : e.clientY;
-            aiBtn.style.left = (currentX - initialX) + 'px'; aiBtn.style.top = (currentY - initialY) + 'px'; aiBtn.style.right = 'auto'; aiBtn.style.bottom = 'auto';
-        }
-
-        function endPress(e) { clearTimeout(pressTimer); if (isDragging) { isDragging = false; aiBtn.classList.remove('draggable'); } else if (e.target === aiBtn || aiBtn.contains(e.target)) { openAIModal(); } }
-
-        let cropper = null; let aiChatHistory = []; let lastExtractedQuestion = null;
-        function openAIModal() { document.getElementById('aiModal').style.display = 'flex'; document.getElementById('ai-input-view').style.display = 'block'; document.getElementById('ai-cropper-view').style.display = 'none'; document.getElementById('ai-loading-view').style.display = 'none'; document.getElementById('ai-chat-view').style.display = 'none'; document.getElementById('ai-idle-view').style.display = 'flex'; document.getElementById('aiTextInput').value = ''; aiChatHistory = []; }
-        function closeAIModal() { document.getElementById('aiModal').style.display = 'none'; if(cropper) { cropper.destroy(); cropper = null; } }
-        function handleAIFuzzySuggestions() { document.getElementById('ai-fuzzy-box').style.display = 'none'; }
-        function handleAIImageUpload(e) { const file = e.target.files[0]; if(!file) return; const reader = new FileReader(); reader.onload = function(event) { document.getElementById('ai-input-view').style.display = 'none'; document.getElementById('ai-cropper-view').style.display = 'flex'; const imgNode = document.getElementById('aiCropperImage'); imgNode.src = event.target.result; if(cropper) cropper.destroy(); cropper = new Cropper(imgNode, { viewMode: 1, autoCropArea: 0.85, background: false }); }; reader.readAsDataURL(file); }
-        function cancelCropper() { if(cropper) { cropper.destroy(); cropper = null; } document.getElementById('ai-cropper-view').style.display = 'none'; document.getElementById('ai-input-view').style.display = 'block'; document.getElementById('aiImageInput').value = ""; document.getElementById('aiCameraInput').value = ""; }
-        async function confirmCropAndSolve() { if(!cropper) return; const canvas = cropper.getCroppedCanvas(); const base64Image = canvas.toDataURL('image/jpeg').split(',')[1]; document.getElementById('ai-cropper-view').style.display = 'none'; document.getElementById('ai-input-view').style.display = 'block'; await callAIWorker({ image: base64Image, mimeType: 'image/jpeg', mode: 'solve' }); }
-        async function processAIText() { const text = document.getElementById('aiTextInput').value.trim(); if(!text) return; document.getElementById('ai-idle-view').style.display = 'none'; document.getElementById('ai-loading-view').style.display = 'flex'; await callAIWorker({ text: text, mode: 'solve' }); }
-        
-        async function callAIWorker(payload) {
-            document.getElementById('ai-idle-view').style.display = 'none'; document.getElementById('ai-loading-view').style.display = 'flex';
-            try {
-                const res = await fetch(AI_WORKER_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }); const data = await res.json(); if(data.error) throw new Error(data.error);
-                if (payload.mode === 'solve') {
-                    document.getElementById('ai-loading-view').style.display = 'none'; document.getElementById('ai-chat-view').style.display = 'flex';
-                    lastExtractedQuestion = data; aiChatHistory = [{ role: 'user', text: "Solve this: " + data.extractedQuestion }];
-                    let html = `<div class="ai-chat-bubble user-bubble"><b>Extracted Question:</b><br>${data.extractedQuestion}</div><div style="background: rgba(253, 184, 19, 0.1); border: 1px solid rgba(253, 184, 19, 0.4); padding: 12px 16px; border-radius: 8px; margin-bottom: 16px; font-size: 14px; color: #eee;">🌐 <b>Curriculum Knowledge Base Solution:</b> Solved autonomously using verified standards.</div>`;
-                    let solutionMarkdown = `**Subject:** ${data.subject}\n\n**Core Concept:** ${data.solution.keyConcept}\n\n**Step-by-Step Explanation:**\n${data.solution.stepByStep}\n\n**Final Conclusion:** ${data.solution.finalAnswer}`;
-                    aiChatHistory.push({ role: 'model', text: solutionMarkdown }); html += `<div class="ai-chat-bubble" id="ai-sol-bubble">${marked.parse(solutionMarkdown)}</div><button class="btn-exam" onclick="saveToDoubtDiary()" style="background:rgba(255,255,255,0.08); color:var(--primary-yellow); width:100%; margin-bottom:15px; border: 1px solid var(--primary-yellow);">📔 Save to Doubt Diary</button>`;
-                    document.getElementById('ai-chat-history').innerHTML = html; renderMathInElement(document.getElementById('ai-sol-bubble'), { delimiters: [ {left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false} ] });
-                } else {
-                    document.getElementById('ai-loading-view').style.display = 'none'; document.getElementById('ai-chat-view').style.display = 'flex'; aiChatHistory.push({ role: 'model', text: data.reply });
-                    const chatDiv = document.createElement('div'); chatDiv.className = 'ai-chat-bubble'; chatDiv.innerHTML = marked.parse(data.reply); document.getElementById('ai-chat-history').appendChild(chatDiv); renderMathInElement(chatDiv, { delimiters: [ {left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false} ] }); document.getElementById('ai-chat-history').scrollTop = document.getElementById('ai-chat-history').scrollHeight;
-                }
-            } catch(e) { document.getElementById('ai-loading-view').style.display = 'none'; document.getElementById('ai-idle-view').style.display = 'flex'; showNotification("❌ AI Error"); }
-        }
-
-        async function sendAIFollowUp() { const inputEl = document.getElementById('aiFollowUpInput'); const text = inputEl.value.trim(); if(!text) return; aiChatHistory.push({ role: 'user', text: text }); const chatDiv = document.createElement('div'); chatDiv.className = 'ai-chat-bubble user-bubble'; chatDiv.innerText = text; document.getElementById('ai-chat-history').appendChild(chatDiv); document.getElementById('ai-chat-history').scrollTop = document.getElementById('ai-chat-history').scrollHeight; inputEl.value = ''; await callAIWorker({ mode: 'chat', text: text, conversationHistory: aiChatHistory.slice(0, -1) }); }
-        async function saveToDoubtDiary() { if (!currentUser) return showAuthModal(); try { await db.collection("ai_doubt_diary").add({ userId: currentUser.uid, questionText: lastExtractedQuestion.extractedQuestion, subject: lastExtractedQuestion.subject, solution: lastExtractedQuestion.solution, timestamp: firebase.firestore.FieldValue.serverTimestamp() }); showNotification("📔 Saved!"); } catch(e) {} }
-
-        // --- MAIN VIEW RENDERER (FIXED HOMEPAGE) ---
-        function _renderView() {
-            const mc = document.getElementById('dynamic-content'); 
-            const bc = document.getElementById('breadcrumb-text');
-            bc.innerText = currentPath.length === 0 ? "Home" : "Home / " + currentPath.join(" / "); 
-            
-            let currentLevel = appData;
-            for (let node of currentPath) { 
-                if(currentLevel[node] !== undefined) currentLevel = currentLevel[node]; 
-                else currentLevel = {};
-            }
-
-            if (typeof currentLevel === 'string' || Array.isArray(currentLevel) || (typeof currentLevel === 'object' && Object.keys(currentLevel).length === 0)) {
-                let topicName = currentPath[currentPath.length - 1]; let checkPath = currentPath.join(" > ");
-                let isPdfSection = (customTopicTypes[checkPath] === 'pdf') || (!requiresQuizLogin(currentPath) && customTopicTypes[checkPath] !== 'mcq');
-                
-                if (!isPdfSection) {
-                    let studentName = (currentUser && currentUser.displayName) ? currentUser.displayName.split(" ")[0] : "Student";
-                    mc.innerHTML = `<div class="card"><h2>${topicName} Practice</h2><p style="color:var(--text-muted); margin-bottom:25px;">${!currentUser ? "Sign in to track your scores on the leaderboard!" : `Ready, <span style="color:var(--primary-yellow);">${studentName}</span>?`}</p><button class="btn-exam" onclick="window.location.hash='#/quiz'" style="background:var(--primary-yellow); color:black; width:200px; margin-right:15px;">Start Quiz &rarr;</button><button class="btn-exam" onclick="goBack()" style="background:#333; width:150px;">&larr; Go Back</button></div>`;
-                } else {
-                    mc.innerHTML = `<div class="card"><h2>${topicName} Resources</h2><p style="color:var(--text-muted);">Materials will appear here once uploaded.</p><button class="btn-exam" onclick="goBack()" style="background:#333; width:150px; margin-top:20px;">&larr; Go Back</button></div>`;
-                }
-                return;
-            }
-
-            let title = currentPath.length === 0 ? "Select Exam Category" : currentPath[currentPath.length - 1];
-            let h = ``;
-
-            if (currentPath.length === 0) {
-                h += `<div class="card" style="border: 1px solid var(--primary-yellow); background: rgba(253, 184, 19, 0.05); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:15px;"><div><h2 style="color:var(--primary-yellow); margin:0 0 5px 0;">⚙️ Custom Practice Engine</h2><p style="color:var(--text-muted); margin:0; font-size:14px;">Mix subjects, filter by difficulty, and build your ultimate personalized mock test.</p></div><button class="btn-exam" onclick="cwStep1()" style="background:var(--primary-yellow); color:black; font-size:16px; padding:12px 24px;">Launch Setup 🚀</button></div>`;
-            }
-
-            h += `<div class="card"><h2>${title}</h2><div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px;">`;
-            for (let key in currentLevel) { 
-                if (currentPath.length === 0 && key === "Daily Quiz Challenge") continue; 
-                let checkPath = currentPath.join(" > ") + (currentPath.length > 0 ? " > " : "") + key;
-                let typeLabel = ""; if (customTopicTypes[checkPath] === 'mcq') typeLabel = " 📝"; else if (customTopicTypes[checkPath] === 'pdf') typeLabel = " 📄";
-                h += `<button class="btn-exam" onclick="navigateTo('${key}')">${key} ${typeLabel}</button>`; 
-            }
-            if (currentPath.length > 0) h += `<button class="btn-exam" onclick="goBack()" style="grid-column: 1 / -1; background: #222; color: #a0a0a0; margin-top: 10px;">&larr; Go Back</button>`;
-            h += `</div></div>`; 
-            mc.innerHTML = h;
-        }
-
-        // --- CUSTOM PRACTICE BUILDER ---
-        let cwState = { exam: '', subjects: [], subtopics: [], count: 20, level: 'Mixed' };
-
-        function cwStep1() {
-            if(!currentUser) return showAuthModal();
-            cwState = { exam: '', subjects: [], subtopics: [], count: 20, level: 'Mixed' };
-            document.getElementById('breadcrumb-text').innerText = "Home / Custom Practice Setup";
-            document.getElementById('dynamic-content').innerHTML = `
-                <div class="card"><h2 style="color:var(--primary-yellow);">⚙️ Custom Practice Setup</h2><p style="color:var(--text-muted); margin-bottom:25px;">Step 1: Which exam are you preparing for?</p>
-                <div style="display:flex; gap:15px; flex-wrap:wrap;"><button class="btn-exam" onclick="cwStep2('NEET')" style="flex:1; padding:20px; font-size:18px;">🩺 NEET</button><button class="btn-exam" onclick="cwStep2('General Knowledge')" style="flex:1; padding:20px; font-size:18px;">🌍 General Knowledge</button></div>
-                <button class="btn-exam" onclick="goHome()" style="margin-top:20px; background:#333;">&larr; Cancel</button></div>`;
-        }
-
-        function cwStep2(exam) {
-            cwState.exam = exam; document.getElementById('breadcrumb-text').innerText = `Home / Custom Practice Setup / ${exam}`;
-            let subs = []; let rNode = exam === 'NEET' ? appData["NEET"]["MCQs Practice"] : appData["General Knowledge"]; let rPath = exam === 'NEET' ? "NEET > MCQs Practice" : "General Knowledge";
-            for(let key in rNode) subs.push({ name: key, path: `${rPath} > ${key}` });
-            for(let p in customTopicTypes) { if(p.startsWith(rPath) && p.split(' > ').length === rPath.split(' > ').length + 1) { let n = p.split(' > ').pop(); if(!subs.find(s => s.name === n)) subs.push({ name: n, path: p }); } }
-            document.getElementById('dynamic-content').innerHTML = `
-                <div class="card"><h2 style="color:var(--primary-yellow);">📚 Select Subjects</h2><p style="color:var(--text-muted); margin-bottom:20px;">Choose subjects from ${exam}.</p>
-                <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap:10px; margin-bottom:25px;">
-                    ${subs.map(s => `<label style="background:#2a2a2a; border:1px solid #444; padding:15px; border-radius:8px; cursor:pointer; display:flex; align-items:center; gap:10px;"><input type="checkbox" value="${s.path}" class="cw-subj-cb"> <span>${s.name}</span></label>`).join('')}
-                </div><div style="display:flex; justify-content:space-between;"><button class="btn-exam" onclick="cwStep1()" style="background:#333;">&larr; Back</button><button class="btn-exam" onclick="cwProcessStep2()" style="background:var(--primary-yellow); color:black;">Next &rarr;</button></div></div>`;
-        }
-
-        function cwProcessStep2() { let cbs = Array.from(document.querySelectorAll('.cw-subj-cb:checked')).map(cb => cb.value); if(cbs.length === 0) return showNotification("⚠️ Select a subject."); cwState.subjects = cbs; cwStep3(); }
-
-        function cwStep3() {
-            document.getElementById('breadcrumb-text').innerText = `Home / Custom Practice Setup / Chapters`;
-            let leafs = []; cwState.subjects.forEach(sP => {
-                let pts = sP.split(' > '); let c = appData; let v = true; for(let p of pts) { if(c[p]) c = c[p]; else {v = false; break;} }
-                function tr(node, pStr) { let hc = false; for(let k in node) { if(k === "Daily Quiz Challenge") continue; hc = true; tr(node[k], pStr + " > " + k); } if(!hc) leafs.push(pStr); }
-                if(v) tr(c, sP); for(let cp in customTopicTypes) { if(cp.startsWith(sP) && customTopicTypes[cp] === 'mcq') { if(!leafs.includes(cp)) leafs.push(cp); } }
-            });
-            leafs = [...new Set(leafs)].sort();
-            document.getElementById('dynamic-content').innerHTML = `
-                <div class="card"><h2 style="color:var(--primary-yellow);">📑 Select Chapters</h2><p style="color:var(--text-muted); margin-bottom:20px;">Pick specific topics to practice.</p>
-                <div style="margin-bottom:15px;"><button onclick="document.querySelectorAll('.cw-sub-cb').forEach(c=>c.checked=true)" style="background:none; border:none; color:var(--primary-yellow); cursor:pointer;">Select All</button> | <button onclick="document.querySelectorAll('.cw-sub-cb').forEach(c=>c.checked=false)" style="background:none; border:none; color:var(--primary-yellow); cursor:pointer;">Deselect All</button></div>
-                <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap:10px; max-height:40vh; overflow-y:auto; padding:10px; background:#111; border-radius:8px; border:1px solid #333; margin-bottom:25px;">
-                    ${leafs.map(l => `<label style="background:#2a2a2a; border:1px solid #444; padding:12px; border-radius:6px; cursor:pointer; display:flex; align-items:flex-start; gap:10px;"><input type="checkbox" value="${l}" class="cw-sub-cb" checked> <span style="font-size:14px;">${l.split(' > ').pop()}<br><span style="font-size:11px; color:#888;">${l}</span></span></label>`).join('')}
-                </div><div style="display:flex; justify-content:space-between;"><button class="btn-exam" onclick="cwStep2(cwState.exam)" style="background:#333;">&larr; Back</button><button class="btn-exam" onclick="cwProcessStep3()" style="background:var(--primary-yellow); color:black;">Next &rarr;</button></div></div>`;
-        }
-
-        function cwProcessStep3() { let cbs = Array.from(document.querySelectorAll('.cw-sub-cb:checked')).map(cb => cb.value); if(cbs.length === 0) return showNotification("⚠️ Select a chapter."); cwState.subtopics = cbs; cwStep4(); }
-
-        function cwStep4() {
-            document.getElementById('dynamic-content').innerHTML = `
-                <div class="card"><h2 style="color:var(--primary-yellow);">🎯 Final Setup</h2><div style="display:flex; gap:20px; flex-wrap:wrap; margin:20px 0 30px 0;">
-                <div style="flex:1; min-width:200px;"><label style="font-weight:bold; margin-bottom:10px; display:block;">Difficulty Level:</label><select id="cwLevel" class="input-field"><option value="Mixed">Mixed (All Levels)</option><option value="Easy">Easy</option><option value="Medium">Medium</option><option value="Hard">Hard</option></select></div>
-                <div style="flex:1; min-width:200px;"><label style="font-weight:bold; margin-bottom:10px; display:block;">Total Questions:</label><input type="number" id="cwCount" class="input-field" value="20" min="5" max="100"></div>
-                </div><div style="display:flex; justify-content:space-between;"><button class="btn-exam" onclick="cwStep3()" style="background:#333;">&larr; Back</button><button class="btn-exam" onclick="cwLaunchQuiz()" style="background:var(--correct-green); color:white;">🚀 Start Custom Quiz</button></div></div>`;
-        }
-
-        function cwLaunchQuiz() { cwState.level = document.getElementById('cwLevel').value; cwState.count = parseInt(document.getElementById('cwCount').value) || 20; _initiateQuizEngine(true); }
-        function requiresQuizLogin(pathArray) { return ["mcqs practice", "mock test", "general knowledge", "practice paper", "current affairs", "history", "geography", "daily quiz challenge"].some(t => pathArray.join(" > ").toLowerCase().includes(t)); }
-
-        // --- QUIZ ENGINE ---
-        let quizState = { questions: [], currentIndex: 0, userAnswers: {}, showAnswerTriggered: {}, flaggedDoubts: {}, viewedQuestions: [], timer: null, secondsPassed: 0, isTimerPaused: false, isCustom: false };
-
-        async function _initiateQuizEngine(isCustomLaunch = false) {
-            const mc = document.getElementById('dynamic-content'); mc.innerHTML = `<div class="card"><div style="font-size:40px; text-align:center;">⚙️</div><h2 style="color:var(--primary-yellow); text-align:center;">Building Quiz...</h2></div>`;
-            try {
-                let isDaily = currentPath[0] === 'Daily Quiz Challenge'; let glIds = [];
-                if (currentUser) { let d = (await db.collection("users").doc(currentUser.uid).get()).data() || {}; for (let k in d) { if (k.startsWith("prog_")) glIds.push(...d[k]); } }
-                let aQs = [];
-
-                if (isCustomLaunch) {
-                    quizState.isCustom = true; let unA = [];
-                    for (const p of cwState.subtopics) { const sn = await db.collection("content").where("path", "==", p).get(); sn.forEach(doc => { let d = doc.data(); if (d.type === 'mcq' && !glIds.includes(doc.id)) { if (cwState.level === 'Mixed' || d.level === cwState.level || (!d.level && cwState.level === 'Mixed')) unA.push({id: doc.id, ...d}); } }); }
-                    aQs = unA.sort(()=>0.5-Math.random()).slice(0, cwState.count);
-                } else if (isDaily) {
-                    quizState.isCustom = false; let tP = currentPath[1] === "NEET" ? "NEET" : "General Knowledge";
-                    const sn = await db.collection("content").where("path", ">=", tP).where("path", "<=", tP + "\uf8ff").get(); let unA = [];
-                    sn.forEach(doc => { let d = doc.data(); if (d.type === 'mcq' && !glIds.includes(doc.id)) unA.push({id: doc.id, ...d}); });
-                    if (currentPath[1] === "NEET") { let b=unA.filter(q=>q.path.includes("Botany")), z=unA.filter(q=>q.path.includes("Zoology")), p=unA.filter(q=>q.path.includes("Physics")), c=unA.filter(q=>q.path.includes("Chemistry")); aQs.push(...b.slice(0,5), ...z.slice(0,5), ...p.slice(0,5), ...c.slice(0,5)); }
-                    else aQs = unA.sort(()=>0.5-Math.random()).slice(0, 20);
-                } else {
-                    quizState.isCustom = false; let pS = currentPath.join(' > '); let sP = "prog_" + currentPath.join('_').replace(/[^a-zA-Z0-9]/g, '_');
-                    let pA = []; if (currentUser) { let d = (await db.collection("users").doc(currentUser.uid).get()).data(); if (d) pA = d[sP] || []; }
-                    const sn = await db.collection("content").where("path", ">=", pS).where("path", "<=", pS + "\uf8ff").get();
-                    sn.forEach(doc => { let d = doc.data(); if (d.type === 'mcq' && !pA.includes(doc.id)) aQs.push({ id: doc.id, ...d }); });
-                }
-
-                quizState.questions = aQs.sort(() => Math.random() - 0.5);
-                if (quizState.questions.length === 0) return mc.innerHTML = `<div class="card" style="text-align:center;"><h2>🎉 Completed!</h2><p>You have attempted all available questions matching these criteria.</p><button class="btn-exam" onclick="goHome()">Go Back</button></div>`;
-                
-                quizState.currentIndex = 0; quizState.userAnswers = {}; quizState.showAnswerTriggered = {}; quizState.flaggedDoubts = {}; quizState.viewedQuestions = []; quizState.secondsPassed = 0; quizState.isTimerPaused = false;
-                clearInterval(quizState.timer); quizState.timer = setInterval(() => { if (!quizState.isTimerPaused) { quizState.secondsPassed++; let d = document.getElementById('quizTimeDisplay'); if(d) d.innerText = formatTime(quizState.secondsPassed); } }, 1000);
-                _renderQuizQuestion();
-            } catch (err) { mc.innerHTML = `<div class="card"><h2>Error</h2><p>${err.message}</p></div>`; }
-        }
-
-        function toggleFlag() { quizState.flaggedDoubts[quizState.currentIndex] = !quizState.flaggedDoubts[quizState.currentIndex]; let b = document.getElementById('flagDoubtBtn'); if(quizState.flaggedDoubts[quizState.currentIndex]) { b.classList.add('flagged'); b.innerText = '⭐ Flagged'; } else { b.classList.remove('flagged'); b.innerText = '⭐ Flag'; } }
-
-        function _renderQuizQuestion() {
-            const mc = document.getElementById('dynamic-content'); if (!quizState.viewedQuestions.includes(quizState.currentIndex)) quizState.viewedQuestions.push(quizState.currentIndex);
-            const q = quizState.questions[quizState.currentIndex]; let mT = q.correctAnswers.length > 1 ? `<span style="color:var(--primary-yellow); font-size:12px;">(Multi)</span>` : "";
-            let sN = quizState.userAnswers[quizState.currentIndex] || []; let hP = quizState.showAnswerTriggered[quizState.currentIndex]; let iF = quizState.flaggedDoubts[quizState.currentIndex]; quizState.isTimerPaused = !!hP;
-            let pal = '<div class="question-palette">'; for(let i=0; i<quizState.questions.length; i++) { let iA = quizState.userAnswers[i] && quizState.userAnswers[i].length > 0; let bg = quizState.currentIndex === i ? 'var(--primary-yellow)' : (iA ? '#4CAF50' : '#2a2a2a'); let cl = quizState.currentIndex === i ? '#000' : '#fff'; let fs = quizState.flaggedDoubts[i] ? '⭐' : ''; pal += `<button onclick="jumpToQuestion(${i})" style="width:35px; height:35px; border-radius:5px; border:1px solid var(--border-color); background:${bg}; color:${cl}; font-weight:bold; cursor:pointer;">${i+1}${fs}</button>`; } pal += '</div>';
-            let optH = Object.keys(q.options).sort().map(k => { if(!q.options[k]) return ''; let iS = sN.includes(k); let eC = ''; if (hP) { if (q.correctAnswers.includes(k)) eC = 'correct'; else if (iS) eC = 'wrong'; } else if (iS) eC = 'selected'; return `<div class="quiz-option ${eC}" onclick="toggleOptionSelection('${k}', ${q.correctAnswers.length > 1})"><b style="margin-right:15px; color:var(--text-muted);">${k}.</b> <span class="katex-render-target">${q.options[k]}</span></div>`; }).join('');
-            mc.innerHTML = `<div class="card"><div class="quiz-header"><span style="color:var(--text-muted);">Q ${quizState.currentIndex + 1} ${mT}</span><div style="display:flex; gap:15px; flex-wrap:wrap;"><button class="report-btn" onclick="openReportModal('${q.id}', '${q.question.replace(/'/g, "\\'")}', '${q.path}')">🚨 Report</button><button id="flagDoubtBtn" class="flag-btn ${iF ? 'flagged' : ''}" onclick="toggleFlag()">${iF ? '⭐ Flagged' : '⭐ Flag'}</button><span class="quiz-timer">⏱ <span id="quizTimeDisplay">${formatTime(quizState.secondsPassed)}</span></span></div></div>${pal}${quizState.isCustom ? `<div style="margin-bottom:15px;"><span class="badge-path">${q.path}</span> <span style="font-size:11px; color:#aaa; margin-left:10px;">Lvl: ${q.level||'Mixed'}</span></div>` : ''}${q.imageUrl ? `<img src="${q.imageUrl}" class="quiz-image">` : ''}<div class="quiz-question-text katex-render-target">${q.question}</div><div id="optionsContainer">${optH}</div><div class="quiz-explanation katex-render-target" style="display:${hP ? 'block' : 'none'}"><b>Explanation:</b><br>${q.explanation || "None."}</div><div class="nav-buttons-row"><div style="display:flex; gap:10px;"><button class="btn-exam" onclick="_prevQuestion()" ${quizState.currentIndex === 0 ? 'disabled' : ''}>&larr; Prev</button><button class="btn-exam" onclick="_nextQuestion()" ${quizState.currentIndex === quizState.questions.length - 1 ? 'disabled' : ''}>Next / Skip &rarr;</button></div><div style="display:flex; gap:10px;"><button class="btn-exam" onclick="checkAnswer()" style="background:#333; ${hP ? 'display:none;' : ''}">Check Answer</button><button class="btn-exam" onclick="finishQuiz()" style="background:var(--wrong-red); border:none;">Finish Quiz</button></div></div></div>`;
-            document.querySelectorAll('.katex-render-target').forEach(el => renderMathInElement(el, { delimiters: [ {left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false} ] }));
-        }
-
-        function toggleOptionSelection(k, iM) { if(quizState.showAnswerTriggered[quizState.currentIndex]) return; let c = quizState.userAnswers[quizState.currentIndex] || []; if(!iM) c=[k]; else { if(c.includes(k)) c=c.filter(x=>x!==k); else c.push(k); } quizState.userAnswers[quizState.currentIndex] = c; _renderQuizQuestion(); }
-        function checkAnswer() { let c = quizState.userAnswers[quizState.currentIndex] || []; if(c.length===0) return showNotification("⚠️ Select an option!"); quizState.showAnswerTriggered[quizState.currentIndex] = true; _renderQuizQuestion(); }
-        function jumpToQuestion(i) { quizState.currentIndex = i; _renderQuizQuestion(); }
-        function _nextQuestion() { if(quizState.currentIndex < quizState.questions.length - 1) { quizState.currentIndex++; _renderQuizQuestion(); } }
-        function _prevQuestion() { if(quizState.currentIndex > 0) { quizState.currentIndex--; _renderQuizQuestion(); } }
-        function formatTime(s) { const m = Math.floor(s / 60); const sc = s % 60; return `${m}:${sc < 10 ? '0' : ''}${sc}`; }
-
-        window.showReviewTab = function(t) { ['correct', 'wrong', 'skipped'].forEach(x => document.getElementById('review-' + x).style.display = 'none'); document.getElementById('review-' + t).style.display = 'block'; };
-        window.toggleViewAnswer = function(id) { let e = document.getElementById(id); e.style.display = e.style.display === 'none' ? 'block' : 'none'; };
-
-        function buildRevHtml(q, i, t, u) {
-            let oH = ''; Object.keys(q.options).sort().forEach(k => { let iU = u.includes(k); let iC = q.correctAnswers.includes(k); let bg = ''; let ic = ''; if (t !== 'skipped') { if (iC) { bg = 'background:rgba(76,175,80,0.1); border-color:var(--correct-green);'; ic = '✅ '; } else if (iU && !iC) { bg = 'background:rgba(244,67,54,0.1); border-color:var(--wrong-red);'; ic = '❌ '; } } oH += `<div style="padding:10px; border:1px solid var(--border-color); border-radius:6px; margin-bottom:8px; ${bg}"><b>${ic}${k}.</b> <span class="katex-render-target">${q.options[k]}</span></div>`; });
-            let bc = t === 'correct' ? 'var(--correct-green)' : (t === 'wrong' ? 'var(--wrong-red)' : 'var(--primary-yellow)');
-            return `<div class="review-item" style="border-left: 4px solid ${bc};"><p style="margin-top:0;"><b>Q${i + 1}:</b> <span class="katex-render-target">${q.question}</span></p>${q.imageUrl ? `<img src="${q.imageUrl}" style="max-height:150px; border-radius:6px; margin-bottom:10px;">` : ''}${oH}<p style="color:var(--correct-green); margin:15px 0 5px 0;"><b>Correct Answer:</b> ${q.correctAnswers.join(', ')}</p><div class="katex-render-target" style="font-size:14px; color:var(--text-muted);"><b>Explanation:</b> ${q.explanation || ''}</div></div>`;
-        }
-
-        async function finishQuiz() {
-            clearInterval(quizState.timer); let att = 0; let ts = 0; let cC = 0; let wC = 0; let sIds = []; let sC = 0; let cH = ''; let wH = ''; let sH = ''; let fH = ''; let isD = currentPath[0] === 'Daily Quiz Challenge';
-            let isN = isD ? (currentPath[1] === "NEET") : (quizState.isCustom ? cwState.exam === 'NEET' : currentPath[0] === "NEET");
-
-            quizState.questions.forEach((q, i) => {
-                let uA = quizState.userAnswers[i] || []; let isA = uA.length > 0; let isC = false; let isV = quizState.viewedQuestions.includes(i);
-                if (isA) { att++; sIds.push(q.id); if (uA.sort().join(',') === q.correctAnswers.sort().join(',')) { isC = true; cC++; } }
-                if (isA && !isC) wC++;
-                if (isA) { if (isC) cH += buildRevHtml(q, i, 'correct', uA); else wH += buildRevHtml(q, i, 'wrong', uA); } else if (isV) { sC++; sH += buildRevHtml(q, i, 'skipped', []); }
-                if (isN) { if (isC) ts += 4; else if (isA && !isC) ts -= 1; } else { if (isC) ts += 1; }
-                if(quizState.flaggedDoubts[i]) { fH += `<div style="background:#2a2a2a; border-left:4px solid var(--primary-yellow); padding:15px; margin-bottom:15px;"><p><b>Q:</b> ${q.question}</p></div>`; if (currentUser) db.collection("flagged_doubts").add({ studentId: currentUser.uid, studentName: currentUser.displayName, questionId: q.id, questionText: q.question, path: q.path, status: 'pending', seenByStudent: true, timestamp: firebase.firestore.FieldValue.serverTimestamp() }); }
-            });
-
-            if (sIds.length > 0 && !isD) { 
-                if (currentUser) { let dTS = {}; if(quizState.isCustom) { quizState.questions.forEach((q) => { if(sIds.includes(q.id)) { let sP = "prog_" + q.path.split(' > ').join('_').replace(/[^a-zA-Z0-9]/g, '_'); if(!dTS[sP]) dTS[sP] = []; dTS[sP].push(q.id); } }); for(let k in dTS) dTS[k] = firebase.firestore.FieldValue.arrayUnion(...dTS[k]); } else { let sP = "prog_" + currentPath.join('_').replace(/[^a-zA-Z0-9]/g, '_'); dTS[sP] = firebase.firestore.FieldValue.arrayUnion(...sIds); } db.collection("users").doc(currentUser.uid).set(dTS, {merge: true}); } 
-            }
-
-            let acc = att === 0 ? 0 : Math.round((cC / att) * 100); let tStr = formatTime(quizState.secondsPassed); let pS = quizState.isCustom ? "Custom Practice" : currentPath.join(' > '); let sName = currentUser ? currentUser.displayName.split(" ")[0] : "Student";
-            if (currentUser && att > 0 && !isD) db.collection("leaderboards").add({ userId: currentUser.uid, userName: currentUser.displayName, quizPath: pS, score: ts, accuracy: acc, timeStr: tStr, attemptedQuestions: att, timestamp: firebase.firestore.FieldValue.serverTimestamp() });
-
-            let scH = isN ? `<div style="background:#2a2a2a; padding: 20px; border-radius: 8px; flex: 1;"><div style="font-size: 32px; font-weight: bold;">${att * 4}</div><div style="color: var(--text-muted); font-size: 14px;">Total Marks</div></div><div style="background:#2a2a2a; padding: 20px; border-radius: 8px; flex: 1; border: 1px solid var(--primary-yellow);"><div style="font-size: 32px; color: var(--primary-yellow); font-weight: bold;">${ts}</div><div style="color: var(--text-muted); font-size: 14px;">Obtained Mark</div></div>` : `<div style="background:#2a2a2a; padding: 20px; border-radius: 8px; flex: 1; border: 1px solid var(--primary-yellow);"><div style="font-size: 32px; color: var(--primary-yellow); font-weight: bold;">${ts}</div><div style="color: var(--text-muted); font-size: 14px;">Total Score</div></div>`;
-
-            document.getElementById('dynamic-content').innerHTML = `<div class="card" style="text-align: center;"><h2 style="font-size: 32px; color: var(--primary-yellow);">Test Complete!</h2><p style="color: var(--text-muted); margin-bottom: 30px;">Great effort, ${sName}! Here is your final breakdown.</p><div style="display:flex; justify-content:center; gap:15px; flex-wrap:wrap; margin-bottom: 40px;">${scH}<div style="background:#2a2a2a; padding: 20px; border-radius: 8px; flex: 1;"><div style="font-size: 32px; font-weight: bold;">${att}</div><div style="color: var(--text-muted); font-size: 14px;">Attempted</div></div><div style="background:#2a2a2a; padding: 20px; border-radius: 8px; flex: 1;"><div style="font-size: 32px; color: var(--correct-green); font-weight: bold;">${acc}%</div><div style="color: var(--text-muted); font-size: 14px;">Accuracy</div></div><div style="background:#2a2a2a; padding: 20px; border-radius: 8px; flex: 1;"><div style="font-size: 32px; font-weight: bold;">${tStr}</div><div style="color: var(--text-muted); font-size: 14px;">Time Taken</div></div></div><h3 style="text-align: left;">📊 Detailed Analysis</h3><div class="review-tabs"><button class="review-tab-btn" onclick="showReviewTab('correct')" style="color:var(--correct-green);">✅ Correct (${cC})</button><button class="review-tab-btn" onclick="showReviewTab('wrong')" style="color:var(--wrong-red);">❌ Wrong (${wC})</button><button class="review-tab-btn" onclick="showReviewTab('skipped')" style="color:var(--primary-yellow);">⏭️ Skipped (${sC})</button></div><div id="review-correct" style="display:block;">${cH || '<p>No correct answers.</p>'}</div><div id="review-wrong" style="display:none;">${wH || '<p>No wrong answers!</p>'}</div><div id="review-skipped" style="display:none;">${sH || '<p>No skipped questions.</p>'}</div>${fH !== '' ? `<h3 style="text-align:left; color:var(--primary-yellow); margin-top: 40px;">⭐ Sent to Admin</h3>${fH}` : ''}<button class="btn-exam" onclick="goHome()" style="width: 250px; margin-top:30px;">&larr; Exit</button></div>`;
-            document.querySelectorAll('.katex-render-target').forEach(el => renderMathInElement(el, { delimiters: [ {left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false} ] }));
-        }
-
-        // --- ADMIN PANEL SECURE RENDERER ---
-        let adminCurrentTab = 'topics'; let adminNewTopicPath = []; let adminSelectedPath = []; let adminManageSelectedPath = [];
-        function _renderAdminLogin() { document.getElementById('dynamic-content').innerHTML = `<div class="card" style="max-width: 400px; margin: 0 auto; text-align: center;"><h2>🔒 Restricted Access</h2><input type="password" id="adminPassInput" class="input-field" placeholder="Password"><button id="loginBtn" class="btn-exam" onclick="verifyAdmin()" style="width: 100%; background: var(--primary-yellow); color: black;">Login to Admin</button></div>`; }
-        async function verifyAdmin() { const p = document.getElementById('adminPassInput').value; try { let c = "mcqs2026"; const d = await db.collection("settings").doc("admin_auth").get(); if (d.exists && d.data().password) c = d.data().password; if (p === c) { sessionStorage.setItem('admin_verified', 'true'); window.location.hash = '#/admin-panel'; } else showNotification("❌ Incorrect Password"); } catch(e) {} }
-
-        function _renderAdminPanel() {
-            if (!sessionStorage.getItem('admin_verified')) return window.location.hash = '#/admin';
-            document.getElementById('dynamic-content').innerHTML = `<div class="card"><div style="display:flex; justify-content:space-between; flex-wrap:wrap; margin-bottom:20px;"><h2 style="color: var(--primary-yellow); margin:0;">🛠️ Admin Control Center</h2><div style="display:flex; gap:10px; flex-wrap:wrap;"><button class="admin-tab-btn ${adminCurrentTab==='topics'?'active':''}" onclick="switchAdminTab('topics')">📁 Folders</button><button class="admin-tab-btn ${adminCurrentTab==='upload'?'active':''}" onclick="switchAdminTab('upload')">➕ Upload</button><button class="admin-tab-btn ${adminCurrentTab==='manage'?'active':''}" onclick="switchAdminTab('manage')">📋 Manage</button><button class="admin-tab-btn ${adminCurrentTab==='reports'?'active':''}" onclick="switchAdminTab('reports')">🚨 Reports</button><button class="admin-tab-btn ${adminCurrentTab==='users'?'active':''}" onclick="switchAdminTab('users')">👥 Users</button><button class="admin-tab-btn ${adminCurrentTab==='doubts'?'active':''}" onclick="switchAdminTab('doubts')">🚩 Doubts</button></div></div><div id="admin-dynamic-body"></div></div>`;
-            const body = document.getElementById('admin-dynamic-body');
-            
-            if(adminCurrentTab === 'topics') {
-                body.innerHTML = `<div style="background: rgba(253, 184, 19, 0.05); padding: 20px; border-radius: 8px; border: 1px solid var(--primary-yellow); margin-bottom: 25px;"><h4 style="margin-top:0; color:var(--primary-yellow);">📁 Create New Topic Folder</h4><label style="color:white; font-size:13px;">1. Select Parent Path:</label><div id="dynamic-new-path-selectors" style="display:flex; gap:10px; flex-wrap:wrap;"></div><div class="admin-row" style="margin-top: 15px;"><div><label style="color:white; font-size:13px;">2. Folder Name:</label><input type="text" id="newFolderName" class="input-field"></div><div><label style="color:white; font-size:13px;">3. Type:</label><select id="newFolderType" class="input-field"><option value="mcq">MCQs</option><option value="pdf">PDF</option></select></div></div><button class="btn-exam" onclick="createCustomTopic()" style="background:var(--primary-yellow); color:black; width:100%; max-width:200px;">+ Add Subtopic</button></div><h4 style="color:var(--primary-yellow);">Active Custom Folders</h4><input type="text" id="adminTopicSearch" class="input-field" placeholder="🔍 Search folders..." oninput="filterAdminTopics()"><div id="admin-topic-list-container"></div>`;
-                _buildAdminNewTopicSelectors(); loadAdminTopicsList();
-            } 
-            else if(adminCurrentTab === 'upload') {
-                body.innerHTML = `<h4 style="margin-top:0;">Upload Content</h4><div id="dynamic-path-selectors" style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:20px;"></div><div id="upload-form-area" style="display:none;"><div class="admin-row"><span style="font-weight: bold;">Type:</span><select id="admResourceType" class="input-field" onchange="document.getElementById('admin-mcq-form').style.display=this.value==='mcq'?'block':'none'; document.getElementById('admin-pdf-form').style.display=this.value==='pdf'?'block':'none';"><option value="mcq">MCQ</option><option value="pdf">PDF</option></select></div><div id="admin-mcq-form"><textarea id="admQuestion" class="input-field" placeholder="Question"></textarea><div class="admin-row"><input type="file" id="admQImage" class="input-field" accept="image/*"><select id="admDifficulty" class="input-field"><option value="Mixed">Mixed</option><option value="Easy">Easy</option><option value="Medium">Medium</option><option value="Hard">Hard</option></select></div><div class="admin-row"><input type="text" id="admOptA" class="input-field" placeholder="Opt A"><input type="text" id="admOptB" class="input-field" placeholder="Opt B"></div><div class="admin-row"><input type="text" id="admOptC" class="input-field" placeholder="Opt C"><input type="text" id="admOptD" class="input-field" placeholder="Opt D"></div><div class="admin-checkbox-group"><b>Correct:</b> <label><input type="checkbox" value="A" class="admCorrectCb"> A</label><label><input type="checkbox" value="B" class="admCorrectCb"> B</label><label><input type="checkbox" value="C" class="admCorrectCb"> C</label><label><input type="checkbox" value="D" class="admCorrectCb"> D</label></div><textarea id="admExplanation" class="input-field" placeholder="Explanation"></textarea></div><div id="admin-pdf-form" style="display:none;"><input type="text" id="admPdfTitle" class="input-field" placeholder="Title"><input type="file" id="admPdfFile" class="input-field" accept=".pdf, image/*"></div><button id="uploadBtn" class="btn-exam" onclick="processAdminUpload()" style="background:#4CAF50; margin-top:20px;">☁️ Upload</button></div>`;
-                _buildAdminSelectors();
-            }
-            else if(adminCurrentTab === 'manage') {
-                body.innerHTML = `<h4>Filter Content</h4><div id="manage-path-selectors" style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:15px;"></div><button class="btn-exam" onclick="loadContentForManagement()" style="background:var(--primary-yellow); color:black; margin-bottom:20px;">🔍 Fetch Content</button><div id="manage-content-list"><p>Select folder and click Fetch.</p></div>`;
-                _buildManageSelectors();
-            }
-            else if(adminCurrentTab === 'reports') { body.innerHTML = `<button class="btn-exam" onclick="loadAdminReports()" style="background:var(--primary-yellow); color:black; margin-bottom:15px;">🔄 Refresh Reports</button><div id="reports-list-container"></div>`; loadAdminReports(); }
-            else if(adminCurrentTab === 'users') { body.innerHTML = `<button class="btn-exam" onclick="loadAdminUsers()" style="background:var(--primary-yellow); color:black; margin-bottom:15px;">🔄 Refresh Students</button><div id="users-table-container" style="overflow-x:auto;"></div>`; loadAdminUsers(); }
-            else if(adminCurrentTab === 'doubts') { body.innerHTML = `<button class="btn-exam" onclick="loadAdminDoubts()" style="background:var(--primary-yellow); color:black; margin-bottom:15px;">🔄 Refresh Doubts</button><div id="doubts-list-container"></div>`; loadAdminDoubts(); }
-        }
-
-        function switchAdminTab(t) { adminCurrentTab = t; _renderAdminPanel(); }
-
-        let globalTopicsData = [];
-        async function loadAdminTopicsList() {
-            const c = document.getElementById('admin-topic-list-container'); c.innerHTML = `<p>Loading folders...</p>`;
-            try { const s = await db.collection("custom_topics").get(); globalTopicsData = []; s.forEach(d => globalTopicsData.push({ id: d.id, ...d.data() })); globalTopicsData.sort((a,b) => (a.parentPath||"").localeCompare(b.parentPath||"")); renderAdminTopicsList(globalTopicsData); } catch(e){}
-        }
-        function renderAdminTopicsList(arr) {
-            const c = document.getElementById('admin-topic-list-container'); if(arr.length === 0) return c.innerHTML = `<p>No custom folders found.</p>`;
-            c.innerHTML = arr.map(d => `<div style="background:#2a2a2a; border:1px solid #444; border-radius:6px; padding:12px; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center;"><div><span style="color:#aaa; font-size:12px;">Path: ${d.parentPath}</span><br><b>📁 ${d.name}</b> <span style="background:#444; padding:2px 6px; border-radius:4px; font-size:11px;">${d.type}</span></div><div style="display:flex; gap:8px;"><button onclick="openEditTopicModal('${d.id}', '${d.name.replace(/'/g, "\\'")}', '${d.type}')" style="background:#2196F3; border:none; color:white; padding:6px 12px; border-radius:4px;">Edit</button><button onclick="deleteCustomTopic('${d.id}')" style="background:var(--wrong-red); border:none; color:white; padding:6px 12px; border-radius:4px;">Delete</button></div></div>`).join('');
-        }
-        function filterAdminTopics() { let q = document.getElementById('adminTopicSearch').value.toLowerCase(); renderAdminTopicsList(globalTopicsData.filter(t => t.name.toLowerCase().includes(q) || t.parentPath.toLowerCase().includes(q))); }
-        function openEditTopicModal(id, name, type) { document.getElementById('editTopicId').value=id; document.getElementById('editTopicName').value=name; document.getElementById('editTopicType').value=type; document.getElementById('editTopicModal').style.display='flex'; }
-        function closeEditTopicModal() { document.getElementById('editTopicModal').style.display='none'; }
-        async function saveEditedTopic() { let i=document.getElementById('editTopicId').value, n=document.getElementById('editTopicName').value.trim(), t=document.getElementById('editTopicType').value; if(!n) return; try{ await db.collection("custom_topics").doc(i).update({name:n, type:t}); closeEditTopicModal(); showNotification("✅ Updated!"); loadAdminTopicsList(); await loadCustomTopics(); } catch(e){} }
-        async function deleteCustomTopic(id) { if(!confirm("Delete this folder?")) return; try{ await db.collection("custom_topics").doc(id).delete(); loadAdminTopicsList(); await loadCustomTopics(); } catch(e){} }
-
-        function _buildAdminNewTopicSelectors() {
-            const c = document.getElementById('dynamic-new-path-selectors'); let h = ''; let cO = appData;
-            for (let i = 0; i <= adminNewTopicPath.length; i++) {
-                if (typeof cO === 'string' || Array.isArray(cO) || (typeof cO === 'object' && Object.keys(cO).length === 0 && i === adminNewTopicPath.length)) break;
-                h += `<select class="input-field" style="flex:1; min-width:150px; margin-bottom:0;" onchange="handleAdminNewTopicPathChange(event, ${i})"><option value="">-- Stop Here --</option>`;
-                for (let k in cO) { if (k === "Daily Quiz Challenge") continue; h += `<option value="${k}" ${adminNewTopicPath[i] === k ? 'selected' : ''}>${k}</option>`; } h += `</select>`;
-                if (adminNewTopicPath[i] && cO[adminNewTopicPath[i]]) cO = cO[adminNewTopicPath[i]]; else break;
-            }
-            c.innerHTML = h; let pD = document.getElementById('new-topic-path-display'); if(!pD) c.insertAdjacentHTML('afterend', `<div id="new-topic-path-display" style="margin-top:10px; font-size:14px; color:var(--primary-yellow);"><b>Selected Parent Path:</b> <span id="new-topic-path-text" style="color:white;">None</span></div>`);
-            document.getElementById('new-topic-path-text').innerText = adminNewTopicPath.length > 0 ? adminNewTopicPath.join(' > ') : 'Root';
-        }
-        function handleAdminNewTopicPathChange(e, d) { if(e.target.value === "") adminNewTopicPath = adminNewTopicPath.slice(0, d); else { adminNewTopicPath = adminNewTopicPath.slice(0, d); adminNewTopicPath.push(e.target.value); } _buildAdminNewTopicSelectors(); }
-        async function createCustomTopic() { if (adminNewTopicPath.length === 0) return showNotification("⚠️ Select a parent path."); const f = document.getElementById('newFolderName').value.trim(); if (!f) return; try { await db.collection("custom_topics").add({ parentPath: adminNewTopicPath.join(' > '), name: f, type: document.getElementById('newFolderType').value, timestamp: firebase.firestore.FieldValue.serverTimestamp() }); showNotification("✅ Created!"); document.getElementById('newFolderName').value = ""; await loadCustomTopics(); _buildAdminNewTopicSelectors(); loadAdminTopicsList(); } catch(e) {} }
-
-        function _buildAdminSelectors() {
-            const c = document.getElementById('dynamic-path-selectors'); let h = ''; let cO = appData;
-            for (let i = 0; i <= adminSelectedPath.length; i++) {
-                if (typeof cO === 'string' || Array.isArray(cO) || (typeof cO === 'object' && Object.keys(cO).length === 0 && i === adminSelectedPath.length)) break;
-                h += `<select class="input-field" style="flex:1; min-width:150px; margin-bottom:0;" onchange="handleAdminPathChange(event, ${i})"><option value="">-- Upload Here --</option>`;
-                for (let k in cO) { if (k === "Daily Quiz Challenge") continue; h += `<option value="${k}" ${adminSelectedPath[i] === k ? 'selected' : ''}>${k}</option>`; } h += `</select>`;
-                if (adminSelectedPath[i] && cO[adminSelectedPath[i]]) cO = cO[adminSelectedPath[i]]; else break;
-            }
-            c.innerHTML = h; const fA = document.getElementById('upload-form-area'); if(fA) fA.style.display = (adminSelectedPath.length > 0) ? 'block' : 'none';
-        }
-        function handleAdminPathChange(e, d) { if(e.target.value === "") adminSelectedPath = adminSelectedPath.slice(0, d); else { adminSelectedPath = adminSelectedPath.slice(0, d); adminSelectedPath.push(e.target.value); } _buildAdminSelectors(); }
-        
-        function _buildManageSelectors() {
-            const c = document.getElementById('manage-path-selectors'); let h = ''; let cO = appData;
-            for (let i = 0; i <= adminManageSelectedPath.length; i++) {
-                if (typeof cO === 'string' || Array.isArray(cO)) break;
-                h += `<select class="input-field" style="flex:1; min-width:150px; margin-bottom:0;" onchange="handleManagePathChange(event, ${i})"><option value="">-- All --</option>`;
-                for (let k in cO) { if (k === "Daily Quiz Challenge") continue; h += `<option value="${k}" ${adminManageSelectedPath[i] === k ? 'selected' : ''}>${k}</option>`; } h += `</select>`;
-                if (adminManageSelectedPath[i] && cO[adminManageSelectedPath[i]]) cO = cO[adminManageSelectedPath[i]]; else break;
-            } c.innerHTML = h;
-        }
-        function handleManagePathChange(e, d) { if(e.target.value === "") adminManageSelectedPath = adminManageSelectedPath.slice(0, d); else { adminManageSelectedPath = adminManageSelectedPath.slice(0, d); adminManageSelectedPath.push(e.target.value); } _buildManageSelectors(); }
-
-        async function uploadFileToCloudinary(f) { const fd = new FormData(); fd.append('file', f); fd.append('upload_preset', CLOUDINARY_PRESET); const r = await fetch(CLOUDINARY_URL, { method: 'POST', body: fd }); const d = await r.json(); if (!r.ok) throw new Error(); return d.secure_url; }
-        async function processAdminUpload() {
-            const ty = document.getElementById('admResourceType').value; const tP = adminSelectedPath.join(' > '); const b = document.getElementById('uploadBtn'); b.innerText = "Uploading..."; b.disabled = true;
-            try {
-                if (ty === 'mcq') {
-                    const q = document.getElementById('admQuestion').value.trim(); const o = { A: document.getElementById('admOptA').value.trim(), B: document.getElementById('admOptB').value.trim(), C: document.getElementById('admOptC').value.trim(), D: document.getElementById('admOptD').value.trim() };
-                    const cCb = document.querySelectorAll('.admCorrectCb:checked'); let cA = Array.from(cCb).map(cb => cb.value); const exp = document.getElementById('admExplanation').value.trim(); const iF = document.getElementById('admQImage').files[0]; const lvl = document.getElementById('admDifficulty').value;
-                    if (!q || !o.A || !o.B || cA.length === 0) throw new Error("Missing fields."); let iU = null; if (iF) iU = await uploadFileToCloudinary(iF); 
-                    await db.collection("content").add({ type: 'mcq', path: tP, level: lvl, question: q, options: o, correctAnswers: cA, explanation: exp, imageUrl: iU, timestamp: firebase.firestore.FieldValue.serverTimestamp() });
-                    document.getElementById('admQuestion').value = ""; document.getElementById('admQImage').value = ""; document.getElementById('admExplanation').value = ""; document.getElementById('admOptA').value = ""; document.getElementById('admOptB').value = ""; document.getElementById('admOptC').value = ""; document.getElementById('admOptD').value = ""; document.querySelectorAll('.admCorrectCb').forEach(cb => cb.checked = false);
-                } else if (ty === 'pdf') {
-                    const t = document.getElementById('admPdfTitle').value.trim(); const f = document.getElementById('admPdfFile').files[0]; if (!t || !f) throw new Error(); const fU = await uploadFileToCloudinary(f);
-                    await db.collection("content").add({ type: 'material', path: tP, title: t, fileUrl: fU, timestamp: firebase.firestore.FieldValue.serverTimestamp() }); document.getElementById('admPdfTitle').value = ""; document.getElementById('admPdfFile').value = "";
-                } showNotification("✅ Upload Successful!");
-            } catch(e) { showNotification("⚠️ ERROR!"); } b.innerText = "☁️ Upload to Database"; b.disabled = false;
-        }
-
-        let loadedItemsCache = {};
-        async function loadContentForManagement() {
-            const c = document.getElementById('manage-content-list'); c.innerHTML = `<p>Fetching items...</p>`;
-            try {
-                let q = db.collection("content"); if (adminManageSelectedPath.length > 0) { const p = adminManageSelectedPath.join(' > '); q = q.where("path", ">=", p).where("path", "<=", p + "\uf8ff"); } else { q = q.orderBy("timestamp", "desc").limit(50); }
-                const s = await q.get(); if(s.empty) return c.innerHTML = `<p>No items found.</p>`; loadedItemsCache = {}; let h = '';
-                s.forEach(doc => { let d = doc.data(); loadedItemsCache[doc.id] = d; if (d.type === 'mcq') { let aStr = (d.correctAnswers || []).join(', '); h += `<div class="card" id="item_${doc.id}" style="padding:15px; margin-bottom:10px;"><div style="display:flex; justify-content:space-between; margin-bottom:10px;"><span class="badge-path">${d.path}</span><div><button onclick="openEditModal('${doc.id}')" style="background:#2196F3; color:white; border:none; padding:4px 10px; border-radius:4px; margin-right:5px;">Edit</button><button onclick="deleteContentItem('${doc.id}')" style="background:var(--wrong-red); color:white; border:none; padding:4px 10px; border-radius:4px;">Delete</button></div></div><b>${d.question}</b><br><span style="font-size:12px; color:var(--text-muted);">Level: ${d.level||'Mixed'} | Correct: ${aStr}</span></div>`; } else { h += `<div class="card" id="item_${doc.id}" style="padding:15px; margin-bottom:10px;"><div style="display:flex; justify-content:space-between;"><span class="badge-path">${d.path}</span><button onclick="deleteContentItem('${doc.id}')" style="background:var(--wrong-red); color:white; border:none; padding:4px 10px; border-radius:4px;">Delete</button></div><b>📄 ${d.title}</b></div>`; } }); c.innerHTML = h;
-            } catch(e) {}
-        }
-        async function deleteContentItem(id) { if(!confirm("Delete permanently?")) return; try { await db.collection("content").doc(id).delete(); document.getElementById("item_"+id).remove(); } catch(e){} }
-        function openEditModal(id) { const d = loadedItemsCache[id]; if(!d) return; document.getElementById('editDocId').value = id; document.getElementById('editQuestion').value = d.question||''; document.getElementById('editOptA').value = d.options?.A||''; document.getElementById('editOptB').value = d.options?.B||''; document.getElementById('editOptC').value = d.options?.C||''; document.getElementById('editOptD').value = d.options?.D||''; document.getElementById('editExplanation').value = d.explanation||''; document.getElementById('editDifficulty').value = d.level||'Mixed'; document.querySelectorAll('.editCorrectCb').forEach(cb => cb.checked = (d.correctAnswers||[]).includes(cb.value)); document.getElementById('editModal').style.display = 'flex'; }
-        function closeEditModal() { document.getElementById('editModal').style.display = 'none'; }
-        async function saveEditedMCQ() { const id = document.getElementById('editDocId').value; const cA = Array.from(document.querySelectorAll('.editCorrectCb:checked')).map(cb => cb.value); if(cA.length===0) return; try { await db.collection("content").doc(id).update({ question: document.getElementById('editQuestion').value, options: {A:document.getElementById('editOptA').value, B:document.getElementById('editOptB').value, C:document.getElementById('editOptC').value, D:document.getElementById('editOptD').value}, correctAnswers: cA, explanation: document.getElementById('editExplanation').value, level: document.getElementById('editDifficulty').value }); closeEditModal(); showNotification("✅ Saved!"); loadContentForManagement(); } catch(e){} }
-
-        async function loadAdminReports() {
-            const c = document.getElementById('reports-list-container'); c.innerHTML = `<p>Loading...</p>`;
-            try {
-                const s = await db.collection("reported_mistakes").get(); let i = []; s.forEach(doc => i.push({ id: doc.id, ...doc.data() })); i.sort((a,b) => (b.timestamp?.toMillis()||0) - (a.timestamp?.toMillis()||0));
-                if(i.length === 0) return c.innerHTML = "<p>No reports.</p>"; let h = '';
-                i.forEach(d => { let st = d.status === 'resolved' ? `<span style="color:var(--correct-green);">✅ Resolved</span>` : `<span style="color:var(--text-muted);">⏳ Pending</span>`; h += `<div class="card" style="padding:15px; margin-bottom:10px;"><p><b>${d.reason}</b> (${st})<br><span style="font-size:12px; color:var(--text-muted);">Path: ${d.path} | User: ${d.studentName}</span></p><p style="font-size:14px;">${d.questionText}</p><div style="display:flex; gap:10px;"><button onclick="openEditModalFromReport('${d.questionId}')" style="background:#2196F3; color:white; border:none; padding:6px 12px; border-radius:4px; cursor:pointer;">Edit MCQ</button><button onclick="resolveReport('${d.id}')" style="background:var(--correct-green); color:white; border:none; padding:6px 12px; border-radius:4px; cursor:pointer;" ${d.status==='resolved'?'disabled':''}>Mark Resolved</button></div></div>`; }); c.innerHTML = h;
-            } catch(e) {}
-        }
-        async function resolveReport(id) { if(confirm("Resolve this report?")) { await db.collection("reported_mistakes").doc(id).update({status: 'resolved', seenByStudent: false}); loadAdminReports(); } }
-        async function openEditModalFromReport(qId) { try { let d = await db.collection("content").doc(qId).get(); if (d.exists) { loadedItemsCache[qId] = d.data(); openEditModal(qId); } } catch(e){} }
-        
-        async function loadAdminDoubts() {
-            const c = document.getElementById('doubts-list-container'); c.innerHTML = `<p>Loading...</p>`;
-            try {
-                const s = await db.collection("flagged_doubts").get(); let i = []; s.forEach(doc => i.push({ id: doc.id, ...doc.data() })); i.sort((a,b) => (b.timestamp?.toMillis()||0) - (a.timestamp?.toMillis()||0));
-                if(i.length === 0) return c.innerHTML = "<p>No flags.</p>"; let h = '';
-                i.forEach(d => { let st = d.status === 'resolved' ? `<span style="color:var(--correct-green);">✅ Reviewed</span>` : `<span style="color:var(--text-muted);">⏳ Pending</span>`; h += `<div class="card" style="padding:15px; margin-bottom:10px;"><p><b>⭐ Flagged</b> (${st})<br><span style="font-size:12px; color:var(--text-muted);">User: ${d.studentName}</span></p><p style="font-size:14px;">${d.questionText}</p><button onclick="resolveDoubt('${d.id}')" style="background:var(--correct-green); color:white; border:none; padding:6px 12px; border-radius:4px; cursor:pointer;" ${d.status==='resolved'?'disabled':''}>Mark Reviewed</button></div>`; }); c.innerHTML = h;
-            } catch(e) {}
-        }
-        async function resolveDoubt(id) { if(confirm("Resolve this doubt?")) { await db.collection("flagged_doubts").doc(id).update({status: 'resolved', seenByStudent: false}); loadAdminDoubts(); } }
-
-        async function loadAdminUsers() { const c = document.getElementById('users-table-container'); try { const s = await db.collection("users").orderBy("lastLogin", "desc").get(); let h = `<table><tr><th>Name</th><th>Email</th></tr>`; s.forEach(d => { h += `<tr><td>${d.data().displayName}</td><td>${d.data().email}</td></tr>`; }); c.innerHTML = h + `</table>`; } catch(e){} }
-    </script>
+    <!-- Link to your new Javascript file -->
+    <script src="script.js"></script>
 </body>
 </html>
