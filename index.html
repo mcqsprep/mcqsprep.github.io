@@ -15,12 +15,10 @@
     
     <meta name="description" content="MCQsPrep - A free, smart MCQ practice platform for competitive exams like NEET and General Knowledge. Track your streak and global rank.">
     
-    <!-- FIREBASE LIBRARIES -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
 
-    <!-- AI SUPPORT LIBRARIES: Cropper.js, Marked.js, KaTeX -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
@@ -273,7 +271,6 @@
                         </div>
                         <div style="text-align:center; font-size: 13px; color: rgba(255,255,255,0.5); margin-top: 15px;">Crop & scan any question from standard textbooks or PYQ sheets</div>
 
-                        <!-- Cropper hidden inside left panel -->
                         <div id="ai-cropper-view" style="display:none; flex-direction:column; margin-top:20px;">
                             <p style="color:var(--text-light); text-shadow: 0 1px 2px rgba(0,0,0,0.8); margin-bottom:15px;">Crop the image to highlight <b>only one question</b> for peak accuracy:</p>
                             <div style="min-height:250px; max-height: 40vh; background:#000; position:relative; margin-bottom:20px; border-radius:10px; overflow:hidden; border: 1px solid rgba(255,255,255,0.2); box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
@@ -288,6 +285,7 @@
 
                     <!-- RIGHT PANEL (RESULTS & CHAT) -->
                     <div class="ai-right-panel">
+                        
                         <div id="ai-idle-view" style="display:flex; flex:1; flex-direction:column; justify-content:center; align-items:center; opacity: 0.3;">
                             <div style="font-size: 70px; margin-bottom:15px;">🧠</div>
                             <h3 style="margin:0; color: white;">AI is ready</h3>
@@ -314,7 +312,6 @@
         </div>
     </div>
 
-    <!-- Auth Modal -->
     <div id="authModal" class="modal-overlay">
         <div class="modal-content" style="text-align: center; max-width: 420px;">
             <button class="close-modal" onclick="skipSignIn()">✕</button>
@@ -334,7 +331,6 @@
         </div>
     </div>
 
-    <!-- Report Modal -->
     <div id="reportModal" class="modal-overlay">
         <div class="modal-content" style="max-width: 450px;">
             <button class="close-modal" onclick="closeReportModal()">✕</button>
@@ -348,7 +344,6 @@
         </div>
     </div>
 
-    <!-- Feedback Modal -->
     <div id="feedbackModal" class="modal-overlay">
         <div class="modal-content" style="text-align: center; max-width: 450px;">
             <button class="close-modal" onclick="closeFeedbackModal()">✕</button>
@@ -362,7 +357,23 @@
         </div>
     </div>
 
-    <!-- Admin Edit Modal -->
+    <!-- Edit Topic Modal -->
+    <div id="editTopicModal" class="modal-overlay">
+        <div class="modal-content" style="max-width: 450px;">
+            <button class="close-modal" onclick="closeEditTopicModal()">✕</button>
+            <h2 style="margin-top:0; color: var(--primary-yellow);">✏️ Edit Folder</h2>
+            <input type="hidden" id="editTopicId">
+            <label style="color:var(--text-muted); font-size:13px;">Folder Name:</label>
+            <input type="text" id="editTopicName" class="input-field">
+            <label style="color:var(--text-muted); font-size:13px;">Content Type:</label>
+            <select id="editTopicType" class="input-field">
+                <option value="mcq">📝 MCQs Practice</option>
+                <option value="pdf">📄 PDF / Image Material</option>
+            </select>
+            <button class="btn-exam" onclick="saveEditedTopic()" style="width:100%; background-color:var(--correct-green); color:white; border:none;">💾 Save Changes</button>
+        </div>
+    </div>
+
     <div id="editModal" class="modal-overlay">
         <div class="modal-content">
             <button class="close-modal" onclick="closeEditModal()">✕</button>
@@ -634,19 +645,26 @@
             document.getElementById('profileNotifDot').style.display = 'none'; document.getElementById('reportMenuDot').style.display = 'none';
             const list = document.getElementById('user-reports-list'); list.innerHTML = `<p style="color:var(--primary-yellow);">Loading reports...</p>`;
             try {
-                let html = ''; let count = 0;
-                let reports = await db.collection("reported_mistakes").where("studentId", "==", currentUser.uid).orderBy("timestamp", "desc").get();
-                reports.forEach(doc => {
-                    let d = doc.data(); count++; let badge = d.status === 'resolved' ? `<span style="background:var(--correct-green); color:white; padding:2px 6px; border-radius:4px; font-size:11px;">✅ Fixed</span>` : `<span style="background:#555; color:white; padding:2px 6px; border-radius:4px; font-size:11px;">⏳ Pending</span>`;
-                    html += `<div style="background:#1a1a1a; padding:12px; border:1px solid #333; border-radius:6px; margin-bottom:10px;"><div style="display:flex; justify-content:space-between; margin-bottom:5px;"><b>${d.reason}</b> ${badge}</div><p style="font-size:13px; color:var(--text-muted); margin:0;">${d.questionText}</p></div>`;
-                    if(d.status === 'resolved' && d.seenByStudent === false) db.collection("reported_mistakes").doc(doc.id).update({seenByStudent: true});
-                });
+                let html = ''; let count = 0; let allItems = [];
+                let reports = await db.collection("reported_mistakes").where("studentId", "==", currentUser.uid).get();
+                reports.forEach(doc => { allItems.push({ _id: doc.id, _type: 'report', ...doc.data() }); });
                 
-                let flags = await db.collection("flagged_doubts").where("studentId", "==", currentUser.uid).orderBy("timestamp", "desc").get();
-                flags.forEach(doc => {
-                    let d = doc.data(); count++; let badge = d.status === 'resolved' ? `<span style="background:var(--correct-green); color:white; padding:2px 6px; border-radius:4px; font-size:11px;">✅ Reviewed</span>` : `<span style="background:#555; color:white; padding:2px 6px; border-radius:4px; font-size:11px;">⏳ Under Review</span>`;
-                    html += `<div style="background:#1a1a1a; padding:12px; border:1px solid #333; border-radius:6px; margin-bottom:10px;"><div style="display:flex; justify-content:space-between; margin-bottom:5px;"><b>⭐ Flagged Doubt</b> ${badge}</div><p style="font-size:13px; color:var(--text-muted); margin:0;">${d.questionText}</p></div>`;
-                    if(d.status === 'resolved' && d.seenByStudent === false) db.collection("flagged_doubts").doc(doc.id).update({seenByStudent: true});
+                let flags = await db.collection("flagged_doubts").where("studentId", "==", currentUser.uid).get();
+                flags.forEach(doc => { allItems.push({ _id: doc.id, _type: 'flag', ...doc.data() }); });
+
+                // Client-side sort to bypass Firebase composite index requirements completely
+                allItems.sort((a, b) => (b.timestamp?.toMillis() || 0) - (a.timestamp?.toMillis() || 0));
+
+                allItems.forEach(d => {
+                    count++;
+                    let badge = d.status === 'resolved' ? `<span style="background:var(--correct-green); color:white; padding:2px 6px; border-radius:4px; font-size:11px;">✅ ${d._type === 'flag' ? 'Reviewed' : 'Fixed'}</span>` : `<span style="background:#555; color:white; padding:2px 6px; border-radius:4px; font-size:11px;">⏳ Pending</span>`;
+                    let title = d._type === 'flag' ? '⭐ Flagged Doubt' : `<b>${d.reason}</b>`;
+                    html += `<div style="background:#1a1a1a; padding:12px; border:1px solid #333; border-radius:6px; margin-bottom:10px;"><div style="display:flex; justify-content:space-between; margin-bottom:5px;">${title} ${badge}</div><p style="font-size:13px; color:var(--text-muted); margin:0;">${d.questionText}</p></div>`;
+                    
+                    if(d.status === 'resolved' && d.seenByStudent === false) {
+                        let col = d._type === 'flag' ? "flagged_doubts" : "reported_mistakes";
+                        db.collection(col).doc(d._id).update({seenByStudent: true});
+                    }
                 });
 
                 if(count === 0) list.innerHTML = `<p style="color:var(--text-muted);">You haven't reported any questions yet.</p>`;
@@ -900,7 +918,9 @@
                     
                     <div id="admin-topics-view" style="display:${adminCurrentTab === 'topics' ? 'block' : 'none'};">
                         <div style="background: rgba(253, 184, 19, 0.05); padding: 20px; border-radius: 8px; border: 1px solid var(--primary-yellow); margin-bottom: 25px;"><h4 style="margin-top:0; color:var(--primary-yellow);">📁 Create New Topic Folder</h4><label style="color:white; font-size:13px;">1. Select Parent Path:</label><div id="dynamic-new-path-selectors" style="display:flex; gap:10px; flex-wrap:wrap;"></div><div class="admin-row" style="margin-top: 15px;"><div><label style="color:white; font-size:13px;">2. New Folder Name:</label><input type="text" id="newFolderName" class="input-field" placeholder="e.g. Molecular Genetics"></div><div><label style="color:white; font-size:13px;">3. Expected Content Type:</label><select id="newFolderType" class="input-field"><option value="mcq">📝 MCQs Practice</option><option value="pdf">📄 PDF / Image Material</option></select></div></div><button class="btn-exam" onclick="createCustomTopic()" style="background-color:var(--primary-yellow); color:black; border:none; width:100%; max-width:200px;">+ Add Subtopic</button></div>
-                        <h4 style="color:var(--primary-yellow); margin-top:30px;">Active Custom Folders</h4><div id="admin-topic-list-container"></div>
+                        <h4 style="color:var(--primary-yellow); margin-top:30px;">Active Custom Folders</h4>
+                        <input type="text" id="adminTopicSearch" class="input-field" placeholder="🔍 Search folders by name or path..." oninput="filterAdminTopics()">
+                        <div id="admin-topic-list-container"></div>
                     </div>
 
                     <div id="admin-manage-view" style="display:${adminCurrentTab === 'manage' ? 'block' : 'none'};"><div style="background: #2a2a2a; padding: 15px; border-radius: 6px; margin-bottom: 20px;"><h4 style="margin-top:0; margin-bottom:10px; color:var(--text-muted);">Filter Content by Folder (Optional)</h4><div id="manage-path-selectors" style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:15px;"></div><button class="btn-exam" onclick="loadContentForManagement()" style="background:var(--primary-yellow); color:black; border:none; padding:10px 15px; width:100%; max-width:250px;">🔍 Fetch Filtered Content</button></div><div id="manage-content-list"><p style="color:var(--text-muted);">Select a folder and click Fetch to load items.</p></div></div>
@@ -919,18 +939,53 @@
 
         function switchAdminTab(tab) { adminCurrentTab = tab; _renderAdminPanel(); }
 
+        let globalTopicsData = [];
         async function loadAdminTopicsList() {
             const container = document.getElementById('admin-topic-list-container'); container.innerHTML = `<p>Loading folders...</p>`;
             try {
                 const snap = await db.collection("custom_topics").orderBy("parentPath").get();
-                if(snap.empty) { container.innerHTML = `<p>No custom folders created yet.</p>`; return; }
-                let html = '';
-                snap.forEach(doc => {
-                    let d = doc.data();
-                    html += `<div style="background:#2a2a2a; border:1px solid #444; border-radius:6px; padding:12px 15px; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center;"><div><span style="color:var(--text-muted); font-size:12px;">Path: ${d.parentPath}</span><br><b style="font-size:16px;">📁 ${d.name}</b> <span style="font-size:11px; background:#444; padding:2px 6px; border-radius:4px;">${d.type}</span></div><button onclick="deleteCustomTopic('${doc.id}')" style="background:var(--wrong-red); border:none; color:white; padding:6px 12px; border-radius:4px; cursor:pointer;">Delete</button></div>`;
-                });
-                container.innerHTML = html;
+                globalTopicsData = [];
+                snap.forEach(doc => globalTopicsData.push({ id: doc.id, ...doc.data() }));
+                renderAdminTopicsList(globalTopicsData);
             } catch(e) { container.innerHTML = `<p>Error: ${e.message}</p>`; }
+        }
+
+        function renderAdminTopicsList(topicsArray) {
+            const container = document.getElementById('admin-topic-list-container');
+            if(topicsArray.length === 0) { container.innerHTML = `<p>No custom folders found.</p>`; return; }
+            let html = '';
+            topicsArray.forEach(d => {
+                let cleanName = d.name.replace(/'/g, "\\'");
+                html += `<div style="background:#2a2a2a; border:1px solid #444; border-radius:6px; padding:12px 15px; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center; flex-wrap: wrap; gap: 10px;"><div><span style="color:var(--text-muted); font-size:12px;">Path: ${d.parentPath}</span><br><b style="font-size:16px;">📁 ${d.name}</b> <span style="font-size:11px; background:#444; padding:2px 6px; border-radius:4px;">${d.type}</span></div><div style="display:flex; gap:8px;"><button onclick="openEditTopicModal('${d.id}', '${cleanName}', '${d.type}')" style="background:#2196F3; border:none; color:white; padding:6px 12px; border-radius:4px; cursor:pointer;">Edit</button><button onclick="deleteCustomTopic('${d.id}')" style="background:var(--wrong-red); border:none; color:white; padding:6px 12px; border-radius:4px; cursor:pointer;">Delete</button></div></div>`;
+            });
+            container.innerHTML = html;
+        }
+
+        function filterAdminTopics() {
+            let q = document.getElementById('adminTopicSearch').value.toLowerCase();
+            let filtered = globalTopicsData.filter(t => t.name.toLowerCase().includes(q) || t.parentPath.toLowerCase().includes(q));
+            renderAdminTopicsList(filtered);
+        }
+
+        function openEditTopicModal(id, name, type) {
+            document.getElementById('editTopicId').value = id;
+            document.getElementById('editTopicName').value = name;
+            document.getElementById('editTopicType').value = type;
+            document.getElementById('editTopicModal').style.display = 'flex';
+        }
+
+        function closeEditTopicModal() { document.getElementById('editTopicModal').style.display = 'none'; }
+
+        async function saveEditedTopic() {
+            let id = document.getElementById('editTopicId').value;
+            let name = document.getElementById('editTopicName').value.trim();
+            let type = document.getElementById('editTopicType').value;
+            if(!name) return alert("Folder name is required.");
+            try {
+                await db.collection("custom_topics").doc(id).update({ name: name, type: type });
+                closeEditTopicModal(); showNotification("✅ Folder updated!");
+                loadAdminTopicsList(); await loadCustomTopics();
+            } catch(e) { alert("Error: " + e.message); }
         }
 
         async function deleteCustomTopic(docId) {
@@ -1472,7 +1527,6 @@
             });
         }
 
-        // --- BREADCRUMB AND NAVIGATION ---
         function _renderView() {
             const mainContent = document.getElementById('dynamic-content');
             const breadcrumb = document.getElementById('breadcrumb-text');
@@ -1522,7 +1576,6 @@
             html += `</div></div>`; mainContent.innerHTML = html;
         }
 
-        // CUSTOM PRACTICE BUILDER
         let customQuizConfig = { paths: [], count: 20, level: 'Mixed' };
 
         function openCustomPracticeBuilder(levelObj, rootTitle) {
