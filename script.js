@@ -437,8 +437,6 @@ function requiresQuizLogin(pathArray) {
 // ==========================================
 // 6. TRACK PROGRESS, STREAK, AND PROFILE
 // ==========================================
-
-// NEW TIERED DASHBOARD SELECTION
 function _renderProgressSelection() {
     if (!currentUser) return document.getElementById('dynamic-content').innerHTML = `<div class="card" style="text-align:center;"><h2>⚠️ Sign In Required</h2><button class="btn-exam" onclick="goBack()" style="background:#333; border:none;">Back</button></div>`;
     document.getElementById('breadcrumb-text').innerText = "Home / Profile / Track Progress";
@@ -455,7 +453,6 @@ function _renderProgressSelection() {
     `;
 }
 
-// NEW DIAGNOSTIC DASHBOARD RENDERER
 async function _renderProgressDashboard(category) {
     if (!currentUser) return;
     document.getElementById('breadcrumb-text').innerText = `Home / Profile / Progress / ${category}`;
@@ -463,12 +460,23 @@ async function _renderProgressDashboard(category) {
     mc.innerHTML = `<div class="card"><h2>📊 Compiling ${category} Diagnostics...</h2></div>`;
     
     try {
-        const snap = await db.collection("leaderboards").where("userId", "==", currentUser.uid).orderBy("timestamp", "asc").get();
+        // FIX: Removed .orderBy("timestamp") to bypass Firestore index requirements. 
+        // We will fetch and then sort locally in javascript.
+        const snap = await db.collection("leaderboards").where("userId", "==", currentUser.uid).get();
         let validDocs = [];
-        snap.forEach(doc => {
-            let d = doc.data();
+        let tempDocs = [];
+        
+        snap.forEach(doc => { tempDocs.push(doc.data()); });
+
+        // Local JavaScript Sort (Bypasses Firebase Index Error)
+        tempDocs.sort((a, b) => {
+            let tA = a.timestamp ? a.timestamp.toMillis() : 0;
+            let tB = b.timestamp ? b.timestamp.toMillis() : 0;
+            return tA - tB;
+        });
+
+        tempDocs.forEach(d => {
             let isNeet = d.examCategory === 'NEET' || (d.quizPath && d.quizPath.includes('NEET'));
-            
             if (category === 'NEET' && isNeet) validDocs.push(d);
             else if (category === 'General Knowledge' && !isNeet) validDocs.push(d);
         });
@@ -478,7 +486,6 @@ async function _renderProgressDashboard(category) {
             return;
         }
 
-        // Aggregate KPIs
         let totalQuizzes = validDocs.length;
         let totalScore = 0; let totalQuestions = 0; let accuracySum = 0;
         let aggregatedSubs = {};
@@ -502,7 +509,6 @@ async function _renderProgressDashboard(category) {
         let avgAccuracy = Math.round(accuracySum / totalQuizzes);
         let recentTrend = accuracyTrend.slice(-10);
 
-        // Subject Mastery Bars
         let subjectHtml = '';
         let weakSpotsHtml = '';
         let validSubjectsCount = 0;
@@ -539,7 +545,6 @@ async function _renderProgressDashboard(category) {
         <div class="card">
             <h2 style="color:var(--primary-yellow); margin-bottom:25px;">${category} Diagnostic Dashboard</h2>
             
-            <!-- KPI HEADER -->
             <div style="display:flex; gap:15px; flex-wrap:wrap; margin-bottom:30px;">
                 <div style="background:#2a2a2a; padding: 20px; border-radius: 8px; flex: 1; min-width: 130px; text-align:center; border:1px solid var(--border-color);"><div style="font-size: 28px; color: white; font-weight: bold;">${totalQuizzes}</div><div style="color: var(--text-muted); font-size: 13px;">Tests Taken</div></div>
                 <div style="background:#2a2a2a; padding: 20px; border-radius: 8px; flex: 1; min-width: 130px; text-align:center; border:1px solid var(--border-color);"><div style="font-size: 28px; color: var(--correct-green); font-weight: bold;">${avgAccuracy}%</div><div style="color: var(--text-muted); font-size: 13px;">Avg. Accuracy</div></div>
@@ -548,13 +553,11 @@ async function _renderProgressDashboard(category) {
             </div>
 
             <div style="display:flex; gap:30px; flex-wrap:wrap;">
-                <!-- SUBJECT MASTERY -->
                 <div style="flex:1; min-width:300px; background:#1a1a1a; border:1px solid var(--border-color); padding:25px; border-radius:8px;">
                     <h3 style="margin-top:0; color:white; border-bottom:1px solid #333; padding-bottom:10px; margin-bottom:20px; font-size:18px;">Subject-Wise Mastery</h3>
                     ${subjectHtml}
                 </div>
 
-                <!-- ACCURACY TRAJECTORY & WEAK SPOTS -->
                 <div style="flex:1.5; min-width:300px; display:flex; flex-direction:column; gap:20px;">
                     <div style="background:#1a1a1a; border:1px solid var(--border-color); padding:25px; border-radius:8px; flex:1;">
                         <h3 style="margin-top:0; color:white; border-bottom:1px solid #333; padding-bottom:10px; margin-bottom:15px; font-size:18px;">Accuracy Trajectory (Last 10 Tests)</h3>
@@ -1120,6 +1123,7 @@ function _renderLeaderboardOptions() {
         </div>`; 
 }
 
+// FIXED: Removed Firebase index ordering. Now sorts leaderboard locally.
 async function fetchLiveLeaderboard(pathPrefix) { 
     const mainContent = document.getElementById('dynamic-content');
     if (!currentUser) { 
@@ -1147,11 +1151,18 @@ async function fetchLiveLeaderboard(pathPrefix) {
             mainContent.innerHTML = `<div class="card" style="text-align:center; padding: 40px 20px;"><h2 style="color: var(--primary-yellow); font-size: 28px; margin-bottom: 10px;">🔒 Leaderboard Locked</h2><p style="color: var(--text-muted); font-size: 15px; max-width: 500px; margin: 0 auto 20px auto; line-height: 1.5;">To ensure competitive integrity, you must attempt a minimum of <b style="color: white;">${requiredText}</b> in this specific category before unlocking the global rankings.</p><div style="background: #2a2a2a; border: 1px solid var(--border-color); padding: 15px 25px; border-radius: 8px; display: inline-block; margin-bottom: 30px;"><span style="color: var(--primary-yellow); font-weight: bold; margin-right: 10px;">Your Progress:</span> <span style="color: white; font-weight: bold;">${progressText}</span></div><br><button class="btn-exam" onclick="window.location.hash='#/leaderboard'" style="background:#333; border:none;">&larr; Back to Categories</button></div>`; return;
         }
 
-        const boardSnapshot = await db.collection("leaderboards").where("quizPath", ">=", pathPrefix).where("quizPath", "<=", pathPrefix + "\uf8ff").orderBy("score", "desc").limit(10).get();
+        const boardSnapshot = await db.collection("leaderboards")
+            .where("quizPath", ">=", pathPrefix)
+            .where("quizPath", "<=", pathPrefix + "\uf8ff")
+            .get();
+            
         let html = `<div class="card"><h2 style="color:var(--primary-yellow);">🏆 Top 10: ${pathPrefix.split(' > ').pop()}</h2><div style="overflow-x:auto;"><table><tr><th>Rank</th><th>Student</th><th>Score</th><th>Accuracy</th><th>Time</th></tr>`;
         let myRank = ">100"; let inTop10 = false; let docs = [];
         boardSnapshot.forEach(doc => docs.push(doc.data()));
-
+        
+        // Local Javascript Sort
+        docs.sort((a, b) => b.score - a.score);
+        
         for(let i = 0; i < docs.length; i++) { if (docs[i].userId === currentUser.uid && docs[i].score === myBestScore) { myRank = i + 1; if (myRank <= 10) inTop10 = true; break; } }
         let displayCount = Math.min(10, docs.length);
         for(let i = 0; i < displayCount; i++) {
