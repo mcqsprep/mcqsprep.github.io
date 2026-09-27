@@ -258,7 +258,7 @@ function _renderView() {
 // 5. CUSTOM PRACTICE BUILDER WIZARD
 // ==========================================
 let cwState = { exam: '', subjects: [], subtopics: [], count: 20, level: 'Mixed' };
-let customQuizConfig = { paths: [], count: 20, level: 'Mixed' };
+let customQuizConfig = { exam: '', paths: [], count: 20, level: 'Mixed' };
 
 function getCustomSubjects(exam) {
     let subjects = [];
@@ -274,19 +274,38 @@ function getCustomSubjects(exam) {
     return subjects;
 }
 
+// FIXED: Automatically removes Difficulty sub-folders (Easy, Medium, Hard, Mixed) from Chapter Selection
 function getAllLeafNodes(subjectPaths) {
     let leafs = [];
+    const diffKeywords = ['easy', 'medium', 'hard', 'mixed'];
+    
     subjectPaths.forEach(subjPath => {
+        let depth = subjPath.split(' > ').length;
+        
+        // Traverse static appData
         let parts = subjPath.split(' > '); let curr = appData; let valid = true;
         for(let p of parts) { if(curr[p]) curr = curr[p]; else {valid = false; break;} }
         function traverse(node, pathStr) {
             let hasChildren = false;
             for(let k in node) { if(k === "Daily Quiz Challenge") continue; hasChildren = true; traverse(node[k], pathStr + " > " + k); }
-            if(!hasChildren) leafs.push(pathStr);
+            if(!hasChildren && !diffKeywords.includes(pathStr.split(' > ').pop().toLowerCase())) leafs.push(pathStr);
         }
         if(valid) traverse(curr, subjPath);
+        
+        // Traverse Custom Topics (Admin-made folders)
         for(let customP in customTopicTypes) {
-            if(customP.startsWith(subjPath) && customTopicTypes[customP] === 'mcq') { if(!leafs.includes(customP)) leafs.push(customP); }
+            if(customP.startsWith(subjPath) && customTopicTypes[customP] === 'mcq') {
+                let cParts = customP.split(' > ');
+                // Extract only the chapter level folder
+                if (cParts.length > depth) {
+                    let chapterPath = cParts.slice(0, depth + 1).join(' > ');
+                    let chapterName = cParts[depth];
+                    // Exclude difficulty named folders
+                    if (!diffKeywords.includes(chapterName.toLowerCase()) && !leafs.includes(chapterPath)) {
+                        leafs.push(chapterPath);
+                    }
+                }
+            }
         }
     });
     return [...new Set(leafs)].sort();
@@ -406,6 +425,7 @@ function cwStep4() {
 function cwLaunchQuiz() {
     cwState.level = document.getElementById('cwLevel').value; 
     cwState.count = parseInt(document.getElementById('cwCount').value) || 20;
+    customQuizConfig.exam = cwState.exam;
     customQuizConfig.paths = cwState.subtopics; 
     customQuizConfig.count = cwState.count; 
     customQuizConfig.level = cwState.level;
@@ -421,8 +441,6 @@ function requiresQuizLogin(pathArray) {
 // ==========================================
 // 6. TRACK PROGRESS, STREAK, AND PROFILE
 // ==========================================
-
-// FIXED: Calculate Streak robustness
 function calculateStreak(dates) {
     if (!dates || dates.length === 0) return 0;
     
@@ -1037,19 +1055,98 @@ async function _initiateQuizEngine(isCustomLaunch = false) {
 
         if (isCustomLaunch) {
             let unattempted = [];
+            // Fetch everything under selected chapter paths
             for (const p of customQuizConfig.paths) {
-                const snap = await db.collection("content").where("path", "==", p).get();
+                const snap = await db.collection("content").where("path", ">=", p).where("path", "<=", p + "\uf8ff").get();
                 snap.forEach(doc => {
                     let d = doc.data();
                     if (d.type === 'mcq' && !globalAttemptedIds.includes(doc.id)) {
-                        if (customQuizConfig.level === 'Mixed' || d.level === customQuizConfig.level || (!d.level && customQuizConfig.level === 'Mixed')) {
-                            unattempted.push({id: doc.id, ...d});
+                        // Match difficulty level (check direct field or folder name)
+                        let isLevelMatch = customQuizConfig.level === 'Mixed' || 
+                                           d.level === customQuizConfig.level || 
+                                           (!d.level && customQuizConfig.level === 'Mixed') ||
+                                           d.path.toLowerCase().includes(customQuizConfig.level.toLowerCase());
+                        
+                        if (isLevelMatch) {
+                            if (!unattempted.find(u => u.id === doc.id)) {
+                                unattempted.push({id: doc.id, ...d});
+                            }
                         }
                     }
                 });
             }
+
+            // Distribute proportional questions
+            let finalSelection = [];
+            let totalNeeded = customQuizConfig.count;
+
+            if (customQuizConfig.exam === 'NEET') {
+                let bot = unattempted.filter(q => q.path.includes('Botany')).sort(()=>0.5-Math.random());
+                let zoo = unattempted.filter(q => q.path.includes('Zoology')).sort(()=>0.5-Math.random());
+                let phy = unattempted.filter(q => q.path.includes('Physics')).sort(()=>0.5-Math.random());
+                let chem = unattempted.filter(q => q.path.includes('Chemistry')).sort(()=>0.5-Math.random());
+
+                let targetEach = Math.floor(totalNeeded / 4);
+                let remainder = totalNeeded % 4;
+
+                let targets = { bot: targetEach, zoo: targetEach, phy: targetEach, chem: targetEach };
+                let keys = ['bot', 'zoo', 'phy', 'chem'];
+                for(let i=0; i<remainder; i++) targets[keys[i]]++;
+
+                let pools = { bot, zoo, phy, chem };
+
+                for (let key of keys) {
+                    let take = Math.min(targets[key], pools[key].length);
+                    finalSelection.push(...pools[key].slice(0, take));
+                    pools[key] = pools[key].slice(take);
+                    targets[key] -= take;
+                }
+
+                let leftoverNeed = keys.reduce((sum, k) => sum + targets[k], 0);
+                if (leftoverNeed > 0) {
+                    let remainingQuestions = [];
+                    for(let k of keys) remainingQuestions.push(...pools[k]);
+                    remainingQuestions = remainingQuestions.sort(()=>0.5-Math.random());
+                    finalSelection.push(...remainingQuestions.slice(0, leftoverNeed));
+                }
+            } else {
+                // General Knowledge distribution
+                let subjectsPresent = [...new Set(unattempted.map(q => {
+                    let parts = q.path.split(' > ');
+                    return parts.length > 1 ? parts[1] : parts[0]; 
+                }))];
+
+                if (subjectsPresent.length > 0) {
+                    let targetEach = Math.floor(totalNeeded / subjectsPresent.length);
+                    let remainder = totalNeeded % subjectsPresent.length;
+
+                    let pools = {};
+                    subjectsPresent.forEach(s => pools[s] = unattempted.filter(q => q.path.includes(s)).sort(()=>0.5-Math.random()));
+
+                    let targets = {};
+                    subjectsPresent.forEach((s, i) => targets[s] = targetEach + (i < remainder ? 1 : 0));
+
+                    for (let s of subjectsPresent) {
+                        let take = Math.min(targets[s], pools[s].length);
+                        finalSelection.push(...pools[s].slice(0, take));
+                        pools[s] = pools[s].slice(take);
+                        targets[s] -= take;
+                    }
+
+                    let leftoverNeed = subjectsPresent.reduce((sum, s) => sum + targets[s], 0);
+                    if (leftoverNeed > 0) {
+                        let remainingQuestions = [];
+                        for(let s of subjectsPresent) remainingQuestions.push(...pools[s]);
+                        remainingQuestions = remainingQuestions.sort(()=>0.5-Math.random());
+                        finalSelection.push(...remainingQuestions.slice(0, leftoverNeed));
+                    }
+                } else {
+                    finalSelection = unattempted.sort(()=>0.5-Math.random()).slice(0, totalNeeded);
+                }
+            }
+
             totalQuestionsInDB = unattempted.length;
-            availableQuestions = unattempted.sort(()=>0.5-Math.random()).slice(0, customQuizConfig.count);
+            availableQuestions = finalSelection.sort(()=>0.5-Math.random()).slice(0, customQuizConfig.count);
             quizState.questions = availableQuestions;
             quizState.isCustom = true;
 
@@ -1105,7 +1202,6 @@ async function _initiateQuizEngine(isCustomLaunch = false) {
                 let disp = document.getElementById('quizTimeDisplay'); 
                 if(disp) disp.innerText = formatTime(quizState.secondsPassed); 
                 
-                // Fix: Automatically log the active streak day the second 5 minutes is reached
                 if (quizState.secondsPassed === 300 && currentUser) {
                     const d = new Date();
                     const localDateStr = d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,'0') + "-" + String(d.getDate()).padStart(2,'0');
@@ -1288,7 +1384,6 @@ async function finishQuiz() {
         else { let localProg = JSON.parse(localStorage.getItem('mcq_progress') || '{}'); localProg["prog_daily_challenge"] = [...(localProg["prog_daily_challenge"] || []), ...sessionAttemptedIds]; localStorage.setItem('mcq_progress', JSON.stringify(localProg)); }
     }
 
-    // Secondary layer: Also record streak upon standard finished completion to be 100% safe
     if (currentUser && attempted > 0) {
         const d = new Date();
         const localDateStr = d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,'0') + "-" + String(d.getDate()).padStart(2,'0');
@@ -1856,7 +1951,7 @@ async function loadAdminReports() {
         let html = '';
         items.forEach(data => {
             let stat = data.status === 'resolved' ? `<span style="background:var(--correct-green); color:white; padding:2px 8px; border-radius:12px; font-size:12px;">✅ Resolved</span>` : `<span style="background:#555; color:white; padding:2px 8px; border-radius:12px; font-size:12px;">⏳ Pending</span>`;
-            html += `<div class="content-item-card" style="border-left: 4px solid var(--wrong-red); background:#252525; padding:15px; margin-bottom:15px; border-radius:8px;"><div class="content-item-header"><span class="badge-path">${data.path || 'Unknown Path'}</span><span style="font-size:12px; color:var(--text-muted); float:right;">${data.timestamp ? new Date(data.timestamp.toMillis()).toLocaleString() : ""}</span></div><div style="margin: 10px 0; padding: 10px; background: rgba(244, 67, 54, 0.1); border-radius: 4px; display:flex; justify-content:space-between;"><div><p style="color:var(--wrong-red); margin:0 0 5px 0;"><b>Issue:</b> ${data.reason}</p><p style="margin:0; font-size:14px;"><b>Details:</b> ${data.description || 'No description provided.'}</p></div>${stat}</div><p style="margin:5px 0 10px 0; font-size:12px; color:var(--text-muted);">Reported by: ${data.studentName}</p><div style="background:#1a1a1a; padding:10px; border-radius:4px; font-size:14px; margin-bottom:10px;"><b>Question Content:</b><br>${data.questionText}</div><div style="display:flex; gap:10px; flex-wrap:wrap;"><button onclick="openEditModalFromReport('${data.questionId}')" style="padding:6px 12px; background:#2196F3; border:none; border-radius:4px; color:white; cursor:pointer;">✏️ Edit MCQ in Database</button><button onclick="resolveReport('${data.id}')" style="padding:6px 12px; background:var(--correct-green); border:none; border-radius:4px; color:white; cursor:pointer;" ${data.status==='resolved'?'disabled':''}>✅ Mark Resolved (Notifies User)</button></div></div>`;
+            html += `<div class="content-item-card" style="border-left: 4px solid var(--wrong-red); background:#252525; padding:15px; margin-bottom:15px; border-radius:8px;"><div class="content-item-header"><span class="badge-path">${data.path || 'Unknown Path'}</span><span style="font-size:12px; color:var(--text-muted); float:right;">${data.timestamp ? new Date(data.timestamp.toMillis()).toLocaleString() : ""}</span></div><div style="margin: 10px 0; padding: 10px; background: rgba(244, 67, 54, 0.1); border-radius: 4px; display:flex; justify-content:space-between;"><div><p style="color:var(--wrong-red); margin:0 0 5px 0;"><b>Issue:</b> ${data.reason}</p><p style="margin:0; font-size:14px;"><b>Details:</b> ${data.description || 'No description provided.'}</p></div>${stat}</div><p style="margin:5px 0 10px 0; font-size:12px; color:var(--text-muted);">Reported by: ${data.studentName}</p><div style="background:#1a1a1a; padding:10px; border-radius:4px; font-size:14px; margin:10px 0;"><b>Question Content:</b><br>${data.questionText}</div><div style="display:flex; gap:10px; flex-wrap:wrap;"><button onclick="openEditModalFromReport('${data.questionId}')" style="padding:6px 12px; background:#2196F3; border:none; border-radius:4px; color:white; cursor:pointer;">✏️ Edit MCQ in Database</button><button onclick="resolveReport('${data.id}')" style="padding:6px 12px; background:var(--correct-green); border:none; border-radius:4px; color:white; cursor:pointer;" ${data.status==='resolved'?'disabled':''}>✅ Mark Resolved (Notifies User)</button></div></div>`;
         });
         container.innerHTML = html;
     } catch(e) { container.innerHTML = `<p style="color:red;">Error: ${e.message}</p>`; }
@@ -1877,7 +1972,6 @@ async function openEditModalFromReport(questionId) {
     } catch (e) { showNotification("❌ Error fetching question: " + e.message); }
 }
 
-// FIXED: Now queries platform_feedback dynamically to inject user ratings into the table
 async function loadAdminUsers() {
     const container = document.getElementById('users-table-container'); 
     container.innerHTML = `<p style="color:var(--primary-yellow);">Fetching students and feedback...</p>`;
