@@ -146,11 +146,24 @@ function handleRouting() {
     }
 }
 
-function goHome() { window.location.hash = '#/home'; }
+function goHome() { 
+    // Fix: If already on home but state changed (e.g. custom wizard), force a render.
+    if (window.location.hash === '#/home' || window.location.hash === '') {
+        currentPath = [];
+        _renderView();
+    } else {
+        window.location.hash = '#/home'; 
+    }
+}
 function navigateTo(key) { window.location.hash = '#/path/' + encodeURIComponent([...currentPath, key].join('/')).replace(/%2F/g, '/'); }
 function jumpToSection(pathArray) { window.location.hash = '#/path/' + encodeURIComponent(pathArray.join('/')).replace(/%2F/g, '/'); }
-function showLeaderboardOptions() { window.location.hash = '#/leaderboard'; }
-function goBack() { window.history.back(); }
+function goBack() { 
+    if (window.history.length > 1 && window.location.hash !== '#/home') {
+        window.history.back(); 
+    } else {
+        goHome();
+    }
+}
 
 // ==========================================
 // 4. MAIN VIEW RENDERER (HOMEPAGE & TOPICS)
@@ -408,6 +421,50 @@ function requiresQuizLogin(pathArray) {
 // ==========================================
 // 6. TRACK PROGRESS, STREAK, AND PROFILE
 // ==========================================
+
+// Algorithm to calculate the user's daily active streak
+function calculateStreak(dates) {
+    if (!dates || dates.length === 0) return 0;
+    
+    // Convert to unique date strings and sort descending
+    let uniqueDates = [...new Set(dates)].map(d => new Date(d).setHours(0,0,0,0));
+    uniqueDates.sort((a, b) => b - a); 
+    
+    let today = new Date().setHours(0,0,0,0);
+    let yesterday = new Date(new Date().setHours(0,0,0,0));
+    yesterday.setDate(new Date().getDate() - 1);
+    yesterday = yesterday.setHours(0,0,0,0);
+    
+    let streak = 0;
+    let checkDate = today;
+    
+    // Check if the streak is active today or yesterday
+    if (uniqueDates[0] === today) {
+        streak++;
+        checkDate = today;
+    } else if (uniqueDates[0] === yesterday) {
+        streak++;
+        checkDate = yesterday;
+    } else {
+        return 0; // Streak is lost
+    }
+    
+    // Count consecutive days backward
+    for (let i = 1; i < uniqueDates.length; i++) {
+        let nextExpected = new Date(checkDate);
+        nextExpected.setDate(nextExpected.getDate() - 1);
+        nextExpected = nextExpected.setHours(0,0,0,0);
+        
+        if (uniqueDates[i] === nextExpected) {
+            streak++;
+            checkDate = nextExpected;
+        } else {
+            break;
+        }
+    }
+    return streak;
+}
+
 async function _renderStreak() {
     if (!currentUser) return document.getElementById('dynamic-content').innerHTML = `<div class="card" style="text-align:center;"><h2>⚠️ Sign In Required</h2><button class="btn-exam" onclick="goBack()" style="background:#333; border:none;">Back</button></div>`;
     document.getElementById('breadcrumb-text').innerText = "Home / Profile / My Streak";
@@ -614,7 +671,7 @@ let cropper = null; let aiChatHistory = []; let lastExtractedQuestion = null;
 
 function openAIModal() {
     document.getElementById('aiModal').style.display = 'flex'; 
-    document.getElementById('ai-left-view').style.display = 'block'; // FIXED THIS ID!
+    document.getElementById('ai-left-view').style.display = 'block'; 
     document.getElementById('ai-cropper-view').style.display = 'none'; 
     document.getElementById('ai-loading-view').style.display = 'none';
     document.getElementById('ai-chat-view').style.display = 'none'; 
@@ -663,7 +720,7 @@ function handleAIImageUpload(e) {
     const file = e.target.files[0]; if(!file) return;
     const reader = new FileReader();
     reader.onload = function(event) {
-        document.getElementById('ai-left-view').style.display = 'none'; // FIXED THIS ID!
+        document.getElementById('ai-left-view').style.display = 'none'; 
         document.getElementById('ai-cropper-view').style.display = 'flex';
         const imgNode = document.getElementById('aiCropperImage'); 
         imgNode.src = event.target.result;
@@ -676,7 +733,7 @@ function handleAIImageUpload(e) {
 function cancelCropper() { 
     if(cropper) { cropper.destroy(); cropper = null; } 
     document.getElementById('ai-cropper-view').style.display = 'none'; 
-    document.getElementById('ai-left-view').style.display = 'block'; // FIXED THIS ID!
+    document.getElementById('ai-left-view').style.display = 'block'; 
     document.getElementById('aiImageInput').value = ""; 
     document.getElementById('aiCameraInput').value = ""; 
 }
@@ -686,7 +743,7 @@ async function confirmCropAndSolve() {
     const canvas = cropper.getCroppedCanvas(); 
     const base64Image = canvas.toDataURL('image/jpeg').split(',')[1]; 
     document.getElementById('ai-cropper-view').style.display = 'none'; 
-    document.getElementById('ai-left-view').style.display = 'block'; // FIXED THIS ID!
+    document.getElementById('ai-left-view').style.display = 'block'; 
     await callAIWorker({ image: base64Image, mimeType: 'image/jpeg', mode: 'solve' });
 }
 
@@ -1214,6 +1271,14 @@ async function finishQuiz() {
         else { let localProg = JSON.parse(localStorage.getItem('mcq_progress') || '{}'); localProg["prog_daily_challenge"] = [...(localProg["prog_daily_challenge"] || []), ...sessionAttemptedIds]; localStorage.setItem('mcq_progress', JSON.stringify(localProg)); }
     }
 
+    // Fix: Record streak active date upon any quiz completion
+    if (currentUser && attempted > 0) {
+        let todayStr = new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD
+        db.collection("users").doc(currentUser.uid).set({
+            activeDates: firebase.firestore.FieldValue.arrayUnion(todayStr)
+        }, {merge: true});
+    }
+
     let accuracy = attempted === 0 ? 0 : Math.round((correctCount / attempted) * 100); 
     let timeStr = formatTime(quizState.secondsPassed); let pathString = quizState.isCustom ? "Custom Practice" : currentPath.join(' > '); let studentName = currentUser ? currentUser.displayName.split(" ")[0] : "Student";
 
@@ -1235,8 +1300,8 @@ async function finishQuiz() {
             <div style="display:flex; justify-content:center; gap:15px; flex-wrap:wrap; margin-bottom: 40px;">
                 ${scoreCardsHtml}
                 <div style="background:#2a2a2a; padding: 20px; border-radius: 8px; min-width: 100px; flex: 1;"><div style="font-size: 32px; color: white; font-weight: bold;">${attempted}</div><div style="color: var(--text-muted); font-size: 14px;">Attempted</div></div>
-                <div style="background:#2a2a2a; padding: 20px; border-radius: 8px; min-width: 100px; flex: 1;"><div style="font-size: 32px; color: var(--correct-green); font-weight: bold;">${acc}%</div><div style="color: var(--text-muted); font-size: 14px;">Accuracy</div></div>
-                <div style="background:#2a2a2a; padding: 20px; border-radius: 8px; min-width: 100px; flex: 1;"><div style="font-size: 32px; color: white; font-weight: bold;">${tStr}</div><div style="color: var(--text-muted); font-size: 14px;">Time Taken</div></div>
+                <div style="background:#2a2a2a; padding: 20px; border-radius: 8px; min-width: 100px; flex: 1;"><div style="font-size: 32px; color: var(--correct-green); font-weight: bold;">${accuracy}%</div><div style="color: var(--text-muted); font-size: 14px;">Accuracy</div></div>
+                <div style="background:#2a2a2a; padding: 20px; border-radius: 8px; min-width: 100px; flex: 1;"><div style="font-size: 32px; color: white; font-weight: bold;">${timeStr}</div><div style="color: var(--text-muted); font-size: 14px;">Time Taken</div></div>
             </div>
             <h3 style="margin-top:20px; padding-bottom: 10px; border-bottom: 1px solid var(--border-color); text-align: left;">📊 Detailed Analysis</h3>
             <div class="review-tabs"><button class="review-tab-btn" onclick="showReviewTab('correct')" style="color:var(--correct-green);">✅ Correct (${correctCount})</button><button class="review-tab-btn" onclick="showReviewTab('wrong')" style="color:var(--wrong-red);">❌ Wrong (${wrongCount})</button><button class="review-tab-btn" onclick="showReviewTab('skipped')" style="color:var(--primary-yellow);">⏭️ Skipped (${skippedCount})</button></div>
@@ -1385,8 +1450,15 @@ function _renderAdminPanel() {
                     </div>
                     <button class="btn-exam" onclick="createCustomTopic()" style="background-color:var(--primary-yellow); color:black; border:none; width:100%; max-width:200px;">+ Add Subtopic</button>
                 </div>
+                
                 <h4 style="color:var(--primary-yellow); margin-top:30px;">Active Custom Folders</h4>
-                <input type="text" id="adminTopicSearch" class="input-field" placeholder="🔍 Search folders by name or path..." oninput="filterAdminTopics()">
+                <!-- Fix: Added Dynamic Folder Filter Dropdown -->
+                <div style="display:flex; gap:10px; margin-bottom:15px; flex-wrap:wrap;">
+                    <select id="adminTopicPathFilter" class="input-field" onchange="filterAdminTopics()" style="flex:1; min-width:200px; margin-bottom:0;">
+                        <option value="ALL">All Paths</option>
+                    </select>
+                    <input type="text" id="adminTopicSearch" class="input-field" placeholder="🔍 Search folders by name..." oninput="filterAdminTopics()" style="flex:2; min-width:200px; margin-bottom:0;">
+                </div>
                 <div id="admin-topic-list-container"></div>
             </div>
 
@@ -1459,13 +1531,21 @@ async function loadAdminTopicsList() {
         globalTopicsData = [];
         snap.forEach(doc => globalTopicsData.push({ id: doc.id, ...doc.data() }));
         globalTopicsData.sort((a,b) => (a.parentPath || "").localeCompare(b.parentPath || ""));
+        
+        // Fix: Auto-populate the Path Filter Dropdown
+        let paths = [...new Set(globalTopicsData.map(t => t.parentPath))].sort();
+        let filterDropdown = document.getElementById('adminTopicPathFilter');
+        if (filterDropdown) {
+            filterDropdown.innerHTML = `<option value="ALL">All Paths</option>` + paths.map(p => `<option value="${p}">${p}</option>`).join('');
+        }
+        
         renderAdminTopicsList(globalTopicsData);
     } catch(e) { container.innerHTML = `<p>Error: ${e.message}</p>`; }
 }
 
 function renderAdminTopicsList(topicsArray) {
     const container = document.getElementById('admin-topic-list-container');
-    if(topicsArray.length === 0) { container.innerHTML = `<p>No custom folders found.</p>`; return; }
+    if(topicsArray.length === 0) { container.innerHTML = `<p>No custom folders found matching criteria.</p>`; return; }
     let html = '';
     topicsArray.forEach(d => {
         let cleanName = d.name.replace(/'/g, "\\'");
@@ -1484,9 +1564,16 @@ function renderAdminTopicsList(topicsArray) {
     container.innerHTML = html;
 }
 
+// Fix: Updated logic to filter by search AND the dropdown selection
 function filterAdminTopics() {
     let q = document.getElementById('adminTopicSearch').value.toLowerCase();
-    let filtered = globalTopicsData.filter(t => t.name.toLowerCase().includes(q) || t.parentPath.toLowerCase().includes(q));
+    let pathFilter = document.getElementById('adminTopicPathFilter') ? document.getElementById('adminTopicPathFilter').value : 'ALL';
+    
+    let filtered = globalTopicsData.filter(t => {
+        let matchesSearch = t.name.toLowerCase().includes(q) || t.parentPath.toLowerCase().includes(q);
+        let matchesPath = pathFilter === 'ALL' || t.parentPath === pathFilter;
+        return matchesSearch && matchesPath;
+    });
     renderAdminTopicsList(filtered);
 }
 
