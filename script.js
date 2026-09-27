@@ -156,7 +156,7 @@ function goHome() {
 }
 function navigateTo(key) { window.location.hash = '#/path/' + encodeURIComponent([...currentPath, key].join('/')).replace(/%2F/g, '/'); }
 function jumpToSection(pathArray) { window.location.hash = '#/path/' + encodeURIComponent(pathArray.join('/')).replace(/%2F/g, '/'); }
-function showLeaderboardOptions() { window.location.hash = '#/leaderboard'; } // FIX: Restored routing function
+function showLeaderboardOptions() { window.location.hash = '#/leaderboard'; }
 function goBack() { 
     if (window.history.length > 1 && window.location.hash !== '#/home') {
         window.history.back(); 
@@ -421,37 +421,46 @@ function requiresQuizLogin(pathArray) {
 // ==========================================
 // 6. TRACK PROGRESS, STREAK, AND PROFILE
 // ==========================================
+
+// FIXED: Calculate Streak robustness
 function calculateStreak(dates) {
     if (!dates || dates.length === 0) return 0;
-    let uniqueDates = [...new Set(dates)].map(d => new Date(d).setHours(0,0,0,0));
+    
+    let uniqueDates = [...new Set(dates)].map(d => {
+        let parts = d.split('-');
+        return new Date(parts[0], parts[1]-1, parts[2]).getTime();
+    });
     uniqueDates.sort((a, b) => b - a); 
     
-    let today = new Date().setHours(0,0,0,0);
-    let yesterday = new Date(new Date().setHours(0,0,0,0));
-    yesterday.setDate(new Date().getDate() - 1);
-    yesterday = yesterday.setHours(0,0,0,0);
+    let today = new Date();
+    today.setHours(0,0,0,0);
+    let todayTime = today.getTime();
+    
+    let yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    let yesterdayTime = yesterday.getTime();
     
     let streak = 0;
-    let checkDate = today;
+    let checkTime = todayTime;
     
-    if (uniqueDates[0] === today) {
+    if (uniqueDates[0] === todayTime) {
         streak++;
-        checkDate = today;
-    } else if (uniqueDates[0] === yesterday) {
+        checkTime = todayTime;
+    } else if (uniqueDates[0] === yesterdayTime) {
         streak++;
-        checkDate = yesterday;
+        checkTime = yesterdayTime;
     } else {
         return 0;
     }
     
     for (let i = 1; i < uniqueDates.length; i++) {
-        let nextExpected = new Date(checkDate);
+        let nextExpected = new Date(checkTime);
         nextExpected.setDate(nextExpected.getDate() - 1);
-        nextExpected = nextExpected.setHours(0,0,0,0);
+        let nextExpectedTime = nextExpected.getTime();
         
-        if (uniqueDates[i] === nextExpected) {
+        if (uniqueDates[i] === nextExpectedTime) {
             streak++;
-            checkDate = nextExpected;
+            checkTime = nextExpectedTime;
         } else {
             break;
         }
@@ -1079,7 +1088,7 @@ async function _initiateQuizEngine(isCustomLaunch = false) {
 
         if (availableQuestions.length === 0) { 
             if(isCustomLaunch) mainContent.innerHTML = `<div class="card" style="text-align:center;"><h2>No Questions Found</h2><p style="color:var(--text-muted);">We couldn't find any unattempted questions matching your selected chapters and difficulty level.</p><button class="btn-exam" onclick="goHome()" style="background:#333; border:none;">&larr; Go Back</button></div>`;
-            else if(totalQuestionsInDB === 0) mainContent.innerHTML = `<div class="card"><h2>No Questions Available</h2><p style="color:var(--text-muted);">Not enough questions available in the database for this section.</p><button class="btn-exam" onclick="goBack()" style="background:#333; border:none;">&larr; Go Back</button></div>`; 
+            else if(totalQuestionsInDB === 0) mainContent.innerHTML = `<div class="card"><h2>No Questions Available</h2><p style="color:var(--text-muted);">Not enough questions available in the database for this section.</p><button class="btn-exam" onclick="goHome()" style="background:#333; border:none;">&larr; Go Back</button></div>`; 
             else {
                 let safePath = "prog_" + currentPath.join('_').replace(/[^a-zA-Z0-9]/g, '_');
                 mainContent.innerHTML = `<div class="card" style="text-align:center; padding: 40px 20px;"><h2 style="color: var(--primary-yellow); font-size: 28px; margin-bottom: 15px;">🎉 Section Completed!</h2><p style="color: var(--text-muted); font-size: 16px; margin-bottom: 25px;">You have successfully attempted all available questions in this section.</p><div style="display:flex; justify-content:center; gap:15px; flex-wrap:wrap;"><button class="btn-exam" onclick="resetProgress('${safePath}')" style="background: #333; color: white; border:none;">🔄 Reset My Progress</button><button class="btn-exam" onclick="goBack()" style="background:#333; border:none;">&larr; Explore Other Topics</button></div></div>`;
@@ -1091,7 +1100,21 @@ async function _initiateQuizEngine(isCustomLaunch = false) {
         
         clearInterval(quizState.timer);
         quizState.timer = setInterval(() => {
-            if (!quizState.isTimerPaused) { quizState.secondsPassed++; let disp = document.getElementById('quizTimeDisplay'); if(disp) disp.innerText = formatTime(quizState.secondsPassed); }
+            if (!quizState.isTimerPaused) { 
+                quizState.secondsPassed++; 
+                let disp = document.getElementById('quizTimeDisplay'); 
+                if(disp) disp.innerText = formatTime(quizState.secondsPassed); 
+                
+                // Fix: Automatically log the active streak day the second 5 minutes is reached
+                if (quizState.secondsPassed === 300 && currentUser) {
+                    const d = new Date();
+                    const localDateStr = d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,'0') + "-" + String(d.getDate()).padStart(2,'0');
+                    db.collection("users").doc(currentUser.uid).set({
+                        activeDates: firebase.firestore.FieldValue.arrayUnion(localDateStr)
+                    }, {merge: true});
+                    showNotification("🔥 5 Minutes Practice Reached! Streak updated!");
+                }
+            }
         }, 1000);
         _renderQuizQuestion();
     } catch (error) { mainContent.innerHTML = `<div class="card"><h2>Error</h2><p>${error.message}</p><button class="btn-exam" onclick="goBack()">&larr; Go Back</button></div>`; }
@@ -1265,10 +1288,12 @@ async function finishQuiz() {
         else { let localProg = JSON.parse(localStorage.getItem('mcq_progress') || '{}'); localProg["prog_daily_challenge"] = [...(localProg["prog_daily_challenge"] || []), ...sessionAttemptedIds]; localStorage.setItem('mcq_progress', JSON.stringify(localProg)); }
     }
 
+    // Secondary layer: Also record streak upon standard finished completion to be 100% safe
     if (currentUser && attempted > 0) {
-        let todayStr = new Date().toLocaleDateString('en-CA');
+        const d = new Date();
+        const localDateStr = d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,'0') + "-" + String(d.getDate()).padStart(2,'0');
         db.collection("users").doc(currentUser.uid).set({
-            activeDates: firebase.firestore.FieldValue.arrayUnion(todayStr)
+            activeDates: firebase.firestore.FieldValue.arrayUnion(localDateStr)
         }, {merge: true});
     }
 
@@ -1852,12 +1877,33 @@ async function openEditModalFromReport(questionId) {
     } catch (e) { showNotification("❌ Error fetching question: " + e.message); }
 }
 
+// FIXED: Now queries platform_feedback dynamically to inject user ratings into the table
 async function loadAdminUsers() {
-    const container = document.getElementById('users-table-container'); container.innerHTML = `<p style="color:var(--primary-yellow);">Fetching students...</p>`;
+    const container = document.getElementById('users-table-container'); 
+    container.innerHTML = `<p style="color:var(--primary-yellow);">Fetching students and feedback...</p>`;
     try {
+        const feedbackSnap = await db.collection("platform_feedback").get();
+        let feedbacks = {};
+        feedbackSnap.forEach(doc => {
+            let d = doc.data();
+            feedbacks[d.studentId] = { rating: d.rating, feedback: d.feedback };
+        });
+
         const snapshot = await db.collection("users").orderBy("lastLogin", "desc").get();
-        let html = `<table><tr><th>Name</th><th>Email</th><th>Last Login</th></tr>`;
-        snapshot.forEach(doc => { html += `<tr><td>${doc.data().displayName}</td><td>${doc.data().email}</td><td>${doc.data().lastLogin ? doc.data().lastLogin.toDate().toLocaleString() : "Unknown"}</td></tr>`; });
+        let html = `<table style="width:100%; text-align:left;"><tr><th>Name</th><th>Email</th><th>Last Login</th><th>Rating</th><th>Feedback</th></tr>`;
+        snapshot.forEach(doc => { 
+            let d = doc.data();
+            let uid = doc.id;
+            let fb = feedbacks[uid] || { rating: '-', feedback: '-' };
+            let stars = fb.rating !== '-' ? '⭐'.repeat(fb.rating) : '-';
+            html += `<tr>
+                <td>${d.displayName || 'Unknown'}</td>
+                <td>${d.email || '-'}</td>
+                <td>${d.lastLogin ? d.lastLogin.toDate().toLocaleString() : "Unknown"}</td>
+                <td style="color:var(--primary-yellow);">${stars}</td>
+                <td style="max-width:200px; font-size:13px; color:var(--text-muted);">${fb.feedback}</td>
+            </tr>`; 
+        });
         container.innerHTML = html + `</table>`;
     } catch(e) { container.innerHTML = `<p style="color:red;">Error: ${e.message}</p>`; }
 }
