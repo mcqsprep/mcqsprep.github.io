@@ -147,7 +147,6 @@ function handleRouting() {
 }
 
 function goHome() { 
-    // Fix: If already on home but state changed (e.g. custom wizard), force a render.
     if (window.location.hash === '#/home' || window.location.hash === '') {
         currentPath = [];
         _renderView();
@@ -157,6 +156,7 @@ function goHome() {
 }
 function navigateTo(key) { window.location.hash = '#/path/' + encodeURIComponent([...currentPath, key].join('/')).replace(/%2F/g, '/'); }
 function jumpToSection(pathArray) { window.location.hash = '#/path/' + encodeURIComponent(pathArray.join('/')).replace(/%2F/g, '/'); }
+function showLeaderboardOptions() { window.location.hash = '#/leaderboard'; } // FIX: Restored routing function
 function goBack() { 
     if (window.history.length > 1 && window.location.hash !== '#/home') {
         window.history.back(); 
@@ -421,12 +421,8 @@ function requiresQuizLogin(pathArray) {
 // ==========================================
 // 6. TRACK PROGRESS, STREAK, AND PROFILE
 // ==========================================
-
-// Algorithm to calculate the user's daily active streak
 function calculateStreak(dates) {
     if (!dates || dates.length === 0) return 0;
-    
-    // Convert to unique date strings and sort descending
     let uniqueDates = [...new Set(dates)].map(d => new Date(d).setHours(0,0,0,0));
     uniqueDates.sort((a, b) => b - a); 
     
@@ -438,7 +434,6 @@ function calculateStreak(dates) {
     let streak = 0;
     let checkDate = today;
     
-    // Check if the streak is active today or yesterday
     if (uniqueDates[0] === today) {
         streak++;
         checkDate = today;
@@ -446,10 +441,9 @@ function calculateStreak(dates) {
         streak++;
         checkDate = yesterday;
     } else {
-        return 0; // Streak is lost
+        return 0;
     }
     
-    // Count consecutive days backward
     for (let i = 1; i < uniqueDates.length; i++) {
         let nextExpected = new Date(checkDate);
         nextExpected.setDate(nextExpected.getDate() - 1);
@@ -1271,9 +1265,8 @@ async function finishQuiz() {
         else { let localProg = JSON.parse(localStorage.getItem('mcq_progress') || '{}'); localProg["prog_daily_challenge"] = [...(localProg["prog_daily_challenge"] || []), ...sessionAttemptedIds]; localStorage.setItem('mcq_progress', JSON.stringify(localProg)); }
     }
 
-    // Fix: Record streak active date upon any quiz completion
     if (currentUser && attempted > 0) {
-        let todayStr = new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD
+        let todayStr = new Date().toLocaleDateString('en-CA');
         db.collection("users").doc(currentUser.uid).set({
             activeDates: firebase.firestore.FieldValue.arrayUnion(todayStr)
         }, {merge: true});
@@ -1452,7 +1445,6 @@ function _renderAdminPanel() {
                 </div>
                 
                 <h4 style="color:var(--primary-yellow); margin-top:30px;">Active Custom Folders</h4>
-                <!-- Fix: Added Dynamic Folder Filter Dropdown -->
                 <div style="display:flex; gap:10px; margin-bottom:15px; flex-wrap:wrap;">
                     <select id="adminTopicPathFilter" class="input-field" onchange="filterAdminTopics()" style="flex:1; min-width:200px; margin-bottom:0;">
                         <option value="ALL">All Paths</option>
@@ -1532,7 +1524,6 @@ async function loadAdminTopicsList() {
         snap.forEach(doc => globalTopicsData.push({ id: doc.id, ...doc.data() }));
         globalTopicsData.sort((a,b) => (a.parentPath || "").localeCompare(b.parentPath || ""));
         
-        // Fix: Auto-populate the Path Filter Dropdown
         let paths = [...new Set(globalTopicsData.map(t => t.parentPath))].sort();
         let filterDropdown = document.getElementById('adminTopicPathFilter');
         if (filterDropdown) {
@@ -1564,7 +1555,6 @@ function renderAdminTopicsList(topicsArray) {
     container.innerHTML = html;
 }
 
-// Fix: Updated logic to filter by search AND the dropdown selection
 function filterAdminTopics() {
     let q = document.getElementById('adminTopicSearch').value.toLowerCase();
     let pathFilter = document.getElementById('adminTopicPathFilter') ? document.getElementById('adminTopicPathFilter').value : 'ALL';
