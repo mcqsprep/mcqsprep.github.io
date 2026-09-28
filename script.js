@@ -437,38 +437,39 @@ function requiresQuizLogin(pathArray) {
 // ==========================================
 // 6. TRACK PROGRESS, STREAK, AND PROFILE
 // ==========================================
+
 function _renderProgressSelection() {
     if (!currentUser) return document.getElementById('dynamic-content').innerHTML = `<div class="card" style="text-align:center;"><h2>⚠️ Sign In Required</h2><button class="btn-exam" onclick="goBack()" style="background:#333; border:none;">Back</button></div>`;
     document.getElementById('breadcrumb-text').innerText = "Home / Profile / Track Progress";
     document.getElementById('dynamic-content').innerHTML = `
         <div class="card" style="text-align:center; padding: 40px 20px;">
-            <h2 style="color:var(--primary-yellow); font-size:28px;">📊 Select Analytics Dashboard</h2>
-            <p style="color:var(--text-muted); margin-bottom:30px;">Choose an exam category to view your detailed performance metrics and weak spots.</p>
-            <div style="display:flex; gap:15px; justify-content:center; flex-wrap:wrap;">
-                <button class="btn-exam" onclick="window.location.hash='#/progress/NEET'" style="width:250px; padding:20px; font-size:18px;">🩺 NEET Analytics</button>
-                <button class="btn-exam" onclick="window.location.hash='#/progress/General Knowledge'" style="width:250px; padding:20px; font-size:18px;">🌍 GK Analytics</button>
+            <h2 style="color:var(--primary-yellow); font-size:24px;">📊 Select Analytics Dashboard</h2>
+            <p style="color:var(--text-muted); margin-bottom:30px; font-size:14px;">Choose an exam category to view your detailed performance metrics and weak spots.</p>
+            <div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
+                <button class="btn-exam" onclick="window.location.hash='#/progress/NEET_MCQ'" style="width:100%; max-width:250px; padding:15px; font-size:16px;">🩺 NEET MCQs Practice</button>
+                <button class="btn-exam" onclick="window.location.hash='#/progress/NEET_MOCK'" style="width:100%; max-width:250px; padding:15px; font-size:16px;">⏱️ NEET Mock Test</button>
+                <button class="btn-exam" onclick="window.location.hash='#/progress/GK'" style="width:100%; max-width:250px; padding:15px; font-size:16px;">🌍 GK Analytics</button>
             </div>
-            <button class="btn-exam" onclick="goBack()" style="margin-top:40px; background:#333; border:none;">&larr; Back</button>
+            <button class="btn-exam" onclick="goBack()" style="margin-top:30px; background:#333; border:none;">&larr; Back</button>
         </div>
     `;
 }
 
 async function _renderProgressDashboard(category) {
     if (!currentUser) return;
-    document.getElementById('breadcrumb-text').innerText = `Home / Profile / Progress / ${category}`;
+    
+    let displayCategory = category === 'NEET_MCQ' ? 'NEET MCQs Practice' : (category === 'NEET_MOCK' ? 'NEET Mock Tests' : 'General Knowledge');
+    document.getElementById('breadcrumb-text').innerText = `Home / Profile / Progress / ${displayCategory}`;
     const mc = document.getElementById('dynamic-content'); 
-    mc.innerHTML = `<div class="card"><h2>📊 Compiling ${category} Diagnostics...</h2></div>`;
+    mc.innerHTML = `<div class="card"><h2>📊 Compiling Diagnostics...</h2></div>`;
     
     try {
-        // FIX: Removed .orderBy("timestamp") to bypass Firestore index requirements. 
-        // We will fetch and then sort locally in javascript.
         const snap = await db.collection("leaderboards").where("userId", "==", currentUser.uid).get();
         let validDocs = [];
         let tempDocs = [];
         
         snap.forEach(doc => { tempDocs.push(doc.data()); });
 
-        // Local JavaScript Sort (Bypasses Firebase Index Error)
         tempDocs.sort((a, b) => {
             let tA = a.timestamp ? a.timestamp.toMillis() : 0;
             let tB = b.timestamp ? b.timestamp.toMillis() : 0;
@@ -477,24 +478,30 @@ async function _renderProgressDashboard(category) {
 
         tempDocs.forEach(d => {
             let isNeet = d.examCategory === 'NEET' || (d.quizPath && d.quizPath.includes('NEET'));
-            if (category === 'NEET' && isNeet) validDocs.push(d);
-            else if (category === 'General Knowledge' && !isNeet) validDocs.push(d);
+            let isMock = d.quizPath && d.quizPath.includes('Mock Test');
+            
+            if (category === 'NEET_MCQ' && isNeet && !isMock) validDocs.push(d);
+            else if (category === 'NEET_MOCK' && isNeet && isMock) validDocs.push(d);
+            else if (category === 'GK' && !isNeet) validDocs.push(d);
         });
 
         if (validDocs.length === 0) {
-            mc.innerHTML = `<div class="card" style="text-align:center;"><h2>No Data Available</h2><p style="color:var(--text-muted);">You haven't completed any quizzes in the ${category} category yet.</p><button class="btn-exam" onclick="goBack()" style="background:#333; border:none;">&larr; Back</button></div>`;
+            mc.innerHTML = `<div class="card" style="text-align:center;"><h2>No Data Available</h2><p style="color:var(--text-muted); font-size:14px;">You haven't completed any quizzes in the ${displayCategory} category yet.</p><button class="btn-exam" onclick="goBack()" style="background:#333; border:none;">&larr; Back</button></div>`;
             return;
         }
 
-        let totalQuizzes = validDocs.length;
-        let totalScore = 0; let totalQuestions = 0; let accuracySum = 0;
-        let aggregatedSubs = {};
-        let accuracyTrend = [];
+        let totalScore = 0; let totalQuestions = 0; let correctCount = 0; let wrongCount = 0;
+        let aggregatedSubs = {}; let accuracyTrend = [];
 
         validDocs.forEach(d => {
             totalScore += (d.score || 0); 
             totalQuestions += (d.attemptedQuestions || 0);
-            accuracySum += (d.accuracy || 0);
+            
+            let c = d.correctCount !== undefined ? d.correctCount : Math.round(((d.accuracy||0)/100) * (d.attemptedQuestions||0));
+            let w = d.wrongCount !== undefined ? d.wrongCount : ((d.attemptedQuestions||0) - c);
+            
+            correctCount += c;
+            wrongCount += w;
             accuracyTrend.push(d.accuracy || 0);
             
             if (d.subjectBreakdown) {
@@ -506,11 +513,11 @@ async function _renderProgressDashboard(category) {
             }
         });
 
-        let avgAccuracy = Math.round(accuracySum / totalQuizzes);
+        let overallAccuracy = totalQuestions > 0 ? Math.round((correctCount / totalQuestions) * 100) : 0;
         let recentTrend = accuracyTrend.slice(-10);
 
         let subjectHtml = '';
-        let weakSpotsHtml = '';
+        let weakSubjects = [];
         let validSubjectsCount = 0;
 
         Object.keys(aggregatedSubs).sort().forEach(subj => {
@@ -520,60 +527,73 @@ async function _renderProgressDashboard(category) {
                 let acc = Math.round((sData.correct / sData.attempts) * 100);
                 let color = acc >= 70 ? 'var(--correct-green)' : (acc >= 50 ? 'var(--primary-yellow)' : 'var(--wrong-red)');
                 
-                if (acc < 50) {
-                    weakSpotsHtml += `<span style="background:rgba(244,67,54,0.1); border:1px solid var(--wrong-red); color:var(--wrong-red); padding:6px 12px; border-radius:20px; font-size:13px; font-weight:bold;">⚠️ ${subj} (${acc}%)</span> `;
-                }
+                if (acc < 50) weakSubjects.push(`${subj} (${acc}%)`);
 
                 subjectHtml += `
-                    <div style="margin-bottom:18px;">
-                        <div style="display:flex; justify-content:space-between; font-size:14px; margin-bottom:8px; font-weight:bold;">
+                    <div style="margin-bottom:15px;">
+                        <div style="display:flex; justify-content:space-between; font-size:13px; margin-bottom:5px; font-weight:bold;">
                             <span style="color:var(--text-light);">${subj}</span>
-                            <span style="color:${color};">${acc}% <span style="color:#666; font-size:11px; font-weight:normal;">(${sData.correct}/${sData.attempts})</span></span>
+                            <span style="color:${color};">${acc}% <span style="color:#666; font-size:10px; font-weight:normal;">(${sData.correct}/${sData.attempts})</span></span>
                         </div>
-                        <div style="width:100%; background:#333; height:10px; border-radius:5px; overflow:hidden;">
-                            <div style="width:${acc}%; background:${color}; height:100%; border-radius:5px;"></div>
+                        <div style="width:100%; background:#333; height:8px; border-radius:4px; overflow:hidden;">
+                            <div style="width:${acc}%; background:${color}; height:100%; border-radius:4px;"></div>
                         </div>
                     </div>
                 `;
             }
         });
 
-        if (validSubjectsCount === 0) subjectHtml = `<p style="color:var(--text-muted); font-size:14px;">Detailed subject analytics only generate for quizzes completed after this update.</p>`;
-        if (weakSpotsHtml === '') weakSpotsHtml = `<span style="color:var(--correct-green); font-size:14px;">✅ No critical weak spots detected (>50% accuracy). Keep it up!</span>`;
+        if (validSubjectsCount === 0) subjectHtml = `<p style="color:var(--text-muted); font-size:13px;">Detailed subject analytics generate for new quizzes.</p>`;
+        
+        let weakSpotsText = weakSubjects.length > 0 
+            ? weakSubjects.join(' • ') 
+            : "<span style='color:var(--correct-green);'>✅ Excellent! All subjects are >50% accuracy. Keep it up!</span>";
 
         mc.innerHTML = `
-        <div class="card">
-            <h2 style="color:var(--primary-yellow); margin-bottom:25px;">${category} Diagnostic Dashboard</h2>
+        <div class="card" style="padding: 20px 15px;">
+            <h2 style="color:var(--primary-yellow); margin-top:0; margin-bottom:15px; font-size:22px;">${displayCategory}</h2>
             
-            <div style="display:flex; gap:15px; flex-wrap:wrap; margin-bottom:30px;">
-                <div style="background:#2a2a2a; padding: 20px; border-radius: 8px; flex: 1; min-width: 130px; text-align:center; border:1px solid var(--border-color);"><div style="font-size: 28px; color: white; font-weight: bold;">${totalQuizzes}</div><div style="color: var(--text-muted); font-size: 13px;">Tests Taken</div></div>
-                <div style="background:#2a2a2a; padding: 20px; border-radius: 8px; flex: 1; min-width: 130px; text-align:center; border:1px solid var(--border-color);"><div style="font-size: 28px; color: var(--correct-green); font-weight: bold;">${avgAccuracy}%</div><div style="color: var(--text-muted); font-size: 13px;">Avg. Accuracy</div></div>
-                <div style="background:#2a2a2a; padding: 20px; border-radius: 8px; flex: 1; min-width: 130px; text-align:center; border:1px solid var(--primary-yellow);"><div style="font-size: 28px; color: var(--primary-yellow); font-weight: bold;">${totalQuestions}</div><div style="color: var(--text-muted); font-size: 13px;">Qs Solved</div></div>
-                <div style="background:#2a2a2a; padding: 20px; border-radius: 8px; flex: 1; min-width: 130px; text-align:center; border:1px solid var(--border-color);"><div style="font-size: 28px; color: white; font-weight: bold;">${totalScore}</div><div style="color: var(--text-muted); font-size: 13px;">Net Score</div></div>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(90px, 1fr)); gap: 8px; margin-bottom: 15px;">
+                <div style="background:#2a2a2a; padding: 12px 5px; border-radius: 6px; text-align:center; border:1px solid var(--border-color);">
+                    <div style="font-size: 20px; color: white; font-weight: bold;">${totalQuestions}</div>
+                    <div style="color: var(--text-muted); font-size: 10px; text-transform:uppercase; margin-top:2px;">Attempted</div>
+                </div>
+                <div style="background:#2a2a2a; padding: 12px 5px; border-radius: 6px; text-align:center; border:1px solid var(--correct-green);">
+                    <div style="font-size: 20px; color: var(--correct-green); font-weight: bold;">${correctCount}</div>
+                    <div style="color: var(--text-muted); font-size: 10px; text-transform:uppercase; margin-top:2px;">Right</div>
+                </div>
+                <div style="background:#2a2a2a; padding: 12px 5px; border-radius: 6px; text-align:center; border:1px solid var(--wrong-red);">
+                    <div style="font-size: 20px; color: var(--wrong-red); font-weight: bold;">${wrongCount}</div>
+                    <div style="color: var(--text-muted); font-size: 10px; text-transform:uppercase; margin-top:2px;">Wrong</div>
+                </div>
+                <div style="background:#2a2a2a; padding: 12px 5px; border-radius: 6px; text-align:center; border:1px solid var(--primary-yellow);">
+                    <div style="font-size: 20px; color: var(--primary-yellow); font-weight: bold;">${totalScore}</div>
+                    <div style="color: var(--text-muted); font-size: 10px; text-transform:uppercase; margin-top:2px;">Overall Mark</div>
+                </div>
+                <div style="background:#2a2a2a; padding: 12px 5px; border-radius: 6px; text-align:center; border:1px solid var(--border-color);">
+                    <div style="font-size: 20px; color: white; font-weight: bold;">${overallAccuracy}%</div>
+                    <div style="color: var(--text-muted); font-size: 10px; text-transform:uppercase; margin-top:2px;">Accuracy</div>
+                </div>
             </div>
 
-            <div style="display:flex; gap:30px; flex-wrap:wrap;">
-                <div style="flex:1; min-width:300px; background:#1a1a1a; border:1px solid var(--border-color); padding:25px; border-radius:8px;">
-                    <h3 style="margin-top:0; color:white; border-bottom:1px solid #333; padding-bottom:10px; margin-bottom:20px; font-size:18px;">Subject-Wise Mastery</h3>
+            <div style="background:rgba(244, 67, 54, 0.05); border-left:3px solid var(--wrong-red); padding:12px; border-radius:4px; margin-bottom:20px;">
+                <div style="color:var(--wrong-red); font-size:11px; font-weight:bold; margin-bottom:5px; text-transform:uppercase;">Needs Improvement</div>
+                <div style="font-size:13px; color:var(--text-light); line-height:1.4;">${weakSpotsText}</div>
+            </div>
+
+            <div style="display:flex; gap:15px; flex-wrap:wrap;">
+                <div style="flex:1; min-width:280px; background:#1a1a1a; border:1px solid var(--border-color); padding:15px; border-radius:6px;">
+                    <h3 style="margin-top:0; color:white; border-bottom:1px solid #333; padding-bottom:8px; margin-bottom:15px; font-size:15px;">Subject-Wise Mastery</h3>
                     ${subjectHtml}
                 </div>
 
-                <div style="flex:1.5; min-width:300px; display:flex; flex-direction:column; gap:20px;">
-                    <div style="background:#1a1a1a; border:1px solid var(--border-color); padding:25px; border-radius:8px; flex:1;">
-                        <h3 style="margin-top:0; color:white; border-bottom:1px solid #333; padding-bottom:10px; margin-bottom:15px; font-size:18px;">Accuracy Trajectory (Last 10 Tests)</h3>
-                        <canvas id="accuracyChart" style="width:100%; height:200px;"></canvas>
-                    </div>
-                    
-                    <div style="background:rgba(253, 184, 19, 0.05); border:1px solid var(--primary-yellow); padding:20px; border-radius:8px;">
-                        <h3 style="margin-top:0; color:var(--primary-yellow); font-size:16px; margin-bottom:15px;">Critical Focus Areas</h3>
-                        <div style="display:flex; flex-wrap:wrap; gap:10px;">
-                            ${weakSpotsHtml}
-                        </div>
-                    </div>
+                <div style="flex:1; min-width:280px; background:#1a1a1a; border:1px solid var(--border-color); padding:15px; border-radius:6px;">
+                    <h3 style="margin-top:0; color:white; border-bottom:1px solid #333; padding-bottom:8px; margin-bottom:15px; font-size:15px;">Accuracy Trajectory</h3>
+                    <canvas id="accuracyChart" style="width:100%; height:160px;"></canvas>
                 </div>
             </div>
 
-            <button class="btn-exam" onclick="window.location.hash='#/progress'" style="margin-top:30px; background:#333; border:none;">&larr; Back to Selection</button>
+            <button class="btn-exam" onclick="window.location.hash='#/progress'" style="margin-top:20px; background:#333; border:none; width:100%; max-width:200px;">&larr; Back to Selection</button>
         </div>`;
 
         setTimeout(() => drawAccuracyChart(recentTrend), 50);
@@ -586,26 +606,26 @@ function drawAccuracyChart(dataPoints) {
     if(!canvas) return;
     const ctx = canvas.getContext('2d');
     const w = canvas.width = canvas.parentElement.clientWidth;
-    const h = canvas.height = 200;
+    const h = canvas.height = 160;
     
     ctx.clearRect(0,0,w,h);
     if(dataPoints.length === 0) {
-        ctx.fillStyle = '#a0a0a0'; ctx.font = '14px sans-serif';
+        ctx.fillStyle = '#a0a0a0'; ctx.font = '12px sans-serif';
         ctx.fillText("Not enough data to display chart.", 10, 20); return;
     }
     
-    const padding = 30; const maxVal = 100;
+    const padding = 20; const maxVal = 100;
     const stepX = (w - padding*2) / Math.max(1, dataPoints.length - 1);
     
     ctx.strokeStyle = '#333'; ctx.lineWidth = 1;
     [0, 25, 50, 75, 100].forEach(val => {
         let y = h - padding - (val/maxVal)*(h - padding*2);
         ctx.beginPath(); ctx.moveTo(padding, y); ctx.lineTo(w-padding, y); ctx.stroke();
-        ctx.fillStyle = '#777'; ctx.font = '11px sans-serif'; ctx.fillText(val+'%', 0, y+4);
+        ctx.fillStyle = '#777'; ctx.font = '10px sans-serif'; ctx.fillText(val+'%', 0, y+3);
     });
     
     if(dataPoints.length > 1) {
-        ctx.strokeStyle = '#fdb813'; ctx.lineWidth = 3; ctx.beginPath();
+        ctx.strokeStyle = '#fdb813'; ctx.lineWidth = 2; ctx.beginPath();
         dataPoints.forEach((val, i) => {
             let x = padding + i*stepX; let y = h - padding - (val/maxVal)*(h - padding*2);
             if(i===0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
@@ -616,8 +636,7 @@ function drawAccuracyChart(dataPoints) {
     ctx.fillStyle = '#4CAF50';
     dataPoints.forEach((val, i) => {
         let x = padding + i*stepX; let y = h - padding - (val/maxVal)*(h - padding*2);
-        ctx.beginPath(); ctx.arc(x, y, 5, 0, Math.PI*2); ctx.fill();
-        ctx.fillStyle = 'white'; ctx.font = '10px sans-serif'; ctx.fillText(val+'%', x-8, y-10); ctx.fillStyle = '#4CAF50';
+        ctx.beginPath(); ctx.arc(x, y, 4, 0, Math.PI*2); ctx.fill();
     });
 }
 
@@ -1123,7 +1142,6 @@ function _renderLeaderboardOptions() {
         </div>`; 
 }
 
-// FIXED: Removed Firebase index ordering. Now sorts leaderboard locally.
 async function fetchLiveLeaderboard(pathPrefix) { 
     const mainContent = document.getElementById('dynamic-content');
     if (!currentUser) { 
@@ -1160,7 +1178,6 @@ async function fetchLiveLeaderboard(pathPrefix) {
         let myRank = ">100"; let inTop10 = false; let docs = [];
         boardSnapshot.forEach(doc => docs.push(doc.data()));
         
-        // Local Javascript Sort
         docs.sort((a, b) => b.score - a.score);
         
         for(let i = 0; i < docs.length; i++) { if (docs[i].userId === currentUser.uid && docs[i].score === myBestScore) { myRank = i + 1; if (myRank <= 10) inTop10 = true; break; } }
