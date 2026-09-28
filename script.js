@@ -437,7 +437,6 @@ function requiresQuizLogin(pathArray) {
 // ==========================================
 // 6. TRACK PROGRESS, STREAK, AND PROFILE
 // ==========================================
-
 function _renderProgressSelection() {
     if (!currentUser) return document.getElementById('dynamic-content').innerHTML = `<div class="card" style="text-align:center;"><h2>⚠️ Sign In Required</h2><button class="btn-exam" onclick="goBack()" style="background:#333; border:none;">Back</button></div>`;
     document.getElementById('breadcrumb-text').innerText = "Home / Profile / Track Progress";
@@ -956,31 +955,52 @@ async function processAIText() {
     await callAIWorker({ text: text, mode: 'solve' });
 }
 
-async function callAIWorker(payload) {
+// FIXED: Implemented Exponential Backoff Auto-Retry System
+async function callAIWorker(payload, retries = 3) {
     document.getElementById('ai-idle-view').style.display = 'none';
     document.getElementById('ai-loading-view').style.display = 'flex';
-    try {
-        const res = await fetch(AI_WORKER_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-        const data = await res.json(); if(data.error) throw new Error(data.error);
+    
+    for (let attempt = 1; attempt <= retries; attempt++) {
+        try {
+            if(attempt > 1) {
+                document.querySelector('#ai-loading-view h2').innerText = `High demand, retrying... (Attempt ${attempt}/${retries})`;
+            } else {
+                document.querySelector('#ai-loading-view h2').innerText = "Consulting Sources...";
+            }
 
-        if (payload.mode === 'solve') { 
-            renderAISolution(data, false); 
-        } else {
-            document.getElementById('ai-loading-view').style.display = 'none'; 
-            document.getElementById('ai-chat-view').style.display = 'flex';
-            aiChatHistory.push({ role: 'model', text: data.reply }); 
-            let parsedHTML = marked.parse(data.reply);
-            const chatDiv = document.createElement('div'); 
-            chatDiv.className = 'ai-chat-bubble'; 
-            chatDiv.innerHTML = parsedHTML;
-            document.getElementById('ai-chat-history').appendChild(chatDiv);
-            renderMathInElement(chatDiv, { delimiters: [ {left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}, {left: '\\(', right: '\\)', display: false}, {left: '\\[', right: '\\]', display: true} ] });
-            document.getElementById('ai-chat-history').scrollTop = document.getElementById('ai-chat-history').scrollHeight;
+            const res = await fetch(AI_WORKER_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+            const data = await res.json(); 
+            if(data.error) throw new Error(data.error);
+
+            if (payload.mode === 'solve') { 
+                renderAISolution(data, false); 
+            } else {
+                document.getElementById('ai-loading-view').style.display = 'none'; 
+                document.getElementById('ai-chat-view').style.display = 'flex';
+                aiChatHistory.push({ role: 'model', text: data.reply }); 
+                let parsedHTML = marked.parse(data.reply);
+                const chatDiv = document.createElement('div'); 
+                chatDiv.className = 'ai-chat-bubble'; 
+                chatDiv.innerHTML = parsedHTML;
+                document.getElementById('ai-chat-history').appendChild(chatDiv);
+                renderMathInElement(chatDiv, { delimiters: [ {left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}, {left: '\\(', right: '\\)', display: false}, {left: '\\[', right: '\\]', display: true} ] });
+                document.getElementById('ai-chat-history').scrollTop = document.getElementById('ai-chat-history').scrollHeight;
+            }
+            return; // Success, exit function
+        } catch(e) {
+            let errorMsg = e.message.toLowerCase();
+            let isHighDemand = errorMsg.includes("high demand") || errorMsg.includes("overloaded") || errorMsg.includes("503") || errorMsg.includes("429");
+            
+            if (isHighDemand && attempt < retries) {
+                // Wait for 2.5 seconds before retrying silently
+                await new Promise(resolve => setTimeout(resolve, 2500));
+            } else {
+                document.getElementById('ai-loading-view').style.display = 'none'; 
+                document.getElementById('ai-idle-view').style.display = 'flex'; 
+                showNotification("❌ AI Error: " + e.message); 
+                return; // Exit on final failure
+            }
         }
-    } catch(e) { 
-        document.getElementById('ai-loading-view').style.display = 'none'; 
-        document.getElementById('ai-idle-view').style.display = 'flex'; 
-        showNotification("❌ AI Error: " + e.message); 
     }
 }
 
