@@ -250,7 +250,6 @@ function _renderView() {
 
         h += `<div class="card"><h2 style="color:var(--primary-yellow);">${title}</h2><div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px;">`;
         
-        // --- SMART SORTING ALGORITHM ---
         let keys = Object.keys(currentLevel);
         const difficultyOrder = ["Easy", "Medium", "Hard", "Mixed"];
         
@@ -763,7 +762,7 @@ async function fetchGlobalRating() {
 fetchGlobalRating();
 
 // ==========================================
-// 7. ASK AI (DRAG AND DROP) LOGIC
+// 7. NEW GEMINI-STYLE AI CHAT ENGINE
 // ==========================================
 const aiBtn = document.getElementById('ai-floating-btn');
 let pressTimer; let isDragging = false; let startX, startY, initialX, initialY;
@@ -821,16 +820,48 @@ function endPress(e) {
 
 let cropper = null; let aiChatHistory = []; let lastExtractedQuestion = null;
 
+function autoExpandTextarea(field) {
+    field.style.height = 'auto';
+    field.style.height = Math.min(field.scrollHeight, 250) + 'px';
+    if (field.scrollHeight > 250) {
+        field.style.overflowY = 'auto';
+    } else {
+        field.style.overflowY = 'hidden';
+    }
+}
+
+function toggleAttachMenu() {
+    const menu = document.getElementById('ai-attach-menu');
+    menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+}
+
+document.addEventListener('click', function(e) {
+    const menu = document.getElementById('ai-attach-menu');
+    const plusBtn = document.querySelector('button[onclick="toggleAttachMenu()"]');
+    if (menu && menu.style.display === 'block' && !menu.contains(e.target) && e.target !== plusBtn) {
+        menu.style.display = 'none';
+    }
+});
+
 function openAIModal() {
     document.getElementById('aiModal').style.display = 'flex'; 
-    document.getElementById('ai-left-view').style.display = 'block'; 
-    document.getElementById('ai-cropper-view').style.display = 'none'; 
-    document.getElementById('ai-loading-view').style.display = 'none';
-    document.getElementById('ai-chat-view').style.display = 'none'; 
     document.getElementById('ai-idle-view').style.display = 'flex';
-    document.getElementById('aiTextInput').value = '';
+    document.getElementById('ai-cropper-view').style.display = 'none';
+    
+    const historyContainer = document.getElementById('gemini-chat-history');
+    const children = Array.from(historyContainer.children);
+    children.forEach(child => {
+        if (child.id !== 'ai-idle-view' && child.id !== 'ai-cropper-view') {
+            historyContainer.removeChild(child);
+        }
+    });
+
+    const input = document.getElementById('aiTextInput');
+    input.value = '';
+    autoExpandTextarea(input);
     document.getElementById('ai-fuzzy-box').style.display = 'none'; 
-    document.getElementById('ai-chat-history').innerHTML = '';
+    document.getElementById('ai-attach-menu').style.display = 'none';
+    
     aiChatHistory = []; 
     lastExtractedQuestion = null;
 }
@@ -855,25 +886,34 @@ function handleAIFuzzySuggestions() {
     }
     scanTree(appData);
     if(matches.length === 0) { 
-        box.innerHTML = `<div class="ai-fuzzy-item" style="color:var(--text-muted);">No direct syllabus match found — AI will solve autonomously using NCERT references 🌐</div>`; 
+        box.innerHTML = `<div class="ai-fuzzy-item" style="color:var(--text-muted); padding: 12px; font-size: 14px;">No direct syllabus match found — AI will solve autonomously using NCERT references 🌐</div>`; 
     } else { 
-        box.innerHTML = matches.slice(0, 5).map(m => `<div class="ai-fuzzy-item" onclick="insertAISuggestion('${m.text.replace(/'/g, "\\'")}')"><span>📚 <b>${m.type}:</b> ${m.title}</span><span style="font-size:12px; color:var(--primary-yellow);">Use Topic &rarr;</span></div>`).join(''); 
+        box.innerHTML = matches.slice(0, 5).map(m => `<div class="ai-fuzzy-item" onclick="insertAISuggestion('${m.text.replace(/'/g, "\\'")}')" style="padding: 12px; border-bottom: 1px solid #333; cursor: pointer; display: flex; justify-content: space-between; color: #fff; font-size: 14px;"><span>📚 <b>${m.type}:</b> ${m.title}</span><span style="color:var(--primary-yellow);">Use Topic &rarr;</span></div>`).join(''); 
     }
     box.style.display = 'block';
 }
 
 function insertAISuggestion(text) { 
-    document.getElementById('aiTextInput').value = text + ": "; 
+    const input = document.getElementById('aiTextInput');
+    input.value = text + ": "; 
+    autoExpandTextarea(input);
     document.getElementById('ai-fuzzy-box').style.display = 'none'; 
-    document.getElementById('aiTextInput').focus(); 
+    input.focus(); 
 }
 
 function handleAIImageUpload(e) {
     const file = e.target.files[0]; if(!file) return;
     const reader = new FileReader();
     reader.onload = function(event) {
-        document.getElementById('ai-left-view').style.display = 'none'; 
+        document.getElementById('ai-idle-view').style.display = 'none';
+        
+        Array.from(document.getElementById('gemini-chat-history').children).forEach(child => {
+            if (child.id !== 'ai-idle-view' && child.id !== 'ai-cropper-view') {
+                child.style.display = 'none';
+            }
+        });
         document.getElementById('ai-cropper-view').style.display = 'flex';
+        
         const imgNode = document.getElementById('aiCropperImage'); 
         imgNode.src = event.target.result;
         if(cropper) cropper.destroy(); 
@@ -885,7 +925,14 @@ function handleAIImageUpload(e) {
 function cancelCropper() { 
     if(cropper) { cropper.destroy(); cropper = null; } 
     document.getElementById('ai-cropper-view').style.display = 'none'; 
-    document.getElementById('ai-left-view').style.display = 'block'; 
+    
+    Array.from(document.getElementById('gemini-chat-history').children).forEach(child => {
+        if (child.id !== 'ai-idle-view' && child.id !== 'ai-cropper-view') {
+            child.style.display = 'block';
+        }
+    });
+    if (aiChatHistory.length === 0) document.getElementById('ai-idle-view').style.display = 'flex';
+    
     document.getElementById('aiImageInput').value = ""; 
     document.getElementById('aiCameraInput').value = ""; 
 }
@@ -894,41 +941,74 @@ async function confirmCropAndSolve() {
     if(!cropper) return; 
     const canvas = cropper.getCroppedCanvas(); 
     const base64Image = canvas.toDataURL('image/jpeg').split(',')[1]; 
-    document.getElementById('ai-cropper-view').style.display = 'none'; 
-    document.getElementById('ai-left-view').style.display = 'block'; 
+    
+    cancelCropper(); 
+    document.getElementById('ai-idle-view').style.display = 'none';
+    appendChatBubble('user', '📷 <i>Image Uploaded</i>');
+    
     await callAIWorker({ image: base64Image, mimeType: 'image/jpeg', mode: 'solve' });
 }
 
-async function processAIText() {
-    const text = document.getElementById('aiTextInput').value.trim(); 
-    if(!text) return showNotification("⚠️ Please type a question.");
+async function handleAISend() {
+    const inputEl = document.getElementById('aiTextInput');
+    const text = inputEl.value.trim();
+    if (!text) return;
+
+    inputEl.value = '';
+    autoExpandTextarea(inputEl);
     document.getElementById('ai-fuzzy-box').style.display = 'none';
     document.getElementById('ai-idle-view').style.display = 'none';
-    document.getElementById('ai-loading-view').style.display = 'flex';
-    
-    try {
-        const cacheSnap = await db.collection("ai_doubt_diary").where("questionText", "==", text).limit(1).get();
-        if (!cacheSnap.empty) {
-            const cachedData = cacheSnap.docs[0].data();
-            const syntheticPayload = { extractedQuestion: cachedData.questionText, subject: cachedData.subject, solution: cachedData.solution, searchKeywords: [] };
-            renderAISolution(syntheticPayload, true); return; 
-        }
-    } catch(e) { console.warn("Cache check skipped"); }
 
-    await callAIWorker({ text: text, mode: 'solve' });
+    appendChatBubble('user', text);
+
+    if (aiChatHistory.length === 0) {
+        try {
+            const cacheSnap = await db.collection("ai_doubt_diary").where("questionText", "==", text).limit(1).get();
+            if (!cacheSnap.empty) {
+                const cachedData = cacheSnap.docs[0].data();
+                const syntheticPayload = { extractedQuestion: cachedData.questionText, subject: cachedData.subject, solution: cachedData.solution, searchKeywords: [] };
+                renderAISolution(syntheticPayload, true); 
+                return; 
+            }
+        } catch(e) { console.warn("Cache check skipped"); }
+        await callAIWorker({ text: text, mode: 'solve' });
+    } else {
+        aiChatHistory.push({ role: 'user', text: text });
+        await callAIWorker({ mode: 'chat', text: text, conversationHistory: aiChatHistory.slice(0, -1) });
+    }
 }
 
-// FIXED: Implemented Exponential Backoff Auto-Retry System
+function appendChatBubble(role, htmlContent) {
+    const historyContainer = document.getElementById('gemini-chat-history');
+    const bubble = document.createElement('div');
+    
+    if (role === 'user') {
+        bubble.style.cssText = `background: #2a2a2a; color: white; padding: 15px 20px; border-radius: 20px 20px 0 20px; max-width: 85%; align-self: flex-end; font-size: 15px; border: 1px solid #444;`;
+    } else if (role === 'loading') {
+        bubble.id = 'ai-typing-indicator';
+        bubble.style.cssText = `background: transparent; color: var(--primary-yellow); padding: 10px 0; max-width: 85%; align-self: flex-start; font-size: 15px; display: flex; align-items: center; gap: 10px;`;
+        htmlContent = `<span style="font-size: 20px; animation: pulse 1s infinite;">🤖</span> <i>${htmlContent}</i>`;
+    } else {
+        bubble.style.cssText = `background: transparent; color: #e3e3e3; padding: 0; max-width: 100%; align-self: flex-start; font-size: 15px; line-height: 1.6;`;
+    }
+    
+    bubble.innerHTML = htmlContent;
+    historyContainer.appendChild(bubble);
+    historyContainer.scrollTop = historyContainer.scrollHeight;
+    
+    if (role === 'model') {
+        renderMathInElement(bubble, { delimiters: [ {left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}, {left: '\\(', right: '\\)', display: false}, {left: '\\[', right: '\\]', display: true} ] });
+    }
+}
+
 async function callAIWorker(payload, retries = 3) {
-    document.getElementById('ai-idle-view').style.display = 'none';
-    document.getElementById('ai-loading-view').style.display = 'flex';
+    appendChatBubble('loading', 'Analyzing query...');
     
     for (let attempt = 1; attempt <= retries; attempt++) {
         try {
             if(attempt > 1) {
-                document.querySelector('#ai-loading-view h2').innerText = `High demand, retrying... (Attempt ${attempt}/${retries})`;
-            } else {
-                document.querySelector('#ai-loading-view h2').innerText = "Consulting Sources...";
+                const indicator = document.getElementById('ai-typing-indicator');
+                if (indicator) indicator.innerHTML = `<span style="font-size: 20px; animation: pulse 1s infinite;">🤖</span> <i style="color:var(--wrong-red);">High demand, retrying... (Attempt ${attempt}/${retries})</i>`;
             }
 
             const res = await fetch(AI_WORKER_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
@@ -938,86 +1018,59 @@ async function callAIWorker(payload, retries = 3) {
             if (payload.mode === 'solve') { 
                 renderAISolution(data, false); 
             } else {
-                document.getElementById('ai-loading-view').style.display = 'none'; 
-                document.getElementById('ai-chat-view').style.display = 'flex';
+                const indicator = document.getElementById('ai-typing-indicator');
+                if (indicator) indicator.remove();
+                
                 aiChatHistory.push({ role: 'model', text: data.reply }); 
                 let parsedHTML = marked.parse(data.reply);
-                const chatDiv = document.createElement('div'); 
-                chatDiv.className = 'ai-chat-bubble'; 
-                chatDiv.innerHTML = parsedHTML;
-                document.getElementById('ai-chat-history').appendChild(chatDiv);
-                renderMathInElement(chatDiv, { delimiters: [ {left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}, {left: '\\(', right: '\\)', display: false}, {left: '\\[', right: '\\]', display: true} ] });
-                document.getElementById('ai-chat-history').scrollTop = document.getElementById('ai-chat-history').scrollHeight;
+                appendChatBubble('model', parsedHTML);
             }
-            return; // Success, exit function
+            return; 
         } catch(e) {
             let errorMsg = e.message.toLowerCase();
             let isHighDemand = errorMsg.includes("high demand") || errorMsg.includes("overloaded") || errorMsg.includes("503") || errorMsg.includes("429");
             
             if (isHighDemand && attempt < retries) {
-                // Wait for 2.5 seconds before retrying silently
                 await new Promise(resolve => setTimeout(resolve, 2500));
             } else {
-                document.getElementById('ai-loading-view').style.display = 'none'; 
-                document.getElementById('ai-idle-view').style.display = 'flex'; 
+                const indicator = document.getElementById('ai-typing-indicator');
+                if (indicator) indicator.remove();
                 showNotification("❌ AI Error: " + e.message); 
-                return; // Exit on final failure
+                appendChatBubble('model', `<span style="color:var(--wrong-red);">❌ AI Error: ${e.message}</span>`);
+                return; 
             }
         }
     }
 }
 
 async function renderAISolution(data, isCached = false) {
-    document.getElementById('ai-loading-view').style.display = 'none'; 
-    document.getElementById('ai-chat-view').style.display = 'flex';
+    const typingIndicator = document.getElementById('ai-typing-indicator');
+    if (typingIndicator) typingIndicator.remove();
     
     lastExtractedQuestion = data; 
     aiChatHistory = [{ role: 'user', text: "Solve this: " + data.extractedQuestion }];
     
-    let html = `<div class="ai-chat-bubble user-bubble"><b>Extracted Question:</b><br>${data.extractedQuestion}</div>`;
+    let html = ``;
     
     if (isCached) {
-        html += `<div class="ai-match-card" style="border-color: var(--primary-yellow); background: rgba(253, 184, 19, 0.15);"><div><b style="color:var(--primary-yellow);">⚡ Instant Cache Match!</b><br><span style="font-size:13px; color:var(--text-light);">Served from Firebase (Zero API Cost)</span></div></div>`;
+        html += `<div style="border: 1px solid var(--primary-yellow); background: rgba(253, 184, 19, 0.1); padding: 10px 15px; border-radius: 8px; margin-bottom: 15px; display: inline-block;"><div><b style="color:var(--primary-yellow);">⚡ Instant Cache Match!</b> <span style="font-size:12px; color:var(--text-light); margin-left:10px;">Served from Firebase</span></div></div><br>`;
     } else {
         const isFound = await checkDatabaseForQuestion(data.searchKeywords);
         if (isFound) { 
-            html += `<div class="ai-match-card"><div><b style="color:var(--correct-green);">✅ Verified Match in MCQsPrep!</b><br><span style="font-size:13px; color:var(--text-light);">${isFound.path}</span></div><button class="btn-exam" onclick="closeAIModal(); jumpToSection(${JSON.stringify(isFound.path.split(' > ')).replace(/"/g, "'")}); window.location.hash='#/quiz';" style="background:var(--correct-green); border:none; padding:8px 14px; color:white; border-radius:6px;">Go Practice 🚀</button></div>`; 
+            html += `<div style="border: 1px solid var(--correct-green); background: rgba(76, 175, 80, 0.1); padding: 10px 15px; border-radius: 8px; margin-bottom: 15px; display: inline-block;"><div><b style="color:var(--correct-green);">✅ Verified Match in MCQsPrep!</b><br><span style="font-size:13px; color:var(--text-light);">${isFound.path}</span></div><button onclick="closeAIModal(); jumpToSection(${JSON.stringify(isFound.path.split(' > ')).replace(/"/g, "'")}); window.location.hash='#/quiz';" style="margin-top:10px; background:var(--correct-green); border:none; padding:6px 12px; color:white; border-radius:6px; cursor:pointer;">Go Practice 🚀</button></div><br>`; 
         } else { 
-            html += `<div style="background: rgba(253, 184, 19, 0.1); border: 1px solid rgba(253, 184, 19, 0.4); padding: 12px 16px; border-radius: 8px; margin-bottom: 16px; font-size: 14px; color: #eee;">🌐 <b>Curriculum Knowledge Base Solution:</b> Solved autonomously using verified NCERT syllabus standards.</div>`; 
+            html += `<div style="border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.05); padding: 10px 15px; border-radius: 8px; margin-bottom: 15px; font-size: 13px; color: #ccc; display: inline-block;">🌐 <b>Curriculum Knowledge Base Solution:</b> Solved autonomously using verified NCERT syllabus standards.</div><br>`; 
         }
     }
     
-    let solutionMarkdown = `**Subject:** ${data.subject}\n\n**Core Concept:** ${data.solution.keyConcept}\n\n**Step-by-Step Explanation:**\n${data.solution.stepByStep}\n\n**Final Conclusion & Answer:** ${data.solution.finalAnswer}`;
+    let solutionMarkdown = `**Subject:** ${data.subject}\n\n**Extracted Question:** ${data.extractedQuestion}\n\n**Core Concept:** ${data.solution.keyConcept}\n\n**Step-by-Step Explanation:**\n${data.solution.stepByStep}\n\n**Final Conclusion & Answer:** ${data.solution.finalAnswer}`;
     aiChatHistory.push({ role: 'model', text: solutionMarkdown }); 
-    let parsedHTML = marked.parse(solutionMarkdown);
-    html += `<div class="ai-chat-bubble" id="ai-sol-bubble">${parsedHTML}</div>`;
-    html += `<button class="btn-exam" onclick="saveToDoubtDiary()" style="background:rgba(255,255,255,0.08); color:var(--primary-yellow); width:100%; margin-bottom:15px; border: 1px solid var(--primary-yellow); border-radius:8px;">📔 Save Explanation to Doubt Diary</button>`;
-
-    const historyContainer = document.getElementById('ai-chat-history'); 
-    historyContainer.innerHTML = html;
-    renderMathInElement(document.getElementById('ai-sol-bubble'), { delimiters: [ {left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}, {left: '\\(', right: '\\)', display: false}, {left: '\\[', right: '\\]', display: true} ] });
-}
-
-async function sendAIFollowUp() {
-    const inputEl = document.getElementById('aiFollowUpInput'); 
-    const text = inputEl.value.trim(); 
-    if(!text) return;
     
-    aiChatHistory.push({ role: 'user', text: text });
-    const chatDiv = document.createElement('div'); 
-    chatDiv.className = 'ai-chat-bubble user-bubble'; 
-    chatDiv.innerText = text;
-    document.getElementById('ai-chat-history').appendChild(chatDiv); 
-    document.getElementById('ai-chat-history').scrollTop = document.getElementById('ai-chat-history').scrollHeight; 
-    inputEl.value = '';
+    let parsedHTML = marked.parse(solutionMarkdown);
+    html += `<div style="margin-bottom: 15px;">${parsedHTML}</div>`;
+    html += `<button onclick="saveToDoubtDiary()" style="background:transparent; color:var(--primary-yellow); padding: 8px 15px; border: 1px solid var(--primary-yellow); border-radius:20px; cursor:pointer; font-size:13px; display:inline-flex; align-items:center; gap:5px;"><span>📔</span> Save Explanation to Doubt Diary</button>`;
 
-    const typingDiv = document.createElement('div'); 
-    typingDiv.className = 'ai-chat-bubble'; 
-    typingDiv.id = 'ai-typing-indicator'; 
-    typingDiv.innerText = "Analyzing follow-up..."; 
-    document.getElementById('ai-chat-history').appendChild(typingDiv);
-    await callAIWorker({ mode: 'chat', text: text, conversationHistory: aiChatHistory.slice(0, -1) });
-    document.getElementById('ai-typing-indicator')?.remove();
+    appendChatBubble('model', html);
 }
 
 async function checkDatabaseForQuestion(keywords) {
