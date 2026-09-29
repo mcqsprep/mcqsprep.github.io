@@ -1,6 +1,12 @@
 // ==========================================
 // 1. SYSTEM INITIALIZATION & CONFIGURATION
 // ==========================================
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js').catch(err => console.log('SW Setup Failed:', err));
+    });
+}
+
 const styleSheet = document.createElement('style');
 styleSheet.innerHTML = `
     @keyframes fadeSlideUp { 0% { transform: translateY(15px); opacity: 0; } 100% { transform: translateY(0); opacity: 1; } }
@@ -25,6 +31,7 @@ styleSheet.innerHTML = `
     .katex-display::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.3); border-radius: 4px; }
     
     #ai-floating-btn { -webkit-user-select: none; -ms-user-select: none; user-select: none; touch-action: none; }
+    .bookmarked { background: rgba(253, 184, 19, 0.2) !important; color: var(--primary-yellow) !important; border-color: var(--primary-yellow) !important; }
 `;
 document.head.appendChild(styleSheet);
 
@@ -81,6 +88,7 @@ let customTopicTypes = {};
 let currentUser = null; 
 let currentPath = []; 
 let dataLoaded = false; 
+let userBookmarks = [];
 
 // ==========================================
 // 2. DATA LOADING & AUTHENTICATION
@@ -144,10 +152,12 @@ auth.onAuthStateChanged((user) => {
             lastLogin: firebase.firestore.FieldValue.serverTimestamp() 
         }, { merge: true });
         checkUserNotifications();
+        loadUserBookmarks();
     } else {
         badge.style.display = 'none'; 
         loginNavBtn.style.display = 'flex'; 
         document.getElementById('profileNotifDot').style.display = 'none';
+        userBookmarks = [];
         if (window.location.hash !== '#/admin' && window.location.hash !== '#/admin-panel' && !sessionStorage.getItem('auth_skipped')) {
             document.getElementById('authModal').style.display = 'flex';
         }
@@ -181,6 +191,7 @@ function handleRouting() {
         else if (hash === 'quiz') _initiateQuizEngine(); 
         else if (hash === 'progress') _renderProgressSelection(); 
         else if (hash.startsWith('progress/')) _renderProgressDashboard(decodeURIComponent(hash.split('/')[1]));
+        else if (hash === 'bookmarks') _initiateBookmarkQuiz();
         else if (hash === 'diary') _renderDoubtDiary(); 
         else if (hash === 'admin') _renderAdminLogin(); 
         else if (hash === 'admin-panel') _renderAdminPanel();
@@ -498,7 +509,6 @@ async function getAttemptedIdsForPath(safePath) {
             if (subDoc.exists && Array.isArray(subDoc.data().attemptedIds)) {
                 return subDoc.data().attemptedIds;
             }
-            // Backward compatibility fallback for legacy root user document fields
             const rootDoc = await db.collection("users").doc(currentUser.uid).get();
             if (rootDoc.exists && Array.isArray(rootDoc.data()[safePath])) {
                 let legacyIds = rootDoc.data()[safePath];
@@ -856,7 +866,6 @@ async function submitPlatformFeedback() {
             showNotification("✅ Thank you!"); 
         }
 
-        // Scaled Atomic Counter update: zero collection downloads needed!
         let ratingDelta = selectedStars - oldRating;
         let countDelta = isUpdate ? 0 : 1;
         await db.collection("settings").doc("platform_stats").set({
@@ -875,7 +884,6 @@ async function fetchGlobalRating() {
     const display = document.getElementById('global-rating-display'); 
     if(!display) return;
     try {
-        // Scaled read: Reads a single aggregated metadata document (1 Document Read)
         const statsDoc = await db.collection("settings").doc("platform_stats").get();
         if (statsDoc.exists) {
             let d = statsDoc.data();
@@ -885,7 +893,6 @@ async function fetchGlobalRating() {
             return;
         }
 
-        // Lazy initialization if platform_stats doesn't exist yet
         const snapshot = await db.collection("platform_feedback").limit(100).get(); 
         if (snapshot.empty) { display.innerText = "5.0"; return; }
         let total = 0; let count = 0; 
@@ -1493,9 +1500,85 @@ function showNotification(message) {
 }
 
 // ==========================================
-// 9. SCALED QUIZ ENGINE & PERSISTENCE
+// 9. SCALED QUIZ ENGINE, PERSISTENCE & BOOKMARKS
 // ==========================================
 let quizState = { questions: [], currentIndex: 0, userAnswers: {}, showAnswerTriggered: {}, flaggedDoubts: {}, viewedQuestions: [], timer: null, secondsPassed: 0, isTimerPaused: false, isCustom: false };
+
+async function loadUserBookmarks() {
+    if (!currentUser) return;
+    try {
+        const snap = await db.collection("users").doc(currentUser.uid).collection("bookmarks").get();
+        userBookmarks = [];
+        snap.forEach(doc => userBookmarks.push(doc.id));
+    } catch(e) {}
+}
+
+async function toggleBookmark(questionId) {
+    if (!currentUser) { showAuthModal(); return; }
+    const btn = document.getElementById('bookmarkBtn_' + questionId);
+    const isBookmarked = userBookmarks.includes(questionId);
+    try {
+        if (isBookmarked) {
+            await db.collection("users").doc(currentUser.uid).collection("bookmarks").doc(questionId).delete();
+            userBookmarks = userBookmarks.filter(id => id !== questionId);
+            if(btn) { btn.innerHTML = "🔖 Bookmark"; btn.classList.remove('bookmarked'); }
+            showNotification("Removed from Bookmarks.");
+        } else {
+            await db.collection("users").doc(currentUser.uid).collection("bookmarks").doc(questionId).set({ savedAt: firebase.firestore.FieldValue.serverTimestamp() });
+            userBookmarks.push(questionId);
+            if(btn) { btn.innerHTML = "🔖 Bookmarked"; btn.classList.add('bookmarked'); }
+            showNotification("Added to Bookmarks!");
+        }
+    } catch(e) { showNotification("❌ Error: " + e.message); }
+}
+
+async function _initiateBookmarkQuiz() {
+    if (!currentUser) { showAuthModal(); return; }
+    const mainContent = document.getElementById('dynamic-content');
+    document.getElementById('breadcrumb-text').innerText = "Home / Profile / My Bookmarks"; 
+    mainContent.innerHTML = `<div class="card page-transition"><div style="font-size:40px; text-align:center; margin-bottom:15px;">🔖</div><h2 style="color:var(--primary-yellow); text-align:center;">Loading Bookmarks...</h2></div>`;
+
+    try {
+        if (userBookmarks.length === 0) {
+            mainContent.innerHTML = `<div class="card page-transition" style="text-align:center;"><h2>No Bookmarks Found</h2><p style="color:var(--text-muted);">You haven't bookmarked any questions yet. Click the 🔖 Bookmark button during a quiz to save questions here for revision.</p><button class="btn-exam" onclick="goBack()" style="background:#333; border:none;">&larr; Go Back</button></div>`;
+            return;
+        }
+
+        let availableQuestions = [];
+        const batches = [];
+        for (let i = 0; i < userBookmarks.length; i += 10) { batches.push(userBookmarks.slice(i, i + 10)); }
+        
+        for (let b of batches) {
+            const snap = await db.collection("content").where(firebase.firestore.FieldPath.documentId(), "in", b).get();
+            snap.forEach(doc => { availableQuestions.push({ id: doc.id, ...doc.data() }); });
+        }
+
+        if (availableQuestions.length === 0) {
+            mainContent.innerHTML = `<div class="card page-transition" style="text-align:center;"><h2>Error</h2><p>Could not load bookmarked questions.</p><button class="btn-exam" onclick="goBack()" style="background:#333; border:none;">&larr; Go Back</button></div>`;
+            return;
+        }
+
+        quizState.questions = availableQuestions;
+        quizState.isCustom = true; 
+        quizState.currentIndex = 0; quizState.userAnswers = {}; quizState.showAnswerTriggered = {}; quizState.flaggedDoubts = {}; quizState.viewedQuestions = []; quizState.secondsPassed = 0; quizState.isTimerPaused = false;
+        
+        clearInterval(quizState.timer);
+        quizState.timer = setInterval(() => {
+            if (!quizState.isTimerPaused) { 
+                quizState.secondsPassed++; 
+                let disp = document.getElementById('quizTimeDisplay'); 
+                if(disp) disp.innerText = formatTime(quizState.secondsPassed); 
+                if (quizState.secondsPassed % 5 === 0) saveQuizSession();
+            }
+        }, 1000);
+        
+        saveQuizSession();
+        _renderQuizQuestion();
+
+    } catch (e) {
+        mainContent.innerHTML = `<div class="card"><h2>Error</h2><p>${e.message}</p><button class="btn-exam" onclick="goBack()">&larr; Go Back</button></div>`;
+    }
+}
 
 function saveQuizSession() {
     if (!quizState || !quizState.questions || quizState.questions.length === 0) return;
@@ -1581,7 +1664,6 @@ async function _initiateQuizEngine(isCustomLaunch = false) {
                 let pSafe = "prog_" + p.split(' > ').join('_').replace(/[^a-zA-Z0-9]/g, '_');
                 let pathAttempted = await getAttemptedIdsForPath(pSafe);
 
-                // Query with a safe limit per chapter instead of full collection scans
                 const snap = await db.collection("content")
                     .where("path", ">=", p)
                     .where("path", "<=", p + "\uf8ff")
@@ -1718,7 +1800,6 @@ async function _initiateQuizEngine(isCustomLaunch = false) {
             let safePath = "prog_" + currentPath.join('_').replace(/[^a-zA-Z0-9]/g, '_');
             let previouslyAttemptedIds = await getAttemptedIdsForPath(safePath);
 
-            // Scaled Retrieval: Query with randomKey and limit
             let randSeed = Math.random();
             let snapshot = await db.collection("content")
                 .where("path", ">=", pathString)
@@ -1737,7 +1818,6 @@ async function _initiateQuizEngine(isCustomLaunch = false) {
                 }
             });
 
-            // Fallback for wrapped bounds or questions awaiting randomKey assignment
             if (availableQuestions.length < 20) {
                 let fallbackSnap = await db.collection("content")
                     .where("path", ">=", pathString)
@@ -1801,6 +1881,7 @@ function _renderQuizQuestion() {
     let multiText = q.correctAnswers.length > 1 ? `<span style="color:var(--primary-yellow); font-size:12px;">(Select all that apply)</span>` : "";
     let selectedNow = quizState.userAnswers[quizState.currentIndex] || []; 
     let hasPeeked = quizState.showAnswerTriggered[quizState.currentIndex]; let isFlagged = quizState.flaggedDoubts[quizState.currentIndex];
+    let isBookmarked = userBookmarks.includes(q.id);
     quizState.isTimerPaused = !!hasPeeked;
 
     let paletteHtml = '<div class="question-palette">';
@@ -1828,6 +1909,7 @@ function _renderQuizQuestion() {
                 <div style="display:flex; align-items:center; gap:15px; flex-wrap:wrap;">
                     <button class="report-btn" onclick="openReportModal('${q.id}', '${q.question.replace(/'/g, "\\'")}', '${q.path}')">🚨 Report Mistake</button>
                     <button id="flagDoubtBtn" class="flag-btn ${isFlagged ? 'flagged' : ''}" onclick="toggleFlag()">${isFlagged ? '⭐ Flagged' : '⭐ Flag for Review'}</button>
+                    <button id="bookmarkBtn_${q.id}" class="flag-btn ${isBookmarked ? 'bookmarked' : ''}" onclick="toggleBookmark('${q.id}')">${isBookmarked ? '🔖 Bookmarked' : '🔖 Bookmark'}</button>
                     <span class="quiz-timer">⏱ <span id="quizTimeDisplay">${formatTime(quizState.secondsPassed)}</span></span>
                 </div>
             </div>
@@ -1862,7 +1944,7 @@ function toggleOptionSelection(optKey, isMulti) {
 
 function checkAnswer() {
     let currentSelections = quizState.userAnswers[quizState.currentIndex] || [];
-    if(currentSelections.length === 0) { showNotification("⚠️ Select an option first!"); return; }
+    if(currentSelections.length === 0) { showNotification("⚠️️ Select an option first!"); return; }
     quizState.showAnswerTriggered[quizState.currentIndex] = true; _renderQuizQuestion();
 }
 
@@ -1943,7 +2025,6 @@ async function finishQuiz() {
         }
     });
 
-    // Subcollection Progress Persistence
     if (sessionAttemptedIds.length > 0) {
         if (!isDailyQuiz && !quizState.isCustom) {
             let safePath = "prog_" + currentPath.join('_').replace(/[^a-zA-Z0-9]/g, '_');
@@ -2469,7 +2550,6 @@ async function processAdminUpload() {
             if (!question || !options.A || !options.B || correctAnswers.length === 0) throw new Error("Question, Option A, Option B, and Correct Answer are required.");
             let imageUrl = null; if (imageFile) imageUrl = await uploadFileToCloudinary(imageFile); 
             
-            // Random index key for sub-second O(1) query at scale
             let randomKey = Math.random();
 
             await db.collection("content").add({ 
