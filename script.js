@@ -3,13 +3,21 @@
 // ==========================================
 const styleSheet = document.createElement('style');
 styleSheet.innerHTML = `
-    @keyframes fadeSlideUp {
-        0% { transform: translateY(15px); opacity: 0; }
-        100% { transform: translateY(0); opacity: 1; }
-    }
-    .page-transition {
-        animation: fadeSlideUp 0.3s cubic-bezier(0.25, 1, 0.5, 1) forwards;
-    }
+    @keyframes fadeSlideUp { 0% { transform: translateY(15px); opacity: 0; } 100% { transform: translateY(0); opacity: 1; } }
+    .page-transition { animation: fadeSlideUp 0.3s cubic-bezier(0.25, 1, 0.5, 1) forwards; }
+    
+    /* Premium AI Background Styles */
+    .ai-fullscreen-modal { background: #0a0a0f !important; overflow: hidden !important; border: none !important; }
+    .ai-ambient-glow { position: absolute; border-radius: 50%; pointer-events: none; filter: blur(140px); z-index: 1; }
+    .ai-glow-1 { top: -10%; left: -10%; width: 50vw; height: 50vh; background: #6228d7; opacity: 0.3; }
+    .ai-glow-2 { bottom: -10%; right: -5%; width: 60vw; height: 60vh; background: #fdb813; opacity: 0.15; }
+    .ai-glow-3 { top: 40%; left: 30%; width: 40vw; height: 40vh; background: #ff007f; opacity: 0.15; }
+    
+    /* Custom Scrollbar for Chat */
+    #gemini-chat-history::-webkit-scrollbar { width: 6px; }
+    #gemini-chat-history::-webkit-scrollbar-track { background: transparent; }
+    #gemini-chat-history::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 10px; }
+    #gemini-chat-history::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.4); }
 `;
 document.head.appendChild(styleSheet);
 
@@ -452,12 +460,6 @@ function cwLaunchQuiz() {
     _initiateQuizEngine(true);
 }
 
-function requiresQuizLogin(pathArray) {
-    const pathString = pathArray.join(" > ").toLowerCase();
-    const triggers = ["mcqs practice", "mock test", "general knowledge", "practice paper", "current affairs", "history", "geography", "daily quiz challenge"];
-    return triggers.some(trigger => pathString.includes(trigger));
-}
-
 // ==========================================
 // 6. TRACK PROGRESS AND PROFILE
 // ==========================================
@@ -819,6 +821,7 @@ function endPress(e) {
 }
 
 let cropper = null; let aiChatHistory = []; let lastExtractedQuestion = null;
+let pendingBase64Image = null; // Stores image before sending
 
 function autoExpandTextarea(field) {
     field.style.height = 'auto';
@@ -835,6 +838,7 @@ function toggleAttachMenu() {
     menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
 }
 
+// Close attachment menu if clicked outside
 document.addEventListener('click', function(e) {
     const menu = document.getElementById('ai-attach-menu');
     const plusBtn = document.querySelector('button[onclick="toggleAttachMenu()"]');
@@ -848,6 +852,7 @@ function openAIModal() {
     document.getElementById('ai-idle-view').style.display = 'flex';
     document.getElementById('ai-cropper-view').style.display = 'none';
     
+    // Clear chat history UI completely
     const historyContainer = document.getElementById('gemini-chat-history');
     const children = Array.from(historyContainer.children);
     children.forEach(child => {
@@ -856,11 +861,13 @@ function openAIModal() {
         }
     });
 
+    // Reset input box
     const input = document.getElementById('aiTextInput');
     input.value = '';
     autoExpandTextarea(input);
     document.getElementById('ai-fuzzy-box').style.display = 'none'; 
     document.getElementById('ai-attach-menu').style.display = 'none';
+    clearPendingImage();
     
     aiChatHistory = []; 
     lastExtractedQuestion = null;
@@ -886,9 +893,9 @@ function handleAIFuzzySuggestions() {
     }
     scanTree(appData);
     if(matches.length === 0) { 
-        box.innerHTML = `<div class="ai-fuzzy-item" style="color:var(--text-muted); padding: 12px; font-size: 14px;">No direct syllabus match found — AI will solve autonomously using NCERT references 🌐</div>`; 
+        box.innerHTML = `<div class="ai-fuzzy-item" style="color:var(--text-muted); padding: 12px 16px; font-size: 14px;">No direct syllabus match found — AI will solve autonomously using NCERT references 🌐</div>`; 
     } else { 
-        box.innerHTML = matches.slice(0, 5).map(m => `<div class="ai-fuzzy-item" onclick="insertAISuggestion('${m.text.replace(/'/g, "\\'")}')" style="padding: 12px; border-bottom: 1px solid #333; cursor: pointer; display: flex; justify-content: space-between; color: #fff; font-size: 14px;"><span>📚 <b>${m.type}:</b> ${m.title}</span><span style="color:var(--primary-yellow);">Use Topic &rarr;</span></div>`).join(''); 
+        box.innerHTML = matches.slice(0, 5).map(m => `<div class="ai-fuzzy-item" onclick="insertAISuggestion('${m.text.replace(/'/g, "\\'")}')" style="padding: 12px 16px; border-bottom: 1px solid #333; cursor: pointer; display: flex; justify-content: space-between; color: #fff; font-size: 14px; transition: 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.05)'" onmouseout="this.style.background='transparent'"><span>📚 <b>${m.type}:</b> ${m.title}</span><span style="color:var(--primary-yellow);">Use Topic &rarr;</span></div>`).join(''); 
     }
     box.style.display = 'block';
 }
@@ -937,78 +944,127 @@ function cancelCropper() {
     document.getElementById('aiCameraInput').value = ""; 
 }
 
-async function confirmCropAndSolve() {
+function confirmCropAndSolve() {
     if(!cropper) return; 
     const canvas = cropper.getCroppedCanvas(); 
-    const base64Image = canvas.toDataURL('image/jpeg').split(',')[1]; 
+    pendingBase64Image = canvas.toDataURL('image/jpeg').split(',')[1]; 
     
     cancelCropper(); 
-    document.getElementById('ai-idle-view').style.display = 'none';
-    appendChatBubble('user', '📷 <i>Image Uploaded</i>');
     
-    await callAIWorker({ image: base64Image, mimeType: 'image/jpeg', mode: 'solve' });
+    document.getElementById('ai-input-image-preview').src = "data:image/jpeg;base64," + pendingBase64Image;
+    document.getElementById('ai-image-preview-container').style.display = 'block';
+    document.getElementById('aiTextInput').focus();
+}
+
+function clearPendingImage() {
+    pendingBase64Image = null;
+    document.getElementById('ai-image-preview-container').style.display = 'none';
+}
+
+function editUserMessage(btn) {
+    const rawText = btn.getAttribute('data-text');
+    const inputEl = document.getElementById('aiTextInput');
+    inputEl.value = rawText;
+    autoExpandTextarea(inputEl);
+    inputEl.focus();
+}
+
+function appendChatBubble(role, htmlContent, rawText = "") {
+    const historyContainer = document.getElementById('gemini-chat-history');
+    
+    if (role === 'user') {
+        const wrapper = document.createElement('div');
+        wrapper.style.cssText = `align-self: flex-end; max-width: 85%; display: flex; align-items: flex-end; gap: 8px; margin-bottom: 5px;`;
+        
+        const editBtn = document.createElement('button');
+        editBtn.innerHTML = '✏️';
+        editBtn.title = 'Edit';
+        editBtn.setAttribute('data-text', rawText.replace(/"/g, '&quot;'));
+        editBtn.style.cssText = `background: rgba(255,255,255,0.1); border: none; color: white; width: 30px; height: 30px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; opacity: 0; transition: 0.2s; font-size: 13px;`;
+        wrapper.onmouseover = () => editBtn.style.opacity = '1';
+        wrapper.onmouseout = () => editBtn.style.opacity = '0';
+        editBtn.onclick = () => editUserMessage(editBtn);
+
+        const bubble = document.createElement('div');
+        bubble.style.cssText = `background: rgba(40, 40, 42, 0.9); backdrop-filter: blur(10px); color: white; padding: 14px 18px; border-radius: 20px 20px 0 20px; font-size: 15px; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 5px 15px rgba(0,0,0,0.3);`;
+        bubble.innerHTML = htmlContent;
+
+        wrapper.appendChild(editBtn);
+        wrapper.appendChild(bubble);
+        historyContainer.appendChild(wrapper);
+        
+    } else if (role === 'loading') {
+        const bubble = document.createElement('div');
+        bubble.id = 'ai-typing-indicator';
+        bubble.style.cssText = `background: transparent; color: var(--primary-yellow); padding: 10px 0; max-width: 85%; align-self: flex-start; font-size: 15px; display: flex; align-items: center; gap: 10px; margin-bottom: 10px;`;
+        bubble.innerHTML = `<span style="font-size: 20px; animation: pulse 1s infinite;">🤖</span> <i id="loading-text-msg">${htmlContent}</i>`;
+        historyContainer.appendChild(bubble);
+        
+    } else {
+        const bubble = document.createElement('div');
+        bubble.style.cssText = `background: transparent; color: #e3e3e3; padding: 0; max-width: 100%; align-self: flex-start; font-size: 15px; line-height: 1.6; margin-bottom: 15px;`;
+        bubble.innerHTML = htmlContent;
+        historyContainer.appendChild(bubble);
+        
+        renderMathInElement(bubble, { delimiters: [ {left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}, {left: '\\(', right: '\\)', display: false}, {left: '\\[', right: '\\]', display: true} ] });
+    }
+    
+    historyContainer.scrollTop = historyContainer.scrollHeight;
 }
 
 async function handleAISend() {
     const inputEl = document.getElementById('aiTextInput');
-    const text = inputEl.value.trim();
-    if (!text) return;
-
+    let text = inputEl.value.trim();
+    
+    if (!text && !pendingBase64Image) return; 
+    if (!text && pendingBase64Image) text = "Please solve the question in this image.";
+    
+    // Clear Input
     inputEl.value = '';
     autoExpandTextarea(inputEl);
     document.getElementById('ai-fuzzy-box').style.display = 'none';
     document.getElementById('ai-idle-view').style.display = 'none';
-
-    appendChatBubble('user', text);
-
-    if (aiChatHistory.length === 0) {
-        try {
-            const cacheSnap = await db.collection("ai_doubt_diary").where("questionText", "==", text).limit(1).get();
-            if (!cacheSnap.empty) {
-                const cachedData = cacheSnap.docs[0].data();
-                const syntheticPayload = { extractedQuestion: cachedData.questionText, subject: cachedData.subject, solution: cachedData.solution, searchKeywords: [] };
-                renderAISolution(syntheticPayload, true); 
-                return; 
-            }
-        } catch(e) { console.warn("Cache check skipped"); }
-        await callAIWorker({ text: text, mode: 'solve' });
+    
+    let displayHtml = text;
+    if (pendingBase64Image) {
+        displayHtml = `<img src="data:image/jpeg;base64,${pendingBase64Image}" style="max-height:120px; border-radius:8px; margin-bottom:10px; display:block; border:1px solid #444;">` + text;
+    }
+    
+    appendChatBubble('user', displayHtml, text);
+    
+    let isVision = !!pendingBase64Image;
+    let currentImg = pendingBase64Image;
+    clearPendingImage(); 
+    
+    if (aiChatHistory.length === 0 || isVision) {
+        if (!isVision) {
+            try {
+                const cacheSnap = await db.collection("ai_doubt_diary").where("questionText", "==", text).limit(1).get();
+                if (!cacheSnap.empty) {
+                    const cachedData = cacheSnap.docs[0].data();
+                    const syntheticPayload = { extractedQuestion: cachedData.questionText, subject: cachedData.subject, solution: cachedData.solution, searchKeywords: [] };
+                    renderAISolution(syntheticPayload, true); 
+                    return; 
+                }
+            } catch(e) {}
+        }
+        
+        let payload = isVision ? { mode: 'solve', text: text, image: currentImg, mimeType: 'image/jpeg' } : { mode: 'solve', text: text };
+        await callAIWorker(payload, 3, text);
     } else {
         aiChatHistory.push({ role: 'user', text: text });
-        await callAIWorker({ mode: 'chat', text: text, conversationHistory: aiChatHistory.slice(0, -1) });
+        await callAIWorker({ mode: 'chat', text: text, conversationHistory: aiChatHistory.slice(0, -1) }, 3, text);
     }
 }
 
-function appendChatBubble(role, htmlContent) {
-    const historyContainer = document.getElementById('gemini-chat-history');
-    const bubble = document.createElement('div');
-    
-    if (role === 'user') {
-        bubble.style.cssText = `background: #2a2a2a; color: white; padding: 15px 20px; border-radius: 20px 20px 0 20px; max-width: 85%; align-self: flex-end; font-size: 15px; border: 1px solid #444;`;
-    } else if (role === 'loading') {
-        bubble.id = 'ai-typing-indicator';
-        bubble.style.cssText = `background: transparent; color: var(--primary-yellow); padding: 10px 0; max-width: 85%; align-self: flex-start; font-size: 15px; display: flex; align-items: center; gap: 10px;`;
-        htmlContent = `<span style="font-size: 20px; animation: pulse 1s infinite;">🤖</span> <i>${htmlContent}</i>`;
-    } else {
-        bubble.style.cssText = `background: transparent; color: #e3e3e3; padding: 0; max-width: 100%; align-self: flex-start; font-size: 15px; line-height: 1.6;`;
-    }
-    
-    bubble.innerHTML = htmlContent;
-    historyContainer.appendChild(bubble);
-    historyContainer.scrollTop = historyContainer.scrollHeight;
-    
-    if (role === 'model') {
-        renderMathInElement(bubble, { delimiters: [ {left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}, {left: '\\(', right: '\\)', display: false}, {left: '\\[', right: '\\]', display: true} ] });
-    }
-}
-
-async function callAIWorker(payload, retries = 3) {
-    appendChatBubble('loading', 'Analyzing query...');
+async function callAIWorker(payload, retries = 3, originalUserText = "") {
+    appendChatBubble('loading', 'Analyzing your query...');
     
     for (let attempt = 1; attempt <= retries; attempt++) {
         try {
             if(attempt > 1) {
-                const indicator = document.getElementById('ai-typing-indicator');
-                if (indicator) indicator.innerHTML = `<span style="font-size: 20px; animation: pulse 1s infinite;">🤖</span> <i style="color:var(--wrong-red);">High demand, retrying... (Attempt ${attempt}/${retries})</i>`;
+                const indicatorText = document.getElementById('loading-text-msg');
+                if (indicatorText) indicatorText.innerHTML = `<span style="color:var(--wrong-red);">High demand, retrying... (Attempt ${attempt}/${retries})</span>`;
             }
 
             const res = await fetch(AI_WORKER_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
@@ -1022,8 +1078,15 @@ async function callAIWorker(payload, retries = 3) {
                 if (indicator) indicator.remove();
                 
                 aiChatHistory.push({ role: 'model', text: data.reply }); 
+                
+                let bubbleId = 'msg_' + Date.now();
+                window.chatDoubts = window.chatDoubts || {};
+                window.chatDoubts[bubbleId] = { q: originalUserText, a: data.reply };
+                
                 let parsedHTML = marked.parse(data.reply);
-                appendChatBubble('model', parsedHTML);
+                let saveBtnHTML = `<div style="margin-top:15px;"><button onclick="saveChatDoubt('${bubbleId}', this)" style="background:rgba(253, 184, 19, 0.1); color:var(--primary-yellow); padding: 8px 15px; border: 1px solid rgba(253,184,19,0.4); border-radius:20px; cursor:pointer; font-size:13px; display:inline-flex; align-items:center; gap:5px; transition:0.2s;" onmouseover="this.style.background='var(--primary-yellow)'; this.style.color='black';" onmouseout="this.style.background='rgba(253, 184, 19, 0.1)'; this.style.color='var(--primary-yellow)';"><span>📔</span> Save Explanation to Doubt Diary</button></div>`;
+                
+                appendChatBubble('model', parsedHTML + saveBtnHTML);
             }
             return; 
         } catch(e) {
@@ -1036,7 +1099,7 @@ async function callAIWorker(payload, retries = 3) {
                 const indicator = document.getElementById('ai-typing-indicator');
                 if (indicator) indicator.remove();
                 showNotification("❌ AI Error: " + e.message); 
-                appendChatBubble('model', `<span style="color:var(--wrong-red);">❌ AI Error: ${e.message}</span>`);
+                appendChatBubble('model', `<div style="background: rgba(244, 67, 54, 0.1); border-left: 4px solid var(--wrong-red); padding: 12px; border-radius: 4px;"><span style="color:var(--wrong-red);">❌ AI Error: ${e.message}</span></div>`);
                 return; 
             }
         }
@@ -1053,13 +1116,13 @@ async function renderAISolution(data, isCached = false) {
     let html = ``;
     
     if (isCached) {
-        html += `<div style="border: 1px solid var(--primary-yellow); background: rgba(253, 184, 19, 0.1); padding: 10px 15px; border-radius: 8px; margin-bottom: 15px; display: inline-block;"><div><b style="color:var(--primary-yellow);">⚡ Instant Cache Match!</b> <span style="font-size:12px; color:var(--text-light); margin-left:10px;">Served from Firebase</span></div></div><br>`;
+        html += `<div style="border: 1px solid rgba(253, 184, 19, 0.3); background: rgba(253, 184, 19, 0.1); padding: 10px 15px; border-radius: 8px; margin-bottom: 15px; display: inline-block;"><div><b style="color:var(--primary-yellow);">⚡ Instant Cache Match!</b> <span style="font-size:12px; color:var(--text-muted); margin-left:10px;">Served from Firebase</span></div></div><br>`;
     } else {
         const isFound = await checkDatabaseForQuestion(data.searchKeywords);
         if (isFound) { 
-            html += `<div style="border: 1px solid var(--correct-green); background: rgba(76, 175, 80, 0.1); padding: 10px 15px; border-radius: 8px; margin-bottom: 15px; display: inline-block;"><div><b style="color:var(--correct-green);">✅ Verified Match in MCQsPrep!</b><br><span style="font-size:13px; color:var(--text-light);">${isFound.path}</span></div><button onclick="closeAIModal(); jumpToSection(${JSON.stringify(isFound.path.split(' > ')).replace(/"/g, "'")}); window.location.hash='#/quiz';" style="margin-top:10px; background:var(--correct-green); border:none; padding:6px 12px; color:white; border-radius:6px; cursor:pointer;">Go Practice 🚀</button></div><br>`; 
+            html += `<div style="border: 1px solid rgba(76, 175, 80, 0.3); background: rgba(76, 175, 80, 0.1); padding: 12px 18px; border-radius: 8px; margin-bottom: 15px; display: inline-block;"><div><b style="color:var(--correct-green);">✅ Verified Match in MCQsPrep!</b><br><span style="font-size:13px; color:var(--text-light);">${isFound.path}</span></div><button onclick="closeAIModal(); jumpToSection(${JSON.stringify(isFound.path.split(' > ')).replace(/"/g, "'")}); window.location.hash='#/quiz';" style="margin-top:12px; background:var(--correct-green); border:none; padding:8px 16px; color:white; border-radius:6px; cursor:pointer; font-weight:bold; font-size:14px;">Go Practice 🚀</button></div><br>`; 
         } else { 
-            html += `<div style="border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.05); padding: 10px 15px; border-radius: 8px; margin-bottom: 15px; font-size: 13px; color: #ccc; display: inline-block;">🌐 <b>Curriculum Knowledge Base Solution:</b> Solved autonomously using verified NCERT syllabus standards.</div><br>`; 
+            html += `<div style="border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.05); padding: 10px 15px; border-radius: 8px; margin-bottom: 15px; font-size: 13px; color: #ccc; display: inline-block;">🌐 <b>Curriculum Knowledge Base Solution:</b> Solved autonomously using verified NCERT syllabus standards.</div><br>`; 
         }
     }
     
@@ -1068,9 +1131,40 @@ async function renderAISolution(data, isCached = false) {
     
     let parsedHTML = marked.parse(solutionMarkdown);
     html += `<div style="margin-bottom: 15px;">${parsedHTML}</div>`;
-    html += `<button onclick="saveToDoubtDiary()" style="background:transparent; color:var(--primary-yellow); padding: 8px 15px; border: 1px solid var(--primary-yellow); border-radius:20px; cursor:pointer; font-size:13px; display:inline-flex; align-items:center; gap:5px;"><span>📔</span> Save Explanation to Doubt Diary</button>`;
+    html += `<button onclick="saveToDoubtDiary()" style="background:rgba(253, 184, 19, 0.1); color:var(--primary-yellow); padding: 8px 15px; border: 1px solid rgba(253,184,19,0.4); border-radius:20px; cursor:pointer; font-size:13px; display:inline-flex; align-items:center; gap:5px; transition:0.2s;" onmouseover="this.style.background='var(--primary-yellow)'; this.style.color='black';" onmouseout="this.style.background='rgba(253, 184, 19, 0.1)'; this.style.color='var(--primary-yellow)';"><span>📔</span> Save Explanation to Doubt Diary</button>`;
 
     appendChatBubble('model', html);
+}
+
+async function saveChatDoubt(bubbleId, btnEl) {
+    if (!currentUser) { showAuthModal(); return; }
+    let data = window.chatDoubts[bubbleId];
+    if (!data) return;
+    
+    btnEl.innerText = "Saving..."; 
+    btnEl.disabled = true;
+    
+    try {
+        await db.collection("ai_doubt_diary").add({
+            userId: currentUser.uid,
+            questionText: data.q,
+            subject: lastExtractedQuestion ? lastExtractedQuestion.subject : "Follow-up Doubt",
+            solution: {
+                keyConcept: "AI Chat Conversation",
+                stepByStep: data.a,
+                finalAnswer: "Review details above."
+            },
+            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        btnEl.innerHTML = "✅ Saved to Diary";
+        btnEl.style.background = "var(--correct-green)";
+        btnEl.style.color = "white";
+        btnEl.style.borderColor = "var(--correct-green)";
+        showNotification("📔 Follow-up saved to your Doubt Diary!");
+    } catch(e) {
+        btnEl.innerText = "❌ Failed to Save";
+        showNotification("❌ Error: " + e.message);
+    }
 }
 
 async function checkDatabaseForQuestion(keywords) {
@@ -1647,7 +1741,7 @@ async function finishQuiz() {
             <div id="review-wrong" style="display:none;">${wrongHtml || '<p>No wrong answers!</p>'}</div>
             <div id="review-skipped" style="display:none;">${skippedHtml || '<p>No skipped questions.</p>'}</div>
             ${flaggedListHtml !== '' ? `<h3 style="text-align:left; color:var(--primary-yellow); margin-top: 40px;">⭐ Sent to Admin</h3>${flaggedListHtml}` : ''}
-            <button class="btn-exam" onclick="window.location.hash='#/home'" style="width: 250px; margin-top:30px; background:#333; border:none;">&larr; Exit to Dashboard</button>
+            <button class="btn-exam" onclick="window.history.back()" style="width: 250px; margin-top:30px; background:#333; border:none;">&larr; Exit to Dashboard</button>
         </div>
     `;
     
