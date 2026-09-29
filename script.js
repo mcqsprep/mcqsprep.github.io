@@ -7,7 +7,8 @@ styleSheet.innerHTML = `
     .page-transition { animation: fadeSlideUp 0.3s cubic-bezier(0.25, 1, 0.5, 1) forwards; }
     
     /* Premium AI Background Styles */
-    .ai-fullscreen-modal { background: #0a0a0f !important; overflow: hidden !important; border: none !important; height: 100dvh !important; max-height: 100dvh !important; }
+    .ai-fullscreen-modal { background: #0a0a0f !important; overflow: hidden !important; border: none !important; height: 100dvh !important; max-height: 100dvh !important; box-sizing: border-box; }
+    .ai-fullscreen-modal * { box-sizing: border-box; }
     .ai-ambient-glow { position: absolute; border-radius: 50%; pointer-events: none; filter: blur(140px); z-index: 1; }
     .ai-glow-1 { top: -10%; left: -10%; width: 50vw; height: 50vh; background: #6228d7; opacity: 0.3; }
     .ai-glow-2 { bottom: -10%; right: -5%; width: 60vw; height: 60vh; background: #fdb813; opacity: 0.15; }
@@ -20,8 +21,11 @@ styleSheet.innerHTML = `
     #gemini-chat-history::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.4); }
     
     /* Fix Mobile Text Cut-offs */
-    .ai-chat-bubble { word-wrap: break-word; overflow-wrap: break-word; box-sizing: border-box; max-width: 100%; overflow-x: auto; }
-    .katex-display { overflow-x: auto; overflow-y: hidden; padding-bottom: 5px; }
+    .ai-chat-bubble { overflow-wrap: break-word; word-wrap: break-word; word-break: break-word; max-width: 100%; box-sizing: border-box; }
+    .ai-chat-bubble p { margin-top: 0; max-width: 100%; overflow-wrap: break-word; }
+    .katex-display { max-width: 100%; overflow-x: auto; overflow-y: hidden; padding-bottom: 8px; margin: 10px 0; }
+    .katex-display::-webkit-scrollbar { height: 4px; }
+    .katex-display::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.3); border-radius: 4px; }
     
     /* Fix Mobile Button Dragging & Text Highlighting */
     #ai-floating-btn { -webkit-user-select: none; -ms-user-select: none; user-select: none; touch-action: none; }
@@ -1016,6 +1020,7 @@ function appendChatBubble(role, htmlContent, rawText = "") {
         editBtn.onclick = () => editUserMessage(editBtn);
 
         const bubble = document.createElement('div');
+        bubble.className = 'ai-chat-bubble';
         bubble.style.cssText = `background: rgba(40, 40, 42, 0.9); backdrop-filter: blur(10px); color: white; padding: 14px 18px; border-radius: 20px 20px 0 20px; font-size: 15px; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 5px 15px rgba(0,0,0,0.3);`;
         bubble.innerHTML = htmlContent;
 
@@ -1025,6 +1030,7 @@ function appendChatBubble(role, htmlContent, rawText = "") {
         
     } else if (role === 'loading') {
         const bubble = document.createElement('div');
+        bubble.className = 'ai-chat-bubble';
         bubble.id = 'ai-typing-indicator';
         bubble.style.cssText = `background: transparent; color: var(--primary-yellow); padding: 10px 0; max-width: 85%; align-self: flex-start; font-size: 15px; display: flex; align-items: center; gap: 10px; margin-bottom: 10px;`;
         bubble.innerHTML = `<span style="font-size: 20px; animation: pulse 1s infinite;">🤖</span> <i id="loading-text-msg">${htmlContent}</i>`;
@@ -1032,6 +1038,7 @@ function appendChatBubble(role, htmlContent, rawText = "") {
         
     } else {
         const bubble = document.createElement('div');
+        bubble.className = 'ai-chat-bubble';
         bubble.style.cssText = `background: transparent; color: #e3e3e3; padding: 0; max-width: 100%; align-self: flex-start; font-size: 15px; line-height: 1.6; margin-bottom: 15px;`;
         bubble.innerHTML = htmlContent;
         historyContainer.appendChild(bubble);
