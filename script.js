@@ -7,17 +7,24 @@ styleSheet.innerHTML = `
     .page-transition { animation: fadeSlideUp 0.3s cubic-bezier(0.25, 1, 0.5, 1) forwards; }
     
     /* Premium AI Background Styles */
-    .ai-fullscreen-modal { background: #0a0a0f !important; overflow: hidden !important; border: none !important; }
+    .ai-fullscreen-modal { background: #0a0a0f !important; overflow: hidden !important; border: none !important; height: 100dvh !important; max-height: 100dvh !important; }
     .ai-ambient-glow { position: absolute; border-radius: 50%; pointer-events: none; filter: blur(140px); z-index: 1; }
     .ai-glow-1 { top: -10%; left: -10%; width: 50vw; height: 50vh; background: #6228d7; opacity: 0.3; }
     .ai-glow-2 { bottom: -10%; right: -5%; width: 60vw; height: 60vh; background: #fdb813; opacity: 0.15; }
     .ai-glow-3 { top: 40%; left: 30%; width: 40vw; height: 40vh; background: #ff007f; opacity: 0.15; }
     
-    /* Custom Scrollbar for Chat */
+    /* Custom Scrollbar & Prevent Overflows */
     #gemini-chat-history::-webkit-scrollbar { width: 6px; }
     #gemini-chat-history::-webkit-scrollbar-track { background: transparent; }
     #gemini-chat-history::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 10px; }
     #gemini-chat-history::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.4); }
+    
+    /* Fix Mobile Text Cut-offs */
+    .ai-chat-bubble { word-wrap: break-word; overflow-wrap: break-word; box-sizing: border-box; max-width: 100%; overflow-x: auto; }
+    .katex-display { overflow-x: auto; overflow-y: hidden; padding-bottom: 5px; }
+    
+    /* Fix Mobile Button Dragging & Text Highlighting */
+    #ai-floating-btn { -webkit-user-select: none; -ms-user-select: none; user-select: none; touch-action: none; }
 `;
 document.head.appendChild(styleSheet);
 
@@ -341,6 +348,7 @@ function getAllLeafNodes(subjectPaths) {
 
 function cwStep1() {
     if(!currentUser) { showAuthModal(); return; }
+    document.getElementById('main-sidebar').style.display = 'none';
     cwState = { exam: '', subjects: [], subtopics: [], count: 20, level: 'Mixed' };
     document.getElementById('breadcrumb-text').innerText = "Home / Custom Practice Setup";
     document.getElementById('dynamic-content').innerHTML = `
@@ -356,6 +364,7 @@ function cwStep1() {
 }
 
 function cwStep2(exam) {
+    document.getElementById('main-sidebar').style.display = 'none';
     cwState.exam = exam; 
     document.getElementById('breadcrumb-text').innerText = `Home / Custom Practice Setup / ${exam}`;
     let subjects = getCustomSubjects(exam);
@@ -381,6 +390,7 @@ function cwProcessStep2() {
 }
 
 function cwStep3() {
+    document.getElementById('main-sidebar').style.display = 'none';
     document.getElementById('breadcrumb-text').innerText = `Home / Custom Practice Setup / Chapters`;
     let leafs = getAllLeafNodes(cwState.subjects);
     document.getElementById('dynamic-content').innerHTML = `
@@ -423,6 +433,7 @@ function cwProcessStep3() {
 }
 
 function cwStep4() {
+    document.getElementById('main-sidebar').style.display = 'none';
     document.getElementById('breadcrumb-text').innerText = `Home / Custom Practice Setup / Configure Quiz`;
     document.getElementById('dynamic-content').innerHTML = `
         <div class="card page-transition">
@@ -838,6 +849,7 @@ function toggleAttachMenu() {
     menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
 }
 
+// Paste Image from Clipboard Support
 function handleAIPaste(e) {
     const items = (e.clipboardData || window.clipboardData).items;
     for (let i = 0; i < items.length; i++) {
