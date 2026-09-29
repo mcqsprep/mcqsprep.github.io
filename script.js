@@ -1,6 +1,30 @@
 // ==========================================
 // 1. SYSTEM INITIALIZATION & CONFIGURATION
 // ==========================================
+const styleSheet = document.createElement('style');
+styleSheet.innerHTML = `
+    @keyframes slideInFromRight {
+        0% { transform: translateX(25px); opacity: 0; }
+        100% { transform: translateX(0); opacity: 1; }
+    }
+    .page-transition {
+        animation: slideInFromRight 0.25s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+    }
+`;
+document.head.appendChild(styleSheet);
+
+function renderWithTransition(html, skipAnimation = false) {
+    const mc = document.getElementById('dynamic-content');
+    if(mc) {
+        if(skipAnimation) {
+            mc.innerHTML = html;
+        } else {
+            mc.innerHTML = `<div class="page-transition">${html}</div>`;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+    }
+}
+
 const firebaseConfig = { 
     apiKey: "AIzaSyDuletjxV1THjWvWLvO0XqB_z5xBBXLwL8", 
     authDomain: "mcqsprep.firebaseapp.com", 
@@ -118,9 +142,22 @@ function signInWithGoogle() { auth.signInWithPopup(provider).catch(err => showNo
 function signOut() { if(confirm("Are you sure you want to sign out?")) auth.signOut(); }
 
 // ==========================================
-// 3. ROUTING ENGINE
+// 3. STRICT ROUTING ENGINE (Fixes Ping Pong & Adds Slides)
 // ==========================================
-window.addEventListener('hashchange', handleRouting);
+let lastHash = window.location.hash || '#/home';
+let viewHistoryStack = [];
+let isReplacing = false;
+
+window.addEventListener('hashchange', () => {
+    let currentHash = window.location.hash;
+    if (isReplacing) {
+        isReplacing = false; 
+    } else {
+        viewHistoryStack.push(lastHash);
+    }
+    lastHash = currentHash;
+    handleRouting();
+});
 
 function handleRouting() {
     try {
@@ -147,22 +184,33 @@ function handleRouting() {
     }
 }
 
+function navigateToHash(newHash) {
+    window.location.hash = newHash; 
+}
+
 function goHome() { 
     if (window.location.hash === '#/home' || window.location.hash === '') {
         currentPath = [];
         _renderView();
     } else {
-        window.location.hash = '#/home'; 
+        viewHistoryStack = []; // Reset stack
+        navigateToHash('#/home'); 
     }
 }
-function navigateTo(key) { window.location.hash = '#/path/' + encodeURIComponent([...currentPath, key].join('/')).replace(/%2F/g, '/'); }
-function jumpToSection(pathArray) { window.location.hash = '#/path/' + encodeURIComponent(pathArray.join('/')).replace(/%2F/g, '/'); }
-function showLeaderboardOptions() { window.location.hash = '#/leaderboard'; }
+
+function navigateTo(key) { navigateToHash('#/path/' + encodeURIComponent([...currentPath, key].join('/')).replace(/%2F/g, '/')); }
+function jumpToSection(pathArray) { navigateToHash('#/path/' + encodeURIComponent(pathArray.join('/')).replace(/%2F/g, '/')); }
+function showLeaderboardOptions() { navigateToHash('#/leaderboard'); }
+
 function goBack() { 
-    if (window.history.length > 1 && window.location.hash !== '#/home') {
-        window.history.back(); 
+    if (viewHistoryStack.length > 0) {
+        let targetHash = viewHistoryStack.pop();
+        isReplacing = true;
+        // Using replace prevents the browser from looping endlessly
+        window.location.replace(window.location.origin + window.location.pathname + targetHash);
     } else {
-        goHome();
+        isReplacing = true;
+        window.location.replace(window.location.origin + window.location.pathname + '#/home');
     }
 }
 
@@ -205,20 +253,20 @@ function _renderView() {
             
             if (!isPdfSection) {
                 let studentName = (currentUser && currentUser.displayName) ? currentUser.displayName.split(" ")[0] : "Student";
-                mc.innerHTML = `
+                renderWithTransition(`
                 <div class="card">
                     <h2 style="color:var(--primary-yellow);">${topicName} Practice</h2>
                     <p style="color:var(--text-muted); margin-bottom:25px;">${!currentUser ? "Sign in to track your scores on the leaderboard!" : `Ready for practice, <span style="color:var(--primary-yellow);">${studentName}</span>?`}</p>
-                    <button class="btn-exam" onclick="window.location.hash='#/quiz'" style="background:var(--primary-yellow); color:black; width:200px; margin-right:15px; font-size:16px;">Start Quiz &rarr;</button>
+                    <button class="btn-exam" onclick="navigateToHash('#/quiz')" style="background:var(--primary-yellow); color:black; width:200px; margin-right:15px; font-size:16px;">Start Quiz &rarr;</button>
                     <button class="btn-exam" onclick="goBack()" style="background:#333; width:150px; font-size:16px; border:none;">&larr; Go Back</button>
-                </div>`;
+                </div>`);
             } else {
-                mc.innerHTML = `
+                renderWithTransition(`
                 <div class="card">
                     <h2 style="color:var(--primary-yellow);">${topicName} Resources</h2>
                     <p style="color:var(--text-muted);">Materials will appear here once uploaded via the Admin Panel.</p>
                     <button class="btn-exam" onclick="goBack()" style="background:#333; width:150px; margin-top:20px; font-size:16px; border:none;">&larr; Go Back</button>
-                </div>`;
+                </div>`);
             }
             return;
         }
@@ -251,7 +299,7 @@ function _renderView() {
             h += `<button class="btn-exam" onclick="goBack()" style="grid-column: 1 / -1; background: #222; border-color: #444; color: #a0a0a0; margin-top: 10px;">&larr; Go Back</button>`;
         }
         h += `</div></div>`; 
-        mc.innerHTML = h;
+        renderWithTransition(h);
     } catch(err) { console.error("Render View Error:", err); }
 }
 
@@ -311,7 +359,7 @@ function cwStep1() {
     if(!currentUser) { showAuthModal(); return; }
     cwState = { exam: '', subjects: [], subtopics: [], count: 20, level: 'Mixed' };
     document.getElementById('breadcrumb-text').innerText = "Home / Custom Practice Setup";
-    document.getElementById('dynamic-content').innerHTML = `
+    renderWithTransition(`
         <div class="card">
             <h2 style="color:var(--primary-yellow);">⚙️ Custom Practice Setup</h2>
             <p style="color:var(--text-muted); margin-bottom:25px;">Step 1: Which exam are you preparing for?</p>
@@ -320,14 +368,14 @@ function cwStep1() {
                 <button class="btn-exam" onclick="cwStep2('General Knowledge')" style="flex:1; padding:20px; font-size:18px;">🌍 General Knowledge</button>
             </div>
             <button class="btn-exam" onclick="goHome()" style="margin-top:20px; background:#333; border:none;">&larr; Cancel</button>
-        </div>`;
+        </div>`);
 }
 
 function cwStep2(exam) {
     cwState.exam = exam; 
     document.getElementById('breadcrumb-text').innerText = `Home / Custom Practice Setup / ${exam}`;
     let subjects = getCustomSubjects(exam);
-    document.getElementById('dynamic-content').innerHTML = `
+    renderWithTransition(`
         <div class="card">
             <h2 style="color:var(--primary-yellow);">📚 Select Subjects</h2>
             <p style="color:var(--text-muted); margin-bottom:20px;">Choose one or more subjects from ${exam}.</p>
@@ -338,7 +386,7 @@ function cwStep2(exam) {
                 <button class="btn-exam" onclick="cwStep1()" style="background:#333; border:none;">&larr; Back</button>
                 <button class="btn-exam" onclick="cwProcessStep2()" style="background:var(--primary-yellow); color:black; border:none;">Next: Select Chapters &rarr;</button>
             </div>
-        </div>`;
+        </div>`);
 }
 
 function cwProcessStep2() {
@@ -351,7 +399,7 @@ function cwProcessStep2() {
 function cwStep3() {
     document.getElementById('breadcrumb-text').innerText = `Home / Custom Practice Setup / Chapters`;
     let leafs = getAllLeafNodes(cwState.subjects);
-    document.getElementById('dynamic-content').innerHTML = `
+    renderWithTransition(`
         <div class="card">
             <h2 style="color:var(--primary-yellow);">📑 Select Chapters / Subtopics</h2>
             <p style="color:var(--text-muted); margin-bottom:20px;">Step 3: Pick the specific topics you want to practice.</p>
@@ -367,7 +415,7 @@ function cwStep3() {
                 <button class="btn-exam" onclick="cwStep2(cwState.exam)" style="background:#333; border:none;">&larr; Back</button>
                 <button class="btn-exam" onclick="cwProcessStep3()" style="background:var(--primary-yellow); color:black; border:none;">Next: Set Difficulty &rarr;</button>
             </div>
-        </div>`;
+        </div>`);
 }
 
 function cwFilterSubtopics() {
@@ -392,7 +440,7 @@ function cwProcessStep3() {
 
 function cwStep4() {
     document.getElementById('breadcrumb-text').innerText = `Home / Custom Practice Setup / Configure Quiz`;
-    document.getElementById('dynamic-content').innerHTML = `
+    renderWithTransition(`
         <div class="card">
             <h2 style="color:var(--primary-yellow);">🎯 Final Setup</h2>
             <p style="color:var(--text-muted);">Step 4: Choose difficulty and number of questions.</p>
@@ -415,7 +463,7 @@ function cwStep4() {
                 <button class="btn-exam" onclick="cwStep3()" style="background:#333; border:none;">&larr; Back</button>
                 <button class="btn-exam" onclick="cwLaunchQuiz()" style="background:var(--correct-green); color:white; font-size:18px; padding:15px 30px; border:none; box-shadow:0 4px 15px rgba(76,175,80,0.4);">🚀 Start Custom Quiz</button>
             </div>
-        </div>`;
+        </div>`);
 }
 
 function cwLaunchQuiz() {
@@ -438,20 +486,20 @@ function requiresQuizLogin(pathArray) {
 // 6. TRACK PROGRESS, STREAK, AND PROFILE
 // ==========================================
 function _renderProgressSelection() {
-    if (!currentUser) return document.getElementById('dynamic-content').innerHTML = `<div class="card" style="text-align:center;"><h2>⚠️ Sign In Required</h2><button class="btn-exam" onclick="goBack()" style="background:#333; border:none;">Back</button></div>`;
+    if (!currentUser) return renderWithTransition(`<div class="card" style="text-align:center;"><h2>⚠️ Sign In Required</h2><button class="btn-exam" onclick="goBack()" style="background:#333; border:none;">Back</button></div>`);
     document.getElementById('breadcrumb-text').innerText = "Home / Profile / Track Progress";
-    document.getElementById('dynamic-content').innerHTML = `
+    renderWithTransition(`
         <div class="card" style="text-align:center; padding: 40px 20px;">
             <h2 style="color:var(--primary-yellow); font-size:24px;">📊 Select Analytics Dashboard</h2>
             <p style="color:var(--text-muted); margin-bottom:30px; font-size:14px;">Choose an exam category to view your detailed performance metrics and weak spots.</p>
             <div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
-                <button class="btn-exam" onclick="window.location.hash='#/progress/NEET_MCQ'" style="width:100%; max-width:250px; padding:15px; font-size:16px;">🩺 NEET MCQs Practice</button>
-                <button class="btn-exam" onclick="window.location.hash='#/progress/NEET_MOCK'" style="width:100%; max-width:250px; padding:15px; font-size:16px;">⏱️ NEET Mock Test</button>
-                <button class="btn-exam" onclick="window.location.hash='#/progress/GK'" style="width:100%; max-width:250px; padding:15px; font-size:16px;">🌍 GK Analytics</button>
+                <button class="btn-exam" onclick="navigateToHash('#/progress/NEET_MCQ')" style="width:100%; max-width:250px; padding:15px; font-size:16px;">🩺 NEET MCQs Practice</button>
+                <button class="btn-exam" onclick="navigateToHash('#/progress/NEET_MOCK')" style="width:100%; max-width:250px; padding:15px; font-size:16px;">⏱️ NEET Mock Test</button>
+                <button class="btn-exam" onclick="navigateToHash('#/progress/GK')" style="width:100%; max-width:250px; padding:15px; font-size:16px;">🌍 GK Analytics</button>
             </div>
             <button class="btn-exam" onclick="goBack()" style="margin-top:30px; background:#333; border:none;">&larr; Back</button>
         </div>
-    `;
+    `);
 }
 
 async function _renderProgressDashboard(category) {
@@ -459,8 +507,7 @@ async function _renderProgressDashboard(category) {
     
     let displayCategory = category === 'NEET_MCQ' ? 'NEET MCQs Practice' : (category === 'NEET_MOCK' ? 'NEET Mock Tests' : 'General Knowledge');
     document.getElementById('breadcrumb-text').innerText = `Home / Profile / Progress / ${displayCategory}`;
-    const mc = document.getElementById('dynamic-content'); 
-    mc.innerHTML = `<div class="card"><h2>📊 Compiling Diagnostics...</h2></div>`;
+    renderWithTransition(`<div class="card"><h2>📊 Compiling Diagnostics...</h2></div>`);
     
     try {
         const snap = await db.collection("leaderboards").where("userId", "==", currentUser.uid).get();
@@ -485,7 +532,7 @@ async function _renderProgressDashboard(category) {
         });
 
         if (validDocs.length === 0) {
-            mc.innerHTML = `<div class="card" style="text-align:center;"><h2>No Data Available</h2><p style="color:var(--text-muted); font-size:14px;">You haven't completed any quizzes in the ${displayCategory} category yet.</p><button class="btn-exam" onclick="goBack()" style="background:#333; border:none;">&larr; Back</button></div>`;
+            renderWithTransition(`<div class="card" style="text-align:center;"><h2>No Data Available</h2><p style="color:var(--text-muted); font-size:14px;">You haven't completed any quizzes in the ${displayCategory} category yet.</p><button class="btn-exam" onclick="goBack()" style="background:#333; border:none;">&larr; Back</button></div>`);
             return;
         }
 
@@ -548,7 +595,7 @@ async function _renderProgressDashboard(category) {
             ? weakSubjects.join(' • ') 
             : "<span style='color:var(--correct-green);'>✅ Excellent! All subjects are >50% accuracy. Keep it up!</span>";
 
-        mc.innerHTML = `
+        renderWithTransition(`
         <div class="card" style="padding: 20px 15px;">
             <h2 style="color:var(--primary-yellow); margin-top:0; margin-bottom:15px; font-size:22px;">${displayCategory}</h2>
             
@@ -592,12 +639,12 @@ async function _renderProgressDashboard(category) {
                 </div>
             </div>
 
-            <button class="btn-exam" onclick="window.location.hash='#/progress'" style="margin-top:20px; background:#333; border:none; width:100%; max-width:200px;">&larr; Back to Selection</button>
-        </div>`;
+            <button class="btn-exam" onclick="navigateToHash('#/progress')" style="margin-top:20px; background:#333; border:none; width:100%; max-width:200px;">&larr; Back to Selection</button>
+        </div>`);
 
         setTimeout(() => drawAccuracyChart(recentTrend), 50);
 
-    } catch(e) { mc.innerHTML = `<div class="card"><p>Error: ${e.message}</p><button class="btn-exam" onclick="goBack()" style="background:#333; border:none;">&larr; Back</button></div>`; }
+    } catch(e) { renderWithTransition(`<div class="card"><p>Error: ${e.message}</p><button class="btn-exam" onclick="goBack()" style="background:#333; border:none;">&larr; Back</button></div>`); }
 }
 
 function drawAccuracyChart(dataPoints) {
@@ -684,10 +731,9 @@ function calculateStreak(dates) {
 }
 
 async function _renderStreak() {
-    if (!currentUser) return document.getElementById('dynamic-content').innerHTML = `<div class="card" style="text-align:center;"><h2>⚠️ Sign In Required</h2><button class="btn-exam" onclick="goBack()" style="background:#333; border:none;">Back</button></div>`;
+    if (!currentUser) return renderWithTransition(`<div class="card" style="text-align:center;"><h2>⚠️ Sign In Required</h2><button class="btn-exam" onclick="goBack()" style="background:#333; border:none;">Back</button></div>`);
     document.getElementById('breadcrumb-text').innerText = "Home / Profile / My Streak";
-    const mc = document.getElementById('dynamic-content'); 
-    mc.innerHTML = `<div class="card"><h2>🔥 Fetching Streak...</h2></div>`;
+    renderWithTransition(`<div class="card"><h2>🔥 Fetching Streak...</h2></div>`);
     try {
         let doc = await db.collection("users").doc(currentUser.uid).get();
         let dates = doc.exists ? (doc.data().activeDates || []) : [];
@@ -697,8 +743,8 @@ async function _renderStreak() {
             datesHtml += `<li style="background:#2a2a2a; padding:8px 12px; border-radius:6px; border:1px solid var(--correct-green); color:var(--correct-green); font-weight:bold;">✅ ${d}</li>`; 
         });
         datesHtml += `</ul>`;
-        mc.innerHTML = `<div class="card" style="text-align:center;"><h2 style="color:var(--primary-yellow);">🔥 Daily Streak</h2><div style="font-size: 80px; margin: 20px 0;">🔥</div><div style="font-size: 32px; font-weight: bold; margin-bottom: 10px;">${streak} Day${streak !== 1 ? 's' : ''}</div><p style="color:var(--text-muted); font-size:14px; margin-bottom:30px;"><i>Spend at least 5 minutes practicing daily to maintain your streak!</i></p>${dates.length > 0 ? datesHtml : ''}<button class="btn-exam" onclick="goBack()" style="margin-top:20px; background:#333; border:none;">Back</button></div>`;
-    } catch(e) { mc.innerHTML = `<div class="card"><h2>Error</h2><p>${e.message}</p></div>`; }
+        renderWithTransition(`<div class="card" style="text-align:center;"><h2 style="color:var(--primary-yellow);">🔥 Daily Streak</h2><div style="font-size: 80px; margin: 20px 0;">🔥</div><div style="font-size: 32px; font-weight: bold; margin-bottom: 10px;">${streak} Day${streak !== 1 ? 's' : ''}</div><p style="color:var(--text-muted); font-size:14px; margin-bottom:30px;"><i>Spend at least 5 minutes practicing daily to maintain your streak!</i></p>${dates.length > 0 ? datesHtml : ''}<button class="btn-exam" onclick="goBack()" style="margin-top:20px; background:#333; border:none;">Back</button></div>`);
+    } catch(e) { renderWithTransition(`<div class="card"><h2>Error</h2><p>${e.message}</p></div>`); }
 }
 
 async function checkUserNotifications() {
@@ -800,7 +846,7 @@ async function fetchGlobalRating() {
 fetchGlobalRating();
 
 // ==========================================
-// 7. ASK AI (DRAG AND DROP) LOGIC
+// 7. ASK AI LOGIC
 // ==========================================
 const aiBtn = document.getElementById('ai-floating-btn');
 let pressTimer; let isDragging = false; let startX, startY, initialX, initialY;
@@ -955,7 +1001,6 @@ async function processAIText() {
     await callAIWorker({ text: text, mode: 'solve' });
 }
 
-// FIXED: Implemented Exponential Backoff Auto-Retry System
 async function callAIWorker(payload, retries = 3) {
     document.getElementById('ai-idle-view').style.display = 'none';
     document.getElementById('ai-loading-view').style.display = 'flex';
@@ -986,19 +1031,18 @@ async function callAIWorker(payload, retries = 3) {
                 renderMathInElement(chatDiv, { delimiters: [ {left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}, {left: '\\(', right: '\\)', display: false}, {left: '\\[', right: '\\]', display: true} ] });
                 document.getElementById('ai-chat-history').scrollTop = document.getElementById('ai-chat-history').scrollHeight;
             }
-            return; // Success, exit function
+            return; 
         } catch(e) {
             let errorMsg = e.message.toLowerCase();
             let isHighDemand = errorMsg.includes("high demand") || errorMsg.includes("overloaded") || errorMsg.includes("503") || errorMsg.includes("429");
             
             if (isHighDemand && attempt < retries) {
-                // Wait for 2.5 seconds before retrying silently
                 await new Promise(resolve => setTimeout(resolve, 2500));
             } else {
                 document.getElementById('ai-loading-view').style.display = 'none'; 
                 document.getElementById('ai-idle-view').style.display = 'flex'; 
                 showNotification("❌ AI Error: " + e.message); 
-                return; // Exit on final failure
+                return; 
             }
         }
     }
@@ -1018,7 +1062,7 @@ async function renderAISolution(data, isCached = false) {
     } else {
         const isFound = await checkDatabaseForQuestion(data.searchKeywords);
         if (isFound) { 
-            html += `<div class="ai-match-card"><div><b style="color:var(--correct-green);">✅ Verified Match in MCQsPrep!</b><br><span style="font-size:13px; color:var(--text-light);">${isFound.path}</span></div><button class="btn-exam" onclick="closeAIModal(); jumpToSection(${JSON.stringify(isFound.path.split(' > ')).replace(/"/g, "'")}); window.location.hash='#/quiz';" style="background:var(--correct-green); border:none; padding:8px 14px; color:white; border-radius:6px;">Go Practice 🚀</button></div>`; 
+            html += `<div class="ai-match-card"><div><b style="color:var(--correct-green);">✅ Verified Match in MCQsPrep!</b><br><span style="font-size:13px; color:var(--text-light);">${isFound.path}</span></div><button class="btn-exam" onclick="closeAIModal(); jumpToSection(${JSON.stringify(isFound.path.split(' > ')).replace(/"/g, "'")}); navigateToHash('#/quiz');" style="background:var(--correct-green); border:none; padding:8px 14px; color:white; border-radius:6px;">Go Practice 🚀</button></div>`; 
         } else { 
             html += `<div style="background: rgba(253, 184, 19, 0.1); border: 1px solid rgba(253, 184, 19, 0.4); padding: 12px 16px; border-radius: 8px; margin-bottom: 16px; font-size: 14px; color: #eee;">🌐 <b>Curriculum Knowledge Base Solution:</b> Solved autonomously using verified NCERT syllabus standards.</div>`; 
         }
@@ -1082,10 +1126,9 @@ async function saveToDoubtDiary() {
 }
 
 async function _renderDoubtDiary() {
-    if (!currentUser) return document.getElementById('dynamic-content').innerHTML = `<div class="card" style="text-align:center;"><h2>⚠️ Sign In Required</h2><button class="btn-exam" onclick="goBack()" style="background:#333; border:none;">Back</button></div>`;
+    if (!currentUser) return renderWithTransition(`<div class="card" style="text-align:center;"><h2>⚠️ Sign In Required</h2><button class="btn-exam" onclick="goBack()" style="background:#333; border:none;">Back</button></div>`);
     document.getElementById('breadcrumb-text').innerText = "Home / Profile / Doubt Diary";
-    const mc = document.getElementById('dynamic-content'); 
-    mc.innerHTML = `<div class="card"><h2>📔 Loading Doubt Diary...</h2></div>`;
+    renderWithTransition(`<div class="card"><h2>📔 Loading Doubt Diary...</h2></div>`);
     try {
         const snap = await db.collection("ai_doubt_diary").where("userId", "==", currentUser.uid).get();
         let items = [];
@@ -1093,7 +1136,7 @@ async function _renderDoubtDiary() {
         items.sort((a,b) => (b.timestamp?.toMillis() || 0) - (a.timestamp?.toMillis() || 0));
 
         if(items.length === 0) { 
-            mc.innerHTML = `<div class="card" style="text-align:center;"><h2>📔 Doubt Diary Empty</h2><p style="color:var(--text-muted);">Use the ✨ Ask AI feature to scan questions and save explanations here for rapid revision.</p><button class="btn-exam" onclick="goBack()" style="background:#333; border:none;">Back</button></div>`; 
+            renderWithTransition(`<div class="card" style="text-align:center;"><h2>📔 Doubt Diary Empty</h2><p style="color:var(--text-muted);">Use the ✨ Ask AI feature to scan questions and save explanations here for rapid revision.</p><button class="btn-exam" onclick="goBack()" style="background:#333; border:none;">Back</button></div>`); 
             return; 
         }
         
@@ -1104,9 +1147,9 @@ async function _renderDoubtDiary() {
             html += `<div style="background:#1a1a1a; border-left: 4px solid var(--primary-yellow); padding: 15px; border-radius: 6px; margin-bottom: 20px;"><div style="display:flex; justify-content:space-between; margin-bottom:10px;"><span class="badge-path">${d.subject}</span><span style="font-size:12px; color:var(--text-muted);">${dateStr}</span></div><p style="font-weight:bold; font-size:16px;">Q: ${d.questionText}</p><button onclick="toggleViewAnswer('diary_sol_${d.id}')" style="background:#333; color:white; border:none; padding:6px 12px; border-radius:4px; cursor:pointer;">👁️ Show Solution</button><div id="diary_sol_${d.id}" class="katex-render-target" style="display:none; margin-top:15px; padding-top:15px; border-top:1px solid #333; line-height:1.6; font-size:15px;">${marked.parse(md)}</div></div>`;
         });
         html += `<button class="btn-exam" onclick="goBack()" style="background:#333; border:none;">Back</button></div>`; 
-        mc.innerHTML = html;
+        renderWithTransition(html);
         document.querySelectorAll('.katex-render-target').forEach(el => { renderMathInElement(el, { delimiters: [ {left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}, {left: '\\(', right: '\\)', display: false}, {left: '\\[', right: '\\]', display: true} ] }); });
-    } catch(e) { mc.innerHTML = `<div class="card"><h2>Error</h2><p>${e.message}</p></div>`; }
+    } catch(e) { renderWithTransition(`<div class="card"><h2>Error</h2><p>${e.message}</p></div>`); }
 }
 
 
@@ -1147,7 +1190,7 @@ function handleLiveSearch() {
 
 function _renderLeaderboardOptions() { 
     document.getElementById('breadcrumb-text').innerText = "Home / Leaderboard"; 
-    document.getElementById('dynamic-content').innerHTML = `
+    renderWithTransition(`
         <div class="card">
             <h2 style="color:var(--primary-yellow);">🏆 Global Leaderboards</h2>
             <p style="color:var(--text-muted); margin-bottom: 20px;">Select a category to view the top 10 scores.</p>
@@ -1155,21 +1198,20 @@ function _renderLeaderboardOptions() {
                 <span style="color: var(--wrong-red); font-weight: bold;">⚠️ CAUTION:</span> <span style="color: var(--text-light); font-size: 14px;">Only signed-in users will have their scores recorded and displayed on the leaderboard.</span>
             </div>
             <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 15px;">
-                <button class="btn-exam" onclick="window.location.hash='#/board/NEET > MCQs Practice'">1. NEET PRACTICE</button>
-                <button class="btn-exam" onclick="window.location.hash='#/board/NEET > Mock Test'">2. MOCK TEST</button>
-                <button class="btn-exam" onclick="window.location.hash='#/board/General Knowledge'">3. GENERAL KNOWLEDGE</button>
+                <button class="btn-exam" onclick="navigateToHash('#/board/NEET > MCQs Practice')">1. NEET PRACTICE</button>
+                <button class="btn-exam" onclick="navigateToHash('#/board/NEET > Mock Test')">2. MOCK TEST</button>
+                <button class="btn-exam" onclick="navigateToHash('#/board/General Knowledge')">3. GENERAL KNOWLEDGE</button>
             </div>
-        </div>`; 
+        </div>`); 
 }
 
 async function fetchLiveLeaderboard(pathPrefix) { 
-    const mainContent = document.getElementById('dynamic-content');
     if (!currentUser) { 
-        mainContent.innerHTML = `<div class="card"><h2>🏆 Fetching Leaderboard...</h2><div style="background: rgba(244, 67, 54, 0.1); border-left: 4px solid var(--wrong-red); padding: 15px; margin: 20px 0; border-radius: 4px;"><span style="color: var(--wrong-red); font-weight: bold;">⚠️ ACCESS DENIED:</span> <span style="color: var(--text-light); font-size: 14px;">You must be signed in with Google to view the global leaderboards.</span></div><button class="btn-exam" onclick="window.location.hash='#/leaderboard'" style="background:#333; border:none;">&larr; Back</button></div>`; 
+        renderWithTransition(`<div class="card"><h2>🏆 Fetching Leaderboard...</h2><div style="background: rgba(244, 67, 54, 0.1); border-left: 4px solid var(--wrong-red); padding: 15px; margin: 20px 0; border-radius: 4px;"><span style="color: var(--wrong-red); font-weight: bold;">⚠️ ACCESS DENIED:</span> <span style="color: var(--text-light); font-size: 14px;">You must be signed in with Google to view the global leaderboards.</span></div><button class="btn-exam" onclick="navigateToHash('#/leaderboard')" style="background:#333; border:none;">&larr; Back</button></div>`); 
         return; 
     }
 
-    mainContent.innerHTML = `<div class="card"><h2>🏆 Fetching Leaderboard...</h2></div>`;
+    renderWithTransition(`<div class="card"><h2>🏆 Fetching Leaderboard...</h2></div>`);
     try {
         const userSnapshot = await db.collection("leaderboards").where("userId", "==", currentUser.uid).get();
         let totalQuestions = 0; let totalTests = 0; let myBestScore = -99999; let myBestData = null;
@@ -1186,7 +1228,7 @@ async function fetchLiveLeaderboard(pathPrefix) {
         else { thresholdMet = (totalQuestions >= 100); requiredText = "100 Practice Questions"; progressText = `${totalQuestions} / 100 Questions Attempted`; }
 
         if (!thresholdMet) {
-            mainContent.innerHTML = `<div class="card" style="text-align:center; padding: 40px 20px;"><h2 style="color: var(--primary-yellow); font-size: 28px; margin-bottom: 10px;">🔒 Leaderboard Locked</h2><p style="color: var(--text-muted); font-size: 15px; max-width: 500px; margin: 0 auto 20px auto; line-height: 1.5;">To ensure competitive integrity, you must attempt a minimum of <b style="color: white;">${requiredText}</b> in this specific category before unlocking the global rankings.</p><div style="background: #2a2a2a; border: 1px solid var(--border-color); padding: 15px 25px; border-radius: 8px; display: inline-block; margin-bottom: 30px;"><span style="color: var(--primary-yellow); font-weight: bold; margin-right: 10px;">Your Progress:</span> <span style="color: white; font-weight: bold;">${progressText}</span></div><br><button class="btn-exam" onclick="window.location.hash='#/leaderboard'" style="background:#333; border:none;">&larr; Back to Categories</button></div>`; return;
+            renderWithTransition(`<div class="card" style="text-align:center; padding: 40px 20px;"><h2 style="color: var(--primary-yellow); font-size: 28px; margin-bottom: 10px;">🔒 Leaderboard Locked</h2><p style="color: var(--text-muted); font-size: 15px; max-width: 500px; margin: 0 auto 20px auto; line-height: 1.5;">To ensure competitive integrity, you must attempt a minimum of <b style="color: white;">${requiredText}</b> in this specific category before unlocking the global rankings.</p><div style="background: #2a2a2a; border: 1px solid var(--border-color); padding: 15px 25px; border-radius: 8px; display: inline-block; margin-bottom: 30px;"><span style="color: var(--primary-yellow); font-weight: bold; margin-right: 10px;">Your Progress:</span> <span style="color: white; font-weight: bold;">${progressText}</span></div><br><button class="btn-exam" onclick="navigateToHash('#/leaderboard')" style="background:#333; border:none;">&larr; Back to Categories</button></div>`); return;
         }
 
         const boardSnapshot = await db.collection("leaderboards")
@@ -1210,10 +1252,10 @@ async function fetchLiveLeaderboard(pathPrefix) {
         html += `</table></div>`;
 
         if (!inTop10 && myBestData) { html += `<div style="margin-top: 30px; background: #2a2a2a; border: 1px solid var(--border-color); border-left: 4px solid var(--primary-yellow); padding: 20px; border-radius: 4px;"><h4 style="margin: 0 0 15px 0; color: var(--primary-yellow); font-size: 18px;">Your Personal Best</h4><div style="display: flex; gap: 30px; flex-wrap: wrap;"><div><span style="color:var(--text-muted); font-size:13px;">Global Rank</span><br><b style="font-size:20px; color: white;">${myRank}</b></div><div><span style="color:var(--text-muted); font-size:13px;">Best Score</span><br><b style="font-size:20px; color:var(--correct-green);">${myBestData.score}</b></div><div><span style="color:var(--text-muted); font-size:13px;">Accuracy</span><br><b style="font-size:20px; color: white;">${myBestData.accuracy}%</b></div><div><span style="color:var(--text-muted); font-size:13px;">Total Tests Attempted</span><br><b style="font-size:20px; color: white;">${totalTests}</b></div></div></div>`; }
-        html += `<button class="btn-exam" onclick="window.location.hash='#/leaderboard'" style="margin-top:25px; background:#333; border:none;">&larr; Back to Categories</button></div>`;
-        mainContent.innerHTML = html;
+        html += `<button class="btn-exam" onclick="navigateToHash('#/leaderboard')" style="margin-top:25px; background:#333; border:none;">&larr; Back to Categories</button></div>`;
+        renderWithTransition(html);
 
-    } catch(e) { mainContent.innerHTML = `<div class="card"><h2 style="color:var(--wrong-red);">Error</h2><p>${e.message}</p></div>`; }
+    } catch(e) { renderWithTransition(`<div class="card"><h2 style="color:var(--wrong-red);">Error</h2><p>${e.message}</p></div>`); }
 }
 
 function showNotification(message) { 
@@ -1231,8 +1273,7 @@ let quizState = { questions: [], currentIndex: 0, userAnswers: {}, showAnswerTri
 async function _initiateQuizEngine(isCustomLaunch = false) {
     const pathString = currentPath.join(' > ');
     document.getElementById('breadcrumb-text').innerText = "Home / " + (isCustomLaunch ? "Custom Quiz" : pathString + " / Active Quiz"); 
-    const mainContent = document.getElementById('dynamic-content');
-    mainContent.innerHTML = `<div class="card"><div style="font-size:40px; text-align:center; margin-bottom:15px;">⚙️</div><h2 style="color:var(--primary-yellow); text-align:center;">Building Your Quiz...</h2><p style="text-align:center; color:var(--text-muted);">Fetching and filtering unattempted questions from the database...</p></div>`;
+    renderWithTransition(`<div class="card"><div style="font-size:40px; text-align:center; margin-bottom:15px;">⚙️</div><h2 style="color:var(--primary-yellow); text-align:center;">Building Your Quiz...</h2><p style="text-align:center; color:var(--text-muted);">Fetching and filtering unattempted questions from the database...</p></div>`);
 
     try {
         let isDailyQuiz = currentPath[0] === 'Daily Quiz Challenge';
@@ -1375,11 +1416,11 @@ async function _initiateQuizEngine(isCustomLaunch = false) {
         }
 
         if (availableQuestions.length === 0) { 
-            if(isCustomLaunch) mainContent.innerHTML = `<div class="card" style="text-align:center;"><h2>No Questions Found</h2><p style="color:var(--text-muted);">We couldn't find any unattempted questions matching your selected chapters and difficulty level.</p><button class="btn-exam" onclick="goHome()" style="background:#333; border:none;">&larr; Go Back</button></div>`;
-            else if(totalQuestionsInDB === 0) mainContent.innerHTML = `<div class="card"><h2>No Questions Available</h2><p style="color:var(--text-muted);">Not enough questions available in the database for this section.</p><button class="btn-exam" onclick="goHome()" style="background:#333; border:none;">&larr; Go Back</button></div>`; 
+            if(isCustomLaunch) renderWithTransition(`<div class="card" style="text-align:center;"><h2>No Questions Found</h2><p style="color:var(--text-muted);">We couldn't find any unattempted questions matching your selected chapters and difficulty level.</p><button class="btn-exam" onclick="goHome()" style="background:#333; border:none;">&larr; Go Back</button></div>`);
+            else if(totalQuestionsInDB === 0) renderWithTransition(`<div class="card"><h2>No Questions Available</h2><p style="color:var(--text-muted);">Not enough questions available in the database for this section.</p><button class="btn-exam" onclick="goHome()" style="background:#333; border:none;">&larr; Go Back</button></div>`); 
             else {
                 let safePath = "prog_" + currentPath.join('_').replace(/[^a-zA-Z0-9]/g, '_');
-                mainContent.innerHTML = `<div class="card" style="text-align:center; padding: 40px 20px;"><h2 style="color: var(--primary-yellow); font-size: 28px; margin-bottom: 15px;">🎉 Section Completed!</h2><p style="color: var(--text-muted); font-size: 16px; margin-bottom: 25px;">You have successfully attempted all available questions in this section.</p><div style="display:flex; justify-content:center; gap:15px; flex-wrap:wrap;"><button class="btn-exam" onclick="resetProgress('${safePath}')" style="background: #333; color: white; border:none;">🔄 Reset My Progress</button><button class="btn-exam" onclick="goBack()" style="background:#333; border:none;">&larr; Explore Other Topics</button></div></div>`;
+                renderWithTransition(`<div class="card" style="text-align:center; padding: 40px 20px;"><h2 style="color: var(--primary-yellow); font-size: 28px; margin-bottom: 15px;">🎉 Section Completed!</h2><p style="color: var(--text-muted); font-size: 16px; margin-bottom: 25px;">You have successfully attempted all available questions in this section.</p><div style="display:flex; justify-content:center; gap:15px; flex-wrap:wrap;"><button class="btn-exam" onclick="resetProgress('${safePath}')" style="background: #333; color: white; border:none;">🔄 Reset My Progress</button><button class="btn-exam" onclick="goBack()" style="background:#333; border:none;">&larr; Explore Other Topics</button></div></div>`);
             }
             return; 
         }
@@ -1404,7 +1445,7 @@ async function _initiateQuizEngine(isCustomLaunch = false) {
             }
         }, 1000);
         _renderQuizQuestion();
-    } catch (error) { mainContent.innerHTML = `<div class="card"><h2>Error</h2><p>${error.message}</p><button class="btn-exam" onclick="goBack()">&larr; Go Back</button></div>`; }
+    } catch (error) { renderWithTransition(`<div class="card"><h2>Error</h2><p>${error.message}</p><button class="btn-exam" onclick="goBack()">&larr; Go Back</button></div>`); }
 }
 
 function toggleFlag() {
@@ -1415,7 +1456,6 @@ function toggleFlag() {
 }
 
 function _renderQuizQuestion() {
-    const mainContent = document.getElementById('dynamic-content');
     if (!quizState.viewedQuestions.includes(quizState.currentIndex)) { quizState.viewedQuestions.push(quizState.currentIndex); }
 
     const q = quizState.questions[quizState.currentIndex];
@@ -1463,7 +1503,9 @@ function _renderQuizQuestion() {
                 <div style="display:flex; gap:10px;"><button class="btn-exam" onclick="checkAnswer()" style="background:#333; border:none; ${hasPeeked ? 'display:none;' : ''}">Check Answer</button><button class="btn-exam" onclick="finishQuiz()" style="background:var(--wrong-red); border:none; color:white;">Finish Quiz</button></div>
             </div>
         </div>`;
-    mainContent.innerHTML = html;
+        
+    // skipAnimation is true here so the screen doesn't slide-in every time you click next question
+    renderWithTransition(html, true); 
     
     document.querySelectorAll('.katex-render-target').forEach(el => {
         renderMathInElement(el, { delimiters: [ {left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}, {left: '\\(', right: '\\)', display: false}, {left: '\\[', right: '\\]', display: true} ] });
@@ -1630,8 +1672,7 @@ async function finishQuiz() {
         scoreCardsHtml = `<div style="background:#2a2a2a; padding: 20px; border-radius: 8px; min-width: 120px; flex: 1; border: 1px solid var(--primary-yellow);"><div style="font-size: 32px; color: var(--primary-yellow); font-weight: bold;">${totalScore}</div><div style="color: var(--text-muted); font-size: 14px;">Total Score</div></div>`;
     }
 
-    const mainContent = document.getElementById('dynamic-content');
-    mainContent.innerHTML = `
+    renderWithTransition(`
         <div class="card" style="text-align: center;">
             <h2 style="font-size: 32px; color: var(--primary-yellow); margin-bottom: 5px;">Test Complete!</h2>
             <p style="color: var(--text-muted); margin-bottom: 30px;">Great effort, ${studentName}! Here is your final breakdown.</p>
@@ -1650,7 +1691,7 @@ async function finishQuiz() {
             ${flaggedListHtml !== '' ? `<h3 style="text-align:left; color:var(--primary-yellow); margin-top: 40px;">⭐ Sent to Admin</h3>${flaggedListHtml}` : ''}
             <button class="btn-exam" onclick="goHome()" style="width: 250px; margin-top:30px; background:#333; border:none;">&larr; Exit to Dashboard</button>
         </div>
-    `;
+    `);
     
     document.querySelectorAll('.katex-render-target, .review-item').forEach(el => {
         renderMathInElement(el, { delimiters: [ {left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}, {left: '\\(', right: '\\)', display: false}, {left: '\\[', right: '\\]', display: true} ] });
@@ -1664,12 +1705,12 @@ let adminCurrentTab = 'topics'; let adminNewTopicPath = []; let adminSelectedPat
 
 function _renderAdminLogin() { 
     document.getElementById('breadcrumb-text').innerText = "Security / Admin Login"; 
-    document.getElementById('dynamic-content').innerHTML = `
+    renderWithTransition(`
     <div class="card" style="max-width: 400px; margin: 0 auto; text-align: center;">
         <h2>🔒 Restricted Access</h2>
         <input type="password" id="adminPassInput" class="input-field" style="margin: 0 auto 15px auto;" placeholder="Password">
         <button id="loginBtn" class="btn-exam" onclick="verifyAdmin()" style="width: 100%; max-width: 300px; background-color: var(--primary-yellow); color: black; border: none;">Login to Admin</button>
-    </div>`; 
+    </div>`); 
 }
 
 async function verifyAdmin() {
@@ -1682,7 +1723,7 @@ async function verifyAdmin() {
         if (doc.exists && doc.data().password) correctPass = doc.data().password;
         if (inputPass === correctPass) { 
             sessionStorage.setItem('admin_verified', 'true'); 
-            window.location.hash = '#/admin-panel'; 
+            navigateToHash('#/admin-panel'); 
             showNotification("✅ Admin Access Granted"); 
         } else { 
             showNotification("❌ Incorrect Password"); 
@@ -1692,10 +1733,10 @@ async function verifyAdmin() {
 }
 
 function _renderAdminPanel() {
-    if (!sessionStorage.getItem('admin_verified')) { window.location.hash = '#/admin'; return; }
+    if (!sessionStorage.getItem('admin_verified')) { navigateToHash('#/admin'); return; }
     document.getElementById('breadcrumb-text').innerText = "Admin Dashboard";
     
-    document.getElementById('dynamic-content').innerHTML = `
+    renderWithTransition(`
         <div class="card">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:10px;">
                 <h2 style="color: var(--primary-yellow); margin:0;">🛠️ Admin Control Center</h2>
@@ -1834,7 +1875,7 @@ function _renderAdminPanel() {
                     <button class="btn-exam" onclick="changeAdminPassword()" style="background:var(--primary-yellow); color:black; border:none; width:100%;">Update Password</button>
                 </div>
             </div>
-        </div>`;
+        </div>`);
         
     if (adminCurrentTab === 'upload') { _buildAdminSelectors(); }
     else if (adminCurrentTab === 'topics') { _buildAdminNewTopicSelectors(); loadAdminTopicsList(); }
