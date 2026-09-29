@@ -100,78 +100,78 @@
     <!-- Floating AI Button -->
     <div id="ai-floating-btn">✨ Ask AI</div>
 
-    <!-- AI Fullscreen Modal -->
-    <div id="aiModal" class="modal-overlay" style="z-index: 4000; padding: 0;">
-        <div class="modal-content ai-fullscreen-modal">
-            <div class="ai-ambient-glow ai-glow-1"></div>
-            <div class="ai-ambient-glow ai-glow-2"></div>
-            <div class="ai-ambient-glow ai-glow-3"></div>
-
-            <button class="ai-exit-btn" onclick="closeAIModal()" title="Close Ask AI">✕</button>
-
-            <div class="ai-workspace">
-                <div style="display:flex; align-items:center; gap:12px; margin-bottom: 25px;">
-                    <div style="font-size:32px;">✨</div>
+    <!-- AI Fullscreen Modal (GEMINI STYLE) -->
+    <div id="aiModal" class="modal-overlay" style="z-index: 4000; padding: 0; display: none;">
+        <div class="modal-content ai-fullscreen-modal" style="background: #131314; display: flex; flex-direction: column;">
+            
+            <!-- Header -->
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 15px 25px; border-bottom: 1px solid #333; background: #1e1f22;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <span style="font-size: 24px;">✨</span>
                     <div>
-                        <h2 style="margin:0; font-size:26px; color: #fff; text-shadow: 0 0 20px rgba(253,184,19,0.5);">Ask AI Tutor</h2>
-                        <span style="font-size:14px; color: rgba(255,255,255,0.7);">Powered by NCERT syllabus models</span>
+                        <h2 style="margin: 0; font-size: 18px; color: #fff;">Ask AI Tutor</h2>
+                        <span style="font-size: 12px; color: #a0a0a0;">Powered by NCERT Models</span>
                     </div>
                 </div>
+                <div style="display: flex; gap: 15px;">
+                    <button onclick="openAIModal()" style="background: none; border: 1px solid #555; color: #fff; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 13px;">🔄 New Chat</button>
+                    <button onclick="closeAIModal()" style="background: none; border: none; color: #fff; font-size: 24px; cursor: pointer;">✕</button>
+                </div>
+            </div>
+
+            <!-- Chat History Area -->
+            <div id="gemini-chat-history" style="flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 20px; max-width: 900px; margin: 0 auto; width: 100%;">
                 
-                <div class="ai-split-container">
-                    <div class="ai-left-panel" id="ai-left-view">
-                        
-                        <div id="ai-input-view">
-                            <p style="color:var(--text-light); font-size:16px; margin-top:0; margin-bottom:20px;">Type your question below, or upload a photo to get a step-by-step solution.</p>
-                            
-                            <textarea id="aiTextInput" class="input-field" placeholder="Type a formula, chapter topic, or question stem..." style="min-height: 120px; font-size:16px; background: rgba(18, 20, 28, 0.75); margin-bottom: 0;"></textarea>
-                            <div id="ai-fuzzy-box" class="ai-fuzzy-suggestions"></div>
+                <!-- Idle State -->
+                <div id="ai-idle-view" style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; opacity: 0.5;">
+                    <div style="font-size: 60px; margin-bottom: 15px;">🧠</div>
+                    <h3 style="color: white; margin:0;">How can I help you today?</h3>
+                    <p style="color: #aaa; font-size: 14px; margin-top: 5px;">Ask a question or upload a photo to get started.</p>
+                </div>
 
-                            <button class="btn-exam" onclick="processAIText()" style="width:100%; background: linear-gradient(135deg, var(--primary-yellow), #ff9800); color:black; font-size:17px; padding:16px; margin-top: 15px; margin-bottom: 25px;">Solve Text Question 🚀</button>
+                <!-- Cropper View (Hidden by default) -->
+                <div id="ai-cropper-view" style="display: none; flex-direction: column; align-items: center; justify-content: center; height: 100%; width: 100%;">
+                    <p style="color: #fff; margin-bottom: 15px;">Crop the image to highlight <b>only one question</b>:</p>
+                    <div style="width: 100%; max-width: 500px; min-height: 250px; max-height: 50vh; background: #000; position: relative; margin-bottom: 20px; border-radius: 10px; overflow: hidden;">
+                        <img id="aiCropperImage" style="max-width: 100%; max-height: 100%; display: block;">
+                    </div>
+                    <div style="display: flex; gap: 15px; width: 100%; max-width: 500px;">
+                        <button class="btn-exam" onclick="cancelCropper()" style="flex: 1; background: #333; border: none; color: white;">Cancel</button>
+                        <button class="btn-exam" onclick="confirmCropAndSolve()" style="flex: 2; background: var(--primary-yellow); color: black; border: none;">Crop & Solve 🚀</button>
+                    </div>
+                </div>
 
-                            <div style="text-align:center; color:rgba(255,255,255,0.3); margin-bottom:25px; font-weight:bold;">— OR —</div>
-                            
-                            <div class="ai-upload-row">
-                                <div class="ai-glass-card ai-upload-card" onclick="document.getElementById('aiImageInput').click()">
-                                    <div style="font-size: 32px;">📁</div><div style="font-weight: bold; font-size: 15px; color: white;">Upload Image</div>
-                                </div>
-                                <div class="ai-glass-card ai-upload-card" onclick="document.getElementById('aiCameraInput').click()">
-                                    <div style="font-size: 32px;">📸</div><div style="font-weight: bold; font-size: 15px; color: white;">Take Photo</div>
-                                </div>
-                                <input type="file" id="aiImageInput" accept="image/*" style="display:none;" onchange="handleAIImageUpload(event)">
-                                <input type="file" id="aiCameraInput" accept="image/*" capture="environment" style="display:none;" onchange="handleAIImageUpload(event)">
-                            </div>
-                        </div>
+            </div>
 
-                        <!-- Cropper Panel -->
-                        <div id="ai-cropper-view" style="display:none; flex-direction:column; margin-top:20px;">
-                            <p style="color:var(--text-light); margin-bottom:15px;">Crop the image to highlight <b>only one question</b>:</p>
-                            <div style="min-height:250px; max-height: 40vh; background:#000; position:relative; margin-bottom:20px; border-radius:10px; overflow:hidden;"><img id="aiCropperImage" style="max-width:100%; max-height:100%; display:block;"></div>
-                            <div style="display:flex; gap:15px;">
-                                <button class="btn-exam" onclick="cancelCropper()" style="flex:1;">Cancel</button>
-                                <button class="btn-exam" onclick="confirmCropAndSolve()" style="flex:2; background:var(--primary-yellow); color:black;">Crop & Solve 🚀</button>
-                            </div>
-                        </div>
+            <!-- Input Area -->
+            <div style="padding: 15px 20px; background: #131314; border-top: 1px solid #333;">
+                <div style="position: relative; max-width: 900px; margin: 0 auto;">
+                    
+                    <!-- Fuzzy Suggestions Dropdown -->
+                    <div id="ai-fuzzy-box" class="ai-fuzzy-suggestions" style="bottom: calc(100% + 10px); position: absolute; width: 100%; background: #1e1e1e; border: 1px solid #444; border-radius: 8px; z-index: 20;"></div>
+
+                    <!-- Attachment Popover -->
+                    <div id="ai-attach-menu" style="display: none; position: absolute; bottom: 65px; left: 0; background: #2a2a2a; border-radius: 12px; padding: 5px; border: 1px solid #444; z-index: 10; box-shadow: 0 5px 15px rgba(0,0,0,0.5);">
+                        <div onclick="document.getElementById('aiImageInput').click(); toggleAttachMenu();" style="padding: 12px 20px; cursor: pointer; color: white; border-bottom: 1px solid #444; display: flex; align-items: center; gap: 10px; font-size: 15px;"><span style="font-size:18px;">📁</span> Upload Image</div>
+                        <div onclick="document.getElementById('aiCameraInput').click(); toggleAttachMenu();" style="padding: 12px 20px; cursor: pointer; color: white; display: flex; align-items: center; gap: 10px; font-size: 15px;"><span style="font-size:18px;">📸</span> Take Photo</div>
                     </div>
 
-                    <div class="ai-right-panel">
-                        <div id="ai-idle-view" style="display:flex; flex:1; flex-direction:column; justify-content:center; align-items:center; opacity: 0.3;">
-                            <div style="font-size: 70px; margin-bottom:15px;">🧠</div><h3 style="margin:0; color: white;">AI is ready</h3><p>Results will appear here.</p>
+                    <!-- Input Pill -->
+                    <div style="display: flex; align-items: flex-end; background: #1e1f22; border-radius: 24px; padding: 10px 15px; border: 1px solid #444; transition: 0.2s;">
+                        <button onclick="toggleAttachMenu()" style="background: none; border: none; color: #e3e3e3; font-size: 26px; cursor: pointer; padding: 4px 8px; line-height: 1; border-radius: 50%; display: flex; align-items: center; justify-content: center; height: 40px; width: 40px; transition: background 0.2s;">+</button>
+                        
+                        <div style="flex: 1; margin: 0 10px; display: flex; flex-direction: column;">
+                            <textarea id="aiTextInput" placeholder="Ask a question or paste a doubt..." style="width: 100%; background: transparent; border: none; color: white; font-size: 16px; resize: none; max-height: 250px; outline: none; padding: 10px 0; font-family: inherit; line-height: 1.5; overflow-y: hidden;" rows="1" oninput="autoExpandTextarea(this); handleAIFuzzySuggestions();" onkeydown="if(event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); handleAISend(); }"></textarea>
                         </div>
-                        <div id="ai-loading-view" style="display:none; flex:1; flex-direction:column; justify-content:center; align-items:center;">
-                            <div style="font-size: 64px; animation: pulse 1s infinite; margin-bottom:20px;">🤖</div>
-                            <h2 style="color:var(--primary-yellow); text-align:center; margin-bottom: 8px;">Consulting Sources...</h2>
-                        </div>
-                        <div id="ai-chat-view" style="display:none; flex:1; flex-direction:column; height: 100%;">
-                            <div id="ai-chat-history" style="flex:1; overflow-y:auto; padding-right:15px; margin-bottom:20px;"></div>
-                            <div style="display:flex; gap:10px; background: rgba(15, 18, 28, 0.85); padding: 12px; border-radius: 12px;">
-                                <input type="text" id="aiFollowUpInput" class="input-field" placeholder="Ask a follow-up doubt..." style="margin-bottom:0; flex:1; background: #000; border: none;">
-                                <button class="btn-exam" onclick="sendAIFollowUp()" style="background:var(--primary-yellow); color:black; padding: 0 20px;">Send</button>
-                            </div>
-                        </div>
+                        
+                        <button onclick="handleAISend()" style="background: white; border: none; color: black; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; font-size: 20px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: transform 0.2s;">↑</button>
                     </div>
                 </div>
             </div>
+            
+            <!-- Hidden File Inputs -->
+            <input type="file" id="aiImageInput" accept="image/*" style="display:none;" onchange="handleAIImageUpload(event)">
+            <input type="file" id="aiCameraInput" accept="image/*" capture="environment" style="display:none;" onchange="handleAIImageUpload(event)">
         </div>
     </div>
 
