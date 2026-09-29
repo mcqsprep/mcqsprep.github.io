@@ -1,6 +1,27 @@
 // ==========================================
 // 1. SYSTEM INITIALIZATION & CONFIGURATION
 // ==========================================
+
+// PWA Install Logic
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    const installBtn = document.getElementById('installAppBtn');
+    if (installBtn) installBtn.style.display = 'flex';
+});
+
+function installPWA() {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.then((choiceResult) => {
+        if (choiceResult.outcome === 'accepted') {
+            document.getElementById('installAppBtn').style.display = 'none';
+        }
+        deferredPrompt = null;
+    });
+}
+
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
         navigator.serviceWorker.register('/sw.js').catch(err => console.log('SW Setup Failed:', err));
@@ -1485,7 +1506,7 @@ async function fetchLiveLeaderboard(pathPrefix) {
         }
         html += `</table></div>`;
 
-        if (!inTop10 && myBestData) { html += `<div style="margin-top: 30px; background: #2a2a2a; border: 1px solid var(--border-color); border-left: 4px solid var(--primary-yellow); padding: 20px; border-radius: 4px;"><h4 style="margin: 0 0 15px 0; color: var(--primary-yellow); font-size: 18px;">Your Personal Best</h4><div style="display: flex; gap: 30px; flex-wrap: wrap;"><div><span style="color:var(--text-muted); font-size:13px;">Best Score</span><br><b style="font-size:20px; color:var(--correct-green);">${myBestData.score}</b></div><div><span style="color:var(--text-muted); font-size:13px;">Accuracy</span><br><b style="font-size:20px; color: white;">${myBestData.accuracy}%</b></div><div><span style="color:var(--text-muted); font-size:13px;">Total Tests Attempted</span><br><b style="font-size:20px; color: white;">${totalTests}</b></div></div></div>`; }
+        if (!inTop10 && myBestData) { html += `<div style="margin-top: 30px; background: #2a2a2a; border: 1px solid var(--border-color); border-left: 4px solid var(--primary-yellow); padding: 20px; border-radius: 4px;"><h4 style="margin: 0 0 15px 0; color: var(--primary-yellow); font-size: 18px;">Your Personal Best</h4><div style="display: flex; gap: 30px; flex-wrap: wrap;"><div><span style="color:var(--text-muted); font-size:13px;">Global Rank</span><br><b style="font-size:20px; color: white;">${myRank}</b></div><div><span style="color:var(--text-muted); font-size:13px;">Best Score</span><br><b style="font-size:20px; color:var(--correct-green);">${myBestData.score}</b></div><div><span style="color:var(--text-muted); font-size:13px;">Accuracy</span><br><b style="font-size:20px; color: white;">${myBestData.accuracy}%</b></div><div><span style="color:var(--text-muted); font-size:13px;">Total Tests Attempted</span><br><b style="font-size:20px; color: white;">${totalTests}</b></div></div></div>`; }
         html += `<button class="btn-exam" onclick="window.history.back()" style="margin-top:25px; background:#333; border:none;">&larr; Back to Categories</button></div>`;
         mainContent.innerHTML = html;
 
@@ -1944,7 +1965,7 @@ function toggleOptionSelection(optKey, isMulti) {
 
 function checkAnswer() {
     let currentSelections = quizState.userAnswers[quizState.currentIndex] || [];
-    if(currentSelections.length === 0) { showNotification("⚠️️ Select an option first!"); return; }
+    if(currentSelections.length === 0) { showNotification("⚠ Select an option first!"); return; }
     quizState.showAnswerTriggered[quizState.currentIndex] = true; _renderQuizQuestion();
 }
 
@@ -2025,6 +2046,7 @@ async function finishQuiz() {
         }
     });
 
+    // Subcollection Progress Persistence
     if (sessionAttemptedIds.length > 0) {
         if (!isDailyQuiz && !quizState.isCustom) {
             let safePath = "prog_" + currentPath.join('_').replace(/[^a-zA-Z0-9]/g, '_');
