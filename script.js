@@ -32,6 +32,24 @@ styleSheet.innerHTML = `
 `;
 document.head.appendChild(styleSheet);
 
+// 🌟 CRITICAL FIX: Safe Math Formatter 🌟
+// Prevents marked.js from corrupting LaTeX underscores (_) by turning them into <em> italics
+function formatTextWithMath(text) {
+    if (!text) return "";
+    const mathSnippets = [];
+    let processedText = text.replace(/(\$\$[\s\S]*?\$\$|\\\[[\s\S]*?\\\]|\$[\s\S]*?\$|\\\([\s\S]*?\\\))/g, function(match) {
+        mathSnippets.push(match);
+        return `@@MATH_SPAWN_${mathSnippets.length - 1}@@`;
+    });
+    
+    let html = marked.parse(processedText);
+    
+    mathSnippets.forEach((snippet, i) => {
+        html = html.replace(`@@MATH_SPAWN_${i}@@`, snippet);
+    });
+    return html;
+}
+
 const firebaseConfig = { 
     apiKey: "AIzaSyDuletjxV1THjWvWLvO0XqB_z5xBBXLwL8", 
     authDomain: "mcqsprep.firebaseapp.com", 
@@ -853,7 +871,6 @@ function toggleAttachMenu() {
     menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
 }
 
-// Paste Image from Clipboard Support
 function handleAIPaste(e) {
     const items = (e.clipboardData || window.clipboardData).items;
     for (let i = 0; i < items.length; i++) {
@@ -1119,7 +1136,7 @@ async function callAIWorker(payload, retries = 3, originalUserText = "") {
                 window.chatDoubts = window.chatDoubts || {};
                 window.chatDoubts[bubbleId] = { q: originalUserText, a: data.reply };
                 
-                let parsedHTML = marked.parse(data.reply);
+                let parsedHTML = formatTextWithMath(data.reply);
                 let saveBtnHTML = `<div style="margin-top:15px;"><button onclick="saveChatDoubt('${bubbleId}', this)" style="background:rgba(253, 184, 19, 0.1); color:var(--primary-yellow); padding: 8px 15px; border: 1px solid rgba(253,184,19,0.4); border-radius:20px; cursor:pointer; font-size:13px; display:inline-flex; align-items:center; gap:5px; transition:0.2s;" onmouseover="this.style.background='var(--primary-yellow)'; this.style.color='black';" onmouseout="this.style.background='rgba(253, 184, 19, 0.1)'; this.style.color='var(--primary-yellow)';"><span>📔</span> Save Explanation to Doubt Diary</button></div>`;
                 
                 appendChatBubble('model', parsedHTML + saveBtnHTML);
@@ -1165,7 +1182,7 @@ async function renderAISolution(data, isCached = false) {
     let solutionMarkdown = `**Extracted Question:** ${data.extractedQuestion}\n\n**Core Concept:** ${data.solution.keyConcept}\n\n**Step-by-Step Explanation:**\n${data.solution.stepByStep}\n\n**Final Conclusion & Answer:** ${data.solution.finalAnswer}`;
     aiChatHistory.push({ role: 'model', text: solutionMarkdown }); 
     
-    let parsedHTML = marked.parse(solutionMarkdown);
+    let parsedHTML = formatTextWithMath(solutionMarkdown);
     html += `<div style="margin-bottom: 15px;">${parsedHTML}</div>`;
     html += `<button onclick="saveToDoubtDiary()" style="background:rgba(253, 184, 19, 0.1); color:var(--primary-yellow); padding: 8px 15px; border: 1px solid rgba(253,184,19,0.4); border-radius:20px; cursor:pointer; font-size:13px; display:inline-flex; align-items:center; gap:5px; transition:0.2s;" onmouseover="this.style.background='var(--primary-yellow)'; this.style.color='black';" onmouseout="this.style.background='rgba(253, 184, 19, 0.1)'; this.style.color='var(--primary-yellow)';"><span>📔</span> Save Explanation to Doubt Diary</button>`;
 
@@ -1247,7 +1264,7 @@ async function _renderDoubtDiary() {
         items.forEach(d => {
             let dateStr = d.timestamp ? new Date(d.timestamp.toMillis()).toLocaleDateString() : '';
             let md = `**Core Concept:** ${d.solution.keyConcept}\n\n**Step-by-Step:**\n${d.solution.stepByStep}\n\n**Final Answer:** ${d.solution.finalAnswer}`;
-            html += `<div style="background:#1a1a1a; border-left: 4px solid var(--primary-yellow); padding: 15px; border-radius: 6px; margin-bottom: 20px;"><div style="display:flex; justify-content:space-between; margin-bottom:10px;"><span class="badge-path">${d.subject}</span><span style="font-size:12px; color:var(--text-muted);">${dateStr}</span></div><p style="font-weight:bold; font-size:16px;">Q: ${d.questionText}</p><button onclick="toggleViewAnswer('diary_sol_${d.id}')" style="background:#333; color:white; border:none; padding:6px 12px; border-radius:4px; cursor:pointer;">👁️ Show Solution</button><div id="diary_sol_${d.id}" class="katex-render-target" style="display:none; margin-top:15px; padding-top:15px; border-top:1px solid #333; line-height:1.6; font-size:15px;">${marked.parse(md)}</div></div>`;
+            html += `<div style="background:#1a1a1a; border-left: 4px solid var(--primary-yellow); padding: 15px; border-radius: 6px; margin-bottom: 20px;"><div style="display:flex; justify-content:space-between; margin-bottom:10px;"><span class="badge-path">${d.subject}</span><span style="font-size:12px; color:var(--text-muted);">${dateStr}</span></div><p style="font-weight:bold; font-size:16px;">Q: ${d.questionText}</p><button onclick="toggleViewAnswer('diary_sol_${d.id}')" style="background:#333; color:white; border:none; padding:6px 12px; border-radius:4px; cursor:pointer;">👁️ Show Solution</button><div id="diary_sol_${d.id}" class="katex-render-target" style="display:none; margin-top:15px; padding-top:15px; border-top:1px solid #333; line-height:1.6; font-size:15px;">${formatTextWithMath(md)}</div></div>`;
         });
         html += `<button class="btn-exam" onclick="goBack()" style="background:#333; border:none;">Back</button></div>`; 
         mc.innerHTML = html;
