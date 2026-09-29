@@ -1,32 +1,24 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-9DMLHEWB1Q"></script>
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-      gtag('config', 'G-9DMLHEWB1Q');
-    </script>
-
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MCQsPrep - Dashboard</title>
-    <meta name="description" content="MCQsPrep - A free, smart MCQ practice platform for competitive exams.">
     
-    <!-- Favicon / Website Icon -->
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🩺</text></svg>">
+    <!-- PWA Installation Requirements -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0a0a0f">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🩺</text></svg>">
     
-    <!-- LINK TO YOUR CSS FILE -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🩺</text></svg>">
     <link rel="stylesheet" href="style.css">
     
-    <!-- FIREBASE LIBRARIES -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
 
-    <!-- AI SUPPORT LIBRARIES -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
@@ -36,7 +28,6 @@
 </head>
 <body>
 
-    <!-- Main Navigation Bar -->
     <nav class="navbar">
         <div style="display: flex; align-items: center; min-width: 0;">
             <div class="logo-container" onclick="goHome()">🩺 MCQsPrep<span>.</span></div>
@@ -67,6 +58,7 @@
                 </div>
                 <div id="profileMenu" class="profile-menu">
                     <div class="profile-menu-item" onclick="window.location.hash='#/progress'; toggleProfileMenu();">📊 Track Progress</div>
+                    <div class="profile-menu-item" onclick="window.location.hash='#/bookmarks'; toggleProfileMenu();">🔖 My Bookmarks</div>
                     <div class="profile-menu-item" onclick="window.location.hash='#/diary'; toggleProfileMenu();">📔 Doubt Diary</div>
                     <div class="profile-menu-item" onclick="openUserReportsModal(); toggleProfileMenu();">🚨 My Reports <span id="reportMenuDot" style="display:none; color:var(--wrong-red); margin-left:auto;">●</span></div>
                     <div class="profile-menu-item" onclick="signOut(); toggleProfileMenu();">🚪 Sign Out</div>
@@ -75,7 +67,6 @@
         </div>
     </nav>
 
-    <!-- Main Content Layout -->
     <div class="breadcrumb" id="breadcrumb-text">Home</div>
     <div class="container">
         <div class="main-content" id="dynamic-content"></div>
@@ -94,13 +85,9 @@
         </div>
     </div>
 
-    <!-- Notification Toast -->
     <div id="notification">Action Triggered!</div>
-
-    <!-- Floating AI Button -->
     <div id="ai-floating-btn">✨ Ask AI</div>
 
-    <!-- 🌟 NEW GEMINI-STYLE AI WORKSPACE 🌟 -->
     <div id="aiModal" class="modal-overlay" style="z-index: 4000; padding: 0; display: none;">
         <div class="modal-content ai-fullscreen-modal" style="display: flex; flex-direction: column;">
             
@@ -108,7 +95,6 @@
             <div class="ai-ambient-glow ai-glow-2"></div>
             <div class="ai-ambient-glow ai-glow-3"></div>
 
-            <!-- Header -->
             <div style="display: flex; justify-content: space-between; align-items: center; padding: 15px 25px; border-bottom: 1px solid rgba(255,255,255,0.05); background: transparent; position: relative; z-index: 10;">
                 <div style="display: flex; align-items: center; gap: 10px;">
                     <span style="font-size: 24px; text-shadow: 0 0 10px rgba(253,184,19,0.5);">✨</span>
@@ -123,17 +109,14 @@
                 </div>
             </div>
 
-            <!-- Chat History Area -->
             <div id="gemini-chat-history" style="flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 20px; max-width: 1000px; margin: 0 auto; width: 100%; position: relative; z-index: 5; box-sizing: border-box;">
                 
-                <!-- Idle Greeting -->
                 <div id="ai-idle-view" style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; opacity: 0.6; padding-bottom: 50px;">
                     <div style="font-size: 60px; margin-bottom: 20px; filter: drop-shadow(0 0 20px rgba(255,255,255,0.2));">🧠</div>
                     <h3 style="color: white; margin:0; font-size: 24px; font-weight: 500;">How can I help you today?</h3>
                     <p style="color: #aaa; font-size: 15px; margin-top: 10px; text-align: center;">Ask a difficult question or upload/paste a photo of a textbook problem.</p>
                 </div>
 
-                <!-- Cropper Workspace -->
                 <div id="ai-cropper-view" style="display: none; flex-direction: column; align-items: center; justify-content: center; height: 100%; width: 100%;">
                     <p style="color: #fff; margin-bottom: 15px; font-size: 15px;">Crop the image to highlight <b>only one question</b>:</p>
                     <div style="width: 100%; max-width: 600px; min-height: 300px; max-height: 50vh; background: #000; position: relative; margin-bottom: 25px; border-radius: 12px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.5); border: 1px solid #333;">
@@ -146,22 +129,17 @@
                 </div>
             </div>
 
-            <!-- Input Area -->
             <div style="padding: 15px 15px max(20px, env(safe-area-inset-bottom)) 15px; background: rgba(10, 10, 15, 0.6); backdrop-filter: blur(20px); border-top: 1px solid rgba(255,255,255,0.05); position: relative; z-index: 10; box-sizing: border-box; width: 100%;">
                 <div style="position: relative; max-width: 900px; margin: 0 auto; box-sizing: border-box;">
                     
                     <div id="ai-fuzzy-box" class="ai-fuzzy-suggestions" style="bottom: calc(100% + 15px); position: absolute; width: 100%; background: #1e1e1e; border: 1px solid #444; border-radius: 12px; z-index: 20; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.5); box-sizing: border-box;"></div>
 
-                    <!-- Attachment Popover -->
                     <div id="ai-attach-menu" style="display: none; position: absolute; bottom: 70px; left: 0; background: rgba(30,30,30,0.95); backdrop-filter: blur(10px); border-radius: 12px; padding: 8px; border: 1px solid #444; z-index: 10; box-shadow: 0 10px 30px rgba(0,0,0,0.6); min-width: 200px;">
                         <div onclick="document.getElementById('aiImageInput').click(); toggleAttachMenu();" style="padding: 12px 15px; cursor: pointer; color: white; border-bottom: 1px solid #333; display: flex; align-items: center; gap: 12px; font-size: 14px; border-radius: 6px; transition: 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='transparent'"><span style="font-size:18px;">📁</span> Upload Image</div>
                         <div onclick="document.getElementById('aiCameraInput').click(); toggleAttachMenu();" style="padding: 12px 15px; cursor: pointer; color: white; display: flex; align-items: center; gap: 12px; font-size: 14px; border-radius: 6px; transition: 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='transparent'"><span style="font-size:18px;">📸</span> Take Photo</div>
                     </div>
 
-                    <!-- Input Pill -->
                     <div style="display: flex; flex-direction: column; background: rgba(30, 30, 35, 0.8); border-radius: 24px; border: 1px solid rgba(255,255,255,0.1); transition: 0.3s; box-shadow: 0 5px 20px rgba(0,0,0,0.3); box-sizing: border-box;">
-                        
-                        <!-- Image Preview -->
                         <div id="ai-image-preview-container" style="display: none; padding: 15px 20px 0 20px;">
                             <div style="position: relative; display: inline-block;">
                                 <img id="ai-input-image-preview" src="" style="height: 65px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); object-fit: cover; box-shadow: 0 4px 10px rgba(0,0,0,0.3);">
