@@ -6,7 +6,6 @@ styleSheet.innerHTML = `
     @keyframes fadeSlideUp { 0% { transform: translateY(15px); opacity: 0; } 100% { transform: translateY(0); opacity: 1; } }
     .page-transition { animation: fadeSlideUp 0.3s cubic-bezier(0.25, 1, 0.5, 1) forwards; }
     
-    /* Premium AI Background Styles */
     .ai-fullscreen-modal { background: #0a0a0f !important; overflow: hidden !important; border: none !important; height: 100dvh !important; max-height: 100dvh !important; box-sizing: border-box; }
     .ai-fullscreen-modal * { box-sizing: border-box; }
     .ai-ambient-glow { position: absolute; border-radius: 50%; pointer-events: none; filter: blur(140px); z-index: 1; }
@@ -14,26 +13,21 @@ styleSheet.innerHTML = `
     .ai-glow-2 { bottom: -10%; right: -5%; width: 60vw; height: 60vh; background: #fdb813; opacity: 0.15; }
     .ai-glow-3 { top: 40%; left: 30%; width: 40vw; height: 40vh; background: #ff007f; opacity: 0.15; }
     
-    /* Custom Scrollbar & Prevent Overflows */
     #gemini-chat-history::-webkit-scrollbar { width: 6px; }
     #gemini-chat-history::-webkit-scrollbar-track { background: transparent; }
     #gemini-chat-history::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 10px; }
     #gemini-chat-history::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.4); }
     
-    /* Fix Mobile Text Cut-offs */
     .ai-chat-bubble { overflow-wrap: break-word; word-wrap: break-word; word-break: break-word; max-width: 100%; box-sizing: border-box; }
     .ai-chat-bubble p { margin-top: 0; max-width: 100%; overflow-wrap: break-word; }
     .katex-display { max-width: 100%; overflow-x: auto; overflow-y: hidden; padding-bottom: 8px; margin: 10px 0; }
     .katex-display::-webkit-scrollbar { height: 4px; }
     .katex-display::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.3); border-radius: 4px; }
     
-    /* Fix Mobile Button Dragging & Text Highlighting */
     #ai-floating-btn { -webkit-user-select: none; -ms-user-select: none; user-select: none; touch-action: none; }
 `;
 document.head.appendChild(styleSheet);
 
-// 🌟 CRITICAL FIX: Safe Math Formatter 🌟
-// Prevents marked.js from corrupting LaTeX underscores (_) by turning them into <em> italics
 function formatTextWithMath(text) {
     if (!text) return "";
     const mathSnippets = [];
@@ -1391,8 +1385,78 @@ function showNotification(message) {
 // ==========================================
 let quizState = { questions: [], currentIndex: 0, userAnswers: {}, showAnswerTriggered: {}, flaggedDoubts: {}, viewedQuestions: [], timer: null, secondsPassed: 0, isTimerPaused: false, isCustom: false };
 
+function saveQuizSession() {
+    if (!quizState || !quizState.questions || quizState.questions.length === 0) return;
+    const sessionData = {
+        path: currentPath,
+        customConfig: customQuizConfig,
+        state: {
+            questions: quizState.questions,
+            currentIndex: quizState.currentIndex,
+            userAnswers: quizState.userAnswers,
+            showAnswerTriggered: quizState.showAnswerTriggered,
+            flaggedDoubts: quizState.flaggedDoubts,
+            viewedQuestions: quizState.viewedQuestions,
+            secondsPassed: quizState.secondsPassed,
+            isCustom: quizState.isCustom
+        },
+        userId: currentUser ? currentUser.uid : 'anonymous'
+    };
+    localStorage.setItem('mcq_active_session', JSON.stringify(sessionData));
+}
+
+function clearQuizSession() {
+    localStorage.removeItem('mcq_active_session');
+}
+
 async function _initiateQuizEngine(isCustomLaunch = false) {
     const pathString = currentPath.join(' > ');
+
+    // --- NEW: INTERCEPT & RESTORE SESSION ---
+    const savedSessionStr = localStorage.getItem('mcq_active_session');
+    if (savedSessionStr) {
+        try {
+            const savedSession = JSON.parse(savedSessionStr);
+            let isSameUser = savedSession.userId === (currentUser ? currentUser.uid : 'anonymous');
+            let isSamePath = false;
+            
+            if (isCustomLaunch && savedSession.state.isCustom) {
+                isSamePath = JSON.stringify(savedSession.customConfig) === JSON.stringify(customQuizConfig);
+            } else if (!isCustomLaunch && !savedSession.state.isCustom) {
+                isSamePath = JSON.stringify(savedSession.path) === JSON.stringify(currentPath);
+            }
+
+            if (isSameUser && isSamePath) {
+                if (confirm("You have an unfinished quiz in progress!\n\nClick 'OK' to resume where you left off, or 'Cancel' to start a fresh quiz.")) {
+                    Object.assign(quizState, savedSession.state);
+                    quizState.isTimerPaused = false;
+                    
+                    document.getElementById('breadcrumb-text').innerText = "Home / " + (isCustomLaunch ? "Custom Quiz" : pathString + " / Active Quiz"); 
+                    
+                    clearInterval(quizState.timer);
+                    quizState.timer = setInterval(() => {
+                        if (!quizState.isTimerPaused) { 
+                            quizState.secondsPassed++; 
+                            let disp = document.getElementById('quizTimeDisplay'); 
+                            if(disp) disp.innerText = formatTime(quizState.secondsPassed); 
+                            if (quizState.secondsPassed % 5 === 0) saveQuizSession();
+                        }
+                    }, 1000);
+                    
+                    _renderQuizQuestion();
+                    return; 
+                } else {
+                    clearQuizSession();
+                }
+            } else {
+                clearQuizSession();
+            }
+        } catch(e) {
+            clearQuizSession();
+        }
+    }
+    // --- END NEW ---
+
     document.getElementById('breadcrumb-text').innerText = "Home / " + (isCustomLaunch ? "Custom Quiz" : pathString + " / Active Quiz"); 
     const mainContent = document.getElementById('dynamic-content');
     mainContent.innerHTML = `<div class="card page-transition"><div style="font-size:40px; text-align:center; margin-bottom:15px;">⚙️</div><h2 style="color:var(--primary-yellow); text-align:center;">Building Your Quiz...</h2><p style="text-align:center; color:var(--text-muted);">Fetching and filtering unattempted questions from the database...</p></div>`;
@@ -1555,8 +1619,10 @@ async function _initiateQuizEngine(isCustomLaunch = false) {
                 quizState.secondsPassed++; 
                 let disp = document.getElementById('quizTimeDisplay'); 
                 if(disp) disp.innerText = formatTime(quizState.secondsPassed); 
+                if (quizState.secondsPassed % 5 === 0) saveQuizSession();
             }
         }, 1000);
+        saveQuizSession();
         _renderQuizQuestion();
     } catch (error) { mainContent.innerHTML = `<div class="card"><h2>Error</h2><p>${error.message}</p><button class="btn-exam" onclick="goBack()">&larr; Go Back</button></div>`; }
 }
@@ -1622,6 +1688,8 @@ function _renderQuizQuestion() {
     document.querySelectorAll('.katex-render-target').forEach(el => {
         renderMathInElement(el, { delimiters: [ {left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}, {left: '\\(', right: '\\)', display: false}, {left: '\\[', right: '\\]', display: true} ] });
     });
+    
+    saveQuizSession();
 }
 
 function toggleOptionSelection(optKey, isMulti) {
@@ -1673,6 +1741,8 @@ function buildReviewItemHtml(q, index, type, userAnsArray) {
 
 async function finishQuiz() {
     clearInterval(quizState.timer); 
+    clearQuizSession();
+    
     let attempted = 0; let totalScore = 0; let correctCount = 0; let wrongCount = 0;
     let sessionAttemptedIds = []; let skippedCount = 0; let isDailyQuiz = currentPath[0] === 'Daily Quiz Challenge';
     let correctHtml = ''; let wrongHtml = ''; let skippedHtml = ''; let flaggedListHtml = '';
