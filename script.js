@@ -488,8 +488,67 @@ function cwLaunchQuiz() {
 }
 
 // ==========================================
-// 6. TRACK PROGRESS AND PROFILE
+// 6. SCALED TRACK PROGRESS, REPORTS & FEEDBACK
 // ==========================================
+async function getAttemptedIdsForPath(safePath) {
+    let ids = [];
+    if (currentUser) {
+        try {
+            const subDoc = await db.collection("users").doc(currentUser.uid).collection("progress").doc(safePath).get();
+            if (subDoc.exists && Array.isArray(subDoc.data().attemptedIds)) {
+                return subDoc.data().attemptedIds;
+            }
+            // Backward compatibility fallback for legacy root user document fields
+            const rootDoc = await db.collection("users").doc(currentUser.uid).get();
+            if (rootDoc.exists && Array.isArray(rootDoc.data()[safePath])) {
+                let legacyIds = rootDoc.data()[safePath];
+                db.collection("users").doc(currentUser.uid).collection("progress").doc(safePath).set({
+                    attemptedIds: legacyIds,
+                    lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+                }, { merge: true }).catch(() => {});
+                return legacyIds;
+            }
+        } catch(e) { console.error("Error fetching progress:", e); }
+    } else {
+        let localProg = JSON.parse(localStorage.getItem('mcq_progress') || '{}');
+        ids = localProg[safePath] || [];
+    }
+    return ids;
+}
+
+async function saveAttemptedIdsForPath(safePath, newAttemptedIds) {
+    if (!newAttemptedIds || newAttemptedIds.length === 0) return;
+    if (currentUser) {
+        try {
+            await db.collection("users").doc(currentUser.uid).collection("progress").doc(safePath).set({
+                attemptedIds: firebase.firestore.FieldValue.arrayUnion(...newAttemptedIds),
+                lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+            }, { merge: true });
+        } catch(e) { console.error("Error saving progress:", e); }
+    } else {
+        let localProg = JSON.parse(localStorage.getItem('mcq_progress') || '{}');
+        localProg[safePath] = [...(localProg[safePath] || []), ...newAttemptedIds];
+        localStorage.setItem('mcq_progress', JSON.stringify(localProg));
+    }
+}
+
+async function resetProgress(safePath) {
+    if(!confirm("Are you sure you want to reset your progress for this section?")) return;
+    if (currentUser) {
+        try {
+            await db.collection("users").doc(currentUser.uid).collection("progress").doc(safePath).delete();
+            let clearField = {}; clearField[safePath] = firebase.firestore.FieldValue.delete();
+            await db.collection("users").doc(currentUser.uid).update(clearField).catch(() => {});
+        } catch(e) { console.error("Error resetting progress:", e); }
+    } else {
+        let localProg = JSON.parse(localStorage.getItem('mcq_progress') || '{}');
+        delete localProg[safePath];
+        localStorage.setItem('mcq_progress', JSON.stringify(localProg));
+    }
+    showNotification("🔄 Progress reset for this section!");
+    _initiateQuizEngine();
+}
+
 function _renderProgressSelection() {
     if (!currentUser) return document.getElementById('dynamic-content').innerHTML = `<div class="card page-transition" style="text-align:center;"><h2>⚠️ Sign In Required</h2><button class="btn-exam" onclick="goBack()" style="background:#333; border:none;">Back</button></div>`;
     document.getElementById('breadcrumb-text').innerText = "Home / Profile / Track Progress";
@@ -759,39 +818,92 @@ async function openFeedbackModal() {
     if (!currentUser) { showNotification("⚠️ Please sign in to rate."); showAuthModal(); return; }
     document.getElementById('feedbackModal').style.display = 'flex'; 
     try {
-        const snap = await db.collection("platform_feedback").where("studentId", "==", currentUser.uid).get();
+        const snap = await db.collection("platform_feedback").where("studentId", "==", currentUser.uid).limit(1).get();
         if (!snap.empty) { userFeedbackDocId = snap.docs[0].id; updateStarUI(snap.docs[0].data().rating || 0); document.getElementById('platformFeedbackText').value = snap.docs[0].data().feedback || ""; document.getElementById('submitFeedbackBtn').innerText = "Update Feedback"; } 
         else { userFeedbackDocId = null; updateStarUI(0); document.getElementById('platformFeedbackText').value = ""; document.getElementById('submitFeedbackBtn').innerText = "Submit Feedback"; }
     } catch(e) {}
 }
 function closeFeedbackModal() { document.getElementById('feedbackModal').style.display = 'none'; }
+
 async function submitPlatformFeedback() {
-    if (!currentUser) return; if (selectedStars === 0) { showNotification("⚠️ Please select a star rating!"); return; }
-    const feedbackText = document.getElementById('platformFeedbackText').value.trim(); const btn = document.getElementById('submitFeedbackBtn'); btn.innerText = "Submitting..."; btn.disabled = true;
+    if (!currentUser) return; 
+    if (selectedStars === 0) { showNotification("⚠️ Please select a star rating!"); return; }
+    const feedbackText = document.getElementById('platformFeedbackText').value.trim(); 
+    const btn = document.getElementById('submitFeedbackBtn'); 
+    btn.innerText = "Submitting..."; btn.disabled = true;
     try {
-        const snap = await db.collection("platform_feedback").where("studentId", "==", currentUser.uid).get();
-        if (!snap.empty) {
-            await db.collection("platform_feedback").doc(snap.docs[0].id).update({ rating: selectedStars, feedback: feedbackText, studentName: currentUser.displayName, timestamp: firebase.firestore.FieldValue.serverTimestamp() });
-            if (snap.docs.length > 1) { for(let i = 1; i < snap.docs.length; i++) await db.collection("platform_feedback").doc(snap.docs[i].id).delete(); }
+        const snap = await db.collection("platform_feedback").where("studentId", "==", currentUser.uid).limit(1).get();
+        let oldRating = 0;
+        let isUpdate = !snap.empty;
+
+        if (isUpdate) {
+            oldRating = snap.docs[0].data().rating || 0;
+            await db.collection("platform_feedback").doc(snap.docs[0].id).update({ 
+                rating: selectedStars, 
+                feedback: feedbackText, 
+                studentName: currentUser.displayName, 
+                timestamp: firebase.firestore.FieldValue.serverTimestamp() 
+            });
             showNotification("✅ Feedback updated!");
-        } else { await db.collection("platform_feedback").add({ rating: selectedStars, feedback: feedbackText, studentName: currentUser.displayName, studentId: currentUser.uid, timestamp: firebase.firestore.FieldValue.serverTimestamp() }); showNotification("✅ Thank you!"); }
-        closeFeedbackModal(); fetchGlobalRating(); 
+        } else { 
+            await db.collection("platform_feedback").add({ 
+                rating: selectedStars, 
+                feedback: feedbackText, 
+                studentName: currentUser.displayName, 
+                studentId: currentUser.uid, 
+                timestamp: firebase.firestore.FieldValue.serverTimestamp() 
+            }); 
+            showNotification("✅ Thank you!"); 
+        }
+
+        // Scaled Atomic Counter update: zero collection downloads needed!
+        let ratingDelta = selectedStars - oldRating;
+        let countDelta = isUpdate ? 0 : 1;
+        await db.collection("settings").doc("platform_stats").set({
+            ratingSum: firebase.firestore.FieldValue.increment(ratingDelta),
+            ratingCount: firebase.firestore.FieldValue.increment(countDelta),
+            lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+        }, { merge: true }).catch(() => {});
+
+        closeFeedbackModal(); 
+        fetchGlobalRating(); 
     } catch(e) { showNotification("❌ Error: " + e.message); }
     btn.innerText = "Submit Feedback"; btn.disabled = false;
 }
+
 async function fetchGlobalRating() {
-    const display = document.getElementById('global-rating-display'); if(!display) return;
+    const display = document.getElementById('global-rating-display'); 
+    if(!display) return;
     try {
-        const snapshot = await db.collection("platform_feedback").get(); 
+        // Scaled read: Reads a single aggregated metadata document (1 Document Read)
+        const statsDoc = await db.collection("settings").doc("platform_stats").get();
+        if (statsDoc.exists) {
+            let d = statsDoc.data();
+            let count = d.ratingCount || 0;
+            let sum = d.ratingSum || 0;
+            display.innerText = count > 0 ? (sum / count).toFixed(1) : "5.0";
+            return;
+        }
+
+        // Lazy initialization if platform_stats doesn't exist yet
+        const snapshot = await db.collection("platform_feedback").limit(100).get(); 
         if (snapshot.empty) { display.innerText = "5.0"; return; }
-        let total = 0; let count = 0; snapshot.forEach(doc => { total += doc.data().rating; count++; }); 
-        display.innerText = (total / count).toFixed(1);
+        let total = 0; let count = 0; 
+        snapshot.forEach(doc => { total += (doc.data().rating || 5); count++; }); 
+        let avg = (total / count).toFixed(1);
+        display.innerText = avg;
+
+        db.collection("settings").doc("platform_stats").set({
+            ratingSum: total,
+            ratingCount: count,
+            lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+        }, { merge: true }).catch(() => {});
     } catch(e) { display.innerText = "5.0"; }
 }
 fetchGlobalRating();
 
 // ==========================================
-// 7. NEW GEMINI-STYLE AI CHAT ENGINE
+// 7. GEMINI-STYLE AI CHAT ENGINE
 // ==========================================
 const aiBtn = document.getElementById('ai-floating-btn');
 let pressTimer; let isDragging = false; let startX, startY, initialX, initialY;
@@ -1244,10 +1356,9 @@ async function _renderDoubtDiary() {
     const mc = document.getElementById('dynamic-content'); 
     mc.innerHTML = `<div class="card page-transition"><h2>📔 Loading Doubt Diary...</h2></div>`;
     try {
-        const snap = await db.collection("ai_doubt_diary").where("userId", "==", currentUser.uid).get();
+        const snap = await db.collection("ai_doubt_diary").where("userId", "==", currentUser.uid).orderBy("timestamp", "desc").limit(30).get();
         let items = [];
         snap.forEach(doc => items.push({ id: doc.id, ...doc.data() }));
-        items.sort((a,b) => (b.timestamp?.toMillis() || 0) - (a.timestamp?.toMillis() || 0));
 
         if(items.length === 0) { 
             mc.innerHTML = `<div class="card page-transition" style="text-align:center;"><h2>📔 Doubt Diary Empty</h2><p style="color:var(--text-muted);">Use the ✨ Ask AI feature to scan questions and save explanations here for rapid revision.</p><button class="btn-exam" onclick="goBack()" style="background:#333; border:none;">Back</button></div>`; 
@@ -1265,7 +1376,6 @@ async function _renderDoubtDiary() {
         document.querySelectorAll('.katex-render-target').forEach(el => { renderMathInElement(el, { delimiters: [ {left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}, {left: '\\(', right: '\\)', display: false}, {left: '\\[', right: '\\]', display: true} ] }); });
     } catch(e) { mc.innerHTML = `<div class="card"><h2>Error</h2><p>${e.message}</p></div>`; }
 }
-
 
 // ==========================================
 // 8. SEARCH ENGINE & LEADERBOARD
@@ -1349,24 +1459,26 @@ async function fetchLiveLeaderboard(pathPrefix) {
         const boardSnapshot = await db.collection("leaderboards")
             .where("quizPath", ">=", pathPrefix)
             .where("quizPath", "<=", pathPrefix + "\uf8ff")
+            .orderBy("quizPath")
+            .orderBy("score", "desc")
+            .limit(10)
             .get();
             
         let html = `<div class="card page-transition"><h2 style="color:var(--primary-yellow);">🏆 Top 10: ${pathPrefix.split(' > ').pop()}</h2><div style="overflow-x:auto;"><table><tr><th>Rank</th><th>Student</th><th>Score</th><th>Accuracy</th><th>Time</th></tr>`;
-        let myRank = ">100"; let inTop10 = false; let docs = [];
+        let inTop10 = false; let docs = [];
         boardSnapshot.forEach(doc => docs.push(doc.data()));
         
-        docs.sort((a, b) => b.score - a.score);
-        
-        for(let i = 0; i < docs.length; i++) { if (docs[i].userId === currentUser.uid && docs[i].score === myBestScore) { myRank = i + 1; if (myRank <= 10) inTop10 = true; break; } }
-        let displayCount = Math.min(10, docs.length);
-        for(let i = 0; i < displayCount; i++) {
-            let data = docs[i]; let medal = (i === 0) ? "🥇 " : ((i === 1) ? "🥈 " : ((i === 2) ? "🥉 " : (i + 1) + ". "));
-            let isMe = (data.userId === currentUser.uid); let rowStyle = isMe ? `style="background: rgba(253, 184, 19, 0.15);"` : "";
+        for(let i = 0; i < docs.length; i++) { 
+            let data = docs[i]; 
+            let medal = (i === 0) ? "🥇 " : ((i === 1) ? "🥈 " : ((i === 2) ? "🥉 " : (i + 1) + ". "));
+            let isMe = (data.userId === currentUser.uid); 
+            if (isMe) inTop10 = true;
+            let rowStyle = isMe ? `style="background: rgba(253, 184, 19, 0.15);"` : "";
             html += `<tr ${rowStyle}><td>${medal}</td><td><b>${data.userName}</b> ${isMe ? '<span style="color:var(--primary-yellow); font-size:12px; margin-left:5px;">(You)</span>' : ''}</td><td style="color:var(--correct-green); font-weight:bold;">${data.score}</td><td>${data.accuracy}%</td><td>${data.timeStr}</td></tr>`;
         }
         html += `</table></div>`;
 
-        if (!inTop10 && myBestData) { html += `<div style="margin-top: 30px; background: #2a2a2a; border: 1px solid var(--border-color); border-left: 4px solid var(--primary-yellow); padding: 20px; border-radius: 4px;"><h4 style="margin: 0 0 15px 0; color: var(--primary-yellow); font-size: 18px;">Your Personal Best</h4><div style="display: flex; gap: 30px; flex-wrap: wrap;"><div><span style="color:var(--text-muted); font-size:13px;">Global Rank</span><br><b style="font-size:20px; color: white;">${myRank}</b></div><div><span style="color:var(--text-muted); font-size:13px;">Best Score</span><br><b style="font-size:20px; color:var(--correct-green);">${myBestData.score}</b></div><div><span style="color:var(--text-muted); font-size:13px;">Accuracy</span><br><b style="font-size:20px; color: white;">${myBestData.accuracy}%</b></div><div><span style="color:var(--text-muted); font-size:13px;">Total Tests Attempted</span><br><b style="font-size:20px; color: white;">${totalTests}</b></div></div></div>`; }
+        if (!inTop10 && myBestData) { html += `<div style="margin-top: 30px; background: #2a2a2a; border: 1px solid var(--border-color); border-left: 4px solid var(--primary-yellow); padding: 20px; border-radius: 4px;"><h4 style="margin: 0 0 15px 0; color: var(--primary-yellow); font-size: 18px;">Your Personal Best</h4><div style="display: flex; gap: 30px; flex-wrap: wrap;"><div><span style="color:var(--text-muted); font-size:13px;">Best Score</span><br><b style="font-size:20px; color:var(--correct-green);">${myBestData.score}</b></div><div><span style="color:var(--text-muted); font-size:13px;">Accuracy</span><br><b style="font-size:20px; color: white;">${myBestData.accuracy}%</b></div><div><span style="color:var(--text-muted); font-size:13px;">Total Tests Attempted</span><br><b style="font-size:20px; color: white;">${totalTests}</b></div></div></div>`; }
         html += `<button class="btn-exam" onclick="window.history.back()" style="margin-top:25px; background:#333; border:none;">&larr; Back to Categories</button></div>`;
         mainContent.innerHTML = html;
 
@@ -1381,7 +1493,7 @@ function showNotification(message) {
 }
 
 // ==========================================
-// 9. QUIZ ENGINE LOGIC
+// 9. SCALED QUIZ ENGINE & PERSISTENCE
 // ==========================================
 let quizState = { questions: [], currentIndex: 0, userAnswers: {}, showAnswerTriggered: {}, flaggedDoubts: {}, viewedQuestions: [], timer: null, secondsPassed: 0, isTimerPaused: false, isCustom: false };
 
@@ -1412,7 +1524,7 @@ function clearQuizSession() {
 async function _initiateQuizEngine(isCustomLaunch = false) {
     const pathString = currentPath.join(' > ');
 
-    // --- NEW: INTERCEPT & RESTORE SESSION ---
+    // Session Persistence Check
     const savedSessionStr = localStorage.getItem('mcq_active_session');
     if (savedSessionStr) {
         try {
@@ -1451,11 +1563,8 @@ async function _initiateQuizEngine(isCustomLaunch = false) {
             } else {
                 clearQuizSession();
             }
-        } catch(e) {
-            clearQuizSession();
-        }
+        } catch(e) { clearQuizSession(); }
     }
-    // --- END NEW ---
 
     document.getElementById('breadcrumb-text').innerText = "Home / " + (isCustomLaunch ? "Custom Quiz" : pathString + " / Active Quiz"); 
     const mainContent = document.getElementById('dynamic-content');
@@ -1463,34 +1572,32 @@ async function _initiateQuizEngine(isCustomLaunch = false) {
 
     try {
         let isDailyQuiz = currentPath[0] === 'Daily Quiz Challenge';
-        
-        let globalAttemptedIds = [];
-        if (currentUser) {
-            let userDoc = await db.collection("users").doc(currentUser.uid).get();
-            if (userDoc.exists) { let d = userDoc.data(); for (let k in d) { if (k.startsWith("prog_")) globalAttemptedIds.push(...d[k]); } }
-        } else {
-            let localProg = JSON.parse(localStorage.getItem('mcq_progress') || '{}');
-            for (let k in localProg) { globalAttemptedIds.push(...localProg[k]); }
-        }
-
-        let availableQuestions = []; let totalQuestionsInDB = 0;
+        let availableQuestions = []; 
+        let totalQuestionsInDB = 0;
 
         if (isCustomLaunch) {
             let unattempted = [];
             for (const p of customQuizConfig.paths) {
-                const snap = await db.collection("content").where("path", ">=", p).where("path", "<=", p + "\uf8ff").get();
+                let pSafe = "prog_" + p.split(' > ').join('_').replace(/[^a-zA-Z0-9]/g, '_');
+                let pathAttempted = await getAttemptedIdsForPath(pSafe);
+
+                // Query with a safe limit per chapter instead of full collection scans
+                const snap = await db.collection("content")
+                    .where("path", ">=", p)
+                    .where("path", "<=", p + "\uf8ff")
+                    .limit(50)
+                    .get();
+
                 snap.forEach(doc => {
                     let d = doc.data();
-                    if (d.type === 'mcq' && !globalAttemptedIds.includes(doc.id)) {
+                    if (d.type === 'mcq' && !pathAttempted.includes(doc.id)) {
                         let isLevelMatch = customQuizConfig.level === 'Mixed' || 
                                            d.level === customQuizConfig.level || 
                                            (!d.level && customQuizConfig.level === 'Mixed') ||
                                            d.path.toLowerCase().includes(customQuizConfig.level.toLowerCase());
                         
-                        if (isLevelMatch) {
-                            if (!unattempted.find(u => u.id === doc.id)) {
-                                unattempted.push({id: doc.id, ...d});
-                            }
+                        if (isLevelMatch && !unattempted.find(u => u.id === doc.id)) {
+                            unattempted.push({id: doc.id, ...d});
                         }
                     }
                 });
@@ -1570,33 +1677,85 @@ async function _initiateQuizEngine(isCustomLaunch = false) {
 
         } else if (isDailyQuiz) {
             let targetPrefix = currentPath[1] === "NEET" ? "NEET" : "General Knowledge";
-            let snap = await db.collection("content").where("path", ">=", targetPrefix).where("path", "<=", targetPrefix + "\uf8ff").get();
-            let unattempted = [];
-            snap.forEach(doc => { let data = doc.data(); if (data.type === 'mcq' && !globalAttemptedIds.includes(doc.id)) { unattempted.push({id: doc.id, ...data}); } });
-
+            let dailyAttempted = await getAttemptedIdsForPath("prog_daily_challenge");
+            
             if (currentPath[1] === "NEET") {
-                let bot = unattempted.filter(q => q.path.includes("Botany")).sort(()=>0.5-Math.random()); let zoo = unattempted.filter(q => q.path.includes("Zoology")).sort(()=>0.5-Math.random());
-                let phy = unattempted.filter(q => q.path.includes("Physics")).sort(()=>0.5-Math.random()); let pChem = unattempted.filter(q => q.path.includes("Physical Chemistry")).sort(()=>0.5-Math.random());
-                let oChem = unattempted.filter(q => q.path.includes("Organic Chemistry")).sort(()=>0.5-Math.random()); let iChem = unattempted.filter(q => q.path.includes("Inorganic Chemistry")).sort(()=>0.5-Math.random());
-                
-                availableQuestions.push(...bot.slice(0, 5), ...zoo.slice(0, 5), ...phy.slice(0, 4), ...pChem.slice(0, 2), ...oChem.slice(0, 2), ...iChem.slice(0, 2));
+                const subjs = ["Botany", "Zoology", "Physics", "Chemistry"];
+                for (let subj of subjs) {
+                    let sPath = `NEET > MCQs Practice > ${subj}`;
+                    let sSnap = await db.collection("content")
+                        .where("path", ">=", sPath)
+                        .where("path", "<=", sPath + "\uf8ff")
+                        .limit(20)
+                        .get();
+                    
+                    let sUnattempted = [];
+                    sSnap.forEach(doc => {
+                        let d = doc.data();
+                        if (d.type === 'mcq' && !dailyAttempted.includes(doc.id)) sUnattempted.push({id: doc.id, ...d});
+                    });
+                    availableQuestions.push(...sUnattempted.sort(() => 0.5 - Math.random()).slice(0, 5));
+                }
                 totalQuestionsInDB = 20; 
             } else { 
-                availableQuestions = unattempted.sort(()=>0.5-Math.random()).slice(0, 20); totalQuestionsInDB = 20;
+                let gSnap = await db.collection("content")
+                    .where("path", ">=", "General Knowledge")
+                    .where("path", "<=", "General Knowledge\uf8ff")
+                    .limit(50)
+                    .get();
+                let gUnattempted = [];
+                gSnap.forEach(doc => {
+                    let d = doc.data();
+                    if (d.type === 'mcq' && !dailyAttempted.includes(doc.id)) gUnattempted.push({id: doc.id, ...d});
+                });
+                availableQuestions = gUnattempted.sort(() => 0.5 - Math.random()).slice(0, 20); 
+                totalQuestionsInDB = 20;
             }
             quizState.questions = availableQuestions.sort(() => Math.random() - 0.5);
             quizState.isCustom = false;
 
         } else {
-            let snapshot = await db.collection("content").where("path", ">=", pathString).where("path", "<=", pathString + "\uf8ff").get();
-            let safePath = "prog_" + currentPath.join('_').replace(/[^a-zA-Z0-9]/g, '_'); let previouslyAttemptedIds = [];
-            if (currentUser) { let userDoc = await db.collection("users").doc(currentUser.uid).get(); if (userDoc.exists) previouslyAttemptedIds = userDoc.data()[safePath] || []; } 
-            else { let localProg = JSON.parse(localStorage.getItem('mcq_progress') || '{}'); previouslyAttemptedIds = localProg[safePath] || []; }
+            let safePath = "prog_" + currentPath.join('_').replace(/[^a-zA-Z0-9]/g, '_');
+            let previouslyAttemptedIds = await getAttemptedIdsForPath(safePath);
+
+            // Scaled Retrieval: Query with randomKey and limit
+            let randSeed = Math.random();
+            let snapshot = await db.collection("content")
+                .where("path", ">=", pathString)
+                .where("path", "<=", pathString + "\uf8ff")
+                .where("randomKey", ">=", randSeed)
+                .limit(50)
+                .get();
 
             snapshot.forEach(doc => {
                 let data = doc.data();
-                if (data.type === 'mcq') { totalQuestionsInDB++; if (!previouslyAttemptedIds.includes(doc.id)) { availableQuestions.push({ id: doc.id, ...data }); } }
+                if (data.type === 'mcq') {
+                    totalQuestionsInDB++;
+                    if (!previouslyAttemptedIds.includes(doc.id)) {
+                        availableQuestions.push({ id: doc.id, ...data });
+                    }
+                }
             });
+
+            // Fallback for wrapped bounds or questions awaiting randomKey assignment
+            if (availableQuestions.length < 20) {
+                let fallbackSnap = await db.collection("content")
+                    .where("path", ">=", pathString)
+                    .where("path", "<=", pathString + "\uf8ff")
+                    .limit(80)
+                    .get();
+
+                fallbackSnap.forEach(doc => {
+                    let data = doc.data();
+                    if (data.type === 'mcq') {
+                        totalQuestionsInDB++;
+                        if (!previouslyAttemptedIds.includes(doc.id) && !availableQuestions.find(q => q.id === doc.id)) {
+                            availableQuestions.push({ id: doc.id, ...data });
+                        }
+                    }
+                });
+            }
+
             quizState.questions = availableQuestions.sort(() => Math.random() - 0.5);
             quizState.isCustom = false;
         }
@@ -1784,36 +1943,26 @@ async function finishQuiz() {
         }
     });
 
-    if (sessionAttemptedIds.length > 0 && !isDailyQuiz && !quizState.isCustom) { 
-        let safePath = "prog_" + currentPath.join('_').replace(/[^a-zA-Z0-9]/g, '_');
-        if (currentUser) { let dataToSave = {}; dataToSave[safePath] = firebase.firestore.FieldValue.arrayUnion(...sessionAttemptedIds); db.collection("users").doc(currentUser.uid).set(dataToSave, {merge: true}); } 
-        else { let localProg = JSON.parse(localStorage.getItem('mcq_progress') || '{}'); localProg[safePath] = [...(localProg[safePath] || []), ...sessionAttemptedIds]; localStorage.setItem('mcq_progress', JSON.stringify(localProg)); }
-    } else if (sessionAttemptedIds.length > 0 && quizState.isCustom) {
-        if (currentUser) { 
-            let dataToSave = {}; 
+    // Subcollection Progress Persistence
+    if (sessionAttemptedIds.length > 0) {
+        if (!isDailyQuiz && !quizState.isCustom) {
+            let safePath = "prog_" + currentPath.join('_').replace(/[^a-zA-Z0-9]/g, '_');
+            await saveAttemptedIdsForPath(safePath, sessionAttemptedIds);
+        } else if (quizState.isCustom) {
+            let grouped = {};
             quizState.questions.forEach((q) => {
                 if(sessionAttemptedIds.includes(q.id)) {
                     let safePath = "prog_" + q.path.split(' > ').join('_').replace(/[^a-zA-Z0-9]/g, '_');
-                    if(!dataToSave[safePath]) dataToSave[safePath] = [];
-                    dataToSave[safePath].push(q.id);
+                    if(!grouped[safePath]) grouped[safePath] = [];
+                    grouped[safePath].push(q.id);
                 }
             });
-            for(let k in dataToSave) { dataToSave[k] = firebase.firestore.FieldValue.arrayUnion(...dataToSave[k]); }
-            db.collection("users").doc(currentUser.uid).set(dataToSave, {merge: true}); 
-        } 
-        else { 
-            let localProg = JSON.parse(localStorage.getItem('mcq_progress') || '{}'); 
-            quizState.questions.forEach((q) => {
-                if(sessionAttemptedIds.includes(q.id)) {
-                    let safePath = "prog_" + q.path.split(' > ').join('_').replace(/[^a-zA-Z0-9]/g, '_');
-                    localProg[safePath] = [...(localProg[safePath] || []), q.id];
-                }
-            });
-            localStorage.setItem('mcq_progress', JSON.stringify(localProg)); 
+            for (let safeP in grouped) {
+                await saveAttemptedIdsForPath(safeP, grouped[safeP]);
+            }
+        } else if (isDailyQuiz) {
+            await saveAttemptedIdsForPath("prog_daily_challenge", sessionAttemptedIds);
         }
-    } else if (sessionAttemptedIds.length > 0 && isDailyQuiz) {
-        if (currentUser) { db.collection("users").doc(currentUser.uid).set({ prog_daily_challenge: firebase.firestore.FieldValue.arrayUnion(...sessionAttemptedIds)}, {merge: true}); } 
-        else { let localProg = JSON.parse(localStorage.getItem('mcq_progress') || '{}'); localProg["prog_daily_challenge"] = [...(localProg["prog_daily_challenge"] || []), ...sessionAttemptedIds]; localStorage.setItem('mcq_progress', JSON.stringify(localProg)); }
     }
 
     let accuracy = attempted === 0 ? 0 : Math.round((correctCount / attempted) * 100); 
@@ -1874,9 +2023,11 @@ async function finishQuiz() {
 }
 
 // ==========================================
-// 10. ADMIN PANEL LOGIC
+// 10. SCALED ADMIN PANEL & PAGINATION
 // ==========================================
 let adminCurrentTab = 'topics'; let adminNewTopicPath = []; let adminSelectedPath = []; let adminManageSelectedPath = []; 
+let lastManageDoc = null;
+let isFetchingManageContent = false;
 
 function _renderAdminLogin() { 
     document.getElementById('breadcrumb-text').innerText = "Security / Admin Login"; 
@@ -2026,7 +2177,7 @@ function _renderAdminPanel() {
                 <div style="background: #2a2a2a; padding: 15px; border-radius: 6px; margin-bottom: 20px;">
                     <h4 style="margin-top:0; margin-bottom:10px; color:var(--text-muted);">Filter Content by Folder (Optional)</h4>
                     <div id="manage-path-selectors" style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:15px;"></div>
-                    <button class="btn-exam" onclick="loadContentForManagement()" style="background:var(--primary-yellow); color:black; border:none; padding:10px 15px; width:100%; max-width:250px;">🔍 Fetch Filtered Content</button>
+                    <button class="btn-exam" onclick="loadContentForManagement(false)" style="background:var(--primary-yellow); color:black; border:none; padding:10px 15px; width:100%; max-width:250px;">🔍 Fetch Filtered Content</button>
                 </div>
                 <div id="manage-content-list">
                     <p style="color:var(--text-muted);">Select a folder and click Fetch to load items.</p>
@@ -2049,18 +2200,28 @@ function _renderAdminPanel() {
             </div>
 
             <div id="admin-settings-view" style="display:${adminCurrentTab === 'settings' ? 'block' : 'none'};">
-                <div style="background: #2a2a2a; padding: 25px; border-radius: 6px; max-width: 400px;">
-                    <h3 style="margin-top:0; margin-bottom:20px;">Change Admin Password</h3>
-                    <input type="password" id="newAdminPass" class="input-field" placeholder="Enter New Password (Min 6 chars)">
-                    <input type="password" id="confirmAdminPass" class="input-field" placeholder="Confirm New Password">
-                    <button class="btn-exam" onclick="changeAdminPassword()" style="background:var(--primary-yellow); color:black; border:none; width:100%;">Update Password</button>
+                <div style="display:flex; gap:20px; flex-wrap:wrap;">
+                    <div style="background: #2a2a2a; padding: 25px; border-radius: 6px; flex:1; min-width: 300px;">
+                        <h3 style="margin-top:0; margin-bottom:20px;">Change Admin Password</h3>
+                        <input type="password" id="newAdminPass" class="input-field" placeholder="Enter New Password (Min 6 chars)">
+                        <input type="password" id="confirmAdminPass" class="input-field" placeholder="Confirm New Password">
+                        <button class="btn-exam" onclick="changeAdminPassword()" style="background:var(--primary-yellow); color:black; border:none; width:100%;">Update Password</button>
+                    </div>
+
+                    <div style="background: #2a2a2a; padding: 25px; border-radius: 6px; flex:1; min-width: 300px; border:1px solid #444;">
+                        <h3 style="margin-top:0; margin-bottom:10px; color:var(--correct-green);">⚡ Database Scalability Tool</h3>
+                        <p style="color:var(--text-muted); font-size:13px; line-height:1.5; margin-bottom:20px;">
+                            Batch indexes existing MCQs with <code>randomKey</code> attributes so the quiz engine can perform sub-second random selections at scale.
+                        </p>
+                        <button id="btnMigrateKeys" class="btn-exam" onclick="runRandomKeyMigration()" style="background:#4CAF50; color:white; border:none; width:100%;">⚡ Index MCQs with Random Keys</button>
+                    </div>
                 </div>
             </div>
         </div>`;
         
     if (adminCurrentTab === 'upload') { _buildAdminSelectors(); }
     else if (adminCurrentTab === 'topics') { _buildAdminNewTopicSelectors(); loadAdminTopicsList(); }
-    else if (adminCurrentTab === 'manage') { _buildManageSelectors(); loadContentForManagement(); }
+    else if (adminCurrentTab === 'manage') { _buildManageSelectors(); loadContentForManagement(false); }
     else if (adminCurrentTab === 'reports') loadAdminReports();
     else if (adminCurrentTab === 'users') loadAdminUsers();
     else if (adminCurrentTab === 'doubts') loadAdminDoubts();
@@ -2293,8 +2454,10 @@ async function uploadFileToCloudinary(file) {
 }
 
 async function processAdminUpload() {
-    const type = document.getElementById('admResourceType').value; const targetPathString = adminSelectedPath.join(' > '); 
-    const btn = document.getElementById('uploadBtn'); btn.innerText = "Uploading... Please wait"; btn.disabled = true;
+    const type = document.getElementById('admResourceType').value; 
+    const targetPathString = adminSelectedPath.join(' > '); 
+    const btn = document.getElementById('uploadBtn'); 
+    btn.innerText = "Uploading... Please wait"; btn.disabled = true;
 
     try {
         if (type === 'mcq') {
@@ -2305,7 +2468,22 @@ async function processAdminUpload() {
             const level = document.getElementById('admDifficulty').value;
             if (!question || !options.A || !options.B || correctAnswers.length === 0) throw new Error("Question, Option A, Option B, and Correct Answer are required.");
             let imageUrl = null; if (imageFile) imageUrl = await uploadFileToCloudinary(imageFile); 
-            await db.collection("content").add({ type: 'mcq', path: targetPathString, level: level, question: question, options: options, correctAnswers: correctAnswers, explanation: explanation, imageUrl: imageUrl, timestamp: firebase.firestore.FieldValue.serverTimestamp() });
+            
+            // Random index key for sub-second O(1) query at scale
+            let randomKey = Math.random();
+
+            await db.collection("content").add({ 
+                type: 'mcq', 
+                path: targetPathString, 
+                level: level, 
+                question: question, 
+                options: options, 
+                correctAnswers: correctAnswers, 
+                explanation: explanation, 
+                imageUrl: imageUrl, 
+                randomKey: randomKey,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp() 
+            });
             clearAdminUploadForm();
         } else if (type === 'pdf') {
             const title = document.getElementById('admPdfTitle').value.trim(); const file = document.getElementById('admPdfFile').files[0];
@@ -2320,17 +2498,53 @@ async function processAdminUpload() {
 }
 
 let loadedItemsCache = {};
-async function loadContentForManagement() {
-    const listEl = document.getElementById('manage-content-list'); listEl.innerHTML = `<p style="color:var(--primary-yellow);">Fetching items from database...</p>`;
+async function loadContentForManagement(isNextPage = false) {
+    if (isFetchingManageContent) return;
+    const listEl = document.getElementById('manage-content-list'); 
+
+    if (!isNextPage) {
+        listEl.innerHTML = `<p style="color:var(--primary-yellow);">Fetching items from database...</p>`;
+        loadedItemsCache = {};
+        lastManageDoc = null;
+    } else {
+        const loadMoreBtn = document.getElementById('btn-load-more-manage');
+        if (loadMoreBtn) { loadMoreBtn.innerText = "Loading more..."; loadMoreBtn.disabled = true; }
+    }
+    isFetchingManageContent = true;
+
     try {
         let query = db.collection("content");
-        if (adminManageSelectedPath.length > 0) { const prefixPath = adminManageSelectedPath.join(' > '); query = query.where("path", ">=", prefixPath).where("path", "<=", prefixPath + "\uf8ff"); } 
-        else { query = query.orderBy("timestamp", "desc").limit(50); }
+        if (adminManageSelectedPath.length > 0) { 
+            const prefixPath = adminManageSelectedPath.join(' > '); 
+            query = query.where("path", ">=", prefixPath).where("path", "<=", prefixPath + "\uf8ff"); 
+        } else { 
+            query = query.orderBy("timestamp", "desc"); 
+        }
+
+        if (isNextPage && lastManageDoc) {
+            query = query.startAfter(lastManageDoc);
+        }
+
+        query = query.limit(20);
         const snapshot = await query.get();
-        if(snapshot.empty) { listEl.innerHTML = `<p style="color:var(--text-muted);">No items found in this folder.</p>`; return; }
-        loadedItemsCache = {}; let html = '';
+
+        if (snapshot.empty) {
+            if (!isNextPage) {
+                listEl.innerHTML = `<p style="color:var(--text-muted);">No items found in this folder.</p>`;
+            } else {
+                const loadMoreBtn = document.getElementById('btn-load-more-manage');
+                if (loadMoreBtn) { loadMoreBtn.innerText = "No more items to load"; loadMoreBtn.disabled = true; }
+            }
+            isFetchingManageContent = false;
+            return;
+        }
+
+        lastManageDoc = snapshot.docs[snapshot.docs.length - 1];
+
+        let html = '';
         snapshot.forEach(doc => {
-            const data = doc.data(); loadedItemsCache[doc.id] = data;
+            const data = doc.data(); 
+            loadedItemsCache[doc.id] = data;
             if (data.type === 'mcq') {
                 let answersStr = (data.correctAnswers || []).join(', ');
                 let lvlBadge = data.level ? `<span style="margin-left:10px; background:#444; color:white; padding:2px 6px; border-radius:4px; font-size:11px;">${data.level}</span>` : '';
@@ -2339,9 +2553,50 @@ async function loadContentForManagement() {
                 html += `<div class="content-item-card" id="item_${doc.id}" style="background:#252525; border:1px solid #333; border-radius:8px; padding:15px; margin-bottom:15px;"><div class="content-item-header" style="display:flex; justify-content:space-between; margin-bottom:10px;"><span class="badge-path">${data.path || 'Uncategorized'}</span><button class="btn-exam" onclick="deleteContentItem('${doc.id}')" style="padding:4px 10px; font-size:12px; background:var(--wrong-red); border:none;">🗑️ Delete</button></div><div style="font-weight:bold; margin-bottom:5px;">📄 ${data.title}</div><a href="${data.fileUrl}" target="_blank" style="color:var(--primary-yellow); font-size:13px;">View Document &rarr;</a></div>`;
             }
         });
-        let titleMsg = adminManageSelectedPath.length > 0 ? `<p style="color:white; font-size:14px; margin-bottom:15px;">Showing results for: <b>${adminManageSelectedPath.join(' > ')}</b></p>` : `<p style="color:white; font-size:14px; margin-bottom:15px;">Showing 50 most recent uploads across all folders.</p>`;
-        listEl.innerHTML = titleMsg + html;
+
+        const oldLoadBtn = document.getElementById('load-more-manage-container');
+        if (oldLoadBtn) oldLoadBtn.remove();
+
+        const loadMoreHtml = snapshot.docs.length >= 20 ? `
+            <div id="load-more-manage-container" style="text-align:center; margin-top:20px; margin-bottom:10px;">
+                <button id="btn-load-more-manage" class="btn-exam" onclick="loadContentForManagement(true)" style="background:#333; border:1px solid #555; width:220px; font-size:14px;">📄 Load More (20)</button>
+            </div>` : '';
+
+        if (!isNextPage) {
+            let titleMsg = adminManageSelectedPath.length > 0 ? `<p style="color:white; font-size:14px; margin-bottom:15px;">Showing results for: <b>${adminManageSelectedPath.join(' > ')}</b></p>` : `<p style="color:white; font-size:14px; margin-bottom:15px;">Showing recent uploads (Page 1):</p>`;
+            listEl.innerHTML = titleMsg + `<div id="manage-items-list-body">${html}</div>` + loadMoreHtml;
+        } else {
+            document.getElementById('manage-items-list-body').insertAdjacentHTML('beforeend', html);
+            listEl.insertAdjacentHTML('beforeend', loadMoreHtml);
+        }
     } catch(e) { listEl.innerHTML = `<p style="color:var(--wrong-red);">Error loading items: ${e.message}</p>`; }
+    isFetchingManageContent = false;
+}
+
+async function runRandomKeyMigration() {
+    if(!confirm("This will scan un-indexed MCQs in the database and assign a randomKey so the quiz engine can perform random selections at scale. Proceed?")) return;
+    const btn = document.getElementById('btnMigrateKeys');
+    if (btn) { btn.innerText = "Indexing in progress..."; btn.disabled = true; }
+    try {
+        let snap = await db.collection("content").where("type", "==", "mcq").limit(400).get();
+        let batch = db.batch();
+        let count = 0;
+        snap.forEach(doc => {
+            if (doc.data().randomKey === undefined) {
+                batch.update(doc.ref, { randomKey: Math.random() });
+                count++;
+            }
+        });
+        if (count > 0) {
+            await batch.commit();
+            showNotification(`✅ Successfully indexed ${count} MCQs with random keys!`);
+        } else {
+            showNotification("✅ All scanned MCQs are already indexed!");
+        }
+    } catch(e) {
+        showNotification("❌ Migration error: " + e.message);
+    }
+    if (btn) { btn.innerText = "⚡ Index MCQs with Random Keys"; btn.disabled = false; }
 }
 
 async function deleteContentItem(docId) {
@@ -2374,8 +2629,12 @@ async function saveEditedMCQ() {
 
     if(!question || !options.A || !options.B || correctAnswers.length === 0) { alert("Question, Options A/B, and Correct Answer required."); return; }
     try {
-        await db.collection("content").doc(docId).update({ question: question, options: options, correctAnswers: correctAnswers, explanation: explanation, level: level });
-        closeEditModal(); showNotification("✅ Changes saved!"); loadContentForManagement();
+        let updatePayload = { question: question, options: options, correctAnswers: correctAnswers, explanation: explanation, level: level };
+        if (loadedItemsCache[docId] && loadedItemsCache[docId].randomKey === undefined) {
+            updatePayload.randomKey = Math.random();
+        }
+        await db.collection("content").doc(docId).update(updatePayload);
+        closeEditModal(); showNotification("✅ Changes saved!"); loadContentForManagement(false);
     } catch(e) { showNotification("❌ Update failed: " + e.message); }
 }
 
@@ -2390,10 +2649,9 @@ async function changeAdminPassword() {
 async function loadAdminReports() {
     const container = document.getElementById('reports-list-container'); container.innerHTML = `<p style="color:var(--primary-yellow);">Fetching reported mistakes...</p>`;
     try {
-        const snapshot = await db.collection("reported_mistakes").get();
+        const snapshot = await db.collection("reported_mistakes").orderBy("timestamp", "desc").limit(50).get();
         let items = [];
         snapshot.forEach(doc => items.push({ id: doc.id, ...doc.data() }));
-        items.sort((a,b) => (b.timestamp?.toMillis() || 0) - (a.timestamp?.toMillis() || 0));
 
         if(items.length === 0) { container.innerHTML = "<p style='color:var(--correct-green);'>✅ No mistakes reported! Everything is clean.</p>"; return; }
         
@@ -2425,14 +2683,14 @@ async function loadAdminUsers() {
     const container = document.getElementById('users-table-container'); 
     container.innerHTML = `<p style="color:var(--primary-yellow);">Fetching students and feedback...</p>`;
     try {
-        const feedbackSnap = await db.collection("platform_feedback").get();
+        const feedbackSnap = await db.collection("platform_feedback").limit(100).get();
         let feedbacks = {};
         feedbackSnap.forEach(doc => {
             let d = doc.data();
             feedbacks[d.studentId] = { rating: d.rating, feedback: d.feedback };
         });
 
-        const snapshot = await db.collection("users").orderBy("lastLogin", "desc").get();
+        const snapshot = await db.collection("users").orderBy("lastLogin", "desc").limit(100).get();
         let html = `<table style="width:100%; text-align:left;"><tr><th>Name</th><th>Email</th><th>Last Login</th><th>Rating</th><th>Feedback</th></tr>`;
         snapshot.forEach(doc => { 
             let d = doc.data();
@@ -2454,10 +2712,9 @@ async function loadAdminUsers() {
 async function loadAdminDoubts() {
     const container = document.getElementById('doubts-list-container'); container.innerHTML = `<p style="color:var(--primary-yellow);">Fetching doubts...</p>`;
     try {
-        const snapshot = await db.collection("flagged_doubts").get();
+        const snapshot = await db.collection("flagged_doubts").orderBy("timestamp", "desc").limit(50).get();
         let items = [];
         snapshot.forEach(doc => items.push({ id: doc.id, ...doc.data() }));
-        items.sort((a,b) => (b.timestamp?.toMillis() || 0) - (a.timestamp?.toMillis() || 0));
 
         if(items.length === 0) { container.innerHTML = "<p>No flagged questions!</p>"; return; }
         
