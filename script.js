@@ -150,7 +150,6 @@ function handleRouting() {
         else if (hash === 'quiz') _initiateQuizEngine(); 
         else if (hash === 'progress') _renderProgressSelection(); 
         else if (hash.startsWith('progress/')) _renderProgressDashboard(decodeURIComponent(hash.split('/')[1]));
-        else if (hash === 'streak') _renderStreak(); 
         else if (hash === 'diary') _renderDoubtDiary(); 
         else if (hash === 'admin') _renderAdminLogin(); 
         else if (hash === 'admin-panel') _renderAdminPanel();
@@ -164,7 +163,6 @@ function goHome() {
         currentPath = [];
         _renderView();
     } else {
-        // Safe replace avoids breaking the back button after finishing quizzes
         window.location.replace(window.location.origin + window.location.pathname + '#/home');
     }
 }
@@ -180,7 +178,7 @@ function goBack() {
 }
 
 // ==========================================
-// 4. MAIN VIEW RENDERER (HOMEPAGE & TOPICS)
+// 4. MAIN VIEW RENDERER & AUTO-SORTER
 // ==========================================
 function _renderView() {
     try {
@@ -252,7 +250,20 @@ function _renderView() {
 
         h += `<div class="card"><h2 style="color:var(--primary-yellow);">${title}</h2><div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px;">`;
         
-        for (let key in currentLevel) { 
+        // --- SMART SORTING ALGORITHM ---
+        let keys = Object.keys(currentLevel);
+        const difficultyOrder = ["Easy", "Medium", "Hard", "Mixed"];
+        
+        keys.sort((a, b) => {
+            let idxA = difficultyOrder.indexOf(a);
+            let idxB = difficultyOrder.indexOf(b);
+            if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+            if (idxA !== -1) return -1;
+            if (idxB !== -1) return 1;
+            return a.localeCompare(b);
+        });
+
+        for (let key of keys) { 
             if (currentPath.length === 0 && key === "Daily Quiz Challenge") continue; 
             let checkPath = currentPath.join(" > ") + (currentPath.length > 0 ? " > " : "") + key;
             let typeLabel = ""; if (customTopicTypes[checkPath] === 'mcq') typeLabel = " 📝"; else if (customTopicTypes[checkPath] === 'pdf') typeLabel = " 📄";
@@ -414,10 +425,10 @@ function cwStep4() {
                 <div style="flex:1; min-width:200px;">
                     <label style="color:var(--text-light); font-weight:bold; margin-bottom:10px; display:block;">Difficulty Level:</label>
                     <select id="cwLevel" class="input-field" style="padding:15px; font-size:16px;">
-                        <option value="Mixed">Mixed (All Levels)</option>
                         <option value="Easy">Easy</option>
                         <option value="Medium">Medium</option>
                         <option value="Hard">Hard</option>
+                        <option value="Mixed">Mixed (All Levels)</option>
                     </select>
                 </div>
                 <div style="flex:1; min-width:200px;">
@@ -449,7 +460,7 @@ function requiresQuizLogin(pathArray) {
 }
 
 // ==========================================
-// 6. TRACK PROGRESS, STREAK, AND PROFILE
+// 6. TRACK PROGRESS AND PROFILE
 // ==========================================
 function _renderProgressSelection() {
     if (!currentUser) return document.getElementById('dynamic-content').innerHTML = `<div class="card page-transition" style="text-align:center;"><h2>⚠️ Sign In Required</h2><button class="btn-exam" onclick="goBack()" style="background:#333; border:none;">Back</button></div>`;
@@ -606,7 +617,6 @@ async function _renderProgressDashboard(category) {
                 </div>
             </div>
 
-            <!-- Ping Pong Fixed Here -->
             <button class="btn-exam" onclick="window.history.back()" style="margin-top:20px; background:#333; border:none; width:100%; max-width:200px;">&larr; Back to Selection</button>
         </div>`;
 
@@ -652,68 +662,6 @@ function drawAccuracyChart(dataPoints) {
         let x = padding + i*stepX; let y = h - padding - (val/maxVal)*(h - padding*2);
         ctx.beginPath(); ctx.arc(x, y, 4, 0, Math.PI*2); ctx.fill();
     });
-}
-
-function calculateStreak(dates) {
-    if (!dates || dates.length === 0) return 0;
-    let uniqueDates = [...new Set(dates)].map(d => {
-        let parts = d.split('-');
-        return new Date(parts[0], parts[1]-1, parts[2]).getTime();
-    });
-    uniqueDates.sort((a, b) => b - a); 
-    
-    let today = new Date();
-    today.setHours(0,0,0,0);
-    let todayTime = today.getTime();
-    
-    let yesterday = new Date(today);
-    yesterday.setDate(yesterday.getDate() - 1);
-    let yesterdayTime = yesterday.getTime();
-    
-    let streak = 0;
-    let checkTime = todayTime;
-    
-    if (uniqueDates[0] === todayTime) {
-        streak++;
-        checkTime = todayTime;
-    } else if (uniqueDates[0] === yesterdayTime) {
-        streak++;
-        checkTime = yesterdayTime;
-    } else {
-        return 0;
-    }
-    
-    for (let i = 1; i < uniqueDates.length; i++) {
-        let nextExpected = new Date(checkTime);
-        nextExpected.setDate(nextExpected.getDate() - 1);
-        let nextExpectedTime = nextExpected.getTime();
-        
-        if (uniqueDates[i] === nextExpectedTime) {
-            streak++;
-            checkTime = nextExpectedTime;
-        } else {
-            break;
-        }
-    }
-    return streak;
-}
-
-async function _renderStreak() {
-    if (!currentUser) return document.getElementById('dynamic-content').innerHTML = `<div class="card page-transition" style="text-align:center;"><h2>⚠️ Sign In Required</h2><button class="btn-exam" onclick="goBack()" style="background:#333; border:none;">Back</button></div>`;
-    document.getElementById('breadcrumb-text').innerText = "Home / Profile / My Streak";
-    const mc = document.getElementById('dynamic-content'); 
-    mc.innerHTML = `<div class="card page-transition"><h2>🔥 Fetching Streak...</h2></div>`;
-    try {
-        let doc = await db.collection("users").doc(currentUser.uid).get();
-        let dates = doc.exists ? (doc.data().activeDates || []) : [];
-        let streak = calculateStreak(dates);
-        let datesHtml = `<ul style="list-style:none; padding:0; display:flex; flex-wrap:wrap; gap:10px;">`;
-        [...new Set(dates)].sort().reverse().slice(0, 14).forEach(d => { 
-            datesHtml += `<li style="background:#2a2a2a; padding:8px 12px; border-radius:6px; border:1px solid var(--correct-green); color:var(--correct-green); font-weight:bold;">✅ ${d}</li>`; 
-        });
-        datesHtml += `</ul>`;
-        mc.innerHTML = `<div class="card page-transition" style="text-align:center;"><h2 style="color:var(--primary-yellow);">🔥 Daily Streak</h2><div style="font-size: 80px; margin: 20px 0;">🔥</div><div style="font-size: 32px; font-weight: bold; margin-bottom: 10px;">${streak} Day${streak !== 1 ? 's' : ''}</div><p style="color:var(--text-muted); font-size:14px; margin-bottom:30px;"><i>Spend at least 5 minutes practicing daily to maintain your streak!</i></p>${dates.length > 0 ? datesHtml : ''}<button class="btn-exam" onclick="goBack()" style="margin-top:20px; background:#333; border:none;">Back</button></div>`;
-    } catch(e) { mc.innerHTML = `<div class="card"><h2>Error</h2><p>${e.message}</p></div>`; }
 }
 
 async function checkUserNotifications() {
@@ -1180,7 +1128,7 @@ function _renderLeaderboardOptions() {
 async function fetchLiveLeaderboard(pathPrefix) { 
     const mainContent = document.getElementById('dynamic-content');
     if (!currentUser) { 
-        mainContent.innerHTML = `<div class="card page-transition"><h2>🏆 Fetching Leaderboard...</h2><div style="background: rgba(244, 67, 54, 0.1); border-left: 4px solid var(--wrong-red); padding: 15px; margin: 20px 0; border-radius: 4px;"><span style="color: var(--wrong-red); font-weight: bold;">⚠️ ACCESS DENIED:</span> <span style="color: var(--text-light); font-size: 14px;">You must be signed in with Google to view the global leaderboards.</span></div><!-- Ping Pong Fixed Here --><button class="btn-exam" onclick="window.history.back()" style="background:#333; border:none;">&larr; Back</button></div>`; 
+        mainContent.innerHTML = `<div class="card page-transition"><h2>🏆 Fetching Leaderboard...</h2><div style="background: rgba(244, 67, 54, 0.1); border-left: 4px solid var(--wrong-red); padding: 15px; margin: 20px 0; border-radius: 4px;"><span style="color: var(--wrong-red); font-weight: bold;">⚠️ ACCESS DENIED:</span> <span style="color: var(--text-light); font-size: 14px;">You must be signed in with Google to view the global leaderboards.</span></div><button class="btn-exam" onclick="window.history.back()" style="background:#333; border:none;">&larr; Back</button></div>`; 
         return; 
     }
 
@@ -1201,7 +1149,7 @@ async function fetchLiveLeaderboard(pathPrefix) {
         else { thresholdMet = (totalQuestions >= 100); requiredText = "100 Practice Questions"; progressText = `${totalQuestions} / 100 Questions Attempted`; }
 
         if (!thresholdMet) {
-            mainContent.innerHTML = `<div class="card page-transition" style="text-align:center; padding: 40px 20px;"><h2 style="color: var(--primary-yellow); font-size: 28px; margin-bottom: 10px;">🔒 Leaderboard Locked</h2><p style="color: var(--text-muted); font-size: 15px; max-width: 500px; margin: 0 auto 20px auto; line-height: 1.5;">To ensure competitive integrity, you must attempt a minimum of <b style="color: white;">${requiredText}</b> in this specific category before unlocking the global rankings.</p><div style="background: #2a2a2a; border: 1px solid var(--border-color); padding: 15px 25px; border-radius: 8px; display: inline-block; margin-bottom: 30px;"><span style="color: var(--primary-yellow); font-weight: bold; margin-right: 10px;">Your Progress:</span> <span style="color: white; font-weight: bold;">${progressText}</span></div><br><!-- Ping Pong Fixed Here --><button class="btn-exam" onclick="window.history.back()" style="background:#333; border:none;">&larr; Back to Categories</button></div>`; return;
+            mainContent.innerHTML = `<div class="card page-transition" style="text-align:center; padding: 40px 20px;"><h2 style="color: var(--primary-yellow); font-size: 28px; margin-bottom: 10px;">🔒 Leaderboard Locked</h2><p style="color: var(--text-muted); font-size: 15px; max-width: 500px; margin: 0 auto 20px auto; line-height: 1.5;">To ensure competitive integrity, you must attempt a minimum of <b style="color: white;">${requiredText}</b> in this specific category before unlocking the global rankings.</p><div style="background: #2a2a2a; border: 1px solid var(--border-color); padding: 15px 25px; border-radius: 8px; display: inline-block; margin-bottom: 30px;"><span style="color: var(--primary-yellow); font-weight: bold; margin-right: 10px;">Your Progress:</span> <span style="color: white; font-weight: bold;">${progressText}</span></div><br><button class="btn-exam" onclick="window.history.back()" style="background:#333; border:none;">&larr; Back to Categories</button></div>`; return;
         }
 
         const boardSnapshot = await db.collection("leaderboards")
@@ -1225,8 +1173,6 @@ async function fetchLiveLeaderboard(pathPrefix) {
         html += `</table></div>`;
 
         if (!inTop10 && myBestData) { html += `<div style="margin-top: 30px; background: #2a2a2a; border: 1px solid var(--border-color); border-left: 4px solid var(--primary-yellow); padding: 20px; border-radius: 4px;"><h4 style="margin: 0 0 15px 0; color: var(--primary-yellow); font-size: 18px;">Your Personal Best</h4><div style="display: flex; gap: 30px; flex-wrap: wrap;"><div><span style="color:var(--text-muted); font-size:13px;">Global Rank</span><br><b style="font-size:20px; color: white;">${myRank}</b></div><div><span style="color:var(--text-muted); font-size:13px;">Best Score</span><br><b style="font-size:20px; color:var(--correct-green);">${myBestData.score}</b></div><div><span style="color:var(--text-muted); font-size:13px;">Accuracy</span><br><b style="font-size:20px; color: white;">${myBestData.accuracy}%</b></div><div><span style="color:var(--text-muted); font-size:13px;">Total Tests Attempted</span><br><b style="font-size:20px; color: white;">${totalTests}</b></div></div></div>`; }
-        
-        // Ping Pong Fixed Here
         html += `<button class="btn-exam" onclick="window.history.back()" style="margin-top:25px; background:#333; border:none;">&larr; Back to Categories</button></div>`;
         mainContent.innerHTML = html;
 
@@ -1396,7 +1342,7 @@ async function _initiateQuizEngine(isCustomLaunch = false) {
             else if(totalQuestionsInDB === 0) mainContent.innerHTML = `<div class="card page-transition"><h2>No Questions Available</h2><p style="color:var(--text-muted);">Not enough questions available in the database for this section.</p><button class="btn-exam" onclick="goHome()" style="background:#333; border:none;">&larr; Go Back</button></div>`; 
             else {
                 let safePath = "prog_" + currentPath.join('_').replace(/[^a-zA-Z0-9]/g, '_');
-                mainContent.innerHTML = `<div class="card page-transition" style="text-align:center; padding: 40px 20px;"><h2 style="color: var(--primary-yellow); font-size: 28px; margin-bottom: 15px;">🎉 Section Completed!</h2><p style="color: var(--text-muted); font-size: 16px; margin-bottom: 25px;">You have successfully attempted all available questions in this section.</p><div style="display:flex; justify-content:center; gap:15px; flex-wrap:wrap;"><button class="btn-exam" onclick="resetProgress('${safePath}')" style="background: #333; color: white; border:none;">🔄 Reset My Progress</button><button class="btn-exam" onclick="goBack()" style="background:#333; border:none;">&larr; Explore Other Topics</button></div></div>`;
+                mainContent.innerHTML = `<div class="card page-transition" style="text-align:center; padding: 40px 20px;"><h2 style="color: var(--primary-yellow); font-size: 28px; margin-bottom: 15px;">🎉 Section Completed!</h2><p style="color: var(--text-muted); font-size: 16px; margin-bottom: 25px;">You have successfully attempted all available questions in this section.</p><div style="display:flex; justify-content:center; gap:15px; flex-wrap:wrap;"><button class="btn-exam" onclick="resetProgress('${safePath}')" style="background: #333; color: white; border:none;">🔄 Reset My Progress</button><button class="btn-exam" onclick="window.history.back()" style="background:#333; border:none;">&larr; Explore Other Topics</button></div></div>`;
             }
             return; 
         }
@@ -1409,15 +1355,6 @@ async function _initiateQuizEngine(isCustomLaunch = false) {
                 quizState.secondsPassed++; 
                 let disp = document.getElementById('quizTimeDisplay'); 
                 if(disp) disp.innerText = formatTime(quizState.secondsPassed); 
-                
-                if (quizState.secondsPassed === 300 && currentUser) {
-                    const d = new Date();
-                    const localDateStr = d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,'0') + "-" + String(d.getDate()).padStart(2,'0');
-                    db.collection("users").doc(currentUser.uid).set({
-                        activeDates: firebase.firestore.FieldValue.arrayUnion(localDateStr)
-                    }, {merge: true});
-                    showNotification("🔥 5 Minutes Practice Reached! Streak updated!");
-                }
             }
         }, 1000);
         _renderQuizQuestion();
@@ -1609,14 +1546,6 @@ async function finishQuiz() {
         else { let localProg = JSON.parse(localStorage.getItem('mcq_progress') || '{}'); localProg["prog_daily_challenge"] = [...(localProg["prog_daily_challenge"] || []), ...sessionAttemptedIds]; localStorage.setItem('mcq_progress', JSON.stringify(localProg)); }
     }
 
-    if (currentUser && attempted > 0) {
-        const d = new Date();
-        const localDateStr = d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,'0') + "-" + String(d.getDate()).padStart(2,'0');
-        db.collection("users").doc(currentUser.uid).set({
-            activeDates: firebase.firestore.FieldValue.arrayUnion(localDateStr)
-        }, {merge: true});
-    }
-
     let accuracy = attempted === 0 ? 0 : Math.round((correctCount / attempted) * 100); 
     let timeStr = formatTime(quizState.secondsPassed); 
     let examCategory = isNeetSection ? "NEET" : "General Knowledge";
@@ -1665,7 +1594,7 @@ async function finishQuiz() {
             <div id="review-wrong" style="display:none;">${wrongHtml || '<p>No wrong answers!</p>'}</div>
             <div id="review-skipped" style="display:none;">${skippedHtml || '<p>No skipped questions.</p>'}</div>
             ${flaggedListHtml !== '' ? `<h3 style="text-align:left; color:var(--primary-yellow); margin-top: 40px;">⭐ Sent to Admin</h3>${flaggedListHtml}` : ''}
-            <button class="btn-exam" onclick="goHome()" style="width: 250px; margin-top:30px; background:#333; border:none;">&larr; Exit to Dashboard</button>
+            <button class="btn-exam" onclick="window.location.hash='#/home'" style="width: 250px; margin-top:30px; background:#333; border:none;">&larr; Exit to Dashboard</button>
         </div>
     `;
     
@@ -1753,10 +1682,10 @@ function _renderAdminPanel() {
                             <div>
                                 <label style="color:var(--text-muted); font-size:14px;">Difficulty Level:</label>
                                 <select id="admDifficulty" class="input-field">
-                                    <option value="Mixed">Mixed (Default)</option>
                                     <option value="Easy">Easy</option>
                                     <option value="Medium">Medium</option>
                                     <option value="Hard">Hard</option>
+                                    <option value="Mixed">Mixed (Default)</option>
                                 </select>
                             </div>
                         </div>
@@ -1992,7 +1921,6 @@ function _buildAdminNewTopicSelectors() {
     }
     container.innerHTML = html;
     
-    // Safely update the display text without insertAdjacentHTML
     let pathTextSpan = document.getElementById('new-topic-path-text');
     if (pathTextSpan) {
         pathTextSpan.innerText = adminNewTopicPath.length > 0 ? adminNewTopicPath.join(' > ') : 'Root (Please select at least one)';
@@ -2055,7 +1983,6 @@ function _buildAdminSelectors() {
     container.innerHTML = html;
     const formArea = document.getElementById('upload-form-area'); if(formArea) formArea.style.display = (adminSelectedPath.length > 0) ? 'block' : 'none';
     
-    // Safely update the display text
     let uploadTextSpan = document.getElementById('upload-path-text');
     if (uploadTextSpan) {
         uploadTextSpan.innerText = adminSelectedPath.length > 0 ? adminSelectedPath.join(' > ') : 'Please select at least one path';
