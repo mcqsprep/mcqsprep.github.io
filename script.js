@@ -821,7 +821,7 @@ function endPress(e) {
 }
 
 let cropper = null; let aiChatHistory = []; let lastExtractedQuestion = null;
-let pendingBase64Image = null; // Stores image before sending
+let pendingBase64Image = null; 
 
 function autoExpandTextarea(field) {
     field.style.height = 'auto';
@@ -838,21 +838,40 @@ function toggleAttachMenu() {
     menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
 }
 
-// Close attachment menu if clicked outside
-document.addEventListener('click', function(e) {
-    const menu = document.getElementById('ai-attach-menu');
-    const plusBtn = document.querySelector('button[onclick="toggleAttachMenu()"]');
-    if (menu && menu.style.display === 'block' && !menu.contains(e.target) && e.target !== plusBtn) {
-        menu.style.display = 'none';
+function handleAIPaste(e) {
+    const items = (e.clipboardData || window.clipboardData).items;
+    for (let i = 0; i < items.length; i++) {
+        if (items[i].type.indexOf('image') !== -1) {
+            const file = items[i].getAsFile();
+            if (!file) continue;
+            e.preventDefault(); 
+            
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                document.getElementById('ai-idle-view').style.display = 'none';
+                Array.from(document.getElementById('gemini-chat-history').children).forEach(child => {
+                    if (child.id !== 'ai-idle-view' && child.id !== 'ai-cropper-view') {
+                        child.style.display = 'none';
+                    }
+                });
+                document.getElementById('ai-cropper-view').style.display = 'flex';
+                
+                const imgNode = document.getElementById('aiCropperImage'); 
+                imgNode.src = event.target.result;
+                if(cropper) cropper.destroy(); 
+                cropper = new Cropper(imgNode, { viewMode: 1, autoCropArea: 0.85, background: false });
+            };
+            reader.readAsDataURL(file);
+            break; 
+        }
     }
-});
+}
 
 function openAIModal() {
     document.getElementById('aiModal').style.display = 'flex'; 
     document.getElementById('ai-idle-view').style.display = 'flex';
     document.getElementById('ai-cropper-view').style.display = 'none';
     
-    // Clear chat history UI completely
     const historyContainer = document.getElementById('gemini-chat-history');
     const children = Array.from(historyContainer.children);
     children.forEach(child => {
@@ -861,7 +880,6 @@ function openAIModal() {
         }
     });
 
-    // Reset input box
     const input = document.getElementById('aiTextInput');
     input.value = '';
     autoExpandTextarea(input);
@@ -1019,7 +1037,6 @@ async function handleAISend() {
     if (!text && !pendingBase64Image) return; 
     if (!text && pendingBase64Image) text = "Please solve the question in this image.";
     
-    // Clear Input
     inputEl.value = '';
     autoExpandTextarea(inputEl);
     document.getElementById('ai-fuzzy-box').style.display = 'none';
@@ -1126,7 +1143,7 @@ async function renderAISolution(data, isCached = false) {
         }
     }
     
-    let solutionMarkdown = `**Subject:** ${data.subject}\n\n**Extracted Question:** ${data.extractedQuestion}\n\n**Core Concept:** ${data.solution.keyConcept}\n\n**Step-by-Step Explanation:**\n${data.solution.stepByStep}\n\n**Final Conclusion & Answer:** ${data.solution.finalAnswer}`;
+    let solutionMarkdown = `**Extracted Question:** ${data.extractedQuestion}\n\n**Core Concept:** ${data.solution.keyConcept}\n\n**Step-by-Step Explanation:**\n${data.solution.stepByStep}\n\n**Final Conclusion & Answer:** ${data.solution.finalAnswer}`;
     aiChatHistory.push({ role: 'model', text: solutionMarkdown }); 
     
     let parsedHTML = marked.parse(solutionMarkdown);
