@@ -10,7 +10,7 @@
     <meta name="theme-color" content="#0a0a0f">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🩺</text></svg>">
+    <link rel="apple-touch-icon" href="icon-192.png">
     
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🩺</text></svg>">
     <link rel="stylesheet" href="style.css">
@@ -47,6 +47,9 @@
         </div>
         
         <div class="nav-links">
+            <!-- Custom Mobile PWA Install Button -->
+            <button id="installAppBtn" onclick="installPWA()" style="display:none; background: linear-gradient(135deg, var(--correct-green), #2e7d32); color: white; border: none; padding: 6px 14px; border-radius: 20px; font-weight: bold; cursor: pointer; font-size: 13px; align-items: center; box-shadow: 0 4px 10px rgba(76, 175, 80, 0.3);">📱 Install App</button>
+            
             <a onclick="goHome()">Home</a>
             <a onclick="showLeaderboardOptions()">Leaderboard</a>
             <div id="loginNavBtn" class="user-badge" onclick="showAuthModal()" style="display:none; background: white; color: #444; border: none;"><img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="G"><span>Sign In</span></div>
