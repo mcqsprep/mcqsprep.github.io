@@ -14,15 +14,19 @@
     <title>MCQsPrep - Dashboard</title>
     <meta name="description" content="MCQsPrep - A free, smart MCQ practice platform for competitive exams.">
     
+    <!-- Favicon / Website Icon -->
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🩺</text></svg>">
     <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🩺</text></svg>">
     
+    <!-- LINK TO YOUR CSS FILE -->
     <link rel="stylesheet" href="style.css">
     
+    <!-- FIREBASE LIBRARIES -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
 
+    <!-- AI SUPPORT LIBRARIES -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
@@ -32,6 +36,7 @@
 </head>
 <body>
 
+    <!-- Main Navigation Bar -->
     <nav class="navbar">
         <div style="display: flex; align-items: center; min-width: 0;">
             <div class="logo-container" onclick="goHome()">🩺 MCQsPrep<span>.</span></div>
@@ -70,6 +75,7 @@
         </div>
     </nav>
 
+    <!-- Main Content Layout -->
     <div class="breadcrumb" id="breadcrumb-text">Home</div>
     <div class="container">
         <div class="main-content" id="dynamic-content"></div>
@@ -88,7 +94,10 @@
         </div>
     </div>
 
+    <!-- Notification Toast -->
     <div id="notification">Action Triggered!</div>
+
+    <!-- Floating AI Button -->
     <div id="ai-floating-btn">✨ Ask AI</div>
 
     <!-- 🌟 NEW GEMINI-STYLE AI WORKSPACE 🌟 -->
@@ -121,7 +130,7 @@
                 <div id="ai-idle-view" style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; opacity: 0.6; padding-bottom: 50px;">
                     <div style="font-size: 60px; margin-bottom: 20px; filter: drop-shadow(0 0 20px rgba(255,255,255,0.2));">🧠</div>
                     <h3 style="color: white; margin:0; font-size: 24px; font-weight: 500;">How can I help you today?</h3>
-                    <p style="color: #aaa; font-size: 15px; margin-top: 10px;">Ask a difficult question or upload a photo of a textbook problem.</p>
+                    <p style="color: #aaa; font-size: 15px; margin-top: 10px;">Ask a difficult question or upload/paste a photo of a textbook problem.</p>
                 </div>
 
                 <!-- Cropper Workspace -->
@@ -152,7 +161,7 @@
                     <!-- Input Pill -->
                     <div style="display: flex; flex-direction: column; background: rgba(30, 30, 35, 0.8); border-radius: 24px; border: 1px solid rgba(255,255,255,0.1); transition: 0.3s; box-shadow: 0 5px 20px rgba(0,0,0,0.3);">
                         
-                        <!-- Image Preview (Injected dynamically) -->
+                        <!-- Image Preview -->
                         <div id="ai-image-preview-container" style="display: none; padding: 15px 20px 0 20px;">
                             <div style="position: relative; display: inline-block;">
                                 <img id="ai-input-image-preview" src="" style="height: 65px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); object-fit: cover; box-shadow: 0 4px 10px rgba(0,0,0,0.3);">
@@ -164,7 +173,7 @@
                             <button onclick="toggleAttachMenu()" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #fff; font-size: 22px; cursor: pointer; border-radius: 50%; display: flex; align-items: center; justify-content: center; height: 42px; width: 42px; flex-shrink: 0; transition: 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.15)'" onmouseout="this.style.background='rgba(255,255,255,0.05)'">+</button>
                             
                             <div style="flex: 1; margin: 0 15px; display: flex; flex-direction: column; justify-content: center;">
-                                <textarea id="aiTextInput" placeholder="Ask a question or paste a doubt..." style="width: 100%; background: transparent; border: none; color: white; font-size: 16px; resize: none; max-height: 250px; outline: none; padding: 10px 0; font-family: inherit; line-height: 1.5; overflow-y: hidden;" rows="1" oninput="autoExpandTextarea(this); handleAIFuzzySuggestions();" onkeydown="if(event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); handleAISend(); }"></textarea>
+                                <textarea id="aiTextInput" placeholder="Ask a question, paste a doubt, or paste an image (Ctrl+V)..." style="width: 100%; background: transparent; border: none; color: white; font-size: 16px; resize: none; max-height: 250px; outline: none; padding: 10px 0; font-family: inherit; line-height: 1.5; overflow-y: hidden;" rows="1" oninput="autoExpandTextarea(this); handleAIFuzzySuggestions();" onkeydown="if(event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); handleAISend(); }" onpaste="handleAIPaste(event)"></textarea>
                             </div>
                             
                             <button onclick="handleAISend()" style="background: #fff; border: none; color: #000; width: 42px; height: 42px; border-radius: 50%; cursor: pointer; font-size: 20px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: transform 0.2s; box-shadow: 0 4px 15px rgba(255,255,255,0.2);" onmousedown="this.style.transform='scale(0.9)'" onmouseup="this.style.transform='scale(1)'">↑</button>
