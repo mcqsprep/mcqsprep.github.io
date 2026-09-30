@@ -29,11 +29,16 @@
 <body>
 
     <nav class="navbar">
-        <div style="display: flex; align-items: center; min-width: 0;">
+        <div style="display: flex; align-items: center; min-width: 0; gap: 15px;">
             <div class="logo-container" onclick="goHome()">🩺 MCQsPrep<span>.</span></div>
-            <div class="nav-rating-badge">
-                <span class="rating-text">Overall: <span>⭐ <span id="global-rating-display">5.0</span>/5</span></span>
-                <button onclick="openFeedbackModal()">⭐ Rate Us</button>
+            <div style="display:flex; gap: 10px;">
+                <div class="nav-rating-badge">
+                    <span class="rating-text">Overall: <span>⭐ <span id="global-rating-display">5.0</span>/5</span></span>
+                    <button onclick="openFeedbackModal()">⭐ Rate Us</button>
+                </div>
+                <div class="nav-streak-badge" title="Daily Practice Streak" style="cursor:help;">
+                    🔥 <span id="nav-streak-display">0</span>
+                </div>
             </div>
         </div>
 
@@ -47,7 +52,6 @@
         </div>
         
         <div class="nav-links">
-            <!-- Custom Mobile PWA Install Button -->
             <button id="installAppBtn" onclick="installPWA()" style="display:none; background: linear-gradient(135deg, var(--correct-green), #2e7d32); color: white; border: none; padding: 6px 14px; border-radius: 20px; font-weight: bold; cursor: pointer; font-size: 13px; align-items: center; box-shadow: 0 4px 10px rgba(76, 175, 80, 0.3);">📱 Install App</button>
             
             <a onclick="goHome()">Home</a>
@@ -175,7 +179,7 @@
     <div id="feedbackModal" class="modal-overlay"><div class="modal-content" style="text-align: center;"><button class="close-modal" onclick="closeFeedbackModal()">✕</button><h2 style="color: var(--primary-yellow);">⭐ Feedback</h2><div style="background: #2a2a2a; padding: 25px; border-radius: 8px;"><div style="margin-bottom: 25px;"><button id="star-1" class="star-btn" onclick="updateStarUI(1)">★</button><button id="star-2" class="star-btn" onclick="updateStarUI(2)">★</button><button id="star-3" class="star-btn" onclick="updateStarUI(3)">★</button><button id="star-4" class="star-btn" onclick="updateStarUI(4)">★</button><button id="star-5" class="star-btn" onclick="updateStarUI(5)">★</button></div><textarea id="platformFeedbackText" class="input-field" placeholder="Tell us what you like..."></textarea><button id="submitFeedbackBtn" class="btn-exam" onclick="submitPlatformFeedback()" style="width: 100%; background: var(--primary-yellow); color: black;">Submit</button></div></div></div>
     
     <!-- Admin Modals -->
-    <div id="editTopicModal" class="modal-overlay"><div class="modal-content" style="max-width: 450px;"><button class="close-modal" onclick="closeEditTopicModal()">✕</button><h2 style="color: var(--primary-yellow);">✏️ Edit Folder</h2><input type="hidden" id="editTopicId"><input type="text" id="editTopicName" class="input-field"><select id="editTopicType" class="input-field"><option value="mcq">MCQs</option><option value="pdf">PDF</option></select><button class="btn-exam" onclick="saveEditedTopic()" style="width:100%; background:var(--correct-green);">Save</button></div></div>
+    <div id="editTopicModal" class="modal-overlay"><div class="modal-content" style="max-width: 450px;"><button class="close-modal" onclick="closeEditTopicModal()">✕</button><h2 style="color: var(--primary-yellow);">✏️️ Edit Folder</h2><input type="hidden" id="editTopicId"><input type="text" id="editTopicName" class="input-field"><select id="editTopicType" class="input-field"><option value="mcq">MCQs</option><option value="pdf">PDF</option></select><button class="btn-exam" onclick="saveEditedTopic()" style="width:100%; background:var(--correct-green);">Save</button></div></div>
     <div id="editModal" class="modal-overlay"><div class="modal-content"><button class="close-modal" onclick="closeEditModal()">✕</button><h2 style="color: var(--primary-yellow);">✏️ Edit MCQ</h2><input type="hidden" id="editDocId"><textarea id="editQuestion" class="input-field"></textarea><div class="admin-row"><input type="text" id="editOptA" class="input-field" placeholder="A"><input type="text" id="editOptB" class="input-field" placeholder="B"></div><div class="admin-row"><input type="text" id="editOptC" class="input-field" placeholder="C"><input type="text" id="editOptD" class="input-field" placeholder="D"></div><div class="admin-checkbox-group"><label><input type="checkbox" value="A" class="editCorrectCb">A</label><label><input type="checkbox" value="B" class="editCorrectCb">B</label><label><input type="checkbox" value="C" class="editCorrectCb">C</label><label><input type="checkbox" value="D" class="editCorrectCb">D</label></div><select id="editDifficulty" class="input-field"><option value="Easy">Easy</option><option value="Medium">Medium</option><option value="Hard">Hard</option><option value="Mixed">Mixed</option></select><textarea id="editExplanation" class="input-field" placeholder="Explanation..."></textarea><button class="btn-exam" onclick="saveEditedMCQ()" style="width:100%; background:var(--correct-green);">Save</button></div></div>
 
     <script src="script.js"></script>
