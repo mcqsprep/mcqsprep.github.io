@@ -38,7 +38,6 @@
                     <span class="rating-text">Overall: <span>⭐ <span id="global-rating-display">5.0</span>/5</span></span>
                     <button onclick="openFeedbackModal()">⭐ Rate Us</button>
                 </div>
-                <!-- FIXED: Now triggers the Streak Rules Modal -->
                 <div class="nav-streak-badge" title="Daily Practice Streak" style="cursor:pointer;" onclick="openStreakModal()">
                     🔥 <span id="nav-streak-display">0</span>
                 </div>
@@ -178,7 +177,7 @@
     <!-- Background Modals -->
     <div id="authModal" class="modal-overlay"><div class="modal-content" style="text-align: center; max-width: 420px;"><button class="close-modal" onclick="skipSignIn()">✕</button><h2 style="color: var(--primary-yellow);">Welcome to MCQsPrep</h2><p style="color: var(--text-muted); margin-bottom: 25px;">Sign in securely to track your progress.</p><button class="google-btn" onclick="signInWithGoogle()"><img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google">Sign in with Google</button></div></div>
     
-    <!-- NEW STREAK MODAL -->
+    <!-- Streak Modal -->
     <div id="streakModal" class="modal-overlay"><div class="modal-content" style="text-align: center; max-width: 400px;"><button class="close-modal" onclick="closeStreakModal()">✕</button><div style="font-size: 50px; margin-bottom: 10px;">🔥</div><h2 style="color: #FF5722; margin-top: 0; margin-bottom: 20px;">Current Streak: <span id="modalStreakCount">0</span> Days</h2><div style="background: rgba(255, 87, 34, 0.1); border-left: 4px solid #FF5722; padding: 15px; margin-bottom: 25px; border-radius: 4px; text-align: left; font-size: 14px;"><b style="color: #FF5722;">How to build your streak:</b><br><span style="color: var(--text-light); line-height: 1.5; display: inline-block; margin-top: 8px;">Complete at least <b>one practice quiz every day</b>. If you miss a single day, your hard-earned streak will reset to zero!</span></div><button class="btn-exam" onclick="closeStreakModal(); jumpToSection(['Daily Quiz Challenge'])" style="width: 100%; background: #FF5722; color: white; border: none; font-size: 16px;">Keep Streak Alive 🚀</button></div></div>
     
     <div id="userReportsModal" class="modal-overlay"><div class="modal-content" style="max-width: 600px;"><button class="close-modal" onclick="closeUserReportsModal()">✕</button><h2 style="color: var(--primary-yellow);">🚨 My Reports</h2><div id="user-reports-list" style="max-height: 50vh; overflow-y: auto;"></div></div></div>
@@ -188,6 +187,25 @@
     <!-- Admin Modals -->
     <div id="editTopicModal" class="modal-overlay"><div class="modal-content" style="max-width: 450px;"><button class="close-modal" onclick="closeEditTopicModal()">✕</button><h2 style="color: var(--primary-yellow);">✏️ Edit Folder</h2><input type="hidden" id="editTopicId"><input type="text" id="editTopicName" class="input-field"><select id="editTopicType" class="input-field"><option value="mcq">MCQs</option><option value="pdf">PDF</option></select><button class="btn-exam" onclick="saveEditedTopic()" style="width:100%; background:var(--correct-green);">Save</button></div></div>
     <div id="editModal" class="modal-overlay"><div class="modal-content"><button class="close-modal" onclick="closeEditModal()">✕</button><h2 style="color: var(--primary-yellow);">✏️ Edit MCQ</h2><input type="hidden" id="editDocId"><textarea id="editQuestion" class="input-field"></textarea><div class="admin-row"><input type="text" id="editOptA" class="input-field" placeholder="A"><input type="text" id="editOptB" class="input-field" placeholder="B"></div><div class="admin-row"><input type="text" id="editOptC" class="input-field" placeholder="C"><input type="text" id="editOptD" class="input-field" placeholder="D"></div><div class="admin-checkbox-group"><label><input type="checkbox" value="A" class="editCorrectCb">A</label><label><input type="checkbox" value="B" class="editCorrectCb">B</label><label><input type="checkbox" value="C" class="editCorrectCb">C</label><label><input type="checkbox" value="D" class="editCorrectCb">D</label></div><select id="editDifficulty" class="input-field"><option value="Easy">Easy</option><option value="Medium">Medium</option><option value="Hard">Hard</option><option value="Mixed">Mixed</option></select><textarea id="editExplanation" class="input-field" placeholder="Explanation..."></textarea><button class="btn-exam" onclick="saveEditedMCQ()" style="width:100%; background:var(--correct-green);">Save</button></div></div>
+
+    <!-- 📱 APP ONLY BOTTOM NAVIGATION BAR -->
+    <div class="mobile-app-bottom-bar">
+        <div class="app-tab active" onclick="goHome()">
+            <span>🏠</span> Home
+        </div>
+        <div class="app-tab" onclick="jumpToSection(['Daily Quiz Challenge'])">
+            <span>📅</span> Daily
+        </div>
+        <div class="app-tab" onclick="window.location.hash='#/progress'">
+            <span>📊</span> Stats
+        </div>
+        <div class="app-tab" onclick="window.location.hash='#/bookmarks'">
+            <span>🔖</span> Saved
+        </div>
+        <div class="app-tab" onclick="openAIModal()">
+            <span>✨</span> AI Tutor
+        </div>
+    </div>
 
     <!-- The 6 New Sequentially Loaded Javascript Files -->
     <script src="js/1-config.js"></script>
