@@ -117,14 +117,18 @@ function handleRouting() {
     }
 }
 
+// FIXED: Sidebar explicitly commanded to 'block' if returning to the home root
 function goHome() { 
     if (window.location.hash === '#/home' || window.location.hash === '') {
         currentPath = [];
+        const sidebar = document.getElementById('main-sidebar');
+        if(sidebar) sidebar.style.display = 'block';
         _renderView();
     } else {
         window.location.replace(window.location.origin + window.location.pathname + '#/home');
     }
 }
+
 function navigateTo(key) { window.location.hash = '#/path/' + encodeURIComponent([...currentPath, key].join('/')).replace(/%2F/g, '/'); }
 function jumpToSection(pathArray) { window.location.hash = '#/path/' + encodeURIComponent(pathArray.join('/')).replace(/%2F/g, '/'); }
 function showLeaderboardOptions() { window.location.hash = '#/leaderboard'; }
