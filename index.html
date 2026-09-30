@@ -38,7 +38,8 @@
                     <span class="rating-text">Overall: <span>⭐ <span id="global-rating-display">5.0</span>/5</span></span>
                     <button onclick="openFeedbackModal()">⭐ Rate Us</button>
                 </div>
-                <div class="nav-streak-badge" title="Daily Practice Streak" style="cursor:help;">
+                <!-- FIXED: Changed cursor to pointer and linked to progress page -->
+                <div class="nav-streak-badge" title="Track My Progress" style="cursor:pointer;" onclick="window.location.hash='#/progress'">
                     🔥 <span id="nav-streak-display">0</span>
                 </div>
             </div>
