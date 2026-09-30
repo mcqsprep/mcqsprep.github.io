@@ -640,3 +640,19 @@ async function fetchLiveLeaderboard(pathPrefix) {
 
     } catch(e) { mainContent.innerHTML = `<div class="card"><h2 style="color:var(--wrong-red);">Error</h2><p>${e.message}</p></div>`; }
 }
+
+// NEW: Functions to control the Streak Rules Modal
+function openStreakModal() {
+    if (!currentUser) { 
+        showNotification("⚠️ Please sign in to track your streak."); 
+        showAuthModal(); 
+        return; 
+    }
+    const currentStreakCount = document.getElementById('nav-streak-display').innerText;
+    document.getElementById('modalStreakCount').innerText = currentStreakCount;
+    document.getElementById('streakModal').style.display = 'flex';
+}
+
+function closeStreakModal() { 
+    document.getElementById('streakModal').style.display = 'none'; 
+}
