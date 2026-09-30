@@ -30,13 +30,14 @@
 </head>
 <body>
 
+    <!-- TOP NAVBAR -->
     <nav class="navbar">
-        <div style="display: flex; align-items: center; min-width: 0; gap: 12px;">
-            <div class="logo-container" onclick="goHome()">🩺 MCQsPrep<span>.</span></div>
-            <div style="display:flex; gap: 8px; align-items:center;">
-                <div class="nav-rating-badge">
+        <div class="nav-left-group">
+            <div class="logo-container" onclick="goHome()">🩺 MCQsPrep<span class="hide-on-mobile">.</span></div>
+            <div class="nav-badges-group">
+                <div class="nav-rating-badge" onclick="openFeedbackModal()">
                     <span class="rating-text">⭐ <span id="global-rating-display">5.0</span></span>
-                    <button onclick="openFeedbackModal()">Rate</button>
+                    <button class="hide-on-mobile">Rate</button>
                 </div>
                 <div class="nav-streak-badge" title="Daily Practice Streak" onclick="openStreakModal()">
                     🔥 <span id="nav-streak-display">0</span>
@@ -54,14 +55,18 @@
         </div>
         
         <div class="nav-links">
-            <button id="installAppBtn" onclick="installPWA()" style="display:none; background: linear-gradient(135deg, var(--correct-green), #2e7d32); color: white; border: none; padding: 6px 14px; border-radius: 20px; font-weight: bold; cursor: pointer; font-size: 13px; align-items: center; box-shadow: 0 4px 10px rgba(76, 175, 80, 0.3);">📱 Install App</button>
-            <a onclick="goHome()">Home</a>
-            <a onclick="showLeaderboardOptions()">Leaderboard</a>
-            <div id="loginNavBtn" class="user-badge" onclick="showAuthModal()" style="display:none; background: white; color: #444; border: none;"><img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="G"><span>Sign In</span></div>
+            <button id="installAppBtn" class="hide-on-mobile" onclick="installPWA()">📱 Install App</button>
+            <a class="hide-on-mobile" onclick="goHome()">Home</a>
+            <a class="hide-on-mobile" onclick="showLeaderboardOptions()">Leaderboard</a>
+            
+            <div id="loginNavBtn" class="user-badge" onclick="showAuthModal()" style="display:none; background: white; color: #444; border: none;">
+                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="G"><span class="hide-on-mobile">Sign In</span>
+            </div>
+            
             <div class="profile-wrapper">
                 <div id="userBadge" class="user-badge" onclick="toggleProfileMenu()">
                     <img id="userPhotoDisplay" src="" alt="👤" style="display:none;">
-                    <span id="userNameDisplay">Student</span>
+                    <span id="userNameDisplay" class="hide-on-mobile">Student</span>
                     <div id="profileNotifDot" class="notification-dot"></div>
                 </div>
                 <div id="profileMenu" class="profile-menu">
@@ -87,14 +92,14 @@
             <div class="card">
                 <h3>Essential Practice</h3>
                 <a class="action-link" onclick="jumpToSection(['NEET', 'MCQs Practice'])">📝 Subject-wise MCQs</a>
-                <a class="action-link" onclick="jumpToSection(['NEET', 'Mock Test'])">⏱️️ Full-Length Mock Tests</a>
+                <a class="action-link" onclick="jumpToSection(['NEET', 'Mock Test'])">⏱ Full-Length Mock Tests</a>
                 <a class="action-link" onclick="jumpToSection(['Daily Quiz Challenge'])">📅 Daily Quiz Challenge</a>
             </div>
         </div>
     </div>
 
     <div id="notification">Action Triggered!</div>
-    <div id="ai-floating-btn">✨ Ask AI</div>
+    <div id="ai-floating-btn" class="hide-on-mobile">✨ Ask AI</div>
 
     <!-- AI Tutor Modal -->
     <div id="aiModal" class="modal-overlay" style="z-index: 4000; padding: 0; display: none;">
@@ -138,7 +143,7 @@
                 </div>
             </div>
 
-            <!-- AI Bottom Bar Container (Adjusted for Full Visibility) -->
+            <!-- AI Text Input Area -->
             <div style="padding: 12px 14px max(18px, env(safe-area-inset-bottom)) 14px; background: rgba(11, 11, 15, 0.95); backdrop-filter: blur(20px); border-top: 1px solid rgba(255,255,255,0.06); position: relative; z-index: 10; box-sizing: border-box; width: 100%;">
                 <div style="position: relative; max-width: 900px; margin: 0 auto; box-sizing: border-box;">
                     
@@ -177,9 +182,7 @@
 
     <!-- Modals -->
     <div id="authModal" class="modal-overlay"><div class="modal-content" style="text-align: center; max-width: 400px;"><button class="close-modal" onclick="skipSignIn()">✕</button><h2 style="color: var(--primary-yellow);">Welcome to MCQsPrep</h2><p style="color: var(--text-muted); margin-bottom: 25px;">Sign in securely to track your progress.</p><button class="google-btn" onclick="signInWithGoogle()"><img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google">Sign in with Google</button></div></div>
-    
     <div id="streakModal" class="modal-overlay"><div class="modal-content" style="text-align: center; max-width: 380px;"><button class="close-modal" onclick="closeStreakModal()">✕</button><div style="font-size: 45px; margin-bottom: 8px;">🔥</div><h2 style="color: #FF5722; margin-top: 0; margin-bottom: 15px;">Current Streak: <span id="modalStreakCount">0</span> Days</h2><div style="background: rgba(255, 87, 34, 0.1); border-left: 4px solid #FF5722; padding: 14px; margin-bottom: 20px; border-radius: 4px; text-align: left; font-size: 13px;"><b style="color: #FF5722;">How to build your streak:</b><br><span style="color: var(--text-light); line-height: 1.5; display: inline-block; margin-top: 6px;">Complete at least <b>one practice quiz every day</b>. If you miss a single day, your streak resets to zero!</span></div><button class="btn-exam" onclick="closeStreakModal(); jumpToSection(['Daily Quiz Challenge'])" style="width: 100%; background: #FF5722; color: white; border: none; font-size: 15px;">Keep Streak Alive 🚀</button></div></div>
-    
     <div id="userReportsModal" class="modal-overlay"><div class="modal-content" style="max-width: 600px;"><button class="close-modal" onclick="closeUserReportsModal()">✕</button><h2 style="color: var(--primary-yellow);">🚨 My Reports</h2><div id="user-reports-list" style="max-height: 50vh; overflow-y: auto;"></div></div></div>
     <div id="reportModal" class="modal-overlay"><div class="modal-content" style="max-width: 450px;"><button class="close-modal" onclick="closeReportModal()">✕</button><h2 style="color: var(--wrong-red);">🚨 Report Mistake</h2><select id="reportReason" class="input-field"><option value="Wrong Option Provided">Wrong Option</option><option value="Typo">Typo</option><option value="Other">Other</option></select><textarea id="reportDescription" class="input-field" placeholder="Details..."></textarea><button class="btn-exam" onclick="submitReport()" style="width:100%; background:var(--wrong-red);">Submit</button></div></div>
     <div id="feedbackModal" class="modal-overlay"><div class="modal-content" style="text-align: center;"><button class="close-modal" onclick="closeFeedbackModal()">✕</button><h2 style="color: var(--primary-yellow);">⭐ Feedback</h2><div style="background: #202026; padding: 22px; border-radius: 8px;"><div style="margin-bottom: 20px;"><button id="star-1" class="star-btn" onclick="updateStarUI(1)">★</button><button id="star-2" class="star-btn" onclick="updateStarUI(2)">★</button><button id="star-3" class="star-btn" onclick="updateStarUI(3)">★</button><button id="star-4" class="star-btn" onclick="updateStarUI(4)">★</button><button id="star-5" class="star-btn" onclick="updateStarUI(5)">★</button></div><textarea id="platformFeedbackText" class="input-field" placeholder="Tell us what you like..."></textarea><button id="submitFeedbackBtn" class="btn-exam" onclick="submitPlatformFeedback()" style="width: 100%; background: var(--primary-yellow); color: black;">Submit</button></div></div></div>
@@ -188,37 +191,31 @@
     <div id="editTopicModal" class="modal-overlay"><div class="modal-content" style="max-width: 450px;"><button class="close-modal" onclick="closeEditTopicModal()">✕</button><h2 style="color: var(--primary-yellow);">✏️ Edit Folder</h2><input type="hidden" id="editTopicId"><input type="text" id="editTopicName" class="input-field"><select id="editTopicType" class="input-field"><option value="mcq">MCQs</option><option value="pdf">PDF</option></select><button class="btn-exam" onclick="saveEditedTopic()" style="width:100%; background:var(--correct-green);">Save</button></div></div>
     <div id="editModal" class="modal-overlay"><div class="modal-content"><button class="close-modal" onclick="closeEditModal()">✕</button><h2 style="color: var(--primary-yellow);">✏️ Edit MCQ</h2><input type="hidden" id="editDocId"><textarea id="editQuestion" class="input-field"></textarea><div class="admin-row"><input type="text" id="editOptA" class="input-field" placeholder="A"><input type="text" id="editOptB" class="input-field" placeholder="B"></div><div class="admin-row"><input type="text" id="editOptC" class="input-field" placeholder="C"><input type="text" id="editOptD" class="input-field" placeholder="D"></div><div class="admin-checkbox-group"><label><input type="checkbox" value="A" class="editCorrectCb">A</label><label><input type="checkbox" value="B" class="editCorrectCb">B</label><label><input type="checkbox" value="C" class="editCorrectCb">C</label><label><input type="checkbox" value="D" class="editCorrectCb">D</label></div><select id="editDifficulty" class="input-field"><option value="Easy">Easy</option><option value="Medium">Medium</option><option value="Hard">Hard</option><option value="Mixed">Mixed</option></select><textarea id="editExplanation" class="input-field" placeholder="Explanation..."></textarea><button class="btn-exam" onclick="saveEditedMCQ()" style="width:100%; background:var(--correct-green);">Save</button></div></div>
 
-    <!-- 📱 FLOATING VECTOR BOTTOM DOCK (Mobile View Only) -->
+    <!-- 📱 FLOATING LIGHT DOCK WITH CENTER AI BUTTON (Mobile Only) -->
     <div class="mobile-app-bottom-bar" id="mobileAppDock">
         <div class="app-tab active" onclick="goHome()">
-            <div class="app-tab-icon">
-                <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
-            </div>
+            <div class="app-tab-icon"><svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg></div>
             <div class="app-tab-label">Home</div>
         </div>
         <div class="app-tab" onclick="jumpToSection(['Daily Quiz Challenge'])">
-            <div class="app-tab-icon">
-                <svg viewBox="0 0 24 24"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/></svg>
-            </div>
+            <div class="app-tab-icon"><svg viewBox="0 0 24 24"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/></svg></div>
             <div class="app-tab-label">Daily</div>
         </div>
-        <div class="app-tab" onclick="window.location.hash='#/progress'">
-            <div class="app-tab-icon">
-                <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/></svg>
+        
+        <!-- CENTER AI ACTION BUTTON -->
+        <div class="app-tab center-action-btn" onclick="openAIModal()">
+            <div class="center-btn-inner">
+                <span style="text-shadow: 0 2px 4px rgba(0,0,0,0.3);">✨</span>
             </div>
+        </div>
+
+        <div class="app-tab" onclick="window.location.hash='#/progress'">
+            <div class="app-tab-icon"><svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/></svg></div>
             <div class="app-tab-label">Stats</div>
         </div>
         <div class="app-tab" onclick="window.location.hash='#/bookmarks'">
-            <div class="app-tab-icon">
-                <svg viewBox="0 0 24 24"><path d="M17 3H7c-1.1 0-1.99.9-1.99 2L5 21l7-3 7 3V5c0-1.1-.9-2-2-2z"/></svg>
-            </div>
+            <div class="app-tab-icon"><svg viewBox="0 0 24 24"><path d="M17 3H7c-1.1 0-1.99.9-1.99 2L5 21l7-3 7 3V5c0-1.1-.9-2-2-2z"/></svg></div>
             <div class="app-tab-label">Saved</div>
-        </div>
-        <div class="app-tab" onclick="openAIModal()">
-            <div class="app-tab-icon">
-                <svg viewBox="0 0 24 24"><path d="M19 9l1.25-2.75L23 5l-2.75-1.25L19 1l-1.25 2.75L15 5l2.75 1.25L19 9zm-7.5.5L9 4 6.5 9.5 1 12l5.5 2.5L9 20l2.5-5.5L17 12l-5.5-2.5zM19 15l-1.25 2.75L15 19l2.75 1.25L19 23l1.25-2.75L23 19l-2.75-1.25L19 15z"/></svg>
-            </div>
-            <div class="app-tab-label">AI Tutor</div>
         </div>
     </div>
 
