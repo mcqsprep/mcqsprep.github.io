@@ -53,6 +53,9 @@ styleSheet.innerHTML = `
     
     #ai-floating-btn { -webkit-user-select: none; -ms-user-select: none; user-select: none; touch-action: none; }
     .bookmarked { background: rgba(253, 184, 19, 0.2) !important; color: var(--primary-yellow) !important; border-color: var(--primary-yellow) !important; }
+    
+    /* Streak Badge Styles */
+    .nav-streak-badge { background: rgba(255, 87, 34, 0.15); color: #FF5722; padding: 5px 12px; border-radius: 20px; font-weight: bold; font-size: 13px; display: flex; align-items: center; gap: 5px; border: 1px solid rgba(255, 87, 34, 0.3); }
 `;
 document.head.appendChild(styleSheet);
 
@@ -82,7 +85,13 @@ const firebaseConfig = {
 };
 
 firebase.initializeApp(firebaseConfig); 
+
+// Enable True Offline-First Persistence for Firestore
 const db = firebase.firestore(); 
+db.enablePersistence({synchronizeTabs:true}).catch(function(err) {
+    console.log("Offline persistence error:", err.code);
+});
+
 const auth = firebase.auth(); 
 const provider = new firebase.auth.GoogleAuthProvider();
 
@@ -166,18 +175,28 @@ auth.onAuthStateChanged((user) => {
         badge.style.display = 'flex'; 
         loginNavBtn.style.display = 'none'; 
         document.getElementById('authModal').style.display = 'none';
-        db.collection("users").doc(user.uid).set({ 
-            displayName: user.displayName, 
-            email: user.email, 
-            photoURL: user.photoURL, 
-            lastLogin: firebase.firestore.FieldValue.serverTimestamp() 
-        }, { merge: true });
+        
+        // Load user data including streak
+        db.collection("users").doc(user.uid).get().then(doc => {
+            if(doc.exists) {
+                let d = doc.data();
+                if(d.currentStreak) document.getElementById('nav-streak-display').innerText = d.currentStreak;
+            }
+            db.collection("users").doc(user.uid).set({ 
+                displayName: user.displayName, 
+                email: user.email, 
+                photoURL: user.photoURL, 
+                lastLogin: firebase.firestore.FieldValue.serverTimestamp() 
+            }, { merge: true });
+        });
+        
         checkUserNotifications();
         loadUserBookmarks();
     } else {
         badge.style.display = 'none'; 
         loginNavBtn.style.display = 'flex'; 
         document.getElementById('profileNotifDot').style.display = 'none';
+        document.getElementById('nav-streak-display').innerText = "0";
         userBookmarks = [];
         if (window.location.hash !== '#/admin' && window.location.hash !== '#/admin-panel' && !sessionStorage.getItem('auth_skipped')) {
             document.getElementById('authModal').style.display = 'flex';
@@ -634,6 +653,8 @@ async function _renderProgressDashboard(category) {
 
         let totalScore = 0; let totalQuestions = 0; let correctCount = 0; let wrongCount = 0;
         let aggregatedSubs = {}; let accuracyTrend = [];
+        let totalAvgTimeC = 0; let countC = 0;
+        let totalAvgTimeW = 0; let countW = 0;
 
         validDocs.forEach(d => {
             totalScore += (d.score || 0); 
@@ -646,6 +667,9 @@ async function _renderProgressDashboard(category) {
             wrongCount += w;
             accuracyTrend.push(d.accuracy || 0);
             
+            if (d.avgTimeCorrect) { totalAvgTimeC += d.avgTimeCorrect; countC++; }
+            if (d.avgTimeWrong) { totalAvgTimeW += d.avgTimeWrong; countW++; }
+            
             if (d.subjectBreakdown) {
                 for(let s in d.subjectBreakdown) {
                     if(!aggregatedSubs[s]) aggregatedSubs[s] = { attempts: 0, correct: 0 };
@@ -657,6 +681,8 @@ async function _renderProgressDashboard(category) {
 
         let overallAccuracy = totalQuestions > 0 ? Math.round((correctCount / totalQuestions) * 100) : 0;
         let recentTrend = accuracyTrend.slice(-10);
+        let finalAvgTimeC = countC > 0 ? Math.round(totalAvgTimeC / countC) : 0;
+        let finalAvgTimeW = countW > 0 ? Math.round(totalAvgTimeW / countW) : 0;
 
         let subjectHtml = '';
         let weakSubjects = [];
@@ -721,6 +747,21 @@ async function _renderProgressDashboard(category) {
             <div style="background:rgba(244, 67, 54, 0.05); border-left:3px solid var(--wrong-red); padding:12px; border-radius:4px; margin-bottom:20px;">
                 <div style="color:var(--wrong-red); font-size:11px; font-weight:bold; margin-bottom:5px; text-transform:uppercase;">Needs Improvement</div>
                 <div style="font-size:13px; color:var(--text-light); line-height:1.4;">${weakSpotsText}</div>
+            </div>
+            
+            <div style="background:#1a1a1a; border:1px solid var(--border-color); padding:15px; border-radius:6px; margin-bottom: 20px;">
+                <h3 style="margin-top:0; color:white; border-bottom:1px solid #333; padding-bottom:8px; margin-bottom:15px; font-size:15px;">⏱️ Time to Accuracy Insights</h3>
+                <div style="display:flex; gap:15px; flex-wrap:wrap;">
+                    <div style="flex:1; background:rgba(76, 175, 80, 0.1); border:1px solid var(--correct-green); padding:15px; border-radius:6px; text-align:center;">
+                        <div style="font-size:24px; color:var(--correct-green); font-weight:bold;">${finalAvgTimeC}s</div>
+                        <div style="color:var(--text-muted); font-size:12px; margin-top:5px;">Avg Time on Correct Answers</div>
+                    </div>
+                    <div style="flex:1; background:rgba(244, 67, 54, 0.1); border:1px solid var(--wrong-red); padding:15px; border-radius:6px; text-align:center;">
+                        <div style="font-size:24px; color:var(--wrong-red); font-weight:bold;">${finalAvgTimeW}s</div>
+                        <div style="color:var(--text-muted); font-size:12px; margin-top:5px;">Avg Time on Wrong Answers</div>
+                    </div>
+                </div>
+                <p style="font-size:12px; color:var(--text-light); margin-top:15px; line-height:1.5;">💡 If your time on wrong answers is significantly higher, it means you are getting stuck and wasting time on questions you ultimately don't know. Practice skipping difficult questions faster!</p>
             </div>
 
             <div style="display:flex; gap:15px; flex-wrap:wrap;">
@@ -1460,7 +1501,7 @@ function _renderLeaderboardOptions() {
 async function fetchLiveLeaderboard(pathPrefix) { 
     const mainContent = document.getElementById('dynamic-content');
     if (!currentUser) { 
-        mainContent.innerHTML = `<div class="card page-transition"><h2>🏆 Fetching Leaderboard...</h2><div style="background: rgba(244, 67, 54, 0.1); border-left: 4px solid var(--wrong-red); padding: 15px; margin: 20px 0; border-radius: 4px;"><span style="color: var(--wrong-red); font-weight: bold;">⚠️ ACCESS DENIED:</span> <span style="color: var(--text-light); font-size: 14px;">You must be signed in with Google to view the global leaderboards.</span></div><button class="btn-exam" onclick="window.history.back()" style="background:#333; border:none;">&larr; Back</button></div>`; 
+        mainContent.innerHTML = `<div class="card page-transition"><h2>🏆 Fetching Leaderboard...</h2><div style="background: rgba(244, 67, 54, 0.1); border-left: 4px solid var(--wrong-red); padding: 15px; margin: 20px 0; border-radius: 4px;"><span style="color: var(--wrong-red); font-weight: bold;">⚠️️ ACCESS DENIED:</span> <span style="color: var(--text-light); font-size: 14px;">You must be signed in with Google to view the global leaderboards.</span></div><button class="btn-exam" onclick="window.history.back()" style="background:#333; border:none;">&larr; Back</button></div>`; 
         return; 
     }
 
@@ -1523,7 +1564,7 @@ function showNotification(message) {
 // ==========================================
 // 9. SCALED QUIZ ENGINE, PERSISTENCE & BOOKMARKS
 // ==========================================
-let quizState = { questions: [], currentIndex: 0, userAnswers: {}, showAnswerTriggered: {}, flaggedDoubts: {}, viewedQuestions: [], timer: null, secondsPassed: 0, isTimerPaused: false, isCustom: false };
+let quizState = { questions: [], currentIndex: 0, userAnswers: {}, showAnswerTriggered: {}, flaggedDoubts: {}, viewedQuestions: [], timer: null, secondsPassed: 0, isTimerPaused: false, isCustom: false, timePerQuestion: {}, currentQEntryTime: 0, isBookmarkQuiz: false, bookmarkStats: {} };
 
 async function loadUserBookmarks() {
     if (!currentUser) return;
@@ -1545,7 +1586,14 @@ async function toggleBookmark(questionId) {
             if(btn) { btn.innerHTML = "🔖 Bookmark"; btn.classList.remove('bookmarked'); }
             showNotification("Removed from Bookmarks.");
         } else {
-            await db.collection("users").doc(currentUser.uid).collection("bookmarks").doc(questionId).set({ savedAt: firebase.firestore.FieldValue.serverTimestamp() });
+            // SRS Init
+            await db.collection("users").doc(currentUser.uid).collection("bookmarks").doc(questionId).set({ 
+                savedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                interval: 1,
+                easeFactor: 2.5,
+                consecutiveCorrect: 0,
+                nextReview: firebase.firestore.FieldValue.serverTimestamp() // Due immediately upon first save
+            });
             userBookmarks.push(questionId);
             if(btn) { btn.innerHTML = "🔖 Bookmarked"; btn.classList.add('bookmarked'); }
             showNotification("Added to Bookmarks!");
@@ -1560,14 +1608,31 @@ async function _initiateBookmarkQuiz() {
     mainContent.innerHTML = `<div class="card page-transition"><div style="font-size:40px; text-align:center; margin-bottom:15px;">🔖</div><h2 style="color:var(--primary-yellow); text-align:center;">Loading Bookmarks...</h2></div>`;
 
     try {
-        if (userBookmarks.length === 0) {
+        const snap = await db.collection("users").doc(currentUser.uid).collection("bookmarks").get();
+        let dueBookmarks = [];
+        let allStats = {};
+        const now = Date.now();
+        
+        snap.forEach(doc => {
+            let data = doc.data();
+            allStats[doc.id] = data;
+            let nextReview = data.nextReview ? (data.nextReview.toMillis ? data.nextReview.toMillis() : new Date(data.nextReview).getTime()) : 0;
+            if (nextReview <= now) dueBookmarks.push(doc.id);
+        });
+
+        if (Object.keys(allStats).length === 0) {
             mainContent.innerHTML = `<div class="card page-transition" style="text-align:center;"><h2>No Bookmarks Found</h2><p style="color:var(--text-muted);">You haven't bookmarked any questions yet. Click the 🔖 Bookmark button during a quiz to save questions here for revision.</p><button class="btn-exam" onclick="goBack()" style="background:#333; border:none;">&larr; Go Back</button></div>`;
+            return;
+        }
+        
+        if (dueBookmarks.length === 0) {
+            mainContent.innerHTML = `<div class="card page-transition" style="text-align:center;"><h2>🎉 All Caught Up!</h2><p style="color:var(--correct-green);">You have no pending Spaced Repetition reviews for today. Check back tomorrow!</p><button class="btn-exam" onclick="goBack()" style="background:#333; border:none;">&larr; Go Back</button></div>`;
             return;
         }
 
         let availableQuestions = [];
         const batches = [];
-        for (let i = 0; i < userBookmarks.length; i += 10) { batches.push(userBookmarks.slice(i, i + 10)); }
+        for (let i = 0; i < dueBookmarks.length; i += 10) { batches.push(dueBookmarks.slice(i, i + 10)); }
         
         for (let b of batches) {
             const snap = await db.collection("content").where(firebase.firestore.FieldPath.documentId(), "in", b).get();
@@ -1581,7 +1646,9 @@ async function _initiateBookmarkQuiz() {
 
         quizState.questions = availableQuestions;
         quizState.isCustom = true; 
-        quizState.currentIndex = 0; quizState.userAnswers = {}; quizState.showAnswerTriggered = {}; quizState.flaggedDoubts = {}; quizState.viewedQuestions = []; quizState.secondsPassed = 0; quizState.isTimerPaused = false;
+        quizState.isBookmarkQuiz = true;
+        quizState.bookmarkStats = allStats;
+        quizState.currentIndex = 0; quizState.userAnswers = {}; quizState.showAnswerTriggered = {}; quizState.flaggedDoubts = {}; quizState.viewedQuestions = []; quizState.secondsPassed = 0; quizState.isTimerPaused = false; quizState.timePerQuestion = {};
         
         clearInterval(quizState.timer);
         quizState.timer = setInterval(() => {
@@ -1593,6 +1660,7 @@ async function _initiateBookmarkQuiz() {
             }
         }, 1000);
         
+        quizState.currentQEntryTime = Date.now();
         saveQuizSession();
         _renderQuizQuestion();
 
@@ -1614,7 +1682,10 @@ function saveQuizSession() {
             flaggedDoubts: quizState.flaggedDoubts,
             viewedQuestions: quizState.viewedQuestions,
             secondsPassed: quizState.secondsPassed,
-            isCustom: quizState.isCustom
+            isCustom: quizState.isCustom,
+            timePerQuestion: quizState.timePerQuestion,
+            isBookmarkQuiz: quizState.isBookmarkQuiz,
+            bookmarkStats: quizState.bookmarkStats
         },
         userId: currentUser ? currentUser.uid : 'anonymous'
     };
@@ -1623,6 +1694,13 @@ function saveQuizSession() {
 
 function clearQuizSession() {
     localStorage.removeItem('mcq_active_session');
+}
+
+function recordQuestionTime() {
+    if(!quizState.currentQEntryTime) return;
+    let timeSpent = Date.now() - quizState.currentQEntryTime;
+    quizState.timePerQuestion[quizState.currentIndex] = (quizState.timePerQuestion[quizState.currentIndex] || 0) + timeSpent;
+    quizState.currentQEntryTime = Date.now();
 }
 
 async function _initiateQuizEngine(isCustomLaunch = false) {
@@ -1646,6 +1724,7 @@ async function _initiateQuizEngine(isCustomLaunch = false) {
                 if (confirm("You have an unfinished quiz in progress!\n\nClick 'OK' to resume where you left off, or 'Cancel' to start a fresh quiz.")) {
                     Object.assign(quizState, savedSession.state);
                     quizState.isTimerPaused = false;
+                    quizState.currentQEntryTime = Date.now();
                     
                     document.getElementById('breadcrumb-text').innerText = "Home / " + (isCustomLaunch ? "Custom Quiz" : pathString + " / Active Quiz"); 
                     
@@ -1871,7 +1950,7 @@ async function _initiateQuizEngine(isCustomLaunch = false) {
             return; 
         }
         
-        quizState.currentIndex = 0; quizState.userAnswers = {}; quizState.showAnswerTriggered = {}; quizState.flaggedDoubts = {}; quizState.viewedQuestions = []; quizState.secondsPassed = 0; quizState.isTimerPaused = false;
+        quizState.currentIndex = 0; quizState.userAnswers = {}; quizState.showAnswerTriggered = {}; quizState.flaggedDoubts = {}; quizState.viewedQuestions = []; quizState.secondsPassed = 0; quizState.isTimerPaused = false; quizState.isBookmarkQuiz = false; quizState.bookmarkStats = {}; quizState.timePerQuestion = {};
         
         clearInterval(quizState.timer);
         quizState.timer = setInterval(() => {
@@ -1882,6 +1961,7 @@ async function _initiateQuizEngine(isCustomLaunch = false) {
                 if (quizState.secondsPassed % 5 === 0) saveQuizSession();
             }
         }, 1000);
+        quizState.currentQEntryTime = Date.now();
         saveQuizSession();
         _renderQuizQuestion();
     } catch (error) { mainContent.innerHTML = `<div class="card"><h2>Error</h2><p>${error.message}</p><button class="btn-exam" onclick="goBack()">&larr; Go Back</button></div>`; }
@@ -1969,9 +2049,9 @@ function checkAnswer() {
     quizState.showAnswerTriggered[quizState.currentIndex] = true; _renderQuizQuestion();
 }
 
-function jumpToQuestion(index) { quizState.currentIndex = index; _renderQuizQuestion(); }
-function _nextQuestion() { if(quizState.currentIndex < quizState.questions.length - 1) { quizState.currentIndex++; _renderQuizQuestion(); } }
-function _prevQuestion() { if(quizState.currentIndex > 0) { quizState.currentIndex--; _renderQuizQuestion(); } }
+function jumpToQuestion(index) { recordQuestionTime(); quizState.currentIndex = index; _renderQuizQuestion(); }
+function _nextQuestion() { if(quizState.currentIndex < quizState.questions.length - 1) { recordQuestionTime(); quizState.currentIndex++; _renderQuizQuestion(); } }
+function _prevQuestion() { if(quizState.currentIndex > 0) { recordQuestionTime(); quizState.currentIndex--; _renderQuizQuestion(); } }
 function formatTime(totalSeconds) { const m = Math.floor(totalSeconds / 60); const s = totalSeconds % 60; return `${m}:${s < 10 ? '0' : ''}${s}`; }
 
 window.showReviewTab = function(tabName) {
@@ -2002,6 +2082,7 @@ function buildReviewItemHtml(q, index, type, userAnsArray) {
 }
 
 async function finishQuiz() {
+    recordQuestionTime();
     clearInterval(quizState.timer); 
     clearQuizSession();
     
@@ -2009,6 +2090,7 @@ async function finishQuiz() {
     let sessionAttemptedIds = []; let skippedCount = 0; let isDailyQuiz = currentPath[0] === 'Daily Quiz Challenge';
     let correctHtml = ''; let wrongHtml = ''; let skippedHtml = ''; let flaggedListHtml = '';
     
+    let totalTimeCorrect = 0; let totalTimeWrong = 0;
     let isNeetSection = isDailyQuiz ? (currentPath[1] === "NEET") : (currentPath[0] === "NEET");
     if(quizState.isCustom) {
         isNeetSection = customQuizConfig.exam === 'NEET';
@@ -2018,8 +2100,16 @@ async function finishQuiz() {
 
     quizState.questions.forEach((q, index) => {
         let userAnsArray = quizState.userAnswers[index] || []; let isAttempted = userAnsArray.length > 0; let isCorrect = false; let isViewed = quizState.viewedQuestions.includes(index);
-        if (isAttempted) { attempted++; sessionAttemptedIds.push(q.id); let userAnsStr = userAnsArray.sort().join(','); let correctAnsStr = q.correctAnswers.sort().join(','); if (userAnsStr === correctAnsStr) { isCorrect = true; correctCount++; } }
-        if (isAttempted && !isCorrect) wrongCount++;
+        let ms = quizState.timePerQuestion[index] || 0;
+
+        if (isAttempted) { 
+            attempted++; sessionAttemptedIds.push(q.id); 
+            let userAnsStr = userAnsArray.sort().join(','); let correctAnsStr = q.correctAnswers.sort().join(','); 
+            if (userAnsStr === correctAnsStr) { isCorrect = true; correctCount++; totalTimeCorrect += ms; } 
+        }
+        
+        if (isAttempted && !isCorrect) { wrongCount++; totalTimeWrong += ms; }
+        
         if (isAttempted) { if (isCorrect) correctHtml += buildReviewItemHtml(q, index, 'correct', userAnsArray); else wrongHtml += buildReviewItemHtml(q, index, 'wrong', userAnsArray); } 
         else if (isViewed) { skippedCount++; skippedHtml += buildReviewItemHtml(q, index, 'skipped', []); }
 
@@ -2046,12 +2136,47 @@ async function finishQuiz() {
         }
     });
 
+    // SRS Bookmark Update Algorithm
+    if (quizState.isBookmarkQuiz && currentUser) {
+        let bmUpdates = [];
+        quizState.questions.forEach((q, index) => {
+            let userAnsArray = quizState.userAnswers[index] || [];
+            if (userAnsArray.length > 0) {
+                let isCorrect = userAnsArray.sort().join(',') === q.correctAnswers.sort().join(',');
+                let srs = quizState.bookmarkStats[q.id] || { interval: 0, easeFactor: 2.5, consecutiveCorrect: 0 };
+                
+                if (isCorrect) {
+                    srs.consecutiveCorrect = (srs.consecutiveCorrect || 0) + 1;
+                    if (srs.consecutiveCorrect === 1) srs.interval = 1;
+                    else if (srs.consecutiveCorrect === 2) srs.interval = 6;
+                    else srs.interval = Math.round(srs.interval * srs.easeFactor);
+                    srs.easeFactor = srs.easeFactor + 0.1;
+                } else {
+                    srs.consecutiveCorrect = 0;
+                    srs.interval = 1;
+                    srs.easeFactor = Math.max(1.3, srs.easeFactor - 0.2);
+                }
+                
+                let nextDate = new Date();
+                nextDate.setDate(nextDate.getDate() + srs.interval);
+                
+                bmUpdates.push(db.collection("users").doc(currentUser.uid).collection("bookmarks").doc(q.id).update({
+                    interval: srs.interval,
+                    easeFactor: srs.easeFactor,
+                    consecutiveCorrect: srs.consecutiveCorrect,
+                    nextReview: firebase.firestore.Timestamp.fromDate(nextDate)
+                }));
+            }
+        });
+        Promise.all(bmUpdates).catch(e => console.error("SRS Update failed", e));
+    }
+
     // Subcollection Progress Persistence
     if (sessionAttemptedIds.length > 0) {
         if (!isDailyQuiz && !quizState.isCustom) {
             let safePath = "prog_" + currentPath.join('_').replace(/[^a-zA-Z0-9]/g, '_');
             await saveAttemptedIdsForPath(safePath, sessionAttemptedIds);
-        } else if (quizState.isCustom) {
+        } else if (quizState.isCustom && !quizState.isBookmarkQuiz) {
             let grouped = {};
             quizState.questions.forEach((q) => {
                 if(sessionAttemptedIds.includes(q.id)) {
@@ -2068,13 +2193,44 @@ async function finishQuiz() {
         }
     }
 
+    // Streak Update Logic
+    if (currentUser && attempted > 0) {
+        db.collection("users").doc(currentUser.uid).get().then(doc => {
+            if (doc.exists) {
+                let data = doc.data();
+                let lastDateStr = data.lastTestDate || "";
+                let todayStr = new Date().toLocaleDateString();
+                let yesterday = new Date();
+                yesterday.setDate(yesterday.getDate() - 1);
+                let yesterdayStr = yesterday.toLocaleDateString();
+                
+                let streak = data.currentStreak || 0;
+                if (lastDateStr === yesterdayStr) {
+                    streak++;
+                } else if (lastDateStr !== todayStr) {
+                    streak = 1; 
+                }
+                
+                db.collection("users").doc(currentUser.uid).update({
+                    lastTestDate: todayStr,
+                    currentStreak: streak,
+                    bestStreak: Math.max(streak, data.bestStreak || 0)
+                });
+                document.getElementById('nav-streak-display').innerText = streak;
+            }
+        });
+    }
+
     let accuracy = attempted === 0 ? 0 : Math.round((correctCount / attempted) * 100); 
     let timeStr = formatTime(quizState.secondsPassed); 
     let examCategory = isNeetSection ? "NEET" : "General Knowledge";
-    let pathString = quizState.isCustom ? `Custom Practice - ${examCategory}` : currentPath.join(' > '); 
+    let pathString = quizState.isCustom ? (quizState.isBookmarkQuiz ? "My Bookmarks (SRS)" : `Custom Practice - ${examCategory}`) : currentPath.join(' > '); 
     let studentName = currentUser ? currentUser.displayName.split(" ")[0] : "Student";
+    
+    let avgTimeCorrect = correctCount > 0 ? Math.round((totalTimeCorrect / correctCount) / 1000) : 0;
+    let avgTimeWrong = wrongCount > 0 ? Math.round((totalTimeWrong / wrongCount) / 1000) : 0;
 
-    if (currentUser && attempted > 0 && !isDailyQuiz) { 
+    if (currentUser && attempted > 0 && !isDailyQuiz && !quizState.isBookmarkQuiz) { 
         db.collection("leaderboards").add({ 
             userId: currentUser.uid, 
             userName: currentUser.displayName, 
@@ -2087,6 +2243,8 @@ async function finishQuiz() {
             correctCount: correctCount,
             wrongCount: wrongCount,
             subjectBreakdown: subjectBreakdown,
+            avgTimeCorrect: avgTimeCorrect,
+            avgTimeWrong: avgTimeWrong,
             timestamp: firebase.firestore.FieldValue.serverTimestamp() 
         }); 
     }
@@ -2104,6 +2262,7 @@ async function finishQuiz() {
             <h2 style="font-size: 32px; color: var(--primary-yellow); margin-bottom: 5px;">Test Complete!</h2>
             <p style="color: var(--text-muted); margin-bottom: 30px;">Great effort, ${studentName}! Here is your final breakdown.</p>
             ${isDailyQuiz ? `<div style="background:rgba(253, 184, 19, 0.1); border-left:4px solid var(--primary-yellow); padding:10px; margin-bottom:20px; border-radius:4px; font-size:14px; text-align:left;"><b style="color:var(--primary-yellow);">Daily Challenge Note:</b> This score is temporary and is not added to the global leaderboard. Come back tomorrow for 20 new questions!</div>` : ''}
+            ${quizState.isBookmarkQuiz ? `<div style="background:rgba(76, 175, 80, 0.1); border-left:4px solid var(--correct-green); padding:10px; margin-bottom:20px; border-radius:4px; font-size:14px; text-align:left;"><b style="color:var(--correct-green);">Memory Interval Updated:</b> Questions you got right will be pushed further into the future. Questions you got wrong will reappear tomorrow!</div>` : ''}
             <div style="display:flex; justify-content:center; gap:15px; flex-wrap:wrap; margin-bottom: 40px;">
                 ${scoreCardsHtml}
                 <div style="background:#2a2a2a; padding: 20px; border-radius: 8px; min-width: 100px; flex: 1;"><div style="font-size: 32px; color: white; font-weight: bold;">${attempted}</div><div style="color: var(--text-muted); font-size: 14px;">Attempted</div></div>
