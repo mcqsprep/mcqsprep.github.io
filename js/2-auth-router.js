@@ -92,10 +92,16 @@ function signOut() { if(confirm("Are you sure you want to sign out?")) auth.sign
 // ==========================================
 window.addEventListener('hashchange', handleRouting);
 
-// Function to update the visual state of the mobile app bottom bar
 function updateBottomNav(hash) {
     document.querySelectorAll('.app-tab').forEach(tab => tab.classList.remove('active'));
     
+    // Hide dock during active quizzes or admin mode so buttons are never covered
+    if (hash === 'quiz' || hash === 'admin' || hash === 'admin-panel') {
+        document.body.classList.add('hide-bottom-bar');
+    } else {
+        document.body.classList.remove('hide-bottom-bar');
+    }
+
     if (!hash || hash === 'home') {
         const homeTab = document.querySelector('.app-tab[onclick="goHome()"]');
         if(homeTab) homeTab.classList.add('active');
@@ -118,9 +124,13 @@ function handleRouting() {
         let hash = decodeURIComponent(rawHash);
         
         let isRootHome = (!hash || hash === 'home');
-        document.getElementById('main-sidebar').style.display = isRootHome ? 'block' : 'none';
         
-        // Sync the bottom bar UI state
+        // Desktop sidebar rule: only show on Home screen
+        const sidebar = document.getElementById('main-sidebar');
+        if (sidebar) {
+            sidebar.style.display = isRootHome ? 'block' : 'none';
+        }
+        
         updateBottomNav(rawHash);
         
         if (isRootHome) { currentPath = []; _renderView(); } 
