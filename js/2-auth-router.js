@@ -92,6 +92,25 @@ function signOut() { if(confirm("Are you sure you want to sign out?")) auth.sign
 // ==========================================
 window.addEventListener('hashchange', handleRouting);
 
+// Function to update the visual state of the mobile app bottom bar
+function updateBottomNav(hash) {
+    document.querySelectorAll('.app-tab').forEach(tab => tab.classList.remove('active'));
+    
+    if (!hash || hash === 'home') {
+        const homeTab = document.querySelector('.app-tab[onclick="goHome()"]');
+        if(homeTab) homeTab.classList.add('active');
+    } else if (hash.includes('Daily%20Quiz%20Challenge')) {
+        const dailyTab = document.querySelector('.app-tab[onclick="jumpToSection([\'Daily Quiz Challenge\'])"]');
+        if(dailyTab) dailyTab.classList.add('active');
+    } else if (hash.startsWith('progress')) {
+        const statsTab = document.querySelector('.app-tab[onclick="window.location.hash=\'#/progress\'"]');
+        if(statsTab) statsTab.classList.add('active');
+    } else if (hash === 'bookmarks') {
+        const savedTab = document.querySelector('.app-tab[onclick="window.location.hash=\'#/bookmarks\'"]');
+        if(savedTab) savedTab.classList.add('active');
+    }
+}
+
 function handleRouting() {
     try {
         if(!dataLoaded) return; 
@@ -100,6 +119,9 @@ function handleRouting() {
         
         let isRootHome = (!hash || hash === 'home');
         document.getElementById('main-sidebar').style.display = isRootHome ? 'block' : 'none';
+        
+        // Sync the bottom bar UI state
+        updateBottomNav(rawHash);
         
         if (isRootHome) { currentPath = []; _renderView(); } 
         else if (hash.startsWith('path/')) { currentPath = hash.replace('path/', '').split('/'); _renderView(); } 
@@ -117,7 +139,6 @@ function handleRouting() {
     }
 }
 
-// FIXED: Sidebar explicitly commanded to 'block' if returning to the home root
 function goHome() { 
     if (window.location.hash === '#/home' || window.location.hash === '') {
         currentPath = [];
