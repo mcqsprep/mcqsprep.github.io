@@ -15,10 +15,12 @@
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🩺</text></svg>">
     <link rel="stylesheet" href="style.css">
     
+    <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
 
+    <!-- Libraries -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
@@ -179,9 +181,15 @@
     <div id="feedbackModal" class="modal-overlay"><div class="modal-content" style="text-align: center;"><button class="close-modal" onclick="closeFeedbackModal()">✕</button><h2 style="color: var(--primary-yellow);">⭐ Feedback</h2><div style="background: #2a2a2a; padding: 25px; border-radius: 8px;"><div style="margin-bottom: 25px;"><button id="star-1" class="star-btn" onclick="updateStarUI(1)">★</button><button id="star-2" class="star-btn" onclick="updateStarUI(2)">★</button><button id="star-3" class="star-btn" onclick="updateStarUI(3)">★</button><button id="star-4" class="star-btn" onclick="updateStarUI(4)">★</button><button id="star-5" class="star-btn" onclick="updateStarUI(5)">★</button></div><textarea id="platformFeedbackText" class="input-field" placeholder="Tell us what you like..."></textarea><button id="submitFeedbackBtn" class="btn-exam" onclick="submitPlatformFeedback()" style="width: 100%; background: var(--primary-yellow); color: black;">Submit</button></div></div></div>
     
     <!-- Admin Modals -->
-    <div id="editTopicModal" class="modal-overlay"><div class="modal-content" style="max-width: 450px;"><button class="close-modal" onclick="closeEditTopicModal()">✕</button><h2 style="color: var(--primary-yellow);">✏️️ Edit Folder</h2><input type="hidden" id="editTopicId"><input type="text" id="editTopicName" class="input-field"><select id="editTopicType" class="input-field"><option value="mcq">MCQs</option><option value="pdf">PDF</option></select><button class="btn-exam" onclick="saveEditedTopic()" style="width:100%; background:var(--correct-green);">Save</button></div></div>
+    <div id="editTopicModal" class="modal-overlay"><div class="modal-content" style="max-width: 450px;"><button class="close-modal" onclick="closeEditTopicModal()">✕</button><h2 style="color: var(--primary-yellow);">✏️ Edit Folder</h2><input type="hidden" id="editTopicId"><input type="text" id="editTopicName" class="input-field"><select id="editTopicType" class="input-field"><option value="mcq">MCQs</option><option value="pdf">PDF</option></select><button class="btn-exam" onclick="saveEditedTopic()" style="width:100%; background:var(--correct-green);">Save</button></div></div>
     <div id="editModal" class="modal-overlay"><div class="modal-content"><button class="close-modal" onclick="closeEditModal()">✕</button><h2 style="color: var(--primary-yellow);">✏️ Edit MCQ</h2><input type="hidden" id="editDocId"><textarea id="editQuestion" class="input-field"></textarea><div class="admin-row"><input type="text" id="editOptA" class="input-field" placeholder="A"><input type="text" id="editOptB" class="input-field" placeholder="B"></div><div class="admin-row"><input type="text" id="editOptC" class="input-field" placeholder="C"><input type="text" id="editOptD" class="input-field" placeholder="D"></div><div class="admin-checkbox-group"><label><input type="checkbox" value="A" class="editCorrectCb">A</label><label><input type="checkbox" value="B" class="editCorrectCb">B</label><label><input type="checkbox" value="C" class="editCorrectCb">C</label><label><input type="checkbox" value="D" class="editCorrectCb">D</label></div><select id="editDifficulty" class="input-field"><option value="Easy">Easy</option><option value="Medium">Medium</option><option value="Hard">Hard</option><option value="Mixed">Mixed</option></select><textarea id="editExplanation" class="input-field" placeholder="Explanation..."></textarea><button class="btn-exam" onclick="saveEditedMCQ()" style="width:100%; background:var(--correct-green);">Save</button></div></div>
 
-    <script src="script.js"></script>
+    <!-- The 6 New Sequentially Loaded Javascript Files -->
+    <script src="js/1-config.js"></script>
+    <script src="js/2-auth-router.js"></script>
+    <script src="js/3-ui-progress.js"></script>
+    <script src="js/4-quiz-engine.js"></script>
+    <script src="js/5-ai-tutor.js"></script>
+    <script src="js/6-admin.js"></script>
 </body>
 </html>
