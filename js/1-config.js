@@ -8,7 +8,11 @@ window.addEventListener('beforeinstallprompt', (e) => {
     e.preventDefault();
     deferredPrompt = e;
     const installBtn = document.getElementById('installAppBtn');
-    if (installBtn) installBtn.style.display = 'flex';
+    
+    // Safety check: Only show install button if not currently running as an installed standalone app
+    if (installBtn && !window.matchMedia('(display-mode: standalone)').matches && window.navigator.standalone !== true) {
+        installBtn.style.display = 'flex';
+    }
 });
 
 function installPWA() {
