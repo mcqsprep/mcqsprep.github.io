@@ -328,6 +328,11 @@ table tr:hover td { background: rgba(255,255,255,0.02); }
 /* By default on Desktop, Bottom Bar is ALWAYS hidden */
 .mobile-app-bottom-bar { display: none; }
 
+/* Permanently Hide Install Button When Running as Installed App */
+@media (display-mode: standalone) {
+    #installAppBtn { display: none !important; }
+}
+
 /* Mobile Responsiveness (Screen <= 768px) */
 @media (max-width: 768px) {
     body { 
@@ -352,7 +357,7 @@ table tr:hover td { background: rgba(255,255,255,0.02); }
         gap: 10px !important;
     }
     
-    /* 🔴 MOBILE NAVBAR FIX (Resolves Overlapping Issue) */
+    /* 🔴 MOBILE NAVBAR FIXES */
     .hide-on-mobile { display: none !important; }
     
     .navbar { 
@@ -360,6 +365,8 @@ table tr:hover td { background: rgba(255,255,255,0.02); }
         display: flex; 
         justify-content: space-between; 
         gap: 5px; 
+        position: sticky;
+        top: 0;
     }
     .logo-container { font-size: 17px; letter-spacing: -0.5px; }
     .nav-left-group { gap: 8px; }
@@ -382,20 +389,39 @@ table tr:hover td { background: rgba(255,255,255,0.02); }
         overflow: hidden; 
     }
     .user-badge img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; position: relative; z-index: 2; }
-    
-    /* Fallback emoji if no photo is loaded */
-    .user-badge::after {
-        content: "👤";
-        font-size: 16px;
-        position: absolute;
-        z-index: 1;
-    }
+    .user-badge::after { content: "👤"; font-size: 16px; position: absolute; z-index: 1; }
 
-    .search-wrapper { margin: 0; }
+    /* 🔴 MOBILE FULL-WIDTH SEARCH OVERLAY */
+    .search-wrapper { margin: 0; position: static; }
     .search-icon-btn { padding: 6px 10px; font-size: 14px; }
     .nav-links { gap: 6px; }
 
-    /* 🔴 MOBILE FLOATING DOCK (Frosted Glass & Lighter Highlight) */
+    .search-wrapper.active {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(15, 15, 19, 0.98);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        z-index: 2000;
+        display: flex;
+        align-items: center;
+        padding: 0 15px;
+        box-sizing: border-box;
+    }
+    .search-wrapper.active .search-input-container {
+        width: 100%;
+        display: flex;
+        position: relative;
+    }
+    .search-wrapper.active input {
+        padding-right: 40px;
+        background: #1e1e26 !important;
+    }
+
+    /* 🔴 MOBILE FLOATING DOCK */
     .mobile-app-bottom-bar {
         display: flex;
         position: fixed;
@@ -403,16 +429,16 @@ table tr:hover td { background: rgba(255,255,255,0.02); }
         left: 15px;
         right: 15px;
         height: 65px;
-        background: rgba(45, 45, 55, 0.75); /* Lighter frosted backdrop */
+        background: rgba(35, 35, 45, 0.85); /* Frosty light-grey backdrop */
         backdrop-filter: blur(25px);
         -webkit-backdrop-filter: blur(25px);
-        border: 1px solid rgba(255, 255, 255, 0.25); /* Bright edge highlight */
+        border: 1px solid rgba(255, 255, 255, 0.15); 
         border-radius: 35px; /* Fully rounded pill shape */
-        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5), inset 0 1px 2px rgba(255,255,255,0.4);
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.6), inset 0 1px 1px rgba(255,255,255,0.2);
         z-index: 3500;
         justify-content: space-between;
         align-items: center;
-        padding: 0 15px;
+        padding: 0 8px;
         transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.2s ease;
     }
 
@@ -430,7 +456,7 @@ table tr:hover td { background: rgba(255,255,255,0.02); }
         align-items: center;
         justify-content: center;
         gap: 4px;
-        color: #b0b0bb;
+        color: #90909e;
         cursor: pointer;
         padding: 6px 0;
         text-decoration: none;
@@ -446,57 +472,33 @@ table tr:hover td { background: rgba(255,255,255,0.02); }
         justify-content: center;
         transition: transform 0.2s ease;
     }
+    .app-tab-icon svg { width: 100%; height: 100%; fill: currentColor; }
+    .app-tab-label { font-size: 10px; font-weight: 600; letter-spacing: 0.2px; }
 
-    .app-tab-icon svg {
-        width: 100%;
-        height: 100%;
-        fill: currentColor;
-    }
-
-    .app-tab-label {
-        font-size: 10px;
-        font-weight: 600;
-        letter-spacing: 0.2px;
-    }
-
-    /* Active Tab Highlight */
-    .app-tab.active {
-        color: var(--primary-yellow);
-    }
-    
+    /* Standard Active Tab Highlight */
+    .app-tab.active { color: var(--primary-yellow); }
     .app-tab.active .app-tab-icon {
         transform: translateY(-2px) scale(1.1);
         filter: drop-shadow(0 2px 8px rgba(253, 184, 19, 0.45));
     }
+    .app-tab.active .app-tab-label { color: #ffffff; font-weight: 700; }
 
-    .app-tab.active .app-tab-label {
-        color: #ffffff;
-        font-weight: 700;
-    }
-
-    /* 🔴 CENTER AI BUTTON (Floating Round Icon) */
-    .center-action-btn {
-        position: relative;
-        top: -24px; /* Float above the dock */
-        flex: 1.2; /* Give it slightly more space */
-        justify-content: center;
-        align-items: center;
-    }
-    .center-btn-inner {
-        width: 60px;
-        height: 60px;
-        border-radius: 50%;
-        background: linear-gradient(135deg, #fdb813, #ff7b00);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        box-shadow: 0 10px 25px rgba(253, 184, 19, 0.5), inset 0 2px 4px rgba(255,255,255,0.4);
-        font-size: 26px;
-        z-index: 10;
-        transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    /* 🔴 FLUSH INTERIOR AI HIGHLIGHT PILL */
+    .app-tab.ai-tab-inner {
+        background: linear-gradient(135deg, var(--primary-yellow), #ff9800);
         color: #000;
+        border-radius: 20px;
+        padding: 8px 4px;
+        margin: 0 4px;
+        flex: 1.15; /* Give it slightly more width so text fits nicely */
+        box-shadow: 0 4px 12px rgba(253, 184, 19, 0.4);
     }
-    .center-action-btn:active .center-btn-inner {
-        transform: scale(0.85);
+    .app-tab.ai-tab-inner:active { transform: scale(0.95); }
+    .app-tab.ai-tab-inner .app-tab-icon { width: 22px; height: 22px; }
+    .app-tab.ai-tab-inner .app-tab-icon svg { fill: #000; }
+    .app-tab.ai-tab-inner .app-tab-label {
+        color: #000;
+        font-weight: 800;
+        font-size: 11px;
     }
 }
