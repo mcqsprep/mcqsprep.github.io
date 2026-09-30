@@ -105,9 +105,9 @@ function updateBottomNav(hash) {
     if (!hash || hash === 'home') {
         const homeTab = document.querySelector('.app-tab[onclick="goHome()"]');
         if(homeTab) homeTab.classList.add('active');
-    } else if (hash.includes('Daily%20Quiz%20Challenge')) {
-        const dailyTab = document.querySelector('.app-tab[onclick="jumpToSection([\'Daily Quiz Challenge\'])"]');
-        if(dailyTab) dailyTab.classList.add('active');
+    } else if (hash.includes('leaderboard') || hash.includes('board/')) {
+        const rankTab = document.querySelector('.app-tab[onclick="window.location.hash=\'#/leaderboard\'"]');
+        if(rankTab) rankTab.classList.add('active');
     } else if (hash.startsWith('progress')) {
         const statsTab = document.querySelector('.app-tab[onclick="window.location.hash=\'#/progress\'"]');
         if(statsTab) statsTab.classList.add('active');
