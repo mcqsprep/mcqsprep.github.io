@@ -7,20 +7,30 @@ let deferredPrompt;
 window.addEventListener('beforeinstallprompt', (e) => {
     e.preventDefault();
     deferredPrompt = e;
-    const installBtn = document.getElementById('installAppBtn');
+    
+    const btn1 = document.getElementById('installAppBtn');
+    const btn2 = document.getElementById('installAppBtnMobile');
     
     // Safety check: Only show install button if not currently running as an installed standalone app
-    if (installBtn && !window.matchMedia('(display-mode: standalone)').matches && window.navigator.standalone !== true) {
-        installBtn.style.display = 'flex';
+    if (!window.matchMedia('(display-mode: standalone)').matches && window.navigator.standalone !== true) {
+        if (btn1) btn1.style.display = 'flex';
+        if (btn2) btn2.style.display = 'flex';
     }
 });
 
 function installPWA() {
-    if (!deferredPrompt) return;
+    if (!deferredPrompt) {
+        // Fallback alert for iOS Safari which hides the API
+        showNotification("To install: Tap your browser menu (or Share icon on iOS) and select 'Add to Home Screen'.");
+        return;
+    }
     deferredPrompt.prompt();
     deferredPrompt.userChoice.then((choiceResult) => {
         if (choiceResult.outcome === 'accepted') {
-            document.getElementById('installAppBtn').style.display = 'none';
+            const btn1 = document.getElementById('installAppBtn');
+            const btn2 = document.getElementById('installAppBtnMobile');
+            if (btn1) btn1.style.display = 'none';
+            if (btn2) btn2.style.display = 'none';
         }
         deferredPrompt = null;
     });
