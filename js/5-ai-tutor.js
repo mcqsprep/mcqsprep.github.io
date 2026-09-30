@@ -60,8 +60,8 @@ let pendingBase64Image = null;
 
 function autoExpandTextarea(field) {
     field.style.height = 'auto';
-    field.style.height = Math.min(field.scrollHeight, 250) + 'px';
-    if (field.scrollHeight > 250) {
+    field.style.height = Math.min(field.scrollHeight, 200) + 'px';
+    if (field.scrollHeight > 200) {
         field.style.overflowY = 'auto';
     } else {
         field.style.overflowY = 'hidden';
@@ -103,6 +103,7 @@ function handleAIPaste(e) {
 }
 
 function openAIModal() {
+    document.body.classList.add('hide-bottom-bar'); // Hide dock so chat bar is fully visible
     document.getElementById('aiModal').style.display = 'flex'; 
     document.getElementById('ai-idle-view').style.display = 'flex';
     document.getElementById('ai-cropper-view').style.display = 'none';
@@ -128,6 +129,7 @@ function openAIModal() {
 
 function closeAIModal() { 
     document.getElementById('aiModal').style.display = 'none'; 
+    document.body.classList.remove('hide-bottom-bar'); // Restore dock
     if(cropper) { cropper.destroy(); cropper = null; } 
 }
 
@@ -146,9 +148,9 @@ function handleAIFuzzySuggestions() {
     }
     scanTree(appData);
     if(matches.length === 0) { 
-        box.innerHTML = `<div class="ai-fuzzy-item" style="color:var(--text-muted); padding: 12px 16px; font-size: 14px;">No direct syllabus match found — AI will solve autonomously using NCERT references 🌐</div>`; 
+        box.innerHTML = `<div class="ai-fuzzy-item" style="color:var(--text-muted); padding: 12px 16px; font-size: 13px;">No direct syllabus match found — AI will solve autonomously using NCERT references 🌐</div>`; 
     } else { 
-        box.innerHTML = matches.slice(0, 5).map(m => `<div class="ai-fuzzy-item" onclick="insertAISuggestion('${m.text.replace(/'/g, "\\'")}')" style="padding: 12px 16px; border-bottom: 1px solid #333; cursor: pointer; display: flex; justify-content: space-between; color: #fff; font-size: 14px; transition: 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.05)'" onmouseout="this.style.background='transparent'"><span>📚 <b>${m.type}:</b> ${m.title}</span><span style="color:var(--primary-yellow);">Use Topic &rarr;</span></div>`).join(''); 
+        box.innerHTML = matches.slice(0, 5).map(m => `<div class="ai-fuzzy-item" onclick="insertAISuggestion('${m.text.replace(/'/g, "\\'")}')" style="padding: 12px 16px; border-bottom: 1px solid #2b2b36; cursor: pointer; display: flex; justify-content: space-between; color: #fff; font-size: 13px;"><span>📚 <b>${m.type}:</b>${m.title}</span><span style="color:var(--primary-yellow);">Use Topic &rarr;</span></div>`).join(''); 
     }
     box.style.display = 'block';
 }
@@ -233,14 +235,14 @@ function appendChatBubble(role, htmlContent, rawText = "") {
         editBtn.innerHTML = '✏️';
         editBtn.title = 'Edit';
         editBtn.setAttribute('data-text', rawText.replace(/"/g, '&quot;'));
-        editBtn.style.cssText = `background: rgba(255,255,255,0.1); border: none; color: white; width: 30px; height: 30px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; opacity: 0; transition: 0.2s; font-size: 13px;`;
+        editBtn.style.cssText = `background: rgba(255,255,255,0.08); border: none; color: white; width: 28px; height: 28px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; opacity: 0; transition: 0.2s; font-size: 12px;`;
         wrapper.onmouseover = () => editBtn.style.opacity = '1';
         wrapper.onmouseout = () => editBtn.style.opacity = '0';
         editBtn.onclick = () => editUserMessage(editBtn);
 
         const bubble = document.createElement('div');
         bubble.className = 'ai-chat-bubble';
-        bubble.style.cssText = `background: rgba(40, 40, 42, 0.9); backdrop-filter: blur(10px); color: white; padding: 14px 18px; border-radius: 20px 20px 0 20px; font-size: 15px; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 5px 15px rgba(0,0,0,0.3);`;
+        bubble.style.cssText = `background: #1c1c28; color: white; padding: 12px 16px; border-radius: 18px 18px 0 18px; font-size: 14px; border: 1px solid rgba(255,255,255,0.1);`;
         bubble.innerHTML = htmlContent;
 
         wrapper.appendChild(editBtn);
@@ -251,14 +253,14 @@ function appendChatBubble(role, htmlContent, rawText = "") {
         const bubble = document.createElement('div');
         bubble.className = 'ai-chat-bubble';
         bubble.id = 'ai-typing-indicator';
-        bubble.style.cssText = `background: transparent; color: var(--primary-yellow); padding: 10px 0; max-width: 85%; align-self: flex-start; font-size: 15px; display: flex; align-items: center; gap: 10px; margin-bottom: 10px;`;
-        bubble.innerHTML = `<span style="font-size: 20px; animation: pulse 1s infinite;">🤖</span> <i id="loading-text-msg">${htmlContent}</i>`;
+        bubble.style.cssText = `background: transparent; color: var(--primary-yellow); padding: 8px 0; max-width: 85%; align-self: flex-start; font-size: 14px; display: flex; align-items: center; gap: 8px;`;
+        bubble.innerHTML = `<span style="font-size: 18px; animation: pulse 1s infinite;">🤖</span> <i id="loading-text-msg">${htmlContent}</i>`;
         historyContainer.appendChild(bubble);
         
     } else {
         const bubble = document.createElement('div');
         bubble.className = 'ai-chat-bubble';
-        bubble.style.cssText = `background: transparent; color: #e3e3e3; padding: 0; max-width: 100%; align-self: flex-start; font-size: 15px; line-height: 1.6; margin-bottom: 15px;`;
+        bubble.style.cssText = `background: transparent; color: #e3e3e3; padding: 0; max-width: 100%; align-self: flex-start; font-size: 14px; line-height: 1.6; margin-bottom: 12px;`;
         bubble.innerHTML = htmlContent;
         historyContainer.appendChild(bubble);
         
@@ -319,7 +321,7 @@ async function callAIWorker(payload, retries = 3, originalUserText = "") {
         try {
             if(attempt > 1) {
                 const indicatorText = document.getElementById('loading-text-msg');
-                if (indicatorText) indicatorText.innerHTML = `<span style="color:var(--wrong-red);">High demand, retrying... (Attempt ${attempt}/${retries})</span>`;
+                if (indicatorText) indicatorText.innerHTML = `<span style="color:var(--wrong-red);">High demand, retrying... (${attempt}/${retries})</span>`;
             }
 
             const res = await fetch(AI_WORKER_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
@@ -339,7 +341,7 @@ async function callAIWorker(payload, retries = 3, originalUserText = "") {
                 window.chatDoubts[bubbleId] = { q: originalUserText, a: data.reply };
                 
                 let parsedHTML = formatTextWithMath(data.reply);
-                let saveBtnHTML = `<div style="margin-top:15px;"><button onclick="saveChatDoubt('${bubbleId}', this)" style="background:rgba(253, 184, 19, 0.1); color:var(--primary-yellow); padding: 8px 15px; border: 1px solid rgba(253,184,19,0.4); border-radius:20px; cursor:pointer; font-size:13px; display:inline-flex; align-items:center; gap:5px; transition:0.2s;" onmouseover="this.style.background='var(--primary-yellow)'; this.style.color='black';" onmouseout="this.style.background='rgba(253, 184, 19, 0.1)'; this.style.color='var(--primary-yellow)';"><span>📔</span> Save Explanation to Doubt Diary</button></div>`;
+                let saveBtnHTML = `<div style="margin-top:12px;"><button onclick="saveChatDoubt('${bubbleId}', this)" style="background:rgba(253, 184, 19, 0.1); color:var(--primary-yellow); padding: 7px 14px; border: 1px solid rgba(253,184,19,0.4); border-radius:20px; cursor:pointer; font-size:12px;">📔 Save Explanation to Diary</button></div>`;
                 
                 appendChatBubble('model', parsedHTML + saveBtnHTML);
             }
@@ -354,7 +356,7 @@ async function callAIWorker(payload, retries = 3, originalUserText = "") {
                 const indicator = document.getElementById('ai-typing-indicator');
                 if (indicator) indicator.remove();
                 showNotification("❌ AI Error: " + e.message); 
-                appendChatBubble('model', `<div style="background: rgba(244, 67, 54, 0.1); border-left: 4px solid var(--wrong-red); padding: 12px; border-radius: 4px;"><span style="color:var(--wrong-red);">❌ AI Error: ${e.message}</span></div>`);
+                appendChatBubble('model', `<div style="background: rgba(244, 67, 54, 0.1); border-left: 4px solid var(--wrong-red); padding: 10px; border-radius: 4px;"><span style="color:var(--wrong-red); font-size: 13px;">❌ AI Error: ${e.message}</span></div>`);
                 return; 
             }
         }
@@ -371,13 +373,13 @@ async function renderAISolution(data, isCached = false) {
     let html = ``;
     
     if (isCached) {
-        html += `<div style="border: 1px solid rgba(253, 184, 19, 0.3); background: rgba(253, 184, 19, 0.1); padding: 10px 15px; border-radius: 8px; margin-bottom: 15px; display: inline-block;"><div><b style="color:var(--primary-yellow);">⚡ Instant Cache Match!</b> <span style="font-size:12px; color:var(--text-muted); margin-left:10px;">Served from Firebase</span></div></div><br>`;
+        html += `<div style="border: 1px solid rgba(253, 184, 19, 0.3); background: rgba(253, 184, 19, 0.1); padding: 8px 12px; border-radius: 8px; margin-bottom: 12px; display: inline-block;"><div><b style="color:var(--primary-yellow); font-size:12px;">⚡ Instant Cache Match!</b></div></div><br>`;
     } else {
         const isFound = await checkDatabaseForQuestion(data.searchKeywords);
         if (isFound) { 
-            html += `<div style="border: 1px solid rgba(76, 175, 80, 0.3); background: rgba(76, 175, 80, 0.1); padding: 12px 18px; border-radius: 8px; margin-bottom: 15px; display: inline-block;"><div><b style="color:var(--correct-green);">✅ Verified Match in MCQsPrep!</b><br><span style="font-size:13px; color:var(--text-light);">${isFound.path}</span></div><button onclick="closeAIModal(); jumpToSection(${JSON.stringify(isFound.path.split(' > ')).replace(/"/g, "'")}); window.location.hash='#/quiz';" style="margin-top:12px; background:var(--correct-green); border:none; padding:8px 16px; color:white; border-radius:6px; cursor:pointer; font-weight:bold; font-size:14px;">Go Practice 🚀</button></div><br>`; 
+            html += `<div style="border: 1px solid rgba(76, 175, 80, 0.3); background: rgba(76, 175, 80, 0.1); padding: 10px 14px; border-radius: 8px; margin-bottom: 12px; display: inline-block;"><div><b style="color:var(--correct-green); font-size:13px;">✅ Verified Match in MCQsPrep!</b><br><span style="font-size:12px; color:var(--text-light);">${isFound.path}</span></div><button onclick="closeAIModal(); jumpToSection(${JSON.stringify(isFound.path.split(' > ')).replace(/"/g, "'")}); window.location.hash='#/quiz';" style="margin-top:8px; background:var(--correct-green); border:none; padding:6px 12px; color:white; border-radius:6px; cursor:pointer; font-weight:bold; font-size:12px;">Go Practice 🚀</button></div><br>`; 
         } else { 
-            html += `<div style="border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.05); padding: 10px 15px; border-radius: 8px; margin-bottom: 15px; font-size: 13px; color: #ccc; display: inline-block;">🌐 <b>Curriculum Knowledge Base Solution:</b> Solved autonomously using verified NCERT syllabus standards.</div><br>`; 
+            html += `<div style="border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.04); padding: 8px 12px; border-radius: 8px; margin-bottom: 12px; font-size: 12px; color: #ccc; display: inline-block;">🌐 Solved autonomously using verified NCERT syllabus standards.</div><br>`; 
         }
     }
     
@@ -385,8 +387,8 @@ async function renderAISolution(data, isCached = false) {
     aiChatHistory.push({ role: 'model', text: solutionMarkdown }); 
     
     let parsedHTML = formatTextWithMath(solutionMarkdown);
-    html += `<div style="margin-bottom: 15px;">${parsedHTML}</div>`;
-    html += `<button onclick="saveToDoubtDiary()" style="background:rgba(253, 184, 19, 0.1); color:var(--primary-yellow); padding: 8px 15px; border: 1px solid rgba(253,184,19,0.4); border-radius:20px; cursor:pointer; font-size:13px; display:inline-flex; align-items:center; gap:5px; transition:0.2s;" onmouseover="this.style.background='var(--primary-yellow)'; this.style.color='black';" onmouseout="this.style.background='rgba(253, 184, 19, 0.1)'; this.style.color='var(--primary-yellow)';"><span>📔</span> Save Explanation to Doubt Diary</button>`;
+    html += `<div style="margin-bottom: 12px;">${parsedHTML}</div>`;
+    html += `<button onclick="saveToDoubtDiary()" style="background:rgba(253, 184, 19, 0.1); color:var(--primary-yellow); padding: 7px 14px; border: 1px solid rgba(253,184,19,0.4); border-radius:20px; cursor:pointer; font-size:12px;">📔 Save Explanation to Doubt Diary</button>`;
 
     appendChatBubble('model', html);
 }
@@ -461,11 +463,11 @@ async function _renderDoubtDiary() {
             return; 
         }
         
-        let html = `<div class="card page-transition"><h2 style="color:var(--primary-yellow);">📔 Your Saved Explanations</h2><p style="color:var(--text-muted); margin-bottom:20px;">Review your previously solved doubts here.</p>`;
+        let html = `<div class="card page-transition"><h2 style="color:var(--primary-yellow);">📔 Your Saved Explanations</h2><p style="color:var(--text-muted); margin-bottom:18px;">Review your previously solved doubts here.</p>`;
         items.forEach(d => {
             let dateStr = d.timestamp ? new Date(d.timestamp.toMillis()).toLocaleDateString() : '';
             let md = `**Core Concept:** ${d.solution.keyConcept}\n\n**Step-by-Step:**\n${d.solution.stepByStep}\n\n**Final Answer:** ${d.solution.finalAnswer}`;
-            html += `<div style="background:#1a1a1a; border-left: 4px solid var(--primary-yellow); padding: 15px; border-radius: 6px; margin-bottom: 20px;"><div style="display:flex; justify-content:space-between; margin-bottom:10px;"><span class="badge-path">${d.subject}</span><span style="font-size:12px; color:var(--text-muted);">${dateStr}</span></div><p style="font-weight:bold; font-size:16px;">Q: ${d.questionText}</p><button onclick="toggleViewAnswer('diary_sol_${d.id}')" style="background:#333; color:white; border:none; padding:6px 12px; border-radius:4px; cursor:pointer;">👁️ Show Solution</button><div id="diary_sol_${d.id}" class="katex-render-target" style="display:none; margin-top:15px; padding-top:15px; border-top:1px solid #333; line-height:1.6; font-size:15px;">${formatTextWithMath(md)}</div></div>`;
+            html += `<div style="background:#13131a; border-left: 4px solid var(--primary-yellow); padding: 14px; border-radius: 6px; margin-bottom: 16px;"><div style="display:flex; justify-content:space-between; margin-bottom:8px;"><span class="badge-path">${d.subject}</span><span style="font-size:11px; color:var(--text-muted);">${dateStr}</span></div><p style="font-weight:600; font-size:15px; margin: 0 0 10px 0;">Q: ${d.questionText}</p><button onclick="toggleViewAnswer('diary_sol_${d.id}')" style="background:#222; color:white; border:none; padding:5px 10px; border-radius:4px; cursor:pointer; font-size:12px;">👁️ Show Solution</button><div id="diary_sol_${d.id}" class="katex-render-target" style="display:none; margin-top:12px; padding-top:12px; border-top:1px solid #282834; line-height:1.6; font-size:14px;">${formatTextWithMath(md)}</div></div>`;
         });
         html += `<button class="btn-exam" onclick="goBack()" style="background:#333; border:none;">Back</button></div>`; 
         mc.innerHTML = html;
