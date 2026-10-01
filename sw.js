@@ -3,8 +3,15 @@ const ASSETS = [
   '/',
   '/index.html',
   '/style.css',
-  '/script.js',
-  '/manifest.json'
+  '/manifest.json',
+  '/icon-192.png',
+  '/icon-512.png',
+  '/js/1-config.js',
+  '/js/2-auth-router.js',
+  '/js/3-ui-progress.js',
+  '/js/4-quiz-engine.js',
+  '/js/5-ai-tutor.js',
+  '/js/6-admin.js'
 ];
 
 self.addEventListener('install', (event) => {
