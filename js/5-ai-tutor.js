@@ -50,9 +50,8 @@ function endPress(e) {
     if (isDragging) {
         isDragging = false;
         aiBtn.classList.remove('draggable');
-    } else if (e.target === aiBtn || aiBtn.contains(e.target)) {
-        openAIModal();
     }
+    // FIX: Removed the openAIModal() trigger here so it doesn't conflict with the native HTML onclick
 }
 
 let cropper = null; let aiChatHistory = []; let lastExtractedQuestion = null;
@@ -467,7 +466,7 @@ async function _renderDoubtDiary() {
         items.forEach(d => {
             let dateStr = d.timestamp ? new Date(d.timestamp.toMillis()).toLocaleDateString() : '';
             let md = `**Core Concept:** ${d.solution.keyConcept}\n\n**Step-by-Step:**\n${d.solution.stepByStep}\n\n**Final Answer:** ${d.solution.finalAnswer}`;
-            html += `<div style="background:#13131a; border-left: 4px solid var(--primary-yellow); padding: 14px; border-radius: 6px; margin-bottom: 16px;"><div style="display:flex; justify-content:space-between; margin-bottom:8px;"><span class="badge-path">${d.subject}</span><span style="font-size:11px; color:var(--text-muted);">${dateStr}</span></div><p style="font-weight:600; font-size:15px; margin: 0 0 10px 0;">Q: ${d.questionText}</p><button onclick="toggleViewAnswer('diary_sol_${d.id}')" style="background:#222; color:white; border:none; padding:5px 10px; border-radius:4px; cursor:pointer; font-size:12px;">👁️ Show Solution</button><div id="diary_sol_${d.id}" class="katex-render-target" style="display:none; margin-top:12px; padding-top:12px; border-top:1px solid #282834; line-height:1.6; font-size:14px;">${formatTextWithMath(md)}</div></div>`;
+            html += `<div style="background:#13131a; border-left: 4px solid var(--primary-yellow); padding: 14px; border-radius: 6px; margin-bottom: 16px;"><div style="display:flex; justify-content:space-between; margin-bottom:8px;"><span class="badge-path">${d.subject}</span><span style="font-size:11px; color:var(--text-muted);">${dateStr}</span></div><p style="font-weight:600; font-size:15px; margin: 0 0 10px 0;">Q: ${d.questionText}</p><button onclick="toggleViewAnswer('diary_sol_${d.id}')" style="background:#222; color:white; border:none; padding:5px 10px; border-radius:4px; cursor:pointer; font-size:12px;">👁️️ Show Solution</button><div id="diary_sol_${d.id}" class="katex-render-target" style="display:none; margin-top:12px; padding-top:12px; border-top:1px solid #282834; line-height:1.6; font-size:14px;">${formatTextWithMath(md)}</div></div>`;
         });
         html += `<button class="btn-exam" onclick="goBack()" style="background:#333; border:none;">Back</button></div>`; 
         mc.innerHTML = html;
