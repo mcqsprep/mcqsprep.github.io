@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mcqsprep-cache-v1';
+const CACHE_NAME = 'mcqsprep-cache-v2'; // FIX: Bumped to V2 to purge old cache
 const ASSETS = [
   '/',
   '/index.html',
