@@ -131,7 +131,7 @@ function cwSelectAll(select) {
 
 function cwProcessStep3() {
     let cbs = Array.from(document.querySelectorAll('.cw-sub-cb:checked')).map(cb => cb.value);
-    if(cbs.length === 0) return showNotification("⚠️️ Select at least one chapter.");
+    if(cbs.length === 0) return showNotification("⚠ Select at least one chapter.");
     cwState.subtopics = cbs; 
     cwStep4();
 }
@@ -512,43 +512,29 @@ async function _initiateQuizEngine(isCustomLaunch = false) {
             let safePath = "prog_" + currentPath.join('_').replace(/[^a-zA-Z0-9]/g, '_');
             let previouslyAttemptedIds = await getAttemptedIdsForPath(safePath);
 
-            let randSeed = Math.random();
+            // FIX: Removed .where("randomKey") to prevent Firestore inequality error.
+            // We now fetch a larger chunk by path, filter, and shuffle entirely client-side.
             let snapshot = await db.collection("content")
                 .where("path", ">=", pathString)
                 .where("path", "<=", pathString + "\uf8ff")
-                .where("randomKey", ">=", randSeed)
-                .limit(50)
+                .limit(150)
                 .get();
 
+            let unattemptedPool = [];
             snapshot.forEach(doc => {
                 let data = doc.data();
                 if (data.type === 'mcq') {
                     totalQuestionsInDB++;
                     if (!previouslyAttemptedIds.includes(doc.id)) {
-                        availableQuestions.push({ id: doc.id, ...data });
+                        unattemptedPool.push({ id: doc.id, ...data });
                     }
                 }
             });
 
-            if (availableQuestions.length < 20) {
-                let fallbackSnap = await db.collection("content")
-                    .where("path", ">=", pathString)
-                    .where("path", "<=", pathString + "\uf8ff")
-                    .limit(80)
-                    .get();
-
-                fallbackSnap.forEach(doc => {
-                    let data = doc.data();
-                    if (data.type === 'mcq') {
-                        totalQuestionsInDB++;
-                        if (!previouslyAttemptedIds.includes(doc.id) && !availableQuestions.find(q => q.id === doc.id)) {
-                            availableQuestions.push({ id: doc.id, ...data });
-                        }
-                    }
-                });
-            }
-
-            quizState.questions = availableQuestions.sort(() => Math.random() - 0.5);
+            // Secure shuffle and take the top 20
+            availableQuestions = unattemptedPool.sort(() => 0.5 - Math.random()).slice(0, 20);
+            
+            quizState.questions = availableQuestions;
             quizState.isCustom = false;
         }
 
