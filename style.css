@@ -202,7 +202,8 @@ table tr:hover td { background: rgba(255,255,255,0.02); }
 .star-btn.active { color: var(--primary-yellow); text-shadow: 0 0 15px rgba(253, 184, 19, 0.5); }
 
 /* Fullscreen AI Workspace */
-#ai-floating-btn { position: fixed; bottom: 25px; right: 25px; background: linear-gradient(135deg, #fdb813, #ff7b00); color: black; font-weight: bold; padding: 12px 24px; border-radius: 30px; cursor: pointer; box-shadow: 0 8px 25px rgba(253, 184, 19, 0.4); z-index: 2500; display: flex; align-items: center; gap: 8px; font-size: 14px; border: 2px solid rgba(255,255,255,0.2); }
+#ai-floating-btn { position: fixed; bottom: 30px; right: 30px; background: linear-gradient(135deg, #fdb813, #ff9800); color: #000; padding: 14px 24px; border-radius: 30px; font-weight: bold; font-size: 16px; box-shadow: 0 4px 15px rgba(253, 184, 19, 0.4); cursor: pointer; z-index: 1000; display: flex; align-items: center; gap: 8px; transition: transform 0.2s ease, box-shadow 0.2s ease; }
+#ai-floating-btn:hover { transform: translateY(-3px); box-shadow: 0 6px 20px rgba(253, 184, 19, 0.6); }
 .ai-fullscreen-modal { width: 100vw !important; height: 100dvh !important; max-width: 100vw !important; max-height: 100dvh !important; border-radius: 0 !important; border: none !important; margin: 0 !important; background: #0b0b0f !important; display: flex; flex-direction: column; padding: 0 !important; box-sizing: border-box; overflow: hidden; }
 .ai-ambient-glow { position: absolute; border-radius: 50%; pointer-events: none; opacity: 0.3; filter: blur(120px); }
 .ai-glow-1 { top: -10%; left: -5%; width: 50vw; height: 50vh; background: radial-gradient(circle, #7928ca, transparent); }
@@ -213,17 +214,16 @@ table tr:hover td { background: rgba(255,255,255,0.02); }
 .ai-fuzzy-item:hover { background: rgba(253, 184, 19, 0.1); color: var(--primary-yellow); }
 .ai-chat-bubble { background: #171720; padding: 16px 20px; border-radius: 14px; margin-bottom: 16px; font-size: 14px; line-height: 1.6; border: 1px solid rgba(255, 255, 255, 0.06); border-left: 4px solid var(--primary-yellow); color: #ffffff; }
 
-
 /* ------------------------------------------------------------- */
-/* 📱 MODERN MOBILE & PWA ARCHITECTURE                           */
+/* 📱 MODERN MOBILE & PWA ARCHITECTURE                             */
 /* ------------------------------------------------------------- */
 
 /* By default on Desktop, Bottom Bar is ALWAYS hidden */
 .mobile-app-bottom-bar { display: none; }
 
-/* FIX: Permanently Hide Install Buttons & Header Links When Running inside the installed PWA window */
+/* Hide Install Buttons globally in ALL standalone PWA modes */
 @media (display-mode: standalone) {
-    #installAppBtn, .install-btn, .hide-in-app-mode { display: none !important; }
+    #installAppBtn, .install-btn { display: none !important; }
 }
 
 /* Mobile Responsiveness (Screen <= 768px) */
@@ -239,6 +239,8 @@ table tr:hover td { background: rgba(255,255,255,0.02); }
     .btn-exam { padding: 10px 14px !important; font-size: 13px !important; }
     .action-link { padding: 11px 14px; font-size: 13px; margin-bottom: 8px; }
     .input-field { padding: 11px 14px; font-size: 13px; margin-bottom: 10px; }
+    
+    #ai-floating-btn { bottom: 80px; right: 20px; padding: 12px 20px; }
 
     /* Auto-tile elements side-by-side on mobile */
     .card > div[style*="display: grid"], .card > div[style*="display:grid"] { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)) !important; gap: 10px !important; }
@@ -290,6 +292,7 @@ table tr:hover td { background: rgba(255,255,255,0.02); }
 /* 🔴 STANDALONE MOBILE APP OVERRIDES (Triggers only when installed on phone) */
 @media (max-width: 768px) and (display-mode: standalone) {
     body { padding-bottom: 90px; } /* Space for bottom dock */
+    .hide-in-app-mode { display: none !important; }
     #ai-floating-btn { display: none !important; }
 
     /* 🔴 MOBILE FLOATING DOCK */
