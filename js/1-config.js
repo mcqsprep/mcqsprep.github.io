@@ -69,6 +69,28 @@ styleSheet.innerHTML = `
     .bookmarked { background: rgba(253, 184, 19, 0.2) !important; color: var(--primary-yellow) !important; border-color: var(--primary-yellow) !important; }
     
     .nav-streak-badge { background: rgba(255, 87, 34, 0.15); color: #FF5722; padding: 5px 12px; border-radius: 20px; font-weight: bold; font-size: 13px; display: flex; align-items: center; gap: 5px; border: 1px solid rgba(255, 87, 34, 0.3); }
+
+    /* Forcing top-anchored snackbar UI to prevent bottom-bar collisions */
+    #notification {
+        position: fixed !important;
+        top: 20px !important;
+        bottom: auto !important;
+        left: 50% !important;
+        transform: translateX(-50%) !important;
+        background: #1a1a24 !important;
+        color: #fdb813 !important;
+        padding: 12px 24px !important;
+        border-radius: 8px !important;
+        border: 1px solid rgba(253, 184, 19, 0.3) !important;
+        font-weight: 500 !important;
+        font-size: 14px !important;
+        z-index: 99999 !important;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.6) !important;
+        text-align: center !important;
+        width: max-content !important;
+        max-width: 90vw !important;
+        pointer-events: none !important;
+    }
 `;
 document.head.appendChild(styleSheet);
 
@@ -137,5 +159,5 @@ function showNotification(message) {
     const notif = document.getElementById('notification'); 
     notif.innerText = message; 
     notif.style.display = 'block'; 
-    setTimeout(() => { notif.style.display = 'none'; }, 3000); 
+    setTimeout(() => { notif.style.display = 'none'; }, 4000); // Extended slightly for readability 
 }
