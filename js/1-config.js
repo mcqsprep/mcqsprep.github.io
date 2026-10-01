@@ -105,7 +105,8 @@ function formatTextWithMath(text) {
     let html = marked.parse(processedText);
     
     mathSnippets.forEach((snippet, i) => {
-        html = html.replace(`@@MATH_SPAWN_${i}@@`, snippet);
+        // FIX: Using a callback function prevents JS from misinterpreting $1, $2, $3 in LaTeX as regex backreferences
+        html = html.replace(`@@MATH_SPAWN_${i}@@`, () => snippet);
     });
     return html;
 }
@@ -159,5 +160,5 @@ function showNotification(message) {
     const notif = document.getElementById('notification'); 
     notif.innerText = message; 
     notif.style.display = 'block'; 
-    setTimeout(() => { notif.style.display = 'none'; }, 4000); // Extended slightly for readability 
+    setTimeout(() => { notif.style.display = 'none'; }, 4000); 
 }
