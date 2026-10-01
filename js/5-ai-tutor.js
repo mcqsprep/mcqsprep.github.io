@@ -2,7 +2,7 @@
 // 7. GEMINI-STYLE AI CHAT ENGINE
 // ==========================================
 const aiBtn = document.getElementById('ai-floating-btn');
-let pressTimer; let isDragging = false; let startX, startY, initialX, initialY;
+let pressTimer; let isDragging = false; let wasDragging = false; let startX, startY, initialX, initialY;
 
 aiBtn.addEventListener('mousedown', startPress);
 aiBtn.addEventListener('touchstart', startPress, {passive: true});
@@ -20,15 +20,17 @@ function startPress(e) {
         initialY = e.clientY - aiBtn.getBoundingClientRect().top;
     }
     isDragging = false;
+    wasDragging = false;
     pressTimer = setTimeout(() => {
         isDragging = true;
         aiBtn.classList.add('draggable');
-    }, 500); 
+    }, 200); // FIX: Reduced timeout for snappier drag detection
 }
 
 function drag(e) {
     if (!isDragging) return;
     e.preventDefault();
+    wasDragging = true; // FIX: Flag that a drag actually occurred
     let currentX = e.type === 'touchmove' ? e.touches[0].clientX : e.clientX;
     let currentY = e.type === 'touchmove' ? e.touches[0].clientY : e.clientY;
     
@@ -51,8 +53,18 @@ function endPress(e) {
         isDragging = false;
         aiBtn.classList.remove('draggable');
     }
-    // FIX: Removed the openAIModal() trigger here so it doesn't conflict with the native HTML onclick
 }
+
+// FIX: Intercept the click event to prevent the modal from opening if we just dragged the button
+aiBtn.onclick = function(e) {
+    if (wasDragging) {
+        e.preventDefault();
+        e.stopPropagation();
+        wasDragging = false;
+        return false;
+    }
+    openAIModal();
+};
 
 let cropper = null; let aiChatHistory = []; let lastExtractedQuestion = null;
 let pendingBase64Image = null; 
@@ -231,7 +243,7 @@ function appendChatBubble(role, htmlContent, rawText = "") {
         wrapper.style.cssText = `align-self: flex-end; max-width: 85%; display: flex; align-items: flex-end; gap: 8px; margin-bottom: 5px;`;
         
         const editBtn = document.createElement('button');
-        editBtn.innerHTML = '✏️';
+        editBtn.innerHTML = '✏️️';
         editBtn.title = 'Edit';
         editBtn.setAttribute('data-text', rawText.replace(/"/g, '&quot;'));
         editBtn.style.cssText = `background: rgba(255,255,255,0.08); border: none; color: white; width: 28px; height: 28px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; opacity: 0; transition: 0.2s; font-size: 12px;`;
@@ -263,7 +275,8 @@ function appendChatBubble(role, htmlContent, rawText = "") {
         bubble.innerHTML = htmlContent;
         historyContainer.appendChild(bubble);
         
-        renderMathInElement(bubble, { delimiters: [ {left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}, {left: '\\(', right: '\\)', display: false}, {left: '\\[', right: '\\]', display: true} ] });
+        // FIX: Added throwOnError: false to prevent KaTeX from crashing the whole render on a syntax error
+        renderMathInElement(bubble, { delimiters: [ {left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}, {left: '\\(', right: '\\)', display: false}, {left: '\\[', right: '\\]', display: true} ], throwOnError: false });
     }
     
     historyContainer.scrollTop = historyContainer.scrollHeight;
@@ -466,10 +479,12 @@ async function _renderDoubtDiary() {
         items.forEach(d => {
             let dateStr = d.timestamp ? new Date(d.timestamp.toMillis()).toLocaleDateString() : '';
             let md = `**Core Concept:** ${d.solution.keyConcept}\n\n**Step-by-Step:**\n${d.solution.stepByStep}\n\n**Final Answer:** ${d.solution.finalAnswer}`;
-            html += `<div style="background:#13131a; border-left: 4px solid var(--primary-yellow); padding: 14px; border-radius: 6px; margin-bottom: 16px;"><div style="display:flex; justify-content:space-between; margin-bottom:8px;"><span class="badge-path">${d.subject}</span><span style="font-size:11px; color:var(--text-muted);">${dateStr}</span></div><p style="font-weight:600; font-size:15px; margin: 0 0 10px 0;">Q: ${d.questionText}</p><button onclick="toggleViewAnswer('diary_sol_${d.id}')" style="background:#222; color:white; border:none; padding:5px 10px; border-radius:4px; cursor:pointer; font-size:12px;">👁️️ Show Solution</button><div id="diary_sol_${d.id}" class="katex-render-target" style="display:none; margin-top:12px; padding-top:12px; border-top:1px solid #282834; line-height:1.6; font-size:14px;">${formatTextWithMath(md)}</div></div>`;
+            html += `<div style="background:#13131a; border-left: 4px solid var(--primary-yellow); padding: 14px; border-radius: 6px; margin-bottom: 16px;"><div style="display:flex; justify-content:space-between; margin-bottom:8px;"><span class="badge-path">${d.subject}</span><span style="font-size:11px; color:var(--text-muted);">${dateStr}</span></div><p style="font-weight:600; font-size:15px; margin: 0 0 10px 0;">Q: ${d.questionText}</p><button onclick="toggleViewAnswer('diary_sol_${d.id}')" style="background:#222; color:white; border:none; padding:5px 10px; border-radius:4px; cursor:pointer; font-size:12px;">👁 Show Solution</button><div id="diary_sol_${d.id}" class="katex-render-target" style="display:none; margin-top:12px; padding-top:12px; border-top:1px solid #282834; line-height:1.6; font-size:14px;">${formatTextWithMath(md)}</div></div>`;
         });
         html += `<button class="btn-exam" onclick="goBack()" style="background:#333; border:none;">Back</button></div>`; 
         mc.innerHTML = html;
-        document.querySelectorAll('.katex-render-target').forEach(el => { renderMathInElement(el, { delimiters: [ {left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}, {left: '\\(', right: '\\)', display: false}, {left: '\\[', right: '\\]', display: true} ] }); });
+        
+        // FIX: Added throwOnError: false here as well
+        document.querySelectorAll('.katex-render-target').forEach(el => { renderMathInElement(el, { delimiters: [ {left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}, {left: '\\(', right: '\\)', display: false}, {left: '\\[', right: '\\]', display: true} ], throwOnError: false }); });
     } catch(e) { mc.innerHTML = `<div class="card"><h2>Error</h2><p>${e.message}</p></div>`; }
 }
