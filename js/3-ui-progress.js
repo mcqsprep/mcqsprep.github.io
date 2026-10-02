@@ -37,8 +37,6 @@ function _renderView() {
             
             if (!isPdfSection) {
                 let studentName = (currentUser && currentUser.displayName) ? currentUser.displayName.split(" ")[0] : "Student";
-                
-                // FIX: Wrapped Start Quiz and Go Back buttons in a flex container with a 15px gap
                 mc.innerHTML = `
                 <div class="card page-transition">
                     <h2 style="color:var(--primary-yellow);">${topicName} Practice</h2>
@@ -98,10 +96,10 @@ function _renderView() {
             "PYQs": { i: "📄", c: "#607D8B", bg: "rgba(96, 125, 139, 0.15)" },
             "Practice Paper": { i: "📝", c: "#795548", bg: "rgba(121, 85, 72, 0.15)" },
             "MCQs Practice": { i: "✅", c: "#00BCD4", bg: "rgba(0, 188, 212, 0.15)" },
-            "Mock Test": { i: "⏱️", c: "#F44336", bg: "rgba(244, 67, 54, 0.15)" },
+            "Mock Test": { i: "⏱️️", c: "#F44336", bg: "rgba(244, 67, 54, 0.15)" },
             "Botany": { i: "🌿", c: "#4CAF50", bg: "rgba(76, 175, 80, 0.15)" },
             "Zoology": { i: "🦁", c: "#FFC107", bg: "rgba(255, 193, 7, 0.15)" },
-            "Physics": { i: "⚛️", c: "#9C27B0", bg: "rgba(156, 39, 176, 0.15)" },
+            "Physics": { i: "⚛️️", c: "#9C27B0", bg: "rgba(156, 39, 176, 0.15)" },
             "Chemistry": { i: "🧪", c: "#00BCD4", bg: "rgba(0, 188, 212, 0.15)" },
             "Organic Chemistry": { i: "🧪", c: "#00BCD4", bg: "rgba(0, 188, 212, 0.15)" },
             "Physical Chemistry": { i: "⚗️", c: "#3F51B5", bg: "rgba(63, 81, 181, 0.15)" },
@@ -611,10 +609,19 @@ function _renderLeaderboardOptions() {
             <div style="background: rgba(244, 67, 54, 0.1); border-left: 4px solid var(--wrong-red); padding: 12px; margin-bottom: 25px; border-radius: 4px;">
                 <span style="color: var(--wrong-red); font-weight: bold;">⚠️ CAUTION:</span> <span style="color: var(--text-light); font-size: 14px;">Only signed-in users will have their scores recorded and displayed on the leaderboard.</span>
             </div>
-            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 15px;">
-                <button class="btn-exam" onclick="window.location.hash='#/board/NEET > MCQs Practice'">1. NEET PRACTICE</button>
-                <button class="btn-exam" onclick="window.location.hash='#/board/NEET > Mock Test'">2. MOCK TEST</button>
-                <button class="btn-exam" onclick="window.location.hash='#/board/General Knowledge'">3. GENERAL KNOWLEDGE</button>
+            <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+                <div class="widget-tile" style="flex:1; min-width: 150px; padding: 15px;" onclick="window.location.hash='#/board/NEET > MCQs Practice'">
+                    <div class="widget-icon" style="background: rgba(253, 184, 19, 0.15); color: #fdb813;">🥇</div>
+                    <div class="widget-text">NEET Practice</div>
+                </div>
+                <div class="widget-tile" style="flex:1; min-width: 150px; padding: 15px;" onclick="window.location.hash='#/board/NEET > Mock Test'">
+                    <div class="widget-icon" style="background: rgba(244, 67, 54, 0.15); color: #F44336;">⏱️</div>
+                    <div class="widget-text">Mock Tests</div>
+                </div>
+                <div class="widget-tile" style="flex:1; min-width: 150px; padding: 15px;" onclick="window.location.hash='#/board/General Knowledge'">
+                    <div class="widget-icon" style="background: rgba(76, 175, 80, 0.15); color: #4CAF50;">🌍</div>
+                    <div class="widget-text">General Knowledge</div>
+                </div>
             </div>
         </div>`; 
 }
@@ -622,7 +629,7 @@ function _renderLeaderboardOptions() {
 async function fetchLiveLeaderboard(pathPrefix) { 
     const mainContent = document.getElementById('dynamic-content');
     if (!currentUser) { 
-        mainContent.innerHTML = `<div class="card page-transition"><h2>🏆 Fetching Leaderboard...</h2><div style="background: rgba(244, 67, 54, 0.1); border-left: 4px solid var(--wrong-red); padding: 15px; margin: 20px 0; border-radius: 4px;"><span style="color: var(--wrong-red); font-weight: bold;">⚠️ ACCESS DENIED:</span> <span style="color: var(--text-light); font-size: 14px;">You must be signed in with Google to view the global leaderboards.</span></div><button class="btn-exam" onclick="window.history.back()" style="background:#333; border:none;">&larr; Back</button></div>`; 
+        mainContent.innerHTML = `<div class="card page-transition"><h2>🏆 Fetching Leaderboard...</h2><div style="background: rgba(244, 67, 54, 0.1); border-left: 4px solid var(--wrong-red); padding: 15px; margin: 20px 0; border-radius: 4px;"><span style="color: var(--wrong-red); font-weight: bold;">⚠️ ACCESS DENIED:</span> <span style="color: var(--text-light); font-size: 14px;">You must be signed in with Google to view the global leaderboards.</span></div><button class="btn-exam" onclick="window.history.back()" style="background:#333; border:none; width:100%;">Back</button></div>`; 
         return; 
     }
 
@@ -643,7 +650,7 @@ async function fetchLiveLeaderboard(pathPrefix) {
         else { thresholdMet = (totalQuestions >= 100); requiredText = "100 Practice Questions"; progressText = `${totalQuestions} / 100 Questions Attempted`; }
 
         if (!thresholdMet) {
-            mainContent.innerHTML = `<div class="card page-transition" style="text-align:center; padding: 40px 20px;"><h2 style="color: var(--primary-yellow); font-size: 28px; margin-bottom: 10px;">🔒 Leaderboard Locked</h2><p style="color: var(--text-muted); font-size: 15px; max-width: 500px; margin: 0 auto 20px auto; line-height: 1.5;">To ensure competitive integrity, you must attempt a minimum of <b style="color: white;">${requiredText}</b> in this specific category before unlocking the global rankings.</p><div style="background: #2a2a2a; border: 1px solid var(--border-color); padding: 15px 25px; border-radius: 8px; display: inline-block; margin-bottom: 30px;"><span style="color: var(--primary-yellow); font-weight: bold; margin-right: 10px;">Your Progress:</span> <span style="color: white; font-weight: bold;">${progressText}</span></div><br><button class="btn-exam" onclick="window.history.back()" style="background:#333; border:none;">&larr; Back to Categories</button></div>`; return;
+            mainContent.innerHTML = `<div class="card page-transition" style="text-align:center; padding: 40px 20px;"><h2 style="color: var(--primary-yellow); font-size: 28px; margin-bottom: 10px;">🔒 Leaderboard Locked</h2><p style="color: var(--text-muted); font-size: 15px; max-width: 500px; margin: 0 auto 20px auto; line-height: 1.5;">To ensure competitive integrity, you must attempt a minimum of <b style="color: white;">${requiredText}</b> in this specific category before unlocking the global rankings.</p><div style="background: #2a2a2a; border: 1px solid var(--border-color); padding: 15px 25px; border-radius: 8px; display: inline-block; margin-bottom: 30px;"><span style="color: var(--primary-yellow); font-weight: bold; margin-right: 10px;">Your Progress:</span> <span style="color: white; font-weight: bold;">${progressText}</span></div><br><button class="btn-exam" onclick="window.history.back()" style="background:#333; border:none; width: 100%;">Back to Categories</button></div>`; return;
         }
 
         const boardSnapshot = await db.collection("leaderboards")
@@ -658,6 +665,7 @@ async function fetchLiveLeaderboard(pathPrefix) {
         let inTop10 = false; let docs = [];
         boardSnapshot.forEach(doc => docs.push(doc.data()));
         
+        // FIX: The CRITICAL Leaderboard Crash was right here!
         for(let i = 0; i < docs.length; i++) { 
             let data = docs[i]; 
             let medal = (i === 0) ? "🥇 " : ((i === 1) ? "🥈 " : ((i === 2) ? "🥉 " : (i + 1) + ". "));
@@ -668,11 +676,14 @@ async function fetchLiveLeaderboard(pathPrefix) {
         }
         html += `</table></div>`;
 
-        if (!inTop10 && myBestData) { html += `<div style="margin-top: 30px; background: #2a2a2a; border: 1px solid var(--border-color); border-left: 4px solid var(--primary-yellow); padding: 20px; border-radius: 4px;"><h4 style="margin: 0 0 15px 0; color: var(--primary-yellow); font-size: 18px;">Your Personal Best</h4><div style="display: flex; gap: 30px; flex-wrap: wrap;"><div><span style="color:var(--text-muted); font-size:13px;">Global Rank</span><br><b style="font-size:20px; color: white;">${myRank}</b></div><div><span style="color:var(--text-muted); font-size:13px;">Best Score</span><br><b style="font-size:20px; color:var(--correct-green);">${myBestData.score}</b></div><div><span style="color:var(--text-muted); font-size:13px;">Accuracy</span><br><b style="font-size:20px; color: white;">${myBestData.accuracy}%</b></div><div><span style="color:var(--text-muted); font-size:13px;">Total Tests Attempted</span><br><b style="font-size:20px; color: white;">${totalTests}</b></div></div></div>`; }
-        html += `<button class="btn-exam" onclick="window.history.back()" style="margin-top:25px; background:#333; border:none;">&larr; Back to Categories</button></div>`;
+        // If the user isn't in the top 10, default to "> 10" to prevent the ReferenceError crash
+        let safeRankDisplay = inTop10 ? "Top 10" : "> 10";
+
+        if (!inTop10 && myBestData) { html += `<div style="margin-top: 30px; background: #2a2a2a; border: 1px solid var(--border-color); border-left: 4px solid var(--primary-yellow); padding: 20px; border-radius: 4px;"><h4 style="margin: 0 0 15px 0; color: var(--primary-yellow); font-size: 18px;">Your Personal Best</h4><div style="display: flex; gap: 30px; flex-wrap: wrap;"><div><span style="color:var(--text-muted); font-size:13px;">Global Rank</span><br><b style="font-size:20px; color: white;">${safeRankDisplay}</b></div><div><span style="color:var(--text-muted); font-size:13px;">Best Score</span><br><b style="font-size:20px; color:var(--correct-green);">${myBestData.score}</b></div><div><span style="color:var(--text-muted); font-size:13px;">Accuracy</span><br><b style="font-size:20px; color: white;">${myBestData.accuracy}%</b></div><div><span style="color:var(--text-muted); font-size:13px;">Total Tests Attempted</span><br><b style="font-size:20px; color: white;">${totalTests}</b></div></div></div>`; }
+        html += `<button class="btn-exam" onclick="window.history.back()" style="margin-top:25px; background:#333; border:none; width: 100%;">Back to Categories</button></div>`;
         mainContent.innerHTML = html;
 
-    } catch(e) { mainContent.innerHTML = `<div class="card"><h2 style="color:var(--wrong-red);">Error</h2><p>${e.message}</p></div>`; }
+    } catch(e) { mainContent.innerHTML = `<div class="card"><h2 style="color:var(--wrong-red);">Error</h2><p>${e.message}</p><button class="btn-exam" onclick="window.history.back()" style="background:#333; border:none; width: 100%;">Back</button></div>`; }
 }
 
 // NEW: Functions to control the Streak Rules Modal
