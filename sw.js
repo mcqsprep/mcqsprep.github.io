@@ -1,8 +1,8 @@
-const CACHE_NAME = 'mcqsprep-cache-v2'; // FIX: Bumped to V2 to purge old cache
+const CACHE_NAME = 'mcqsprep-cache-v3';
 const ASSETS = [
   '/',
   '/index.html',
-  '/style.css',
+  '/style.css?v=3',
   '/manifest.json',
   '/icon-192.png',
   '/icon-512.png',
