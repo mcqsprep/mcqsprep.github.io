@@ -1,8 +1,8 @@
-const CACHE_NAME = 'mcqsprep-cache-v6';
+const CACHE_NAME = 'mcqsprep-cache-v7';
 const ASSETS = [
   '/',
   '/index.html',
-  '/style.css?v=6',
+  '/style.css?v=7',
   '/manifest.json',
   '/icon-192.png',
   '/icon-512.png',
@@ -32,7 +32,6 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-    // Stale-While-Revalidate for static assets, bypass for Firebase API calls
     if (event.request.method === 'GET' && !event.request.url.includes('firestore.googleapis.com')) {
         event.respondWith(
             caches.open(CACHE_NAME).then((cache) => {
@@ -40,7 +39,7 @@ self.addEventListener('fetch', (event) => {
                     const fetchedResponse = fetch(event.request).then((networkResponse) => {
                         cache.put(event.request, networkResponse.clone());
                         return networkResponse;
-                    }).catch(() => {}); // Fails silently if offline
+                    }).catch(() => {});
                     return cachedResponse || fetchedResponse;
                 });
             })
