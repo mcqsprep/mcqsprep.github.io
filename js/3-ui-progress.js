@@ -37,12 +37,16 @@ function _renderView() {
             
             if (!isPdfSection) {
                 let studentName = (currentUser && currentUser.displayName) ? currentUser.displayName.split(" ")[0] : "Student";
+                
+                // FIX: Wrapped Start Quiz and Go Back buttons in a flex container with a 15px gap
                 mc.innerHTML = `
                 <div class="card page-transition">
                     <h2 style="color:var(--primary-yellow);">${topicName} Practice</h2>
                     <p style="color:var(--text-muted); margin-bottom:25px;">${!currentUser ? "Sign in to track your scores on the leaderboard!" : `Ready for practice, <span style="color:var(--primary-yellow);">${studentName}</span>?`}</p>
-                    <button class="btn-exam" onclick="window.location.hash='#/quiz'" style="background:var(--primary-yellow); color:black; width:200px; margin-right:15px; font-size:16px;">Start Quiz &rarr;</button>
-                    <button class="btn-exam" onclick="goBack()" style="background:#333; width:150px; font-size:16px; border:none;">&larr; Go Back</button>
+                    <div style="display:flex; flex-wrap:wrap; gap:15px; margin-top:20px;">
+                        <button class="btn-exam" onclick="window.location.hash='#/quiz'" style="background:var(--primary-yellow); color:black; flex:1; min-width:150px; font-size:16px;">Start Quiz &rarr;</button>
+                        <button class="btn-exam" onclick="goBack()" style="background:#333; flex:1; min-width:120px; font-size:16px; border:none;">&larr; Go Back</button>
+                    </div>
                 </div>`;
             } else {
                 mc.innerHTML = `
@@ -84,7 +88,6 @@ function _renderView() {
             return a.localeCompare(b);
         });
 
-        // 🔴 DYNAMIC ICON AND COLOR MAPPING FOR WIDGETS
         const iconMap = {
             "NEET": { i: "🩺", c: "#fdb813", bg: "rgba(253, 184, 19, 0.15)" },
             "General Knowledge": { i: "🌍", c: "#4CAF50", bg: "rgba(76, 175, 80, 0.15)" },
@@ -113,7 +116,6 @@ function _renderView() {
             
             let iconData = iconMap[key] || { i: typeLabel === '📄' ? "📄" : "📁", c: "#9e9ea7", bg: "rgba(255,255,255,0.08)" };
 
-            // Inject Native iOS Style Grid Tiles
             h += `<div class="widget-tile" onclick="navigateTo('${safeKey}')">
                     <div class="widget-icon" style="background: ${iconData.bg}; color: ${iconData.c};">${iconData.i}</div>
                     <div class="widget-text">${key}</div>
@@ -194,7 +196,7 @@ async function resetProgress(safePath) {
 }
 
 function _renderProgressSelection() {
-    if (!currentUser) return document.getElementById('dynamic-content').innerHTML = `<div class="card page-transition" style="text-align:center;"><h2>⚠️️ Sign In Required</h2><button class="btn-exam" onclick="goBack()" style="background:#333; border:none;">Back</button></div>`;
+    if (!currentUser) return document.getElementById('dynamic-content').innerHTML = `<div class="card page-transition" style="text-align:center;"><h2>⚠ Sign In Required</h2><button class="btn-exam" onclick="goBack()" style="background:#333; border:none;">Back</button></div>`;
     document.getElementById('breadcrumb-text').innerText = "Home / Profile / Track Progress";
     document.getElementById('dynamic-content').innerHTML = `
         <div class="card page-transition" style="text-align:center; padding: 40px 20px;">
