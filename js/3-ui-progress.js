@@ -58,18 +58,19 @@ function _renderView() {
         let title = currentPath.length === 0 ? "Select Exam Category" : currentPath[currentPath.length - 1];
         let h = ``;
 
+        // 🔴 INJECT THE HIGH-END PREMIUM "HERO" BANNER FOR HOME PAGE
         if (currentPath.length === 0) {
             h += `
-            <div class="card" style="border: 1px solid var(--primary-yellow); background: rgba(253, 184, 19, 0.05); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:15px; margin-bottom: 25px;">
-                <div>
-                    <h2 style="color:var(--primary-yellow); margin:0 0 5px 0;">⚙️ Custom Practice Engine</h2>
-                    <p style="color:var(--text-muted); margin:0; font-size:14px;">Mix subjects, filter by difficulty, and build your ultimate personalized mock test.</p>
+            <div class="premium-banner" onclick="cwStep1()">
+                <div class="premium-banner-content">
+                    <span class="premium-badge">CUSTOM PRACTICE</span>
+                    <h2 style="margin: 10px 0; font-size: 22px; color: white;">Practice smart with tailored mock tests.</h2>
+                    <button class="premium-btn">Launch Setup 🚀</button>
                 </div>
-                <button class="btn-exam" onclick="cwStep1()" style="background:var(--primary-yellow); color:black; font-size:16px; padding:12px 24px; box-shadow:0 4px 15px rgba(253,184,19,0.3); border:none;">Launch Setup 🚀</button>
             </div>`;
         }
 
-        h += `<div class="card"><h2 style="color:var(--primary-yellow);">${title}</h2><div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px;">`;
+        h += `<div class="widget-section"><h3 class="widget-title">${title}</h3><div class="widget-grid">`;
         
         let keys = Object.keys(currentLevel);
         const difficultyOrder = ["Easy", "Medium", "Hard", "Mixed"];
@@ -83,16 +84,47 @@ function _renderView() {
             return a.localeCompare(b);
         });
 
+        // 🔴 DYNAMIC ICON AND COLOR MAPPING FOR WIDGETS
+        const iconMap = {
+            "NEET": { i: "🩺", c: "#fdb813", bg: "rgba(253, 184, 19, 0.15)" },
+            "General Knowledge": { i: "🌍", c: "#4CAF50", bg: "rgba(76, 175, 80, 0.15)" },
+            "Current Affairs": { i: "📰", c: "#2196F3", bg: "rgba(33, 150, 243, 0.15)" },
+            "History": { i: "🏛️", c: "#FF9800", bg: "rgba(255, 152, 0, 0.15)" },
+            "Geography": { i: "🗺️", c: "#4CAF50", bg: "rgba(76, 175, 80, 0.15)" },
+            "NCERT Book": { i: "📚", c: "#9C27B0", bg: "rgba(156, 39, 176, 0.15)" },
+            "PYQs": { i: "📄", c: "#607D8B", bg: "rgba(96, 125, 139, 0.15)" },
+            "Practice Paper": { i: "📝", c: "#795548", bg: "rgba(121, 85, 72, 0.15)" },
+            "MCQs Practice": { i: "✅", c: "#00BCD4", bg: "rgba(0, 188, 212, 0.15)" },
+            "Mock Test": { i: "⏱️", c: "#F44336", bg: "rgba(244, 67, 54, 0.15)" },
+            "Botany": { i: "🌿", c: "#4CAF50", bg: "rgba(76, 175, 80, 0.15)" },
+            "Zoology": { i: "🦁", c: "#FFC107", bg: "rgba(255, 193, 7, 0.15)" },
+            "Physics": { i: "⚛️", c: "#9C27B0", bg: "rgba(156, 39, 176, 0.15)" },
+            "Chemistry": { i: "🧪", c: "#00BCD4", bg: "rgba(0, 188, 212, 0.15)" },
+            "Organic Chemistry": { i: "🧪", c: "#00BCD4", bg: "rgba(0, 188, 212, 0.15)" },
+            "Physical Chemistry": { i: "⚗️", c: "#3F51B5", bg: "rgba(63, 81, 181, 0.15)" },
+            "Inorganic Chemistry": { i: "🧫", c: "#FF5722", bg: "rgba(255, 87, 34, 0.15)" }
+        };
+
         for (let key of keys) { 
             if (currentPath.length === 0 && key === "Daily Quiz Challenge") continue; 
             let checkPath = currentPath.join(" > ") + (currentPath.length > 0 ? " > " : "") + key;
-            let typeLabel = ""; if (customTopicTypes[checkPath] === 'mcq') typeLabel = " 📝"; else if (customTopicTypes[checkPath] === 'pdf') typeLabel = " 📄";
+            let typeLabel = ""; if (customTopicTypes[checkPath] === 'mcq') typeLabel = "📝"; else if (customTopicTypes[checkPath] === 'pdf') typeLabel = "📄";
             let safeKey = key.replace(/'/g, "\\'");
-            h += `<button class="btn-exam" onclick="navigateTo('${safeKey}')">${key} ${typeLabel}</button>`; 
+            
+            let iconData = iconMap[key] || { i: typeLabel === '📄' ? "📄" : "📁", c: "#9e9ea7", bg: "rgba(255,255,255,0.08)" };
+
+            // Inject Native iOS Style Grid Tiles
+            h += `<div class="widget-tile" onclick="navigateTo('${safeKey}')">
+                    <div class="widget-icon" style="background: ${iconData.bg}; color: ${iconData.c};">${iconData.i}</div>
+                    <div class="widget-text">${key}</div>
+                  </div>`; 
         }
         
         if (currentPath.length > 0) {
-            h += `<button class="btn-exam" onclick="goBack()" style="grid-column: 1 / -1; background: #222; border-color: #444; color: #a0a0a0; margin-top: 10px;">&larr; Go Back</button>`;
+            h += `<div class="widget-tile" onclick="goBack()" style="background: #111; border-color: #333;">
+                    <div class="widget-icon" style="background: #222; color: #aaa;">&larr;</div>
+                    <div class="widget-text" style="color: #aaa;">Go Back</div>
+                  </div>`;
         }
         h += `</div></div>`; 
         mc.innerHTML = `<div class="page-transition">${h}</div>`;
@@ -162,7 +194,7 @@ async function resetProgress(safePath) {
 }
 
 function _renderProgressSelection() {
-    if (!currentUser) return document.getElementById('dynamic-content').innerHTML = `<div class="card page-transition" style="text-align:center;"><h2>⚠️ Sign In Required</h2><button class="btn-exam" onclick="goBack()" style="background:#333; border:none;">Back</button></div>`;
+    if (!currentUser) return document.getElementById('dynamic-content').innerHTML = `<div class="card page-transition" style="text-align:center;"><h2>⚠️️ Sign In Required</h2><button class="btn-exam" onclick="goBack()" style="background:#333; border:none;">Back</button></div>`;
     document.getElementById('breadcrumb-text').innerText = "Home / Profile / Track Progress";
     document.getElementById('dynamic-content').innerHTML = `
         <div class="card page-transition" style="text-align:center; padding: 40px 20px;">
