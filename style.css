@@ -219,77 +219,103 @@ table tr:hover td { background: rgba(255,255,255,0.02); }
 /* ------------------------------------------------------------- */
 
 @media (max-width: 768px) {
-    body { background-color: #000000 !important; } /* Pure OLED Black */
+    body { background-color: #000000 !important; } 
     .breadcrumb { display: none !important; }
-    .container { padding: 10px 14px !important; gap: 16px !important; } 
-
-    /* 🔴 Bento Box Cards (Heavy border-radius, elevated grey, no harsh borders) */
+    
+    /* 🔴 FORCE VERTICAL STACK FOR MAIN LAYOUT */
+    .container { 
+        display: flex !important;
+        flex-direction: column !important; 
+        padding: 16px 16px 100px 16px !important; 
+        gap: 20px !important; 
+        min-height: auto !important;
+    } 
+    .main-content, .sidebar { 
+        width: 100% !important; 
+        max-width: 100% !important; 
+        flex: none !important; 
+        margin: 0 !important; 
+    } 
+    
+    /* 🔴 PREMIUM IOS-STYLE CARDS */
     .card { 
-        background: #121214 !important; 
-        border: 1px solid rgba(255,255,255,0.06) !important; 
+        background: #141416 !important; 
+        border: 1px solid rgba(255,255,255,0.08) !important; 
         border-radius: 24px !important; 
-        padding: 22px !important;
-        margin-bottom: 14px !important;
+        padding: 20px 22px !important;
+        margin-bottom: 0 !important; 
         box-shadow: none !important; 
     }
 
-    /* Override the custom practice inline styles injected via JS */
     .card[style*="border: 1px solid var(--primary-yellow)"] {
         border: 1px solid rgba(253, 184, 19, 0.3) !important;
-        background: linear-gradient(180deg, rgba(253, 184, 19, 0.08) 0%, #121214 100%) !important;
+        background: radial-gradient(120% 100% at 50% 0%, rgba(253, 184, 19, 0.08) 0%, #141416 100%) !important;
     }
 
-    .card h2 { font-size: 1.4rem !important; letter-spacing: -0.5px !important; margin-bottom: 15px !important; color: #fff !important; }
-    .card h3 { font-size: 13px !important; color: #888 !important; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; margin-bottom: 12px !important; }
+    .card h2 { font-size: 22px !important; letter-spacing: -0.5px !important; margin-top: 0 !important; margin-bottom: 8px !important; color: #fff !important; font-weight: 700 !important; }
+    .card p { font-size: 15px !important; margin-bottom: 24px !important; line-height: 1.4 !important; color: #8e8e93 !important;}
+    .card h3 { font-size: 12px !important; color: #8e8e93 !important; text-transform: uppercase; letter-spacing: 1.2px !important; font-weight: 700 !important; margin-top: 0 !important; margin-bottom: 16px !important; }
 
-    /* 🔴 Action Links -> Native iOS Style List Cells with Chevrons */
+    /* 🔴 PREMIUM LIST UI (Replaces block action links) */
     .action-link {
-        background: #1a1a1f !important;
+        background: transparent !important;
         border: none !important;
-        border-radius: 16px !important;
-        padding: 18px 20px !important;
-        font-size: 15px !important;
+        border-bottom: 1px solid rgba(255,255,255,0.06) !important;
+        border-radius: 0 !important;
+        padding: 16px 4px !important;
+        font-size: 16px !important;
         display: flex !important;
-        justify-content: space-between !important;
+        justify-content: flex-start !important;
         align-items: center !important;
-        font-weight: 600 !important;
+        font-weight: 500 !important;
         color: #fff !important;
-        margin-bottom: 10px !important;
+        margin-bottom: 0 !important;
+        box-shadow: none !important;
+        transition: opacity 0.2s !important;
     }
+    .action-link:active { opacity: 0.5 !important; }
+    .action-link:last-of-type { border-bottom: none !important; padding-bottom: 4px !important; }
+    .action-link:first-of-type { padding-top: 4px !important; }
     .action-link::after { 
-        content: "❯"; 
-        color: #555; 
-        font-size: 14px; 
-        font-weight: 800; 
+        content: "›"; 
+        color: #666; 
+        font-size: 24px; 
+        font-weight: 400; 
+        margin-left: auto; 
+        margin-top: -2px;
     }
 
-    /* 🔴 Category Tiles (NEET, GK) -> Chunky Squircle Widgets */
+    /* 🔴 CATEGORY GRID (NEET, GK) */
     .card > div[style*="display: grid"], .card > div[style*="display:grid"] { 
         grid-template-columns: 1fr 1fr !important; 
         gap: 12px !important; 
     }
     
     .btn-exam:not([style*="background"]):not(#loginBtn) {
-        background: #1a1a1f !important;
-        border: none !important;
-        border-radius: 20px !important;
-        padding: 24px 10px !important;
+        background: rgba(255,255,255,0.06) !important;
+        border: 1px solid rgba(255,255,255,0.04) !important;
+        border-radius: 16px !important;
+        padding: 16px 12px !important;
         font-size: 15px !important;
-        font-weight: 700 !important;
+        font-weight: 600 !important;
         color: #fff !important;
         display: flex !important;
         justify-content: center !important;
         align-items: center !important;
+        box-shadow: none !important;
     }
     
-    /* Upgraded Yellow 'Launch Setup' Button */
+    /* High-Impact Yellow Button */
     .btn-exam[style*="var(--primary-yellow)"] {
         border-radius: 18px !important;
         padding: 16px 24px !important;
-        font-size: 15px !important;
+        font-size: 16px !important;
+        font-weight: 700 !important;
+        box-shadow: 0 4px 20px rgba(253, 184, 19, 0.25) !important;
+        width: 100% !important; 
     }
 
-    .input-field { padding: 14px 16px; font-size: 14px; margin-bottom: 12px; border-radius: 12px; }
+    .input-field { padding: 16px; font-size: 15px; margin-bottom: 14px; border-radius: 14px; background: rgba(255,255,255,0.06) !important; border: 1px solid rgba(255,255,255,0.08) !important; }
     
     /* Mobile Top Navbar Fixes */
     .hide-on-mobile, .compact-hide { display: none !important; } 
@@ -327,7 +353,6 @@ table tr:hover td { background: rgba(255,255,255,0.02); }
 
 /* 🔴 STANDALONE MOBILE APP OVERRIDES (Triggers only when installed on phone) */
 @media (max-width: 768px) and (display-mode: standalone) {
-    body { padding-bottom: 90px; } /* Space for bottom dock */
     .hide-in-app-mode { display: none !important; }
     #ai-floating-btn { display: none !important; }
 
