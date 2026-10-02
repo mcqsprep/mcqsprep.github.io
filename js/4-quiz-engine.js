@@ -63,7 +63,7 @@ function cwStep1() {
                 <button class="btn-exam" onclick="cwStep2('NEET')" style="flex:1; padding:20px; font-size:18px;">🩺 NEET</button>
                 <button class="btn-exam" onclick="cwStep2('General Knowledge')" style="flex:1; padding:20px; font-size:18px;">🌍 General Knowledge</button>
             </div>
-            <button class="btn-exam" onclick="goHome()" style="margin-top:20px; background:#333; border:none;">&larr; Cancel</button>
+            <button class="btn-exam" onclick="goHome()" style="margin-top:20px; background:#333; border:none; width:100%;">Cancel</button>
         </div>`;
 }
 
@@ -79,9 +79,9 @@ function cwStep2(exam) {
             <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap:10px; margin-bottom:25px;">
                 ${subjects.map(s => `<label style="background:#2a2a2a; border:1px solid #444; padding:15px; border-radius:8px; cursor:pointer; display:flex; align-items:center; gap:10px;"><input type="checkbox" value="${s.path}" class="cw-subj-cb"> <span>${s.name}</span></label>`).join('')}
             </div>
-            <div style="display:flex; justify-content:space-between;">
-                <button class="btn-exam" onclick="cwStep1()" style="background:#333; border:none;">&larr; Back</button>
-                <button class="btn-exam" onclick="cwProcessStep2()" style="background:var(--primary-yellow); color:black; border:none;">Next: Select Chapters &rarr;</button>
+            <div style="display:flex; justify-content:space-between; gap:15px;">
+                <button class="btn-exam" onclick="cwStep1()" style="background:#333; border:none; flex:1;">&larr; Back</button>
+                <button class="btn-exam" onclick="cwProcessStep2()" style="background:var(--primary-yellow); color:black; border:none; flex:2;">Next: Select Chapters &rarr;</button>
             </div>
         </div>`;
 }
@@ -99,7 +99,7 @@ function cwStep3() {
     let leafs = getAllLeafNodes(cwState.subjects);
     document.getElementById('dynamic-content').innerHTML = `
         <div class="card page-transition">
-            <h2 style="color:var(--primary-yellow);">📑 Select Chapters / Subtopics</h2>
+            <h2 style="color:var(--primary-yellow);">📑 Select Chapters</h2>
             <p style="color:var(--text-muted); margin-bottom:20px;">Step 3: Pick the specific topics you want to practice.</p>
             <input type="text" id="cwSubtopicSearch" class="input-field" placeholder="🔍 Search chapters..." oninput="cwFilterSubtopics()">
             <div style="margin-bottom:15px;">
@@ -109,9 +109,9 @@ function cwStep3() {
             <div id="cw-subtopic-list" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap:10px; max-height:40vh; overflow-y:auto; padding:10px; background:#111; border-radius:8px; border:1px solid #333; margin-bottom:25px;">
                 ${leafs.map(l => `<label class="cw-sub-lbl" style="background:#2a2a2a; border:1px solid #444; padding:12px; border-radius:6px; cursor:pointer; display:flex; align-items:flex-start; gap:10px;"><input type="checkbox" value="${l}" class="cw-sub-cb" checked> <span style="font-size:14px;">${l.split(' > ').pop()}<br><span style="font-size:11px; color:#888;">${l}</span></span></label>`).join('')}
             </div>
-            <div style="display:flex; justify-content:space-between;">
-                <button class="btn-exam" onclick="cwStep2(cwState.exam)" style="background:#333; border:none;">&larr; Back</button>
-                <button class="btn-exam" onclick="cwProcessStep3()" style="background:var(--primary-yellow); color:black; border:none;">Next: Set Difficulty &rarr;</button>
+            <div style="display:flex; justify-content:space-between; gap:15px;">
+                <button class="btn-exam" onclick="cwStep2(cwState.exam)" style="background:#333; border:none; flex:1;">&larr; Back</button>
+                <button class="btn-exam" onclick="cwProcessStep3()" style="background:var(--primary-yellow); color:black; border:none; flex:2;">Next: Set Difficulty &rarr;</button>
             </div>
         </div>`;
 }
@@ -158,9 +158,9 @@ function cwStep4() {
                     <input type="number" id="cwCount" class="input-field" value="20" min="5" max="100" style="padding:15px; font-size:16px;">
                 </div>
             </div>
-            <div style="display:flex; justify-content:space-between;">
-                <button class="btn-exam" onclick="cwStep3()" style="background:#333; border:none;">&larr; Back</button>
-                <button class="btn-exam" onclick="cwLaunchQuiz()" style="background:var(--correct-green); color:white; font-size:18px; padding:15px 30px; border:none; box-shadow:0 4px 15px rgba(76,175,80,0.4);">🚀 Start Custom Quiz</button>
+            <div style="display:flex; justify-content:space-between; gap:15px;">
+                <button class="btn-exam" onclick="cwStep3()" style="background:#333; border:none; flex:1;">&larr; Back</button>
+                <button class="btn-exam" onclick="cwLaunchQuiz()" style="background:var(--correct-green); color:white; font-size:18px; padding:15px 30px; border:none; box-shadow:0 4px 15px rgba(76,175,80,0.4); flex:2;">🚀 Start Custom Quiz</button>
             </div>
         </div>`;
 }
@@ -234,12 +234,12 @@ async function _initiateBookmarkQuiz() {
         });
 
         if (Object.keys(allStats).length === 0) {
-            mainContent.innerHTML = `<div class="card page-transition" style="text-align:center;"><h2>No Bookmarks Found</h2><p style="color:var(--text-muted);">You haven't bookmarked any questions yet. Click the 🔖 Bookmark button during a quiz to save questions here for revision.</p><button class="btn-exam" onclick="goBack()" style="background:#333; border:none;">&larr; Go Back</button></div>`;
+            mainContent.innerHTML = `<div class="card page-transition" style="text-align:center;"><h2>No Bookmarks Found</h2><p style="color:var(--text-muted);">You haven't bookmarked any questions yet. Click the 🔖 Bookmark button during a quiz to save questions here for revision.</p><button class="btn-exam" onclick="goBack()" style="background:#333; border:none; width: 100%;">Back</button></div>`;
             return;
         }
         
         if (dueBookmarks.length === 0) {
-            mainContent.innerHTML = `<div class="card page-transition" style="text-align:center;"><h2>🎉 All Caught Up!</h2><p style="color:var(--correct-green);">You have no pending Spaced Repetition reviews for today. Check back tomorrow!</p><button class="btn-exam" onclick="goBack()" style="background:#333; border:none;">&larr; Go Back</button></div>`;
+            mainContent.innerHTML = `<div class="card page-transition" style="text-align:center;"><h2>🎉 All Caught Up!</h2><p style="color:var(--correct-green);">You have no pending Spaced Repetition reviews for today. Check back tomorrow!</p><button class="btn-exam" onclick="goBack()" style="background:#333; border:none; width: 100%;">Back</button></div>`;
             return;
         }
 
@@ -253,7 +253,7 @@ async function _initiateBookmarkQuiz() {
         }
 
         if (availableQuestions.length === 0) {
-            mainContent.innerHTML = `<div class="card page-transition" style="text-align:center;"><h2>Error</h2><p>Could not load bookmarked questions.</p><button class="btn-exam" onclick="goBack()" style="background:#333; border:none;">&larr; Go Back</button></div>`;
+            mainContent.innerHTML = `<div class="card page-transition" style="text-align:center;"><h2>Error</h2><p>Could not load bookmarked questions.</p><button class="btn-exam" onclick="goBack()" style="background:#333; border:none; width: 100%;">Back</button></div>`;
             return;
         }
 
@@ -512,8 +512,6 @@ async function _initiateQuizEngine(isCustomLaunch = false) {
             let safePath = "prog_" + currentPath.join('_').replace(/[^a-zA-Z0-9]/g, '_');
             let previouslyAttemptedIds = await getAttemptedIdsForPath(safePath);
 
-            // FIX: Removed .where("randomKey") to prevent Firestore inequality error.
-            // We now fetch a larger chunk by path, filter, and shuffle entirely client-side.
             let snapshot = await db.collection("content")
                 .where("path", ">=", pathString)
                 .where("path", "<=", pathString + "\uf8ff")
@@ -531,7 +529,6 @@ async function _initiateQuizEngine(isCustomLaunch = false) {
                 }
             });
 
-            // Secure shuffle and take the top 20
             availableQuestions = unattemptedPool.sort(() => 0.5 - Math.random()).slice(0, 20);
             
             quizState.questions = availableQuestions;
@@ -539,11 +536,11 @@ async function _initiateQuizEngine(isCustomLaunch = false) {
         }
 
         if (availableQuestions.length === 0) { 
-            if(isCustomLaunch) mainContent.innerHTML = `<div class="card page-transition" style="text-align:center;"><h2>No Questions Found</h2><p style="color:var(--text-muted);">We couldn't find any unattempted questions matching your selected chapters and difficulty level.</p><button class="btn-exam" onclick="goHome()" style="background:#333; border:none;">&larr; Go Back</button></div>`;
-            else if(totalQuestionsInDB === 0) mainContent.innerHTML = `<div class="card page-transition"><h2>No Questions Available</h2><p style="color:var(--text-muted);">Not enough questions available in the database for this section.</p><button class="btn-exam" onclick="goHome()" style="background:#333; border:none;">&larr; Go Back</button></div>`; 
+            if(isCustomLaunch) mainContent.innerHTML = `<div class="card page-transition" style="text-align:center;"><h2>No Questions Found</h2><p style="color:var(--text-muted);">We couldn't find any unattempted questions matching your selected chapters and difficulty level.</p><button class="btn-exam" onclick="goHome()" style="background:#333; border:none; width:100%;">Back</button></div>`;
+            else if(totalQuestionsInDB === 0) mainContent.innerHTML = `<div class="card page-transition"><h2>No Questions Available</h2><p style="color:var(--text-muted);">Not enough questions available in the database for this section.</p><button class="btn-exam" onclick="goHome()" style="background:#333; border:none; width:100%;">Back</button></div>`; 
             else {
                 let safePath = "prog_" + currentPath.join('_').replace(/[^a-zA-Z0-9]/g, '_');
-                mainContent.innerHTML = `<div class="card page-transition" style="text-align:center; padding: 40px 20px;"><h2 style="color: var(--primary-yellow); font-size: 28px; margin-bottom: 15px;">🎉 Section Completed!</h2><p style="color: var(--text-muted); font-size: 16px; margin-bottom: 25px;">You have successfully attempted all available questions in this section.</p><div style="display:flex; justify-content:center; gap:15px; flex-wrap:wrap;"><button class="btn-exam" onclick="resetProgress('${safePath}')" style="background: #333; color: white; border:none;">🔄 Reset My Progress</button><button class="btn-exam" onclick="window.history.back()" style="background:#333; border:none;">&larr; Explore Other Topics</button></div></div>`;
+                mainContent.innerHTML = `<div class="card page-transition" style="text-align:center; padding: 40px 20px;"><h2 style="color: var(--primary-yellow); font-size: 28px; margin-bottom: 15px;">🎉 Section Completed!</h2><p style="color: var(--text-muted); font-size: 16px; margin-bottom: 25px;">You have successfully attempted all available questions in this section.</p><div style="display:flex; flex-direction:column; gap:15px;"><button class="btn-exam" onclick="resetProgress('${safePath}')" style="background: #333; color: white; border:none;">🔄 Reset My Progress</button><button class="btn-exam" onclick="window.history.back()" style="background:#333; border:none;">Explore Other Topics</button></div></div>`;
             }
             return; 
         }
@@ -562,7 +559,7 @@ async function _initiateQuizEngine(isCustomLaunch = false) {
         quizState.currentQEntryTime = Date.now();
         saveQuizSession();
         _renderQuizQuestion();
-    } catch (error) { mainContent.innerHTML = `<div class="card"><h2>Error</h2><p>${error.message}</p><button class="btn-exam" onclick="goBack()">&larr; Go Back</button></div>`; }
+    } catch (error) { mainContent.innerHTML = `<div class="card"><h2>Error</h2><p>${error.message}</p><button class="btn-exam" onclick="goBack()" style="width:100%;">&larr; Go Back</button></div>`; }
 }
 
 function toggleFlag() {
@@ -619,14 +616,15 @@ function _renderQuizQuestion() {
             <div id="optionsContainer">${optionsHtml}</div>
             <div class="quiz-explanation katex-render-target" style="display:${hasPeeked ? 'block' : 'none'}"><b>Explanation:</b><br><span id="expText">${q.explanation || "No explanation provided."}</span></div>
             <div class="nav-buttons-row">
-                <div style="display:flex; gap:10px;"><button class="btn-exam" onclick="_prevQuestion()" ${quizState.currentIndex === 0 ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : ''}>&larr; Prev</button><button class="btn-exam" onclick="_nextQuestion()" ${quizState.currentIndex === quizState.questions.length - 1 ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : ''}>Next / Skip &rarr;</button></div>
-                <div style="display:flex; gap:10px;"><button class="btn-exam" onclick="checkAnswer()" style="background:#333; border:none; ${hasPeeked ? 'display:none;' : ''}">Check Answer</button><button class="btn-exam" onclick="finishQuiz()" style="background:var(--wrong-red); border:none; color:white;">Finish Quiz</button></div>
+                <div style="display:flex; gap:10px; flex:1;"><button class="btn-exam" onclick="_prevQuestion()" ${quizState.currentIndex === 0 ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : ''} style="flex:1;">&larr; Prev</button><button class="btn-exam" onclick="_nextQuestion()" ${quizState.currentIndex === quizState.questions.length - 1 ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : ''} style="flex:1;">Next &rarr;</button></div>
+                <div style="display:flex; gap:10px; flex:1;"><button class="btn-exam" onclick="checkAnswer()" style="background:#333; border:none; flex:1; ${hasPeeked ? 'display:none;' : ''}">Check</button><button class="btn-exam" onclick="finishQuiz()" style="background:var(--wrong-red); border:none; color:white; flex:1;">Finish</button></div>
             </div>
         </div>`;
     mainContent.innerHTML = html;
     
+    // FIX: ADDED throwOnError: false TO PREVENT KATEX CRASHES IN THE QUIZ ENGINE
     document.querySelectorAll('.katex-render-target').forEach(el => {
-        renderMathInElement(el, { delimiters: [ {left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}, {left: '\\(', right: '\\)', display: false}, {left: '\\[', right: '\\]', display: true} ] });
+        renderMathInElement(el, { delimiters: [ {left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}, {left: '\\(', right: '\\)', display: false}, {left: '\\[', right: '\\]', display: true} ], throwOnError: false });
     });
     
     saveQuizSession();
@@ -870,11 +868,12 @@ async function finishQuiz() {
             <div id="review-wrong" style="display:none;">${wrongHtml || '<p>No wrong answers!</p>'}</div>
             <div id="review-skipped" style="display:none;">${skippedHtml || '<p>No skipped questions.</p>'}</div>
             ${flaggedListHtml !== '' ? `<h3 style="text-align:left; color:var(--primary-yellow); margin-top: 40px;">⭐ Sent to Admin</h3>${flaggedListHtml}` : ''}
-            <button class="btn-exam" onclick="window.history.back()" style="width: 250px; margin-top:30px; background:#333; border:none;">&larr; Exit to Dashboard</button>
+            <button class="btn-exam" onclick="window.history.back()" style="width: 100%; margin-top:30px; background:#333; border:none;">&larr; Exit to Dashboard</button>
         </div>
     `;
     
+    // FIX: ADDED throwOnError: false TO PREVENT KATEX CRASHES IN THE REVIEW SCREEN
     document.querySelectorAll('.katex-render-target, .review-item').forEach(el => {
-        renderMathInElement(el, { delimiters: [ {left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}, {left: '\\(', right: '\\)', display: false}, {left: '\\[', right: '\\]', display: true} ] });
+        renderMathInElement(el, { delimiters: [ {left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}, {left: '\\(', right: '\\)', display: false}, {left: '\\[', right: '\\]', display: true} ], throwOnError: false });
     });
 }
