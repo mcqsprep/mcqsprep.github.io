@@ -166,8 +166,15 @@ body {
 .modal-content { background: var(--card-bg); padding: 30px; border-radius: 16px; border: 1px solid var(--border-color); width: 90%; max-width: 480px; position: relative; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 50px rgba(0,0,0,0.7); }
 .close-modal { position: absolute; top: 14px; right: 16px; background: #23232c; border: 1px solid var(--border-color); color: var(--text-muted); font-size: 16px; width: 30px; height: 30px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; }
 
-/* FIX: Star Rating Button explicitly styled to prevent white browser default background */
-.star-btn { font-size: 36px; color: #555; cursor: pointer; background: transparent !important; border: none !important; padding: 0 3px; outline: none; box-shadow: none !important; -webkit-appearance: none; appearance: none; }
+/* FIX: Ensure stars are stripped of native browser styles everywhere */
+.star-btn { 
+    font-size: 36px; color: #555; cursor: pointer; 
+    background: transparent !important; 
+    border: none !important; padding: 0 3px; outline: none; 
+    box-shadow: none !important; 
+    -webkit-appearance: none; 
+    appearance: none; 
+}
 .star-btn.active { color: var(--primary-yellow) !important; text-shadow: 0 0 15px rgba(253, 184, 19, 0.5); }
 
 /* Fullscreen AI Workspace */
@@ -213,17 +220,33 @@ body {
         border-radius: 0 !important;
         padding: 16px 4px !important;
         font-size: 16px !important;
+        
+        /* FIX: Proper flex alignment for Chevron */
         display: flex !important;
         justify-content: space-between !important;
         align-items: center !important;
+        
         font-weight: 500 !important;
         color: #fff !important;
         margin-bottom: 0 !important;
         box-shadow: none !important;
     }
-    .action-link::after { content: "›"; color: #666; font-size: 24px; font-weight: 400; margin-top: -2px; }
     
-    /* Old cards hidden or stripped of borders to rely on widgets */
+    .action-link::after { 
+        content: "›"; 
+        color: #666; 
+        font-size: 24px; 
+        font-weight: 400; 
+        display: flex;
+        align-items: center;
+    }
+    
+    /* 
+       FIX: REMOVED the rule that hid display:grid inside cards entirely!
+       This ensures that the Custom Practice Setup checkboxes and Leaderboards remain visible.
+    */
+    
+    /* Native App Style Card Reset */
     .card { background: transparent !important; border: none !important; padding: 0 !important; box-shadow: none !important; margin-bottom: 18px !important; }
     .card h2 { font-size: 24px !important; color: #fff !important; margin-bottom: 8px !important; }
     .card p { color: #8e8e93 !important; font-size: 14px !important; margin-bottom: 24px !important; }
