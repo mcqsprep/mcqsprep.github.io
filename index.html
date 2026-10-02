@@ -5,24 +5,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>MCQsPrep - Dashboard</title>
     
-    <!-- PWA Requirements -->
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#000000">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="apple-touch-icon" href="icon-192.png">
-    
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🩺</text></svg>">
     
-    <!-- Cache busting parameter bumped to v6 -->
-    <link rel="stylesheet" href="style.css?v=6">
+    <!-- Cache busting parameter bumped to v7 -->
+    <link rel="stylesheet" href="style.css?v=7">
     
-    <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
 
-    <!-- Libraries -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
@@ -32,7 +28,6 @@
 </head>
 <body>
 
-    <!-- TOP NAVBAR -->
     <nav class="navbar">
         <div class="nav-left">
             <div class="logo-container" onclick="goHome()">🩺 MCQsPrep<span class="compact-hide">.</span></div>
@@ -82,7 +77,6 @@
         </div>
     </nav>
     
-    <!-- MOBILE WEB SUB-NAVBAR -->
     <div class="mobile-web-subnav hide-on-pc hide-in-app-mode">
         <button id="installAppBtnMobile" class="install-btn" onclick="installPWA()" style="display:flex;">📱 Install App</button>
         <div style="display: flex; gap: 20px;">
@@ -95,49 +89,24 @@
     <div class="container">
         <div class="main-content" id="dynamic-content"></div>
         <div class="sidebar" id="main-sidebar">
-            
-            <!-- 🔴 PREMIUM WIDGET GRID -->
-            <div class="widget-section" style="margin-bottom: 24px;">
-                <h3 class="widget-title">Quick Links</h3>
-                <div class="widget-grid">
-                    <div class="widget-tile" onclick="jumpToSection(['NEET', 'NCERT Book'])">
-                        <div class="widget-icon" style="background: rgba(156, 39, 176, 0.15); color: #9C27B0;">📚</div>
-                        <div class="widget-text">NCERT Books</div>
-                    </div>
-                    <div class="widget-tile" onclick="jumpToSection(['NEET', 'PYQs'])">
-                        <div class="widget-icon" style="background: rgba(96, 125, 139, 0.15); color: #607D8B;">📄</div>
-                        <div class="widget-text">PYQs</div>
-                    </div>
-                </div>
+            <div class="card">
+                <h3>Quick Links</h3>
+                <a class="action-link" onclick="jumpToSection(['NEET', 'NCERT Book'])"><span style="margin-right:8px;">📚</span> NCERT Books</a>
+                <a class="action-link" onclick="jumpToSection(['NEET', 'PYQs'])"><span style="margin-right:8px;">📄</span> Previous Year Papers</a>
             </div>
-            
-            <div class="widget-section">
-                <h3 class="widget-title">Essential Practice</h3>
-                <div class="widget-grid">
-                    <div class="widget-tile" onclick="jumpToSection(['NEET', 'MCQs Practice'])">
-                        <div class="widget-icon" style="background: rgba(0, 188, 212, 0.15); color: #00BCD4;">📝</div>
-                        <div class="widget-text">Topic MCQs</div>
-                    </div>
-                    <div class="widget-tile" onclick="jumpToSection(['NEET', 'Mock Test'])">
-                        <div class="widget-icon" style="background: rgba(244, 67, 54, 0.15); color: #F44336;">⏱️</div>
-                        <div class="widget-text">Mock Tests</div>
-                    </div>
-                    <div class="widget-tile" onclick="jumpToSection(['Daily Quiz Challenge'])" style="grid-column: 1 / -1; flex-direction: row; justify-content: flex-start; padding: 16px;">
-                        <div class="widget-icon" style="background: rgba(253, 184, 19, 0.15); color: #fdb813; width: 45px; height: 45px; font-size: 22px;">📅</div>
-                        <div class="widget-text" style="font-size: 16px; margin-left: 10px;">Daily Quiz Challenge</div>
-                    </div>
-                </div>
+            <div class="card">
+                <h3>Essential Practice</h3>
+                <a class="action-link" onclick="jumpToSection(['NEET', 'MCQs Practice'])"><span style="margin-right:8px;">📝</span> Subject-wise MCQs</a>
+                <a class="action-link" onclick="jumpToSection(['NEET', 'Mock Test'])"><span style="margin-right:8px;">⏱️</span> Full-Length Mock Tests</a>
+                <a class="action-link" onclick="jumpToSection(['Daily Quiz Challenge'])"><span style="margin-right:8px;">📅</span> Daily Quiz Challenge</a>
             </div>
-
         </div>
     </div>
 
     <div id="notification">Action Triggered!</div>
     
-    <!-- AI Floating Button -->
     <div id="ai-floating-btn" class="hide-in-app-mode" onclick="openAIModal()">✨ Ask AI</div>
 
-    <!-- AI Tutor Modal -->
     <div id="aiModal" class="modal-overlay" style="z-index: 4000; padding: 0; display: none;">
         <div class="modal-content ai-fullscreen-modal" style="display: flex; flex-direction: column;">
             <div class="ai-ambient-glow ai-glow-1"></div>
@@ -176,7 +145,6 @@
                 </div>
             </div>
 
-            <!-- AI Text Input Area -->
             <div style="padding: 12px 14px max(18px, env(safe-area-inset-bottom)) 14px; background: rgba(11, 11, 15, 0.95); backdrop-filter: blur(20px); border-top: 1px solid rgba(255,255,255,0.06); position: relative; z-index: 10; box-sizing: border-box; width: 100%;">
                 <div style="position: relative; max-width: 900px; margin: 0 auto; box-sizing: border-box;">
                     <div id="ai-fuzzy-box" class="ai-fuzzy-suggestions" style="bottom: calc(100% + 15px); position: absolute; width: 100%; background: #1a1a24; border: 1px solid #333; border-radius: 12px; z-index: 20; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.6); box-sizing: border-box;"></div>
@@ -201,7 +169,6 @@
                     </div>
                 </div>
             </div>
-            
             <input type="file" id="aiImageInput" accept="image/*" style="display:none;" onchange="handleAIImageUpload(event)">
             <input type="file" id="aiCameraInput" accept="image/*" capture="environment" style="display:none;" onchange="handleAIImageUpload(event)">
         </div>
@@ -214,7 +181,6 @@
     <div id="reportModal" class="modal-overlay"><div class="modal-content" style="max-width: 450px;"><button class="close-modal" onclick="closeReportModal()">✕</button><h2 style="color: var(--wrong-red);">🚨 Report Mistake</h2><select id="reportReason" class="input-field"><option value="Wrong Option Provided">Wrong Option</option><option value="Typo">Typo</option><option value="Other">Other</option></select><textarea id="reportDescription" class="input-field" placeholder="Details..."></textarea><button class="btn-exam" onclick="submitReport()" style="width:100%; background:var(--wrong-red);">Submit</button></div></div>
     <div id="feedbackModal" class="modal-overlay"><div class="modal-content" style="text-align: center;"><button class="close-modal" onclick="closeFeedbackModal()">✕</button><h2 style="color: var(--primary-yellow);">⭐ Feedback</h2><div style="background: #202026; padding: 22px; border-radius: 8px;"><div style="margin-bottom: 20px;"><button id="star-1" class="star-btn" onclick="updateStarUI(1)">★</button><button id="star-2" class="star-btn" onclick="updateStarUI(2)">★</button><button id="star-3" class="star-btn" onclick="updateStarUI(3)">★</button><button id="star-4" class="star-btn" onclick="updateStarUI(4)">★</button><button id="star-5" class="star-btn" onclick="updateStarUI(5)">★</button></div><textarea id="platformFeedbackText" class="input-field" placeholder="Tell us what you like..."></textarea><button id="submitFeedbackBtn" class="btn-exam" onclick="submitPlatformFeedback()" style="width: 100%; background: var(--primary-yellow); color: black;">Submit</button></div></div></div>
     
-    <!-- Admin Modals -->
     <div id="editTopicModal" class="modal-overlay"><div class="modal-content" style="max-width: 450px;"><button class="close-modal" onclick="closeEditTopicModal()">✕</button><h2 style="color: var(--primary-yellow);">✏️ Edit Folder</h2><input type="hidden" id="editTopicId"><input type="text" id="editTopicName" class="input-field"><select id="editTopicType" class="input-field"><option value="mcq">MCQs</option><option value="pdf">PDF</option></select><button class="btn-exam" onclick="saveEditedTopic()" style="width:100%; background:var(--correct-green);">Save</button></div></div>
     <div id="editModal" class="modal-overlay"><div class="modal-content"><button class="close-modal" onclick="closeEditModal()">✕</button><h2 style="color: var(--primary-yellow);">✏️ Edit MCQ</h2><input type="hidden" id="editDocId"><textarea id="editQuestion" class="input-field"></textarea><div class="admin-row"><input type="text" id="editOptA" class="input-field" placeholder="A"><input type="text" id="editOptB" class="input-field" placeholder="B"></div><div class="admin-row"><input type="text" id="editOptC" class="input-field" placeholder="C"><input type="text" id="editOptD" class="input-field" placeholder="D"></div><div class="admin-checkbox-group"><label><input type="checkbox" value="A" class="editCorrectCb">A</label><label><input type="checkbox" value="B" class="editCorrectCb">B</label><label><input type="checkbox" value="C" class="editCorrectCb">C</label><label><input type="checkbox" value="D" class="editCorrectCb">D</label></div><select id="editDifficulty" class="input-field"><option value="Easy">Easy</option><option value="Medium">Medium</option><option value="Hard">Hard</option><option value="Mixed">Mixed</option></select><textarea id="editExplanation" class="input-field" placeholder="Explanation..."></textarea><button class="btn-exam" onclick="saveEditedMCQ()" style="width:100%; background:var(--correct-green);">Save</button></div></div>
 
@@ -229,7 +195,6 @@
             <div class="app-tab-label">Rank</div>
         </div>
         
-        <!-- FLUSH YELLOW AI PILL -->
         <div class="app-tab ai-tab-inner" onclick="openAIModal()">
             <div class="app-tab-icon"><svg viewBox="0 0 24 24"><path d="M19 9l1.25-2.75L23 5l-2.75-1.25L19 1l-1.25 2.75L15 5l2.75 1.25L19 9zm-7.5.5L9 4 6.5 9.5 1 12l5.5 2.5L9 20l2.5-5.5L17 12l-5.5-2.5zM19 15l-1.25 2.75L15 19l2.75 1.25L19 23l1.25-2.75L23 19l-2.75-1.25L19 15z"/></svg></div>
             <div class="app-tab-label">Ask AI</div>
@@ -245,7 +210,6 @@
         </div>
     </div>
 
-    <!-- Script Sequence -->
     <script src="js/1-config.js"></script>
     <script src="js/2-auth-router.js"></script>
     <script src="js/3-ui-progress.js"></script>
