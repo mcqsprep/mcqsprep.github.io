@@ -25,7 +25,7 @@ body {
 ::-webkit-scrollbar-thumb { background: #2a2a35; border-radius: 10px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--primary-yellow); }
 
-/* 🔴 NEW PC NAVBAR ARCHITECTURE */
+/* 🔴 PC NAVBAR ARCHITECTURE */
 .navbar { 
     display: flex; 
     justify-content: space-between; 
@@ -214,92 +214,88 @@ table tr:hover td { background: rgba(255,255,255,0.02); }
 .ai-fuzzy-item:hover { background: rgba(253, 184, 19, 0.1); color: var(--primary-yellow); }
 .ai-chat-bubble { background: #171720; padding: 16px 20px; border-radius: 14px; margin-bottom: 16px; font-size: 14px; line-height: 1.6; border: 1px solid rgba(255, 255, 255, 0.06); border-left: 4px solid var(--primary-yellow); color: #ffffff; }
 
-
 /* ------------------------------------------------------------- */
 /* 📱 PREMIUM APP WIDGET OVERHAUL (Mobile & PWA)                 */
 /* ------------------------------------------------------------- */
 
-/* Hide Breadcrumbs completely on all mobile screens to match native apps */
 @media (max-width: 768px) {
+    body { background-color: #000000 !important; } /* Pure OLED Black */
     .breadcrumb { display: none !important; }
-    body { font-size: 13px; }
-    .container { flex-direction: column; padding: 15px 12px; gap: 12px; min-height: auto;} 
-    .sidebar { max-width: 100%; } 
-    
-    /* 🔴 Bento Box / Squircle Card Overhaul */
+    .container { padding: 10px 14px !important; gap: 16px !important; } 
+
+    /* 🔴 Bento Box Cards (Heavy border-radius, elevated grey, no harsh borders) */
     .card { 
-        padding: 24px; 
-        margin-bottom: 18px; 
-        border-radius: 24px; /* Heavy native app rounding */
-        border: 1px solid rgba(255,255,255,0.03); 
-        background: linear-gradient(160deg, #181820 0%, #111116 100%);
-        box-shadow: 0 10px 30px rgba(0,0,0,0.3); 
+        background: #121214 !important; 
+        border: 1px solid rgba(255,255,255,0.06) !important; 
+        border-radius: 24px !important; 
+        padding: 22px !important;
+        margin-bottom: 14px !important;
+        box-shadow: none !important; 
     }
-    .card h2 { font-size: 1.35rem !important; margin-bottom: 14px !important; letter-spacing: -0.5px; }
-    .card h3 { font-size: 1.15rem !important; margin-bottom: 12px !important; }
-    .card p { font-size: 14px !important; margin-bottom: 18px !important; line-height: 1.5; color: #a0a0ab !important;}
-    
-    /* 🔴 Action Links (Converted to Native UI Lists with Chevrons) */
-    .action-link { 
+
+    /* Override the custom practice inline styles injected via JS */
+    .card[style*="border: 1px solid var(--primary-yellow)"] {
+        border: 1px solid rgba(253, 184, 19, 0.3) !important;
+        background: linear-gradient(180deg, rgba(253, 184, 19, 0.08) 0%, #121214 100%) !important;
+    }
+
+    .card h2 { font-size: 1.4rem !important; letter-spacing: -0.5px !important; margin-bottom: 15px !important; color: #fff !important; }
+    .card h3 { font-size: 13px !important; color: #888 !important; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; margin-bottom: 12px !important; }
+
+    /* 🔴 Action Links -> Native iOS Style List Cells with Chevrons */
+    .action-link {
+        background: #1a1a1f !important;
+        border: none !important;
+        border-radius: 16px !important;
+        padding: 18px 20px !important;
+        font-size: 15px !important;
         display: flex !important;
         justify-content: space-between !important;
         align-items: center !important;
-        padding: 16px 20px !important; 
-        font-size: 15px !important; 
-        border-radius: 16px !important; 
-        background: #1c1c24 !important;
-        border: none !important;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.2), inset 0 1px 1px rgba(255,255,255,0.05) !important;
-        margin-bottom: 12px !important;
         font-weight: 600 !important;
+        color: #fff !important;
+        margin-bottom: 10px !important;
     }
-    .action-link::after {
-        content: "›";
-        font-size: 24px;
-        color: #666;
-        margin-top: -4px;
-        font-weight: 300;
+    .action-link::after { 
+        content: "❯"; 
+        color: #555; 
+        font-size: 14px; 
+        font-weight: 800; 
     }
 
-    /* 🔴 Category Tile Grid (NEET, GK) */
+    /* 🔴 Category Tiles (NEET, GK) -> Chunky Squircle Widgets */
     .card > div[style*="display: grid"], .card > div[style*="display:grid"] { 
         grid-template-columns: 1fr 1fr !important; 
-        gap: 14px !important; 
+        gap: 12px !important; 
     }
     
-    /* Squircle Grid Buttons */
     .btn-exam:not([style*="background"]):not(#loginBtn) {
-        background: #1c1c24 !important;
+        background: #1a1a1f !important;
         border: none !important;
-        border-radius: 18px !important;
-        padding: 22px 10px !important;
+        border-radius: 20px !important;
+        padding: 24px 10px !important;
         font-size: 15px !important;
         font-weight: 700 !important;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.2), inset 0 1px 1px rgba(255,255,255,0.05) !important;
+        color: #fff !important;
         display: flex !important;
         justify-content: center !important;
         align-items: center !important;
-        color: #fff !important;
-        letter-spacing: 0.3px;
     }
-
+    
     /* Upgraded Yellow 'Launch Setup' Button */
     .btn-exam[style*="var(--primary-yellow)"] {
-        border-radius: 16px !important;
+        border-radius: 18px !important;
         padding: 16px 24px !important;
         font-size: 15px !important;
-        box-shadow: 0 6px 20px rgba(253, 184, 19, 0.4), inset 0 -3px 0 rgba(0,0,0,0.1) !important;
     }
 
     .input-field { padding: 14px 16px; font-size: 14px; margin-bottom: 12px; border-radius: 12px; }
     
-    #ai-floating-btn { bottom: 80px; right: 20px; padding: 12px 20px; }
-    
-    /* 🔴 MOBILE NAVBAR UPGRADES */
+    /* Mobile Top Navbar Fixes */
     .hide-on-mobile, .compact-hide { display: none !important; } 
     .hide-on-pc { display: flex !important; }
     
-    .navbar { padding: 12px 16px; flex-direction: row; gap: 5px; }
+    .navbar { padding: 10px 14px; flex-direction: row; gap: 5px; background: #000 !important; border-bottom: none !important; }
     .nav-left, .nav-right { gap: 5px; }
     .nav-badges-group { gap: 5px; }
     .logo-container { font-size: 18px; letter-spacing: -0.5px; }
@@ -315,28 +311,18 @@ table tr:hover td { background: rgba(255,255,255,0.02); }
     .user-badge img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; position: relative; z-index: 2; }
     .user-badge::after { content: "👤"; font-size: 16px; position: absolute; z-index: 1; }
 
-    /* MOBILE WEB SUB-NAVBAR */
-    .mobile-web-subnav {
-        justify-content: space-between;
-        align-items: center;
-        padding: 12px 16px;
-        background: rgba(15, 15, 19, 0.95);
-        border-bottom: 1px solid var(--border-color);
-        gap: 10px;
-    }
-    .mobile-web-subnav a { color: var(--text-light); text-decoration: none; font-size: 14px; font-weight: 600; cursor:pointer;}
-    .mobile-web-subnav a:hover { color: var(--primary-yellow); }
-
-    /* MOBILE FULL-SCREEN SEARCH OVERLAY */
+    /* Search Engine Override for Mobile */
     .search-wrapper { margin: 0; flex: 0; position: static; }
     .search-icon-btn { padding: 8px 12px; font-size: 15px; }
     
     .search-wrapper.active {
-        position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 15, 19, 0.98);
-        backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); z-index: 2000; display: flex;
+        position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.98);
+        backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); z-index: 2000; display: flex;
         align-items: center; padding: 0 15px; box-sizing: border-box; margin: 0;
     }
     .search-wrapper.active .search-input-container { width: 100%; display: flex; position: relative; }
+    
+    #ai-floating-btn { bottom: 80px; right: 20px; padding: 12px 20px; }
 }
 
 /* 🔴 STANDALONE MOBILE APP OVERRIDES (Triggers only when installed on phone) */
@@ -353,12 +339,12 @@ table tr:hover td { background: rgba(255,255,255,0.02); }
         left: 15px;
         right: 15px;
         height: 65px;
-        background: rgba(35, 35, 45, 0.85);
+        background: rgba(28, 28, 32, 0.85);
         backdrop-filter: blur(25px);
         -webkit-backdrop-filter: blur(25px);
-        border: 1px solid rgba(255, 255, 255, 0.15); 
+        border: 1px solid rgba(255, 255, 255, 0.1); 
         border-radius: 35px;
-        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.6), inset 0 1px 1px rgba(255,255,255,0.2);
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.6), inset 0 1px 1px rgba(255,255,255,0.1);
         z-index: 3500;
         justify-content: space-between;
         align-items: center;
@@ -380,7 +366,7 @@ table tr:hover td { background: rgba(255,255,255,0.02); }
         align-items: center;
         justify-content: center;
         gap: 4px;
-        color: #90909e;
+        color: #777;
         cursor: pointer;
         padding: 6px 0;
         text-decoration: none;
