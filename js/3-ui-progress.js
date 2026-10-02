@@ -37,6 +37,8 @@ function _renderView() {
             
             if (!isPdfSection) {
                 let studentName = (currentUser && currentUser.displayName) ? currentUser.displayName.split(" ")[0] : "Student";
+                
+                // FIX: Wrapped Start Quiz and Go Back buttons in a flex container with a 15px gap
                 mc.innerHTML = `
                 <div class="card page-transition">
                     <h2 style="color:var(--primary-yellow);">${topicName} Practice</h2>
@@ -96,10 +98,10 @@ function _renderView() {
             "PYQs": { i: "📄", c: "#607D8B", bg: "rgba(96, 125, 139, 0.15)" },
             "Practice Paper": { i: "📝", c: "#795548", bg: "rgba(121, 85, 72, 0.15)" },
             "MCQs Practice": { i: "✅", c: "#00BCD4", bg: "rgba(0, 188, 212, 0.15)" },
-            "Mock Test": { i: "⏱️️", c: "#F44336", bg: "rgba(244, 67, 54, 0.15)" },
+            "Mock Test": { i: "⏱️", c: "#F44336", bg: "rgba(244, 67, 54, 0.15)" },
             "Botany": { i: "🌿", c: "#4CAF50", bg: "rgba(76, 175, 80, 0.15)" },
             "Zoology": { i: "🦁", c: "#FFC107", bg: "rgba(255, 193, 7, 0.15)" },
-            "Physics": { i: "⚛️️", c: "#9C27B0", bg: "rgba(156, 39, 176, 0.15)" },
+            "Physics": { i: "⚛️", c: "#9C27B0", bg: "rgba(156, 39, 176, 0.15)" },
             "Chemistry": { i: "🧪", c: "#00BCD4", bg: "rgba(0, 188, 212, 0.15)" },
             "Organic Chemistry": { i: "🧪", c: "#00BCD4", bg: "rgba(0, 188, 212, 0.15)" },
             "Physical Chemistry": { i: "⚗️", c: "#3F51B5", bg: "rgba(63, 81, 181, 0.15)" },
@@ -344,7 +346,7 @@ async function _renderProgressDashboard(category) {
             </div>
             
             <div style="background:#1a1a1a; border:1px solid var(--border-color); padding:15px; border-radius:6px; margin-bottom: 20px;">
-                <h3 style="margin-top:0; color:white; border-bottom:1px solid #333; padding-bottom:8px; margin-bottom:15px; font-size:15px;">⏱️ Time to Accuracy Insights</h3>
+                <h3 style="margin-top:0; color:white; border-bottom:1px solid #333; padding-bottom:8px; margin-bottom:15px; font-size:15px;">⏱️️ Time to Accuracy Insights</h3>
                 <div style="display:flex; gap:15px; flex-wrap:wrap;">
                     <div style="flex:1; background:rgba(76, 175, 80, 0.1); border:1px solid var(--correct-green); padding:15px; border-radius:6px; text-align:center;">
                         <div style="font-size:24px; color:var(--correct-green); font-weight:bold;">${finalAvgTimeC}s</div>
@@ -481,7 +483,7 @@ function closeUserReportsModal() { document.getElementById('userReportsModal').s
 let selectedStars = 0; let userFeedbackDocId = null; 
 function updateStarUI(stars) { selectedStars = stars; for(let i=1; i<=5; i++) { document.getElementById('star-'+i).classList.remove('active'); if(i <= stars) document.getElementById('star-'+i).classList.add('active'); } }
 async function openFeedbackModal() { 
-    if (!currentUser) { showNotification("⚠️ Please sign in to rate."); showAuthModal(); return; }
+    if (!currentUser) { showNotification("⚠️️ Please sign in to rate."); showAuthModal(); return; }
     document.getElementById('feedbackModal').style.display = 'flex'; 
     try {
         const snap = await db.collection("platform_feedback").where("studentId", "==", currentUser.uid).limit(1).get();
@@ -665,7 +667,6 @@ async function fetchLiveLeaderboard(pathPrefix) {
         let inTop10 = false; let docs = [];
         boardSnapshot.forEach(doc => docs.push(doc.data()));
         
-        // FIX: The CRITICAL Leaderboard Crash was right here!
         for(let i = 0; i < docs.length; i++) { 
             let data = docs[i]; 
             let medal = (i === 0) ? "🥇 " : ((i === 1) ? "🥈 " : ((i === 2) ? "🥉 " : (i + 1) + ". "));
@@ -676,7 +677,7 @@ async function fetchLiveLeaderboard(pathPrefix) {
         }
         html += `</table></div>`;
 
-        // If the user isn't in the top 10, default to "> 10" to prevent the ReferenceError crash
+        // FIX: Replaced undefined ${myRank} with safe fallback to prevent crash
         let safeRankDisplay = inTop10 ? "Top 10" : "> 10";
 
         if (!inTop10 && myBestData) { html += `<div style="margin-top: 30px; background: #2a2a2a; border: 1px solid var(--border-color); border-left: 4px solid var(--primary-yellow); padding: 20px; border-radius: 4px;"><h4 style="margin: 0 0 15px 0; color: var(--primary-yellow); font-size: 18px;">Your Personal Best</h4><div style="display: flex; gap: 30px; flex-wrap: wrap;"><div><span style="color:var(--text-muted); font-size:13px;">Global Rank</span><br><b style="font-size:20px; color: white;">${safeRankDisplay}</b></div><div><span style="color:var(--text-muted); font-size:13px;">Best Score</span><br><b style="font-size:20px; color:var(--correct-green);">${myBestData.score}</b></div><div><span style="color:var(--text-muted); font-size:13px;">Accuracy</span><br><b style="font-size:20px; color: white;">${myBestData.accuracy}%</b></div><div><span style="color:var(--text-muted); font-size:13px;">Total Tests Attempted</span><br><b style="font-size:20px; color: white;">${totalTests}</b></div></div></div>`; }
