@@ -214,93 +214,112 @@ table tr:hover td { background: rgba(255,255,255,0.02); }
 .ai-fuzzy-item:hover { background: rgba(253, 184, 19, 0.1); color: var(--primary-yellow); }
 .ai-chat-bubble { background: #171720; padding: 16px 20px; border-radius: 14px; margin-bottom: 16px; font-size: 14px; line-height: 1.6; border: 1px solid rgba(255, 255, 255, 0.06); border-left: 4px solid var(--primary-yellow); color: #ffffff; }
 
+
 /* ------------------------------------------------------------- */
-/* 📱 MODERN MOBILE & PWA ARCHITECTURE                             */
+/* 📱 PREMIUM APP WIDGET OVERHAUL (Mobile & PWA)                 */
 /* ------------------------------------------------------------- */
 
-/* By default on Desktop, Bottom Bar is ALWAYS hidden */
-.mobile-app-bottom-bar { display: none; }
-
-/* Hide Install Buttons globally in ALL standalone PWA modes */
-@media (display-mode: standalone) {
-    #installAppBtn, .install-btn { display: none !important; }
-}
-
-/* Mobile Responsiveness (Screen <= 768px) */
+/* Hide Breadcrumbs completely on all mobile screens to match native apps */
 @media (max-width: 768px) {
+    .breadcrumb { display: none !important; }
     body { font-size: 13px; }
-    .container { flex-direction: column; padding: 12px; gap: 12px; min-height: auto;} 
+    .container { flex-direction: column; padding: 15px 12px; gap: 12px; min-height: auto;} 
     .sidebar { max-width: 100%; } 
-    .breadcrumb { padding: 8px 14px; font-size: 11px; } 
     
-    /* 🔴 PREMIUM MOBILE NATIVE UI UPGRADES */
-    .card { padding: 20px; margin-bottom: 16px; border-radius: 18px; border: 1px solid rgba(255,255,255,0.06); box-shadow: 0 8px 24px rgba(0,0,0,0.2); }
-    .card h2 { font-size: 1.3rem !important; margin-bottom: 12px !important; letter-spacing: -0.3px; }
-    .card h3 { font-size: 1.1rem !important; margin-bottom: 10px !important; }
-    .card p { font-size: 13px !important; margin-bottom: 16px !important; line-height: 1.5; }
+    /* 🔴 Bento Box / Squircle Card Overhaul */
+    .card { 
+        padding: 24px; 
+        margin-bottom: 18px; 
+        border-radius: 24px; /* Heavy native app rounding */
+        border: 1px solid rgba(255,255,255,0.03); 
+        background: linear-gradient(160deg, #181820 0%, #111116 100%);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.3); 
+    }
+    .card h2 { font-size: 1.35rem !important; margin-bottom: 14px !important; letter-spacing: -0.5px; }
+    .card h3 { font-size: 1.15rem !important; margin-bottom: 12px !important; }
+    .card p { font-size: 14px !important; margin-bottom: 18px !important; line-height: 1.5; color: #a0a0ab !important;}
     
-    /* Action Links (List view styling) */
+    /* 🔴 Action Links (Converted to Native UI Lists with Chevrons) */
     .action-link { 
-        padding: 16px 18px !important; 
-        font-size: 14px !important; 
-        border-radius: 14px !important; 
-        background: linear-gradient(145deg, #24242e, #1a1a21) !important;
-        border: 1px solid rgba(255,255,255,0.05) !important;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.15), inset 0 1px 1px rgba(255,255,255,0.03) !important;
-        margin-bottom: 10px !important;
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        padding: 16px 20px !important; 
+        font-size: 15px !important; 
+        border-radius: 16px !important; 
+        background: #1c1c24 !important;
+        border: none !important;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.2), inset 0 1px 1px rgba(255,255,255,0.05) !important;
+        margin-bottom: 12px !important;
+        font-weight: 600 !important;
+    }
+    .action-link::after {
+        content: "›";
+        font-size: 24px;
+        color: #666;
+        margin-top: -4px;
+        font-weight: 300;
     }
 
-    /* Generic Exam Buttons (NEET, GK, etc.) */
-    .btn-exam {
-        border-radius: 14px !important;
-        padding: 15px !important;
-        font-size: 14px !important;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15), inset 0 1px 1px rgba(255,255,255,0.05) !important;
+    /* 🔴 Category Tile Grid (NEET, GK) */
+    .card > div[style*="display: grid"], .card > div[style*="display:grid"] { 
+        grid-template-columns: 1fr 1fr !important; 
+        gap: 14px !important; 
+    }
+    
+    /* Squircle Grid Buttons */
+    .btn-exam:not([style*="background"]):not(#loginBtn) {
+        background: #1c1c24 !important;
+        border: none !important;
+        border-radius: 18px !important;
+        padding: 22px 10px !important;
+        font-size: 15px !important;
+        font-weight: 700 !important;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.2), inset 0 1px 1px rgba(255,255,255,0.05) !important;
+        display: flex !important;
+        justify-content: center !important;
+        align-items: center !important;
+        color: #fff !important;
         letter-spacing: 0.3px;
     }
 
-    /* Base State for standard category buttons to give a glass/gradient premium feel */
-    .btn-exam:not([style*="background"]):not(#loginBtn) {
-        background: linear-gradient(145deg, #282834, #1d1d25) !important;
-        border: 1px solid rgba(255,255,255,0.06) !important;
-        color: #f0f0f0 !important;
-    }
-
-    /* Make category grids 50/50 split for bigger touch targets */
-    .card > div[style*="display: grid"], .card > div[style*="display:grid"] { 
-        grid-template-columns: 1fr 1fr !important; 
-        gap: 12px !important; 
+    /* Upgraded Yellow 'Launch Setup' Button */
+    .btn-exam[style*="var(--primary-yellow)"] {
+        border-radius: 16px !important;
+        padding: 16px 24px !important;
+        font-size: 15px !important;
+        box-shadow: 0 6px 20px rgba(253, 184, 19, 0.4), inset 0 -3px 0 rgba(0,0,0,0.1) !important;
     }
 
     .input-field { padding: 14px 16px; font-size: 14px; margin-bottom: 12px; border-radius: 12px; }
     
     #ai-floating-btn { bottom: 80px; right: 20px; padding: 12px 20px; }
     
-    /* 🔴 MOBILE NAVBAR FIXES */
+    /* 🔴 MOBILE NAVBAR UPGRADES */
     .hide-on-mobile, .compact-hide { display: none !important; } 
     .hide-on-pc { display: flex !important; }
     
-    .navbar { padding: 10px 14px; flex-direction: row; gap: 5px; }
+    .navbar { padding: 12px 16px; flex-direction: row; gap: 5px; }
     .nav-left, .nav-right { gap: 5px; }
     .nav-badges-group { gap: 5px; }
-    .logo-container { font-size: 17px; letter-spacing: -0.5px; }
+    .logo-container { font-size: 18px; letter-spacing: -0.5px; }
     
-    .nav-rating-badge { padding: 4px 8px; border-radius: 12px; }
-    .nav-streak-badge { padding: 4px 8px; border-radius: 12px; font-size: 12px; }
+    .nav-rating-badge { padding: 5px 10px; border-radius: 12px; }
+    .nav-streak-badge { padding: 5px 10px; border-radius: 12px; font-size: 13px; }
     
     .user-badge { 
-        padding: 0 !important; width: 32px; height: 32px; border: 2px solid var(--primary-yellow) !important; 
+        padding: 0 !important; width: 34px; height: 34px; border: 2px solid var(--primary-yellow) !important; 
         border-radius: 50% !important; background: transparent !important; display: flex; align-items: center; 
         justify-content: center; overflow: hidden; margin-left: 0;
     }
     .user-badge img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; position: relative; z-index: 2; }
     .user-badge::after { content: "👤"; font-size: 16px; position: absolute; z-index: 1; }
 
-    /* 🔴 MOBILE WEB SUB-NAVBAR (Houses Install, Home, Rank for browsers) */
+    /* MOBILE WEB SUB-NAVBAR */
     .mobile-web-subnav {
         justify-content: space-between;
         align-items: center;
-        padding: 10px 14px;
+        padding: 12px 16px;
         background: rgba(15, 15, 19, 0.95);
         border-bottom: 1px solid var(--border-color);
         gap: 10px;
@@ -308,9 +327,9 @@ table tr:hover td { background: rgba(255,255,255,0.02); }
     .mobile-web-subnav a { color: var(--text-light); text-decoration: none; font-size: 14px; font-weight: 600; cursor:pointer;}
     .mobile-web-subnav a:hover { color: var(--primary-yellow); }
 
-    /* 🔴 MOBILE FULL-SCREEN SEARCH OVERLAY FIX */
+    /* MOBILE FULL-SCREEN SEARCH OVERLAY */
     .search-wrapper { margin: 0; flex: 0; position: static; }
-    .search-icon-btn { padding: 6px 10px; font-size: 14px; }
+    .search-icon-btn { padding: 8px 12px; font-size: 15px; }
     
     .search-wrapper.active {
         position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 15, 19, 0.98);
@@ -325,10 +344,6 @@ table tr:hover td { background: rgba(255,255,255,0.02); }
     body { padding-bottom: 90px; } /* Space for bottom dock */
     .hide-in-app-mode { display: none !important; }
     #ai-floating-btn { display: none !important; }
-    
-    /* 🔴 HIDES THE "HOME" BREADCRUMB IN INSTALLED APP MODE */
-    .breadcrumb { display: none !important; }
-    .container { padding-top: 15px; } /* Prevent card from hitting top status bar since breadcrumb is gone */
 
     /* 🔴 MOBILE FLOATING DOCK */
     .mobile-app-bottom-bar {
