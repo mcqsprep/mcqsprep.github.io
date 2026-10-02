@@ -232,18 +232,49 @@ table tr:hover td { background: rgba(255,255,255,0.02); }
     .container { flex-direction: column; padding: 12px; gap: 12px; min-height: auto;} 
     .sidebar { max-width: 100%; } 
     .breadcrumb { padding: 8px 14px; font-size: 11px; } 
-    .card { padding: 16px; margin-bottom: 12px; border-radius: 12px; }
-    .card h2 { font-size: 1.2rem !important; margin-bottom: 10px !important; }
-    .card h3 { font-size: 1.0rem !important; margin-bottom: 8px !important; }
-    .card p { font-size: 13px !important; margin-bottom: 12px !important; }
-    .btn-exam { padding: 10px 14px !important; font-size: 13px !important; }
-    .action-link { padding: 11px 14px; font-size: 13px; margin-bottom: 8px; }
-    .input-field { padding: 11px 14px; font-size: 13px; margin-bottom: 10px; }
+    
+    /* 🔴 PREMIUM MOBILE NATIVE UI UPGRADES */
+    .card { padding: 20px; margin-bottom: 16px; border-radius: 18px; border: 1px solid rgba(255,255,255,0.06); box-shadow: 0 8px 24px rgba(0,0,0,0.2); }
+    .card h2 { font-size: 1.3rem !important; margin-bottom: 12px !important; letter-spacing: -0.3px; }
+    .card h3 { font-size: 1.1rem !important; margin-bottom: 10px !important; }
+    .card p { font-size: 13px !important; margin-bottom: 16px !important; line-height: 1.5; }
+    
+    /* Action Links (List view styling) */
+    .action-link { 
+        padding: 16px 18px !important; 
+        font-size: 14px !important; 
+        border-radius: 14px !important; 
+        background: linear-gradient(145deg, #24242e, #1a1a21) !important;
+        border: 1px solid rgba(255,255,255,0.05) !important;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.15), inset 0 1px 1px rgba(255,255,255,0.03) !important;
+        margin-bottom: 10px !important;
+    }
+
+    /* Generic Exam Buttons (NEET, GK, etc.) */
+    .btn-exam {
+        border-radius: 14px !important;
+        padding: 15px !important;
+        font-size: 14px !important;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15), inset 0 1px 1px rgba(255,255,255,0.05) !important;
+        letter-spacing: 0.3px;
+    }
+
+    /* Base State for standard category buttons to give a glass/gradient premium feel */
+    .btn-exam:not([style*="background"]):not(#loginBtn) {
+        background: linear-gradient(145deg, #282834, #1d1d25) !important;
+        border: 1px solid rgba(255,255,255,0.06) !important;
+        color: #f0f0f0 !important;
+    }
+
+    /* Make category grids 50/50 split for bigger touch targets */
+    .card > div[style*="display: grid"], .card > div[style*="display:grid"] { 
+        grid-template-columns: 1fr 1fr !important; 
+        gap: 12px !important; 
+    }
+
+    .input-field { padding: 14px 16px; font-size: 14px; margin-bottom: 12px; border-radius: 12px; }
     
     #ai-floating-btn { bottom: 80px; right: 20px; padding: 12px 20px; }
-
-    /* Auto-tile elements side-by-side on mobile */
-    .card > div[style*="display: grid"], .card > div[style*="display:grid"] { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)) !important; gap: 10px !important; }
     
     /* 🔴 MOBILE NAVBAR FIXES */
     .hide-on-mobile, .compact-hide { display: none !important; } 
@@ -294,6 +325,10 @@ table tr:hover td { background: rgba(255,255,255,0.02); }
     body { padding-bottom: 90px; } /* Space for bottom dock */
     .hide-in-app-mode { display: none !important; }
     #ai-floating-btn { display: none !important; }
+    
+    /* 🔴 HIDES THE "HOME" BREADCRUMB IN INSTALLED APP MODE */
+    .breadcrumb { display: none !important; }
+    .container { padding-top: 15px; } /* Prevent card from hitting top status bar since breadcrumb is gone */
 
     /* 🔴 MOBILE FLOATING DOCK */
     .mobile-app-bottom-bar {
