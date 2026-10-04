@@ -6,14 +6,13 @@
     <title>MCQsPrep - Dashboard</title>
     
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#000000">
+    <meta name="theme-color" content="#0f0f13">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="apple-touch-icon" href="icon-192.png">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🩺</text></svg>">
     
-    <!-- Cache busting parameter bumped to v7 -->
-    <link rel="stylesheet" href="style.css?v=7">
+    <link rel="stylesheet" href="style.css?v=8">
     
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
@@ -89,16 +88,31 @@
     <div class="container">
         <div class="main-content" id="dynamic-content"></div>
         <div class="sidebar" id="main-sidebar">
-            <div class="card">
-                <h3>Quick Links</h3>
-                <a class="action-link" onclick="jumpToSection(['NEET', 'NCERT Book'])"><span style="margin-right:8px;">📚</span> NCERT Books</a>
-                <a class="action-link" onclick="jumpToSection(['NEET', 'PYQs'])"><span style="margin-right:8px;">📄</span> Previous Year Papers</a>
+            <div class="card sidebar-card">
+                <h3 class="section-title">Quick Links</h3>
+                <a class="action-link" onclick="jumpToSection(['NEET', 'NCERT Book'])">
+                    <span class="link-icon" style="color: #9C27B0;">📚</span>
+                    <span class="link-text">NCERT Books</span>
+                </a>
+                <a class="action-link" onclick="jumpToSection(['NEET', 'PYQs'])">
+                    <span class="link-icon" style="color: #607D8B;">📄</span>
+                    <span class="link-text">Previous Year Papers</span>
+                </a>
             </div>
-            <div class="card">
-                <h3>Essential Practice</h3>
-                <a class="action-link" onclick="jumpToSection(['NEET', 'MCQs Practice'])"><span style="margin-right:8px;">📝</span> Subject-wise MCQs</a>
-                <a class="action-link" onclick="jumpToSection(['NEET', 'Mock Test'])"><span style="margin-right:8px;">⏱️</span> Full-Length Mock Tests</a>
-                <a class="action-link" onclick="jumpToSection(['Daily Quiz Challenge'])"><span style="margin-right:8px;">📅</span> Daily Quiz Challenge</a>
+            <div class="card sidebar-card">
+                <h3 class="section-title">Essential Practice</h3>
+                <a class="action-link" onclick="jumpToSection(['NEET', 'MCQs Practice'])">
+                    <span class="link-icon" style="color: #00BCD4;">📝</span>
+                    <span class="link-text">Subject-wise MCQs</span>
+                </a>
+                <a class="action-link" onclick="jumpToSection(['NEET', 'Mock Test'])">
+                    <span class="link-icon" style="color: #F44336;">⏱️</span>
+                    <span class="link-text">Full-Length Mock Tests</span>
+                </a>
+                <a class="action-link" onclick="jumpToSection(['Daily Quiz Challenge'])">
+                    <span class="link-icon" style="color: #fdb813;">📅</span>
+                    <span class="link-text">Daily Quiz Challenge</span>
+                </a>
             </div>
         </div>
     </div>
@@ -169,6 +183,7 @@
                     </div>
                 </div>
             </div>
+            
             <input type="file" id="aiImageInput" accept="image/*" style="display:none;" onchange="handleAIImageUpload(event)">
             <input type="file" id="aiCameraInput" accept="image/*" capture="environment" style="display:none;" onchange="handleAIImageUpload(event)">
         </div>
