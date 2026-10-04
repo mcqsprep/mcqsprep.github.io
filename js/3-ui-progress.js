@@ -37,11 +37,9 @@ function _renderView() {
             
             if (!isPdfSection) {
                 let studentName = (currentUser && currentUser.displayName) ? currentUser.displayName.split(" ")[0] : "Student";
-                
-                // FIX: Wrapped Start Quiz and Go Back buttons in a flex container with a 15px gap
                 mc.innerHTML = `
                 <div class="card page-transition">
-                    <h2 style="color:var(--primary-yellow);">${topicName} Practice</h2>
+                    <h2 class="section-title">${topicName} Practice</h2>
                     <p style="color:var(--text-muted); margin-bottom:25px;">${!currentUser ? "Sign in to track your scores on the leaderboard!" : `Ready for practice, <span style="color:var(--primary-yellow);">${studentName}</span>?`}</p>
                     <div style="display:flex; flex-wrap:wrap; gap:15px; margin-top:20px;">
                         <button class="btn-exam" onclick="window.location.hash='#/quiz'" style="background:var(--primary-yellow); color:black; flex:1; min-width:150px; font-size:16px;">Start Quiz &rarr;</button>
@@ -51,7 +49,7 @@ function _renderView() {
             } else {
                 mc.innerHTML = `
                 <div class="card page-transition">
-                    <h2 style="color:var(--primary-yellow);">${topicName} Resources</h2>
+                    <h2 class="section-title">${topicName} Resources</h2>
                     <p style="color:var(--text-muted);">Materials will appear here once uploaded via the Admin Panel.</p>
                     <button class="btn-exam" onclick="goBack()" style="background:#333; width:150px; margin-top:20px; font-size:16px; border:none;">&larr; Go Back</button>
                 </div>`;
@@ -62,19 +60,17 @@ function _renderView() {
         let title = currentPath.length === 0 ? "Select Exam Category" : currentPath[currentPath.length - 1];
         let h = ``;
 
-        // 🔴 INJECT THE HIGH-END PREMIUM "HERO" BANNER FOR HOME PAGE
         if (currentPath.length === 0) {
             h += `
-            <div class="premium-banner" onclick="cwStep1()">
-                <div class="premium-banner-content">
-                    <span class="premium-badge">CUSTOM PRACTICE</span>
-                    <h2 style="margin: 10px 0; font-size: 22px; color: white;">Practice smart with tailored mock tests.</h2>
-                    <button class="premium-btn">Launch Setup 🚀</button>
-                </div>
+            <div class="card setup-hero-card" onclick="cwStep1()">
+                <div class="hero-badge">CUSTOM PRACTICE</div>
+                <h2 class="hero-title">Practice smart with tailored mock tests.</h2>
+                <p class="hero-desc">Mix subjects, filter by difficulty, and build your ultimate personalized mock test.</p>
+                <button class="btn-exam hero-btn">Launch Setup 🚀</button>
             </div>`;
         }
 
-        h += `<div class="widget-section"><h3 class="widget-title">${title}</h3><div class="widget-grid">`;
+        h += `<div class="card category-section"><h2 class="section-title">${title}</h2><div class="category-grid">`;
         
         let keys = Object.keys(currentLevel);
         const difficultyOrder = ["Easy", "Medium", "Hard", "Mixed"];
@@ -116,17 +112,17 @@ function _renderView() {
             
             let iconData = iconMap[key] || { i: typeLabel === '📄' ? "📄" : "📁", c: "#9e9ea7", bg: "rgba(255,255,255,0.08)" };
 
-            h += `<div class="widget-tile" onclick="navigateTo('${safeKey}')">
-                    <div class="widget-icon" style="background: ${iconData.bg}; color: ${iconData.c};">${iconData.i}</div>
-                    <div class="widget-text">${key}</div>
-                  </div>`; 
+            h += `<button class="btn-exam category-tile" onclick="navigateTo('${safeKey}')">
+                    <div class="cat-icon" style="background: ${iconData.bg}; color: ${iconData.c};">${iconData.i}</div>
+                    <div class="cat-text">${key}</div>
+                  </button>`; 
         }
         
         if (currentPath.length > 0) {
-            h += `<div class="widget-tile" onclick="goBack()" style="background: #111; border-color: #333;">
-                    <div class="widget-icon" style="background: #222; color: #aaa;">&larr;</div>
-                    <div class="widget-text" style="color: #aaa;">Go Back</div>
-                  </div>`;
+            h += `<button class="btn-exam category-tile" onclick="goBack()" style="background: #1c1c24; border-color: #333;">
+                    <div class="cat-icon" style="background: #222; color: #aaa;">&larr;</div>
+                    <div class="cat-text" style="color: #aaa;">Go Back</div>
+                  </button>`;
         }
         h += `</div></div>`; 
         mc.innerHTML = `<div class="page-transition">${h}</div>`;
@@ -315,9 +311,9 @@ async function _renderProgressDashboard(category) {
 
         mc.innerHTML = `
         <div class="card page-transition" style="padding: 20px 15px;">
-            <h2 style="color:var(--primary-yellow); margin-top:0; margin-bottom:15px; font-size:22px;">${displayCategory}</h2>
+            <h2 class="section-title" style="margin-top:0; margin-bottom:15px; font-size:22px;">${displayCategory}</h2>
             
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(90px, 1fr)); gap: 8px; margin-bottom: 15px;">
+            <div class="category-grid" style="grid-template-columns: repeat(auto-fit, minmax(90px, 1fr)); gap: 8px; margin-bottom: 15px;">
                 <div style="background:#2a2a2a; padding: 12px 5px; border-radius: 6px; text-align:center; border:1px solid var(--border-color);">
                     <div style="font-size: 20px; color: white; font-weight: bold;">${totalQuestions}</div>
                     <div style="color: var(--text-muted); font-size: 10px; text-transform:uppercase; margin-top:2px;">Attempted</div>
@@ -346,7 +342,7 @@ async function _renderProgressDashboard(category) {
             </div>
             
             <div style="background:#1a1a1a; border:1px solid var(--border-color); padding:15px; border-radius:6px; margin-bottom: 20px;">
-                <h3 style="margin-top:0; color:white; border-bottom:1px solid #333; padding-bottom:8px; margin-bottom:15px; font-size:15px;">⏱️️ Time to Accuracy Insights</h3>
+                <h3 style="margin-top:0; color:white; border-bottom:1px solid #333; padding-bottom:8px; margin-bottom:15px; font-size:15px;">⏱️ Time to Accuracy Insights</h3>
                 <div style="display:flex; gap:15px; flex-wrap:wrap;">
                     <div style="flex:1; background:rgba(76, 175, 80, 0.1); border:1px solid var(--correct-green); padding:15px; border-radius:6px; text-align:center;">
                         <div style="font-size:24px; color:var(--correct-green); font-weight:bold;">${finalAvgTimeC}s</div>
@@ -483,7 +479,7 @@ function closeUserReportsModal() { document.getElementById('userReportsModal').s
 let selectedStars = 0; let userFeedbackDocId = null; 
 function updateStarUI(stars) { selectedStars = stars; for(let i=1; i<=5; i++) { document.getElementById('star-'+i).classList.remove('active'); if(i <= stars) document.getElementById('star-'+i).classList.add('active'); } }
 async function openFeedbackModal() { 
-    if (!currentUser) { showNotification("⚠️️ Please sign in to rate."); showAuthModal(); return; }
+    if (!currentUser) { showNotification("⚠️ Please sign in to rate."); showAuthModal(); return; }
     document.getElementById('feedbackModal').style.display = 'flex'; 
     try {
         const snap = await db.collection("platform_feedback").where("studentId", "==", currentUser.uid).limit(1).get();
@@ -604,26 +600,28 @@ function handleLiveSearch() {
 
 function _renderLeaderboardOptions() { 
     document.getElementById('breadcrumb-text').innerText = "Home / Leaderboard"; 
+    
+    // FIX: Using the generic category classes so it respects both PC and Mobile CSS.
     document.getElementById('dynamic-content').innerHTML = `
         <div class="card page-transition">
-            <h2 style="color:var(--primary-yellow);">🏆 Global Leaderboards</h2>
+            <h2 class="section-title">🏆 Global Leaderboards</h2>
             <p style="color:var(--text-muted); margin-bottom: 20px;">Select a category to view the top 10 scores.</p>
             <div style="background: rgba(244, 67, 54, 0.1); border-left: 4px solid var(--wrong-red); padding: 12px; margin-bottom: 25px; border-radius: 4px;">
                 <span style="color: var(--wrong-red); font-weight: bold;">⚠️ CAUTION:</span> <span style="color: var(--text-light); font-size: 14px;">Only signed-in users will have their scores recorded and displayed on the leaderboard.</span>
             </div>
-            <div style="display: flex; gap: 15px; flex-wrap: wrap;">
-                <div class="widget-tile" style="flex:1; min-width: 150px; padding: 15px;" onclick="window.location.hash='#/board/NEET > MCQs Practice'">
-                    <div class="widget-icon" style="background: rgba(253, 184, 19, 0.15); color: #fdb813;">🥇</div>
-                    <div class="widget-text">NEET Practice</div>
-                </div>
-                <div class="widget-tile" style="flex:1; min-width: 150px; padding: 15px;" onclick="window.location.hash='#/board/NEET > Mock Test'">
-                    <div class="widget-icon" style="background: rgba(244, 67, 54, 0.15); color: #F44336;">⏱️</div>
-                    <div class="widget-text">Mock Tests</div>
-                </div>
-                <div class="widget-tile" style="flex:1; min-width: 150px; padding: 15px;" onclick="window.location.hash='#/board/General Knowledge'">
-                    <div class="widget-icon" style="background: rgba(76, 175, 80, 0.15); color: #4CAF50;">🌍</div>
-                    <div class="widget-text">General Knowledge</div>
-                </div>
+            <div class="category-grid">
+                <button class="btn-exam category-tile" onclick="window.location.hash='#/board/NEET > MCQs Practice'">
+                    <div class="cat-icon" style="background: rgba(253, 184, 19, 0.15); color: #fdb813;">🥇</div>
+                    <div class="cat-text">NEET Practice</div>
+                </button>
+                <button class="btn-exam category-tile" onclick="window.location.hash='#/board/NEET > Mock Test'">
+                    <div class="cat-icon" style="background: rgba(244, 67, 54, 0.15); color: #F44336;">⏱️</div>
+                    <div class="cat-text">Mock Tests</div>
+                </button>
+                <button class="btn-exam category-tile" onclick="window.location.hash='#/board/General Knowledge'">
+                    <div class="cat-icon" style="background: rgba(76, 175, 80, 0.15); color: #4CAF50;">🌍</div>
+                    <div class="cat-text">General Knowledge</div>
+                </button>
             </div>
         </div>`; 
 }
@@ -631,11 +629,11 @@ function _renderLeaderboardOptions() {
 async function fetchLiveLeaderboard(pathPrefix) { 
     const mainContent = document.getElementById('dynamic-content');
     if (!currentUser) { 
-        mainContent.innerHTML = `<div class="card page-transition"><h2>🏆 Fetching Leaderboard...</h2><div style="background: rgba(244, 67, 54, 0.1); border-left: 4px solid var(--wrong-red); padding: 15px; margin: 20px 0; border-radius: 4px;"><span style="color: var(--wrong-red); font-weight: bold;">⚠️ ACCESS DENIED:</span> <span style="color: var(--text-light); font-size: 14px;">You must be signed in with Google to view the global leaderboards.</span></div><button class="btn-exam" onclick="window.history.back()" style="background:#333; border:none; width:100%;">Back</button></div>`; 
+        mainContent.innerHTML = `<div class="card page-transition"><h2 class="section-title">🏆 Fetching Leaderboard...</h2><div style="background: rgba(244, 67, 54, 0.1); border-left: 4px solid var(--wrong-red); padding: 15px; margin: 20px 0; border-radius: 4px;"><span style="color: var(--wrong-red); font-weight: bold;">⚠️️ ACCESS DENIED:</span> <span style="color: var(--text-light); font-size: 14px;">You must be signed in with Google to view the global leaderboards.</span></div><button class="btn-exam" onclick="window.history.back()" style="background:#333; border:none; width:100%;">Back</button></div>`; 
         return; 
     }
 
-    mainContent.innerHTML = `<div class="card page-transition"><h2>🏆 Fetching Leaderboard...</h2></div>`;
+    mainContent.innerHTML = `<div class="card page-transition"><h2 class="section-title">🏆 Fetching Leaderboard...</h2></div>`;
     try {
         const userSnapshot = await db.collection("leaderboards").where("userId", "==", currentUser.uid).get();
         let totalQuestions = 0; let totalTests = 0; let myBestScore = -99999; let myBestData = null;
@@ -652,7 +650,7 @@ async function fetchLiveLeaderboard(pathPrefix) {
         else { thresholdMet = (totalQuestions >= 100); requiredText = "100 Practice Questions"; progressText = `${totalQuestions} / 100 Questions Attempted`; }
 
         if (!thresholdMet) {
-            mainContent.innerHTML = `<div class="card page-transition" style="text-align:center; padding: 40px 20px;"><h2 style="color: var(--primary-yellow); font-size: 28px; margin-bottom: 10px;">🔒 Leaderboard Locked</h2><p style="color: var(--text-muted); font-size: 15px; max-width: 500px; margin: 0 auto 20px auto; line-height: 1.5;">To ensure competitive integrity, you must attempt a minimum of <b style="color: white;">${requiredText}</b> in this specific category before unlocking the global rankings.</p><div style="background: #2a2a2a; border: 1px solid var(--border-color); padding: 15px 25px; border-radius: 8px; display: inline-block; margin-bottom: 30px;"><span style="color: var(--primary-yellow); font-weight: bold; margin-right: 10px;">Your Progress:</span> <span style="color: white; font-weight: bold;">${progressText}</span></div><br><button class="btn-exam" onclick="window.history.back()" style="background:#333; border:none; width: 100%;">Back to Categories</button></div>`; return;
+            mainContent.innerHTML = `<div class="card page-transition" style="text-align:center; padding: 40px 20px;"><h2 class="section-title" style="font-size: 28px; margin-bottom: 10px;">🔒 Leaderboard Locked</h2><p style="color: var(--text-muted); font-size: 15px; max-width: 500px; margin: 0 auto 20px auto; line-height: 1.5;">To ensure competitive integrity, you must attempt a minimum of <b style="color: white;">${requiredText}</b> in this specific category before unlocking the global rankings.</p><div style="background: #2a2a2a; border: 1px solid var(--border-color); padding: 15px 25px; border-radius: 8px; display: inline-block; margin-bottom: 30px;"><span style="color: var(--primary-yellow); font-weight: bold; margin-right: 10px;">Your Progress:</span> <span style="color: white; font-weight: bold;">${progressText}</span></div><br><button class="btn-exam" onclick="window.history.back()" style="background:#333; border:none; width: 100%;">Back to Categories</button></div>`; return;
         }
 
         const boardSnapshot = await db.collection("leaderboards")
@@ -663,7 +661,7 @@ async function fetchLiveLeaderboard(pathPrefix) {
             .limit(10)
             .get();
             
-        let html = `<div class="card page-transition"><h2 style="color:var(--primary-yellow);">🏆 Top 10: ${pathPrefix.split(' > ').pop()}</h2><div style="overflow-x:auto;"><table><tr><th>Rank</th><th>Student</th><th>Score</th><th>Accuracy</th><th>Time</th></tr>`;
+        let html = `<div class="card page-transition"><h2 class="section-title">🏆 Top 10: ${pathPrefix.split(' > ').pop()}</h2><div style="overflow-x:auto;"><table><tr><th>Rank</th><th>Student</th><th>Score</th><th>Accuracy</th><th>Time</th></tr>`;
         let inTop10 = false; let docs = [];
         boardSnapshot.forEach(doc => docs.push(doc.data()));
         
@@ -677,7 +675,6 @@ async function fetchLiveLeaderboard(pathPrefix) {
         }
         html += `</table></div>`;
 
-        // FIX: Replaced undefined ${myRank} with safe fallback to prevent crash
         let safeRankDisplay = inTop10 ? "Top 10" : "> 10";
 
         if (!inTop10 && myBestData) { html += `<div style="margin-top: 30px; background: #2a2a2a; border: 1px solid var(--border-color); border-left: 4px solid var(--primary-yellow); padding: 20px; border-radius: 4px;"><h4 style="margin: 0 0 15px 0; color: var(--primary-yellow); font-size: 18px;">Your Personal Best</h4><div style="display: flex; gap: 30px; flex-wrap: wrap;"><div><span style="color:var(--text-muted); font-size:13px;">Global Rank</span><br><b style="font-size:20px; color: white;">${safeRankDisplay}</b></div><div><span style="color:var(--text-muted); font-size:13px;">Best Score</span><br><b style="font-size:20px; color:var(--correct-green);">${myBestData.score}</b></div><div><span style="color:var(--text-muted); font-size:13px;">Accuracy</span><br><b style="font-size:20px; color: white;">${myBestData.accuracy}%</b></div><div><span style="color:var(--text-muted); font-size:13px;">Total Tests Attempted</span><br><b style="font-size:20px; color: white;">${totalTests}</b></div></div></div>`; }
@@ -687,7 +684,6 @@ async function fetchLiveLeaderboard(pathPrefix) {
     } catch(e) { mainContent.innerHTML = `<div class="card"><h2 style="color:var(--wrong-red);">Error</h2><p>${e.message}</p><button class="btn-exam" onclick="window.history.back()" style="background:#333; border:none; width: 100%;">Back</button></div>`; }
 }
 
-// NEW: Functions to control the Streak Rules Modal
 function openStreakModal() {
     if (!currentUser) { 
         showNotification("⚠️ Please sign in to track your streak."); 
