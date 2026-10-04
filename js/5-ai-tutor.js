@@ -198,9 +198,10 @@ function cancelCropper() {
     if(cropper) { cropper.destroy(); cropper = null; } 
     document.getElementById('ai-cropper-view').style.display = 'none'; 
     
+    // FIX: Changed from 'block' to '' to preserve the flexbox alignment of chat bubbles
     Array.from(document.getElementById('gemini-chat-history').children).forEach(child => {
         if (child.id !== 'ai-idle-view' && child.id !== 'ai-cropper-view') {
-            child.style.display = 'block';
+            child.style.display = '';
         }
     });
     if (aiChatHistory.length === 0) document.getElementById('ai-idle-view').style.display = 'flex';
@@ -274,7 +275,7 @@ function appendChatBubble(role, htmlContent, rawText = "") {
         bubble.innerHTML = htmlContent;
         historyContainer.appendChild(bubble);
         
-        // FIX: ADDED errorColor safety net to prevent glaring red UI if KaTeX fails
+        // FIX: errorColor safety net to prevent glaring red UI if KaTeX fails
         renderMathInElement(bubble, { 
             delimiters: [ {left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}, {left: '\\(', right: '\\)', display: false}, {left: '\\[', right: '\\]', display: true} ], 
             throwOnError: false, 
@@ -487,7 +488,7 @@ async function _renderDoubtDiary() {
         html += `<button class="btn-exam" onclick="goBack()" style="background:#333; border:none;">Back</button></div>`; 
         mc.innerHTML = html;
         
-        // FIX: ADDED errorColor safety net to prevent glaring red UI if KaTeX fails
+        // FIX: errorColor safety net to prevent glaring red UI if KaTeX fails
         document.querySelectorAll('.katex-render-target').forEach(el => { renderMathInElement(el, { delimiters: [ {left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}, {left: '\\(', right: '\\)', display: false}, {left: '\\[', right: '\\]', display: true} ], throwOnError: false, errorColor: "#fdb813" }); });
     } catch(e) { mc.innerHTML = `<div class="card"><h2>Error</h2><p>${e.message}</p></div>`; }
 }
