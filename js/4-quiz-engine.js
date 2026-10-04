@@ -278,7 +278,7 @@ async function _initiateBookmarkQuiz() {
         _renderQuizQuestion();
 
     } catch (e) {
-        mainContent.innerHTML = `<div class="card"><h2>Error</h2><p>${e.message}</p><button class="btn-exam" onclick="goBack()">&larr; Go Back</button></div>`;
+        mainContent.innerHTML = `<div class="card"><h2>Error</h2><p>${e.message}</p><button class="btn-exam" onclick="goBack()" style="width:100%;">&larr; Go Back</button></div>`;
     }
 }
 
@@ -595,13 +595,13 @@ function _renderQuizQuestion() {
         let isSelected = selectedNow.includes(key); let extraClass = '';
         if (hasPeeked) { if (q.correctAnswers.includes(key)) extraClass = 'correct'; else if (isSelected) extraClass = 'wrong'; } 
         else if (isSelected) { extraClass = 'selected'; }
-        return `<div class="quiz-option ${extraClass}" onclick="toggleOptionSelection('${key}', ${q.correctAnswers.length > 1})"><b style="margin-right:15px; color:var(--text-muted);">${key}.</b> <span class="katex-render-target">${q.options[key]}</span></div>`;
+        return `<div class="quiz-option ${extraClass}" onclick="toggleOptionSelection('${key}',${q.correctAnswers.length > 1})"><b style="margin-right:15px; color:var(--text-muted);">${key}.</b> <span class="katex-render-target">${q.options[key]}</span></div>`;
     }).join('');
 
     let html = `
         <div class="card">
             <div class="quiz-header">
-                <span style="color:var(--text-muted);">Question ${quizState.currentIndex + 1} ${multiText}</span>
+                <span style="color:var(--text-muted);">Question ${quizState.currentIndex + 1}${multiText}</span>
                 <div style="display:flex; align-items:center; gap:15px; flex-wrap:wrap;">
                     <button class="report-btn" onclick="openReportModal('${q.id}', '${q.question.replace(/'/g, "\\'")}', '${q.path}')">🚨 Report Mistake</button>
                     <button id="flagDoubtBtn" class="flag-btn ${isFlagged ? 'flagged' : ''}" onclick="toggleFlag()">${isFlagged ? '⭐ Flagged' : '⭐ Flag for Review'}</button>
@@ -609,8 +609,7 @@ function _renderQuizQuestion() {
                     <span class="quiz-timer">⏱ <span id="quizTimeDisplay">${formatTime(quizState.secondsPassed)}</span></span>
                 </div>
             </div>
-            ${paletteHtml}
-            ${quizState.isCustom ? `<div style="margin-bottom:15px;"><span class="badge-path">${q.path}</span> <span style="font-size:11px; color:#aaa; margin-left:10px;">Lvl: ${q.level||'Mixed'}</span></div>` : ''}
+            ${paletteHtml}${quizState.isCustom ? `<div style="margin-bottom:15px;"><span class="badge-path">${q.path}</span> <span style="font-size:11px; color:#aaa; margin-left:10px;">Lvl: ${q.level||'Mixed'}</span></div>` : ''}
             ${q.imageUrl ? `<img src="${q.imageUrl}" class="quiz-image">` : ''}
             <div class="quiz-question-text katex-render-target">${q.question}</div>
             <div id="optionsContainer">${optionsHtml}</div>
@@ -622,9 +621,13 @@ function _renderQuizQuestion() {
         </div>`;
     mainContent.innerHTML = html;
     
-    // FIX: ADDED throwOnError: false TO PREVENT KATEX CRASHES IN THE QUIZ ENGINE
+    // FIX: ADDED errorColor safety net to prevent glaring red UI if KaTeX fails
     document.querySelectorAll('.katex-render-target').forEach(el => {
-        renderMathInElement(el, { delimiters: [ {left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}, {left: '\\(', right: '\\)', display: false}, {left: '\\[', right: '\\]', display: true} ], throwOnError: false });
+        renderMathInElement(el, { 
+            delimiters: [ {left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}, {left: '\\(', right: '\\)', display: false}, {left: '\\[', right: '\\]', display: true} ], 
+            throwOnError: false, 
+            errorColor: "#fdb813" 
+        });
     });
     
     saveQuizSession();
@@ -670,9 +673,7 @@ function buildReviewItemHtml(q, index, type, userAnsArray) {
     let borderColor = type === 'correct' ? 'var(--correct-green)' : (type === 'wrong' ? 'var(--wrong-red)' : 'var(--primary-yellow)');
     return `
         <div class="review-item" style="border-left: 4px solid ${borderColor};">
-            <p style="margin-top:0; font-size: 16px;"><b>Q${index + 1}:</b> <span class="katex-render-target">${q.question}</span></p>
-            ${img} ${optionsHtml}
-            ${type === 'skipped' ? `<button onclick="toggleViewAnswer('ans_div_${q.id}')" style="background:#333; color:white; border:none; padding:8px 15px; border-radius:4px; cursor:pointer; margin-top:10px;">👁️ View Answer</button><div id="ans_div_${q.id}" style="display:none; margin-top:15px; padding-top:15px; border-top:1px solid #333;"><p style="color:var(--correct-green); margin:0 0 10px 0;"><b>Correct Answer:</b> ${q.correctAnswers.join(', ')}</p>${exp}</div>` : `<p style="color:var(--correct-green); margin:15px 0 5px 0;"><b>Correct Answer:</b> ${q.correctAnswers.join(', ')}</p>${exp}`}
+            <p style="margin-top:0; font-size: 16px;"><b>Q${index + 1}:</b> <span class="katex-render-target">${q.question}</span></p>${img} ${optionsHtml}${type === 'skipped' ? `<button onclick="toggleViewAnswer('ans_div_${q.id}')" style="background:#333; color:white; border:none; padding:8px 15px; border-radius:4px; cursor:pointer; margin-top:10px;">👁️ View Answer</button><div id="ans_div_${q.id}" style="display:none; margin-top:15px; padding-top:15px; border-top:1px solid #333;"><p style="color:var(--correct-green); margin:0 0 10px 0;"><b>Correct Answer:</b> ${q.correctAnswers.join(', ')}</p>${exp}</div>` : `<p style="color:var(--correct-green); margin:15px 0 5px 0;"><b>Correct Answer:</b> ${q.correctAnswers.join(', ')}</p>${exp}`}
         </div>
     `;
 }
@@ -844,7 +845,7 @@ async function finishQuiz() {
 
     let scoreCardsHtml = '';
     if (isNeetSection) {
-        scoreCardsHtml = `<div style="background:#2a2a2a; padding: 20px; border-radius: 8px; min-width: 120px; flex: 1;"><div style="font-size: 32px; color: white; font-weight: bold;">${attempted * 4}</div><div style="color: var(--text-muted); font-size: 14px;">Total Marks</div><div style="color: var(--text-muted); font-size: 11px; margin-top:5px;">(${attempted}x4)</div></div><div style="background:#2a2a2a; padding: 20px; border-radius: 8px; min-width: 120px; flex: 1; border: 1px solid var(--primary-yellow);"><div style="font-size: 32px; color: var(--primary-yellow); font-weight: bold;">${totalScore}</div><div style="color: var(--text-muted); font-size: 14px;">Obtained Mark</div><div style="color: var(--text-muted); font-size: 11px; margin-top:5px;">(${correctCount}x4) - ${wrongCount}</div></div>`;
+        scoreCardsHtml = `<div style="background:#2a2a2a; padding: 20px; border-radius: 8px; min-width: 120px; flex: 1;"><div style="font-size: 32px; color: white; font-weight: bold;">${attempted * 4}</div><div style="color: var(--text-muted); font-size: 14px;">Total Marks</div><div style="color: var(--text-muted); font-size: 11px; margin-top:5px;">(${attempted}x4)</div></div><div style="background:#2a2a2a; padding: 20px; border-radius: 8px; min-width: 120px; flex: 1; border: 1px solid var(--primary-yellow);"><div style="font-size: 32px; color: var(--primary-yellow); font-weight: bold;">${totalScore}</div><div style="color: var(--text-muted); font-size: 14px;">Obtained Mark</div><div style="color: var(--text-muted); font-size: 11px; margin-top:5px;">(${correctCount}x4) -${wrongCount}</div></div>`;
     } else {
         scoreCardsHtml = `<div style="background:#2a2a2a; padding: 20px; border-radius: 8px; min-width: 120px; flex: 1; border: 1px solid var(--primary-yellow);"><div style="font-size: 32px; color: var(--primary-yellow); font-weight: bold;">${totalScore}</div><div style="color: var(--text-muted); font-size: 14px;">Total Score</div></div>`;
     }
@@ -866,14 +867,17 @@ async function finishQuiz() {
             <div class="review-tabs"><button class="review-tab-btn" onclick="showReviewTab('correct')" style="color:var(--correct-green);">✅ Correct (${correctCount})</button><button class="review-tab-btn" onclick="showReviewTab('wrong')" style="color:var(--wrong-red);">❌ Wrong (${wrongCount})</button><button class="review-tab-btn" onclick="showReviewTab('skipped')" style="color:var(--primary-yellow);">⏭️ Skipped (${skippedCount})</button></div>
             <div id="review-correct" style="display:block;">${correctHtml || '<p>No correct answers.</p>'}</div>
             <div id="review-wrong" style="display:none;">${wrongHtml || '<p>No wrong answers!</p>'}</div>
-            <div id="review-skipped" style="display:none;">${skippedHtml || '<p>No skipped questions.</p>'}</div>
-            ${flaggedListHtml !== '' ? `<h3 style="text-align:left; color:var(--primary-yellow); margin-top: 40px;">⭐ Sent to Admin</h3>${flaggedListHtml}` : ''}
+            <div id="review-skipped" style="display:none;">${skippedHtml \vert{}\vert{} '<p>No skipped questions.</p>'}</div>${flaggedListHtml !== '' ? `<h3 style="text-align:left; color:var(--primary-yellow); margin-top: 40px;">⭐ Sent to Admin</h3>${flaggedListHtml}` : ''}
             <button class="btn-exam" onclick="window.history.back()" style="width: 100%; margin-top:30px; background:#333; border:none;">&larr; Exit to Dashboard</button>
         </div>
     `;
     
-    // FIX: ADDED throwOnError: false TO PREVENT KATEX CRASHES IN THE REVIEW SCREEN
+    // FIX: ADDED errorColor safety net to prevent glaring red UI if KaTeX fails
     document.querySelectorAll('.katex-render-target, .review-item').forEach(el => {
-        renderMathInElement(el, { delimiters: [ {left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}, {left: '\\(', right: '\\)', display: false}, {left: '\\[', right: '\\]', display: true} ], throwOnError: false });
+        renderMathInElement(el, { 
+            delimiters: [ {left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}, {left: '\\(', right: '\\)', display: false}, {left: '\\[', right: '\\]', display: true} ], 
+            throwOnError: false, 
+            errorColor: "#fdb813" 
+        });
     });
 }
