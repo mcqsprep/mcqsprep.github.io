@@ -1,8 +1,8 @@
-const CACHE_NAME = 'mcqsprep-cache-v9';
+const CACHE_NAME = 'mcqsprep-cache-v10';
 const ASSETS = [
   '/',
   '/index.html',
-  '/style.css?v=9',
+  '/style.css?v=10',
   '/manifest.json',
   '/icon-192.png',
   '/icon-512.png',
