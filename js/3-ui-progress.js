@@ -13,68 +13,6 @@ window.forceCwStep1 = function(e) {
     if (typeof cwStep1 === 'function') cwStep1();
 };
 
-// HARDCODED SYLLABUS ORDER: Forces Firebase to respect the actual book sequence instead of alphabetizing.
-const canonicalOrder = [
-    // Biology (Class 11 & 12)
-    "The Living World", "Biological Classification", "Plant Kingdom", "Animal Kingdom", 
-    "Morphology of Flowering Plants", "Anatomy of Flowering Plants", "Structural Organisation in Animals", 
-    "Cell: The Unit of Life", "Biomolecules", "Cell Cycle and Cell Division", 
-    "Transport in Plants", "Mineral Nutrition", "Photosynthesis in Higher Plants", "Respiration in Plants", 
-    "Plant Growth and Development", "Digestion and Absorption", "Breathing and Exchange of Gases", 
-    "Body Fluids and Circulation", "Excretory Products and their Elimination", "Locomotion and Movement", 
-    "Neural Control and Coordination", "Chemical Coordination and Integration", "Reproduction in Organisms", 
-    "Sexual Reproduction in Flowering Plants", "Human Reproduction", "Reproductive Health", 
-    "Principles of Inheritance and Variation", "Molecular Basis of Inheritance", "Evolution", 
-    "Human Health and Disease", "Strategies for Enhancement in Food Production", "Microbes in Human Welfare", 
-    "Biotechnology: Principles and Processes", "Biotechnology and its Applications", 
-    "Organisms and Populations", "Ecosystem", "Biodiversity and Conservation", "Environmental Issues",
-    
-    // Physics
-    "Physical World", "Units and Measurements", "Motion in a Straight Line", "Motion in a Plane", 
-    "Laws of Motion", "Work Energy and Power", "System of Particles and Rotational Motion", "Gravitation", 
-    "Mechanical Properties of Solids", "Mechanical Properties of Fluids", "Thermal Properties of Matter", 
-    "Thermodynamics", "Kinetic Theory", "Oscillations", "Waves", "Electric Charges and Fields", 
-    "Electrostatic Potential and Capacitance", "Current Electricity", "Moving Charges and Magnetism", 
-    "Magnetism and Matter", "Electromagnetic Induction", "Alternating Current", "Electromagnetic Waves", 
-    "Ray Optics and Optical Instruments", "Wave Optics", "Dual Nature of Radiation and Matter", 
-    "Atoms", "Nuclei", "Semiconductor Electronics",
-
-    // Chemistry
-    "Some Basic Concepts of Chemistry", "Structure of Atom", "Classification of Elements and Periodicity in Properties", 
-    "Chemical Bonding and Molecular Structure", "States of Matter", "Thermodynamics", "Equilibrium", "Redox Reactions", 
-    "Hydrogen", "The s-Block Elements", "The p-Block Elements", "Organic Chemistry - Some Basic Principles and Techniques",
-    "Hydrocarbons", "Environmental Chemistry", "The Solid State", "Solutions", "Electrochemistry", "Chemical Kinetics",
-    "Surface Chemistry", "General Principles and Processes of Isolation of Elements", "The d- and f-Block Elements",
-    "Coordination Compounds", "Haloalkanes and Haloarenes", "Alcohols, PhenI see the problem! The issue with the blank screen is actually caused by the `canonicalOrder` array itself.
-
-While trying to fix the sorting issue, I hardcoded a massive array of textbook chapters into `3-ui-progress.js`. Because these are exact, verbatim chapter titles from a published textbook (NCERT), the system's safety filters flagged the response as a potential copyright violation and automatically blocked the output, causing the code generation to cut off abruptly and crash your JavaScript.
-
-To fix your dashboard and the sorting issue *without* triggering the copyright filters, we cannot hardcode the entire syllabus into the frontend file.
-
-Instead, we can use a much cleaner and safer approach: **We will assign a simple numeric prefix to your folders in the Firebase Admin Panel, and then sort by that number on the frontend.**
-
-### Step 1: The Fix for `3-ui-progress.js`
-
-Here is the fully repaired `3-ui-progress.js`. I have completely removed the problematic `canonicalOrder` array. Instead, I have updated the `.sort()` function to look for a numeric prefix (like "01.", "02.", "12.") at the start of the chapter name. If it finds one, it sorts numerically. If it doesn't, it falls back to standard sorting.
-
-Please replace the entire contents of your **`3-ui-progress.js`** with this code:
-
-```javascript
-// ==========================================
-// 4. MAIN VIEW RENDERER & AUTO-SORTER
-// ==========================================
-
-// FIX: Global Force Functions to bypass router hash locks
-window.forceStartQuiz = function() {
-    window.location.hash = '#/quiz';
-    setTimeout(() => { _initiateQuizEngine(); }, 100);
-};
-
-window.forceCwStep1 = function(e) {
-    if (e) e.stopPropagation();
-    if (typeof cwStep1 === 'function') cwStep1();
-};
-
 function _renderView() {
     try {
         const mc = document.getElementById('dynamic-content'); 
@@ -97,11 +35,8 @@ function _renderView() {
         }
 
         if (isEndpoint) {
-            let topicName = currentPath[currentPath.length - 1]; 
-            
-            // Clean the numeric prefix (e.g., "01. ") from the title display if it exists
-            let displayTopicName = topicName.replace(/^\d+\.\s*/, '');
-            
+            let topicNameRaw = currentPath[currentPath.length - 1]; 
+            let topicName = topicNameRaw.replace(/^\d+\.\s*/, ''); // Hides numbers from the main title
             let checkPath = currentPath.join(" > ");
             let isPdfSection = false;
             
@@ -118,7 +53,7 @@ function _renderView() {
                 
                 mc.innerHTML = `
                 <div class="card page-transition">
-                    <h2 class="section-title">${displayTopicName} Practice</h2>
+                    <h2 class="section-title">${topicName} Practice</h2>
                     <p style="color:var(--text-muted); margin-bottom:25px;">${!currentUser ? "Sign in to track your scores on the leaderboard!" : `Ready for practice, <span style="color:var(--primary-yellow);">${studentName}</span>?`}</p>
                     <div style="display:flex; flex-wrap:wrap; gap:15px; margin-top:20px;">
                         <button class="btn-exam" onclick="forceStartQuiz()" style="background:var(--primary-yellow) !important; color:black !important; flex:1; min-width:150px; font-size:16px; font-weight:bold; border:none !important; box-shadow:0 4px 15px rgba(253,184,19,0.3) !important;">Start Quiz &rarr;</button>
@@ -128,7 +63,7 @@ function _renderView() {
             } else {
                 mc.innerHTML = `
                 <div class="card page-transition">
-                    <h2 class="section-title">${displayTopicName} Resources</h2>
+                    <h2 class="section-title">${topicName} Resources</h2>
                     <p style="color:var(--text-muted);">Materials will appear here once uploaded via the Admin Panel.</p>
                     <button class="btn-exam" onclick="goBack()" style="background:#333; width:150px; margin-top:20px; font-size:16px; border:none;">&larr; Go Back</button>
                 </div>`;
@@ -137,7 +72,7 @@ function _renderView() {
         }
 
         let titleRaw = currentPath.length === 0 ? "Select Exam Category" : currentPath[currentPath.length - 1];
-        let title = titleRaw.replace(/^\d+\.\s*/, ''); // Clean prefix from header
+        let title = titleRaw.replace(/^\d+\.\s*/, '');
         let h = ``;
 
         if (currentPath.length === 0) {
@@ -155,25 +90,18 @@ function _renderView() {
         let keys = Object.keys(currentLevel);
         const difficultyOrder = ["Easy", "Medium", "Hard", "Mixed"];
         
-        // FIX: Implement robust numeric sorting to bypass alphabetical constraints
         keys.sort((a, b) => {
             let idxA = difficultyOrder.indexOf(a);
             let idxB = difficultyOrder.indexOf(b);
-            
-            // 1. Keep the Difficulty levels (Easy, Medium, Hard) at the very top
             if (idxA !== -1 && idxB !== -1) return idxA - idxB;
             if (idxA !== -1) return -1;
             if (idxB !== -1) return 1;
             
-            // 2. Extract potential numeric prefixes (e.g., "01. Chapter Name" -> 1)
+            // Numeric sorting for prefixes (e.g. "01. Botany")
             let matchA = a.match(/^(\d+)\./);
             let matchB = b.match(/^(\d+)\./);
+            if (matchA && matchB) return parseInt(matchA[1], 10) - parseInt(matchB[1], 10);
             
-            if (matchA && matchB) {
-                return parseInt(matchA[1], 10) - parseInt(matchB[1], 10);
-            }
-            
-            // 3. Fallback to alphabetical if no numbers are present
             return a.localeCompare(b);
         });
 
@@ -182,7 +110,7 @@ function _renderView() {
             "General Knowledge": { i: "🌍", c: "#4CAF50", bg: "rgba(76, 175, 80, 0.15)" },
             "Current Affairs": { i: "📰", c: "#2196F3", bg: "rgba(33, 150, 243, 0.15)" },
             "History": { i: "🏛️", c: "#FF9800", bg: "rgba(255, 152, 0, 0.15)" },
-            "Geography": { i: "🗺️️", c: "#4CAF50", bg: "rgba(76, 175, 80, 0.15)" },
+            "Geography": { i: "🗺️", c: "#4CAF50", bg: "rgba(76, 175, 80, 0.15)" },
             "NCERT Book": { i: "📚", c: "#9C27B0", bg: "rgba(156, 39, 176, 0.15)" },
             "PYQs": { i: "📄", c: "#607D8B", bg: "rgba(96, 125, 139, 0.15)" },
             "Practice Paper": { i: "📝", c: "#795548", bg: "rgba(121, 85, 72, 0.15)" },
@@ -203,9 +131,8 @@ function _renderView() {
             let typeLabel = ""; if (customTopicTypes[checkPath] === 'mcq') typeLabel = "📝"; else if (customTopicTypes[checkPath] === 'pdf') typeLabel = "📄";
             let safeKey = key.replace(/'/g, "\\'");
             
-            // Clean the key for display purposes (removes "01. " but keeps the original path for logic)
+            // Hides the numbers from the folder UI
             let displayKey = key.replace(/^\d+\.\s*/, '');
-            
             let iconData = iconMap[displayKey] || iconMap[key] || { i: typeLabel === '📄' ? "📄" : "📁", c: "#9e9ea7", bg: "rgba(255,255,255,0.08)" };
 
             h += `<button class="category-tile" onclick="navigateTo('${safeKey}')">
@@ -360,7 +287,6 @@ async function _renderProgressDashboard(category) {
             
             if (d.subjectBreakdown) {
                 for(let s in d.subjectBreakdown) {
-                    // Clean prefix from subject name in breakdown if it exists
                     let cleanS = s.replace(/^\d+\.\s*/, '');
                     if(!aggregatedSubs[cleanS]) aggregatedSubs[cleanS] = { attempts: 0, correct: 0 };
                     aggregatedSubs[cleanS].attempts += d.subjectBreakdown[s].attempts;
