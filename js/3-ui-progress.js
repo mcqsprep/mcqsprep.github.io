@@ -37,13 +37,15 @@ function _renderView() {
             
             if (!isPdfSection) {
                 let studentName = (currentUser && currentUser.displayName) ? currentUser.displayName.split(" ")[0] : "Student";
+                
+                // FIX: Restored proper window.location.hash routing for Start Quiz button
                 mc.innerHTML = `
                 <div class="card page-transition">
                     <h2 class="section-title">${topicName} Practice</h2>
                     <p style="color:var(--text-muted); margin-bottom:25px;">${!currentUser ? "Sign in to track your scores on the leaderboard!" : `Ready for practice, <span style="color:var(--primary-yellow);">${studentName}</span>?`}</p>
                     <div style="display:flex; flex-wrap:wrap; gap:15px; margin-top:20px;">
-                        <button class="btn-exam" onclick="_forceStartQuiz()" style="background:var(--primary-yellow); color:black; flex:1; min-width:150px; font-size:16px;">Start Quiz &rarr;</button>
-                        <button class="btn-exam" onclick="goBack()" style="background:#333; flex:1; min-width:120px; font-size:16px; border:none;">&larr; Go Back</button>
+                        <button class="btn-exam" onclick="window.location.hash='#/quiz'" style="background:var(--primary-yellow) !important; color:black !important; flex:1; min-width:150px; font-size:16px; font-weight:bold; border:none !important; box-shadow:0 4px 15px rgba(253,184,19,0.3) !important;">Start Quiz &rarr;</button>
+                        <button class="btn-exam" onclick="goBack()" style="background:#333 !important; color:white !important; flex:1; min-width:120px; font-size:16px; border:none !important; font-weight:bold;">&larr; Go Back</button>
                     </div>
                 </div>`;
             } else {
@@ -60,18 +62,19 @@ function _renderView() {
         let title = currentPath.length === 0 ? "Select Exam Category" : currentPath[currentPath.length - 1];
         let h = ``;
 
-        // 🔴 INJECT THE HIGH-END PREMIUM "HERO" BANNER FOR HOME PAGE
         if (currentPath.length === 0) {
+            // FIX: Restored cwStep1() onclick and stopPropagation to ensure the button is always clickable
             h += `
-            <div class="card setup-hero-card" onclick="cwStep1()">
+            <div class="setup-hero-card" onclick="cwStep1()">
                 <div class="hero-badge">CUSTOM PRACTICE</div>
                 <h2 class="hero-title">Practice smart with tailored mock tests.</h2>
                 <p class="hero-desc">Mix subjects, filter by difficulty, and build your ultimate personalized mock test.</p>
-                <button class="btn-exam hero-btn">Launch Setup 🚀</button>
+                <button class="btn-exam hero-btn" onclick="cwStep1(); event.stopPropagation();">Launch Setup 🚀</button>
             </div>`;
         }
 
-        h += `<div class="card category-section"><h2 class="section-title">${title}</h2><div class="category-grid">`;
+        // FIX: Reverted "card" class back to "sidebar-card" so grid layout isn't destroyed
+        h += `<div class="sidebar-card category-section"><h3 class="section-title">${title}</h3><div class="category-grid">`;
         
         let keys = Object.keys(currentLevel);
         const difficultyOrder = ["Easy", "Medium", "Hard", "Mixed"];
