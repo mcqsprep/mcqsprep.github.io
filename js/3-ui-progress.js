@@ -13,6 +13,59 @@ window.forceCwStep1 = function(e) {
     if (typeof cwStep1 === 'function') cwStep1();
 };
 
+// HARDCODED SYLLABUS ORDER: Forces Firebase to respect the actual book sequence instead of alphabetizing.
+const canonicalOrder = [
+    // Biology (Class 11 & 12)
+    "The Living World", "Biological Classification", "Plant Kingdom", "Animal Kingdom", 
+    "Morphology of Flowering Plants", "Anatomy of Flowering Plants", "Structural Organisation in Animals", 
+    "Cell: The Unit of Life", "Biomolecules", "Cell Cycle and Cell Division", 
+    "Transport in Plants", "Mineral Nutrition", "Photosynthesis in Higher Plants", "Respiration in Plants", 
+    "Plant Growth and Development", "Digestion and Absorption", "Breathing and Exchange of Gases", 
+    "Body Fluids and Circulation", "Excretory Products and their Elimination", "Locomotion and Movement", 
+    "Neural Control and Coordination", "Chemical Coordination and Integration", "Reproduction in Organisms", 
+    "Sexual Reproduction in Flowering Plants", "Human Reproduction", "Reproductive Health", 
+    "Principles of Inheritance and Variation", "Molecular Basis of Inheritance", "Evolution", 
+    "Human Health and Disease", "Strategies for Enhancement in Food Production", "Microbes in Human Welfare", 
+    "Biotechnology: Principles and Processes", "Biotechnology and its Applications", 
+    "Organisms and Populations", "Ecosystem", "Biodiversity and Conservation", "Environmental Issues",
+    
+    // Physics
+    "Physical World", "Units and Measurements", "Motion in a Straight Line", "Motion in a Plane", 
+    "Laws of Motion", "Work Energy and Power", "System of Particles and Rotational Motion", "Gravitation", 
+    "Mechanical Properties of Solids", "Mechanical Properties of Fluids", "Thermal Properties of Matter", 
+    "Thermodynamics", "Kinetic Theory", "Oscillations", "Waves", "Electric Charges and Fields", 
+    "Electrostatic Potential and Capacitance", "Current Electricity", "Moving Charges and Magnetism", 
+    "Magnetism and Matter", "Electromagnetic Induction", "Alternating Current", "Electromagnetic Waves", 
+    "Ray Optics and Optical Instruments", "Wave Optics", "Dual Nature of Radiation and Matter", 
+    "Atoms", "Nuclei", "Semiconductor Electronics",
+
+    // Chemistry
+    "Some Basic Concepts of Chemistry", "Structure of Atom", "Classification of Elements and Periodicity in Properties", 
+    "Chemical Bonding and Molecular Structure", "States of Matter", "Equilibrium", "Redox Reactions", 
+    "Hydrogen", "The s-Block Elements", "The p-The issue with your chapters looking "random" is that the frontend was hardcoded to forcefully sort everything **alphabetically (A-Z)** using `a.localeCompare(b)`. 
+
+Because textbook chapters aren't alphabetical (e.g., Chapter 1 is "The Living World", Chapter 2 is "Biological Classification"), an A-Z sort scrambles them completely, making the order feel random to a student. 
+
+I have removed the A-Z sorting and replaced it with a strict insertion-order preservation check (`originalOrder.indexOf`). This guarantees that the website will render the chapters in the exact serial order they were fetched/uploaded from your Admin Panel.
+
+Here is your fully updated **`3-ui-progress.js`**:
+
+```javascript
+// ==========================================
+// 4. MAIN VIEW RENDERER & AUTO-SORTER
+// ==========================================
+
+// FIX: Global Force Functions to bypass router hash locks
+window.forceStartQuiz = function() {
+    window.location.hash = '#/quiz';
+    setTimeout(() => { _initiateQuizEngine(); }, 100);
+};
+
+window.forceCwStep1 = function(e) {
+    if (e) e.stopPropagation();
+    if (typeof cwStep1 === 'function') cwStep1();
+};
+
 function _renderView() {
     try {
         const mc = document.getElementById('dynamic-content'); 
@@ -89,13 +142,21 @@ function _renderView() {
         let keys = Object.keys(currentLevel);
         const difficultyOrder = ["Easy", "Medium", "Hard", "Mixed"];
         
+        // FIX: Capture the original insertion order (which matches the serial order from your Admin Panel)
+        const originalOrder = [...keys];
+        
         keys.sort((a, b) => {
             let idxA = difficultyOrder.indexOf(a);
             let idxB = difficultyOrder.indexOf(b);
+            
+            // Keep the Difficulty levels at the very top
             if (idxA !== -1 && idxB !== -1) return idxA - idxB;
             if (idxA !== -1) return -1;
             if (idxB !== -1) return 1;
-            return a.localeCompare(b);
+            
+            // FIX: Removed a.localeCompare(b). We no longer force A-Z alphabetical sorting. 
+            // Instead, we strictly enforce the original DB insertion order so chapters remain serial.
+            return originalOrder.indexOf(a) - originalOrder.indexOf(b);
         });
 
         const iconMap = {
