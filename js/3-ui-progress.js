@@ -42,7 +42,7 @@ function _renderView() {
                     <h2 class="section-title">${topicName} Practice</h2>
                     <p style="color:var(--text-muted); margin-bottom:25px;">${!currentUser ? "Sign in to track your scores on the leaderboard!" : `Ready for practice, <span style="color:var(--primary-yellow);">${studentName}</span>?`}</p>
                     <div style="display:flex; flex-wrap:wrap; gap:15px; margin-top:20px;">
-                        <button class="btn-exam" onclick="window.location.hash='#/quiz'" style="background:var(--primary-yellow); color:black; flex:1; min-width:150px; font-size:16px;">Start Quiz &rarr;</button>
+                        <button class="btn-exam" onclick="_forceStartQuiz()" style="background:var(--primary-yellow); color:black; flex:1; min-width:150px; font-size:16px;">Start Quiz &rarr;</button>
                         <button class="btn-exam" onclick="goBack()" style="background:#333; flex:1; min-width:120px; font-size:16px; border:none;">&larr; Go Back</button>
                     </div>
                 </div>`;
@@ -60,6 +60,7 @@ function _renderView() {
         let title = currentPath.length === 0 ? "Select Exam Category" : currentPath[currentPath.length - 1];
         let h = ``;
 
+        // 🔴 INJECT THE HIGH-END PREMIUM "HERO" BANNER FOR HOME PAGE
         if (currentPath.length === 0) {
             h += `
             <div class="card setup-hero-card" onclick="cwStep1()">
@@ -601,7 +602,6 @@ function handleLiveSearch() {
 function _renderLeaderboardOptions() { 
     document.getElementById('breadcrumb-text').innerText = "Home / Leaderboard"; 
     
-    // FIX: Using the generic category classes so it respects both PC and Mobile CSS.
     document.getElementById('dynamic-content').innerHTML = `
         <div class="card page-transition">
             <h2 class="section-title">🏆 Global Leaderboards</h2>
@@ -629,7 +629,7 @@ function _renderLeaderboardOptions() {
 async function fetchLiveLeaderboard(pathPrefix) { 
     const mainContent = document.getElementById('dynamic-content');
     if (!currentUser) { 
-        mainContent.innerHTML = `<div class="card page-transition"><h2 class="section-title">🏆 Fetching Leaderboard...</h2><div style="background: rgba(244, 67, 54, 0.1); border-left: 4px solid var(--wrong-red); padding: 15px; margin: 20px 0; border-radius: 4px;"><span style="color: var(--wrong-red); font-weight: bold;">⚠️️ ACCESS DENIED:</span> <span style="color: var(--text-light); font-size: 14px;">You must be signed in with Google to view the global leaderboards.</span></div><button class="btn-exam" onclick="window.history.back()" style="background:#333; border:none; width:100%;">Back</button></div>`; 
+        mainContent.innerHTML = `<div class="card page-transition"><h2 class="section-title">🏆 Fetching Leaderboard...</h2><div style="background: rgba(244, 67, 54, 0.1); border-left: 4px solid var(--wrong-red); padding: 15px; margin: 20px 0; border-radius: 4px;"><span style="color: var(--wrong-red); font-weight: bold;">⚠ ACCESS DENIED:</span> <span style="color: var(--text-light); font-size: 14px;">You must be signed in with Google to view the global leaderboards.</span></div><button class="btn-exam" onclick="window.history.back()" style="background:#333; border:none; width:100%;">Back</button></div>`; 
         return; 
     }
 
