@@ -165,19 +165,45 @@ function cwStep4() {
                 </div>
                 <div style="flex:1; min-width:200px;">
                     <label style="color:var(--text-light); font-weight:bold; margin-bottom:10px; display:block;">Total Questions:</label>
-                    <input type="number" id="cwCount" class="input-field" value="20" min="5" max="100" style="padding:15px; font-size:16px;">
+                    <input type="number" id="cwCount" class="input-field" value="20" min="10" max="250" style="padding:15px; font-size:16px;" oninput="validateCwCount()">
+                    <div id="cwCountWarning" style="color: var(--wrong-red); font-size: 14px; margin-top: 5px; display: none;">⚠️ Please enter a number between 10 and 250.</div>
                 </div>
             </div>
             <div style="display:flex; justify-content:space-between; gap:15px;">
                 <button class="btn-exam" onclick="cwStep3()" style="background:#333; border:none; flex:1;">&larr; Back</button>
-                <button class="btn-exam" onclick="cwLaunchQuiz()" style="background:var(--correct-green); color:white; font-size:18px; padding:15px 30px; border:none; box-shadow:0 4px 15px rgba(76,175,80,0.4); flex:2;">🚀 Start Custom Quiz</button>
+                <button id="cwStartBtn" class="btn-exam" onclick="cwLaunchQuiz()" style="background:var(--correct-green); color:white; font-size:18px; padding:15px 30px; border:none; box-shadow:0 4px 15px rgba(76,175,80,0.4); flex:2; transition: all 0.3s ease;">🚀 Start Custom Quiz</button>
             </div>
         </div>`;
 }
 
+window.validateCwCount = function() {
+    let countInput = document.getElementById('cwCount');
+    let warning = document.getElementById('cwCountWarning');
+    let startBtn = document.getElementById('cwStartBtn');
+    let val = parseInt(countInput.value);
+
+    if (isNaN(val) || val < 10 || val > 250) {
+        warning.style.display = 'block';
+        startBtn.disabled = true;
+        startBtn.style.opacity = '0.5';
+        startBtn.style.cursor = 'not-allowed';
+    } else {
+        warning.style.display = 'none';
+        startBtn.disabled = false;
+        startBtn.style.opacity = '1';
+        startBtn.style.cursor = 'pointer';
+    }
+}
+
 function cwLaunchQuiz() {
+    let countVal = parseInt(document.getElementById('cwCount').value);
+    if (isNaN(countVal) || countVal < 10 || countVal > 250) {
+        showNotification("⚠️ Please enter a valid number of questions (10 - 250).");
+        return;
+    }
+
     cwState.level = document.getElementById('cwLevel').value; 
-    cwState.count = parseInt(document.getElementById('cwCount').value) || 20;
+    cwState.count = countVal || 20;
     customQuizConfig.exam = cwState.exam;
     customQuizConfig.paths = cwState.subtopics; 
     customQuizConfig.count = cwState.count; 
