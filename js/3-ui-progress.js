@@ -1,6 +1,18 @@
 // ==========================================
 // 4. MAIN VIEW RENDERER & AUTO-SORTER
 // ==========================================
+
+// FIX: Global Force Functions to bypass router hash locks
+window.forceStartQuiz = function() {
+    window.location.hash = '#/quiz';
+    setTimeout(() => { _initiateQuizEngine(); }, 100);
+};
+
+window.forceCwStep1 = function(e) {
+    if (e) e.stopPropagation();
+    if (typeof cwStep1 === 'function') cwStep1();
+};
+
 function _renderView() {
     try {
         const mc = document.getElementById('dynamic-content'); 
@@ -38,13 +50,13 @@ function _renderView() {
             if (!isPdfSection) {
                 let studentName = (currentUser && currentUser.displayName) ? currentUser.displayName.split(" ")[0] : "Student";
                 
-                // FIX: Restored proper window.location.hash routing for Start Quiz button
+                // FIX: Restored gap explicitly and used the robust forceStartQuiz global function
                 mc.innerHTML = `
                 <div class="card page-transition">
                     <h2 class="section-title">${topicName} Practice</h2>
                     <p style="color:var(--text-muted); margin-bottom:25px;">${!currentUser ? "Sign in to track your scores on the leaderboard!" : `Ready for practice, <span style="color:var(--primary-yellow);">${studentName}</span>?`}</p>
                     <div style="display:flex; flex-wrap:wrap; gap:15px; margin-top:20px;">
-                        <button class="btn-exam" onclick="window.location.hash='#/quiz'" style="background:var(--primary-yellow) !important; color:black !important; flex:1; min-width:150px; font-size:16px; font-weight:bold; border:none !important; box-shadow:0 4px 15px rgba(253,184,19,0.3) !important;">Start Quiz &rarr;</button>
+                        <button class="btn-exam" onclick="forceStartQuiz()" style="background:var(--primary-yellow) !important; color:black !important; flex:1; min-width:150px; font-size:16px; font-weight:bold; border:none !important; box-shadow:0 4px 15px rgba(253,184,19,0.3) !important;">Start Quiz &rarr;</button>
                         <button class="btn-exam" onclick="goBack()" style="background:#333 !important; color:white !important; flex:1; min-width:120px; font-size:16px; border:none !important; font-weight:bold;">&larr; Go Back</button>
                     </div>
                 </div>`;
@@ -63,18 +75,16 @@ function _renderView() {
         let h = ``;
 
         if (currentPath.length === 0) {
-            // FIX: Restored cwStep1() onclick and stopPropagation to ensure the button is always clickable
             h += `
-            <div class="setup-hero-card" onclick="cwStep1()">
+            <div class="card setup-hero-card" onclick="forceCwStep1(event)">
                 <div class="hero-badge">CUSTOM PRACTICE</div>
                 <h2 class="hero-title">Practice smart with tailored mock tests.</h2>
                 <p class="hero-desc">Mix subjects, filter by difficulty, and build your ultimate personalized mock test.</p>
-                <button class="btn-exam hero-btn" onclick="cwStep1(); event.stopPropagation();">Launch Setup 🚀</button>
+                <button class="btn-exam hero-btn" onclick="forceCwStep1(event)">Launch Setup 🚀</button>
             </div>`;
         }
 
-        // FIX: Reverted "card" class back to "sidebar-card" so grid layout isn't destroyed
-        h += `<div class="sidebar-card category-section"><h3 class="section-title">${title}</h3><div class="category-grid">`;
+        h += `<div class="card category-section"><h3 class="section-title">${title}</h3><div class="category-grid">`;
         
         let keys = Object.keys(currentLevel);
         const difficultyOrder = ["Easy", "Medium", "Hard", "Mixed"];
@@ -116,14 +126,14 @@ function _renderView() {
             
             let iconData = iconMap[key] || { i: typeLabel === '📄' ? "📄" : "📁", c: "#9e9ea7", bg: "rgba(255,255,255,0.08)" };
 
-            h += `<button class="btn-exam category-tile" onclick="navigateTo('${safeKey}')">
+            h += `<button class="category-tile" onclick="navigateTo('${safeKey}')">
                     <div class="cat-icon" style="background: ${iconData.bg}; color: ${iconData.c};">${iconData.i}</div>
                     <div class="cat-text">${key}</div>
                   </button>`; 
         }
         
         if (currentPath.length > 0) {
-            h += `<button class="btn-exam category-tile" onclick="goBack()" style="background: #1c1c24; border-color: #333;">
+            h += `<button class="category-tile" onclick="goBack()" style="background: #1c1c24; border-color: #333;">
                     <div class="cat-icon" style="background: #222; color: #aaa;">&larr;</div>
                     <div class="cat-text" style="color: #aaa;">Go Back</div>
                   </button>`;
@@ -317,26 +327,26 @@ async function _renderProgressDashboard(category) {
         <div class="card page-transition" style="padding: 20px 15px;">
             <h2 class="section-title" style="margin-top:0; margin-bottom:15px; font-size:22px;">${displayCategory}</h2>
             
-            <div class="category-grid" style="grid-template-columns: repeat(auto-fit, minmax(90px, 1fr)); gap: 8px; margin-bottom: 15px;">
-                <div style="background:#2a2a2a; padding: 12px 5px; border-radius: 6px; text-align:center; border:1px solid var(--border-color);">
-                    <div style="font-size: 20px; color: white; font-weight: bold;">${totalQuestions}</div>
-                    <div style="color: var(--text-muted); font-size: 10px; text-transform:uppercase; margin-top:2px;">Attempted</div>
+            <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-bottom: 15px;">
+                <div style="flex:1; min-width: 100px; max-width: 150px; background:#2a2a2a; padding: 15px 10px; border-radius: 8px; text-align:center; border:1px solid var(--border-color);">
+                    <div style="font-size: 24px; color: white; font-weight: bold;">${totalQuestions}</div>
+                    <div style="color: var(--text-muted); font-size: 11px; text-transform:uppercase; margin-top:4px;">Attempted</div>
                 </div>
-                <div style="background:#2a2a2a; padding: 12px 5px; border-radius: 6px; text-align:center; border:1px solid var(--correct-green);">
-                    <div style="font-size: 20px; color: var(--correct-green); font-weight: bold;">${correctCount}</div>
-                    <div style="color: var(--text-muted); font-size: 10px; text-transform:uppercase; margin-top:2px;">Right</div>
+                <div style="flex:1; min-width: 100px; max-width: 150px; background:#2a2a2a; padding: 15px 10px; border-radius: 8px; text-align:center; border:1px solid var(--correct-green);">
+                    <div style="font-size: 24px; color: var(--correct-green); font-weight: bold;">${correctCount}</div>
+                    <div style="color: var(--text-muted); font-size: 11px; text-transform:uppercase; margin-top:4px;">Right</div>
                 </div>
-                <div style="background:#2a2a2a; padding: 12px 5px; border-radius: 6px; text-align:center; border:1px solid var(--wrong-red);">
-                    <div style="font-size: 20px; color: var(--wrong-red); font-weight: bold;">${wrongCount}</div>
-                    <div style="color: var(--text-muted); font-size: 10px; text-transform:uppercase; margin-top:2px;">Wrong</div>
+                <div style="flex:1; min-width: 100px; max-width: 150px; background:#2a2a2a; padding: 15px 10px; border-radius: 8px; text-align:center; border:1px solid var(--wrong-red);">
+                    <div style="font-size: 24px; color: var(--wrong-red); font-weight: bold;">${wrongCount}</div>
+                    <div style="color: var(--text-muted); font-size: 11px; text-transform:uppercase; margin-top:4px;">Wrong</div>
                 </div>
-                <div style="background:#2a2a2a; padding: 12px 5px; border-radius: 6px; text-align:center; border:1px solid var(--primary-yellow);">
-                    <div style="font-size: 20px; color: var(--primary-yellow); font-weight: bold;">${totalScore}</div>
-                    <div style="color: var(--text-muted); font-size: 10px; text-transform:uppercase; margin-top:2px;">Overall Mark</div>
+                <div style="flex:1; min-width: 100px; max-width: 150px; background:#2a2a2a; padding: 15px 10px; border-radius: 8px; text-align:center; border:1px solid var(--primary-yellow);">
+                    <div style="font-size: 24px; color: var(--primary-yellow); font-weight: bold;">${totalScore}</div>
+                    <div style="color: var(--text-muted); font-size: 11px; text-transform:uppercase; margin-top:4px;">Overall Mark</div>
                 </div>
-                <div style="background:#2a2a2a; padding: 12px 5px; border-radius: 6px; text-align:center; border:1px solid var(--border-color);">
-                    <div style="font-size: 20px; color: white; font-weight: bold;">${overallAccuracy}%</div>
-                    <div style="color: var(--text-muted); font-size: 10px; text-transform:uppercase; margin-top:2px;">Accuracy</div>
+                <div style="flex:1; min-width: 100px; max-width: 150px; background:#2a2a2a; padding: 15px 10px; border-radius: 8px; text-align:center; border:1px solid var(--border-color);">
+                    <div style="font-size: 24px; color: white; font-weight: bold;">${overallAccuracy}%</div>
+                    <div style="color: var(--text-muted); font-size: 11px; text-transform:uppercase; margin-top:4px;">Accuracy</div>
                 </div>
             </div>
 
