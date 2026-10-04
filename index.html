@@ -12,8 +12,8 @@
     <link rel="apple-touch-icon" href="icon-192.png">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🩺</text></svg>">
     
-    <!-- Cache busting parameter bumped to v10 -->
-    <link rel="stylesheet" href="style.css?v=10">
+    <!-- Cache busting parameter bumped to v11 -->
+    <link rel="stylesheet" href="style.css?v=11">
     
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
@@ -200,7 +200,7 @@
     <div id="editTopicModal" class="modal-overlay"><div class="modal-content" style="max-width: 450px;"><button class="close-modal" onclick="closeEditTopicModal()">✕</button><h2 style="color: var(--primary-yellow);">✏️ Edit Folder</h2><input type="hidden" id="editTopicId"><input type="text" id="editTopicName" class="input-field"><select id="editTopicType" class="input-field"><option value="mcq">MCQs</option><option value="pdf">PDF</option></select><button class="btn-exam" onclick="saveEditedTopic()" style="width:100%; background:var(--correct-green);">Save</button></div></div>
     <div id="editModal" class="modal-overlay"><div class="modal-content"><button class="close-modal" onclick="closeEditModal()">✕</button><h2 style="color: var(--primary-yellow);">✏️ Edit MCQ</h2><input type="hidden" id="editDocId"><textarea id="editQuestion" class="input-field"></textarea><div class="admin-row"><input type="text" id="editOptA" class="input-field" placeholder="A"><input type="text" id="editOptB" class="input-field" placeholder="B"></div><div class="admin-row"><input type="text" id="editOptC" class="input-field" placeholder="C"><input type="text" id="editOptD" class="input-field" placeholder="D"></div><div class="admin-checkbox-group"><label><input type="checkbox" value="A" class="editCorrectCb">A</label><label><input type="checkbox" value="B" class="editCorrectCb">B</label><label><input type="checkbox" value="C" class="editCorrectCb">C</label><label><input type="checkbox" value="D" class="editCorrectCb">D</label></div><select id="editDifficulty" class="input-field"><option value="Easy">Easy</option><option value="Medium">Medium</option><option value="Hard">Hard</option><option value="Mixed">Mixed</option></select><textarea id="editExplanation" class="input-field" placeholder="Explanation..."></textarea><button class="btn-exam" onclick="saveEditedMCQ()" style="width:100%; background:var(--correct-green);">Save</button></div></div>
 
-    <!-- 📱 FLOATING LIGHT DOCK -->
+    <!-- 📱 FLOATING LIGHT DOCK (Hidden on Website, Visible on App) -->
     <div class="mobile-app-bottom-bar" id="mobileAppDock">
         <div class="app-tab active" onclick="goHome()">
             <div class="app-tab-icon"><svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg></div>
