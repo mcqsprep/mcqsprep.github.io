@@ -24,13 +24,13 @@ function startPress(e) {
     pressTimer = setTimeout(() => {
         isDragging = true;
         aiBtn.classList.add('draggable');
-    }, 200); // FIX: Reduced timeout for snappier drag detection
+    }, 200);
 }
 
 function drag(e) {
     if (!isDragging) return;
     e.preventDefault();
-    wasDragging = true; // FIX: Flag that a drag actually occurred
+    wasDragging = true;
     let currentX = e.type === 'touchmove' ? e.touches[0].clientX : e.clientX;
     let currentY = e.type === 'touchmove' ? e.touches[0].clientY : e.clientY;
     
@@ -55,7 +55,6 @@ function endPress(e) {
     }
 }
 
-// FIX: Intercept the click event to prevent the modal from opening if we just dragged the button
 aiBtn.onclick = function(e) {
     if (wasDragging) {
         e.preventDefault();
@@ -114,7 +113,7 @@ function handleAIPaste(e) {
 }
 
 function openAIModal() {
-    document.body.classList.add('hide-bottom-bar'); // Hide dock so chat bar is fully visible
+    document.body.classList.add('hide-bottom-bar');
     document.getElementById('aiModal').style.display = 'flex'; 
     document.getElementById('ai-idle-view').style.display = 'flex';
     document.getElementById('ai-cropper-view').style.display = 'none';
@@ -140,7 +139,7 @@ function openAIModal() {
 
 function closeAIModal() { 
     document.getElementById('aiModal').style.display = 'none'; 
-    document.body.classList.remove('hide-bottom-bar'); // Restore dock
+    document.body.classList.remove('hide-bottom-bar');
     if(cropper) { cropper.destroy(); cropper = null; } 
 }
 
@@ -243,7 +242,7 @@ function appendChatBubble(role, htmlContent, rawText = "") {
         wrapper.style.cssText = `align-self: flex-end; max-width: 85%; display: flex; align-items: flex-end; gap: 8px; margin-bottom: 5px;`;
         
         const editBtn = document.createElement('button');
-        editBtn.innerHTML = '✏️️';
+        editBtn.innerHTML = '✏';
         editBtn.title = 'Edit';
         editBtn.setAttribute('data-text', rawText.replace(/"/g, '&quot;'));
         editBtn.style.cssText = `background: rgba(255,255,255,0.08); border: none; color: white; width: 28px; height: 28px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; opacity: 0; transition: 0.2s; font-size: 12px;`;
@@ -275,8 +274,12 @@ function appendChatBubble(role, htmlContent, rawText = "") {
         bubble.innerHTML = htmlContent;
         historyContainer.appendChild(bubble);
         
-        // FIX: Added throwOnError: false to prevent KaTeX from crashing the whole render on a syntax error
-        renderMathInElement(bubble, { delimiters: [ {left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}, {left: '\\(', right: '\\)', display: false}, {left: '\\[', right: '\\]', display: true} ], throwOnError: false });
+        // FIX: ADDED errorColor safety net to prevent glaring red UI if KaTeX fails
+        renderMathInElement(bubble, { 
+            delimiters: [ {left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}, {left: '\\(', right: '\\)', display: false}, {left: '\\[', right: '\\]', display: true} ], 
+            throwOnError: false, 
+            errorColor: "#fdb813" 
+        });
     }
     
     historyContainer.scrollTop = historyContainer.scrollHeight;
@@ -484,7 +487,7 @@ async function _renderDoubtDiary() {
         html += `<button class="btn-exam" onclick="goBack()" style="background:#333; border:none;">Back</button></div>`; 
         mc.innerHTML = html;
         
-        // FIX: Added throwOnError: false here as well
-        document.querySelectorAll('.katex-render-target').forEach(el => { renderMathInElement(el, { delimiters: [ {left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}, {left: '\\(', right: '\\)', display: false}, {left: '\\[', right: '\\]', display: true} ], throwOnError: false }); });
+        // FIX: ADDED errorColor safety net to prevent glaring red UI if KaTeX fails
+        document.querySelectorAll('.katex-render-target').forEach(el => { renderMathInElement(el, { delimiters: [ {left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}, {left: '\\(', right: '\\)', display: false}, {left: '\\[', right: '\\]', display: true} ], throwOnError: false, errorColor: "#fdb813" }); });
     } catch(e) { mc.innerHTML = `<div class="card"><h2>Error</h2><p>${e.message}</p></div>`; }
 }
