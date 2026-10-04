@@ -39,6 +39,21 @@ if ('serviceWorker' in navigator) {
     });
 }
 
+// 🔴 NEW: PC Back Button Visibility Logic
+function handlePCBackButton() {
+    const backBtn = document.querySelector('.pc-back-btn');
+    if (!backBtn) return;
+    const hash = window.location.hash || '';
+    // Hide the back button if we are on the main Home page
+    if (hash === '' || hash === '#/' || hash.startsWith('#/home')) {
+        backBtn.style.display = 'none';
+    } else {
+        backBtn.style.display = 'flex';
+    }
+}
+window.addEventListener('hashchange', handlePCBackButton);
+window.addEventListener('DOMContentLoaded', handlePCBackButton);
+
 const styleSheet = document.createElement('style');
 styleSheet.innerHTML = `
     @keyframes fadeSlideUp { 0% { transform: translateY(15px); opacity: 0; } 100% { transform: translateY(0); opacity: 1; } }
@@ -81,20 +96,14 @@ styleSheet.innerHTML = `
 `;
 document.head.appendChild(styleSheet);
 
-// FIX: Auto-Sanitizer to clean AI LaTeX outputs before KaTeX parses them
 function formatTextWithMath(text) {
     if (!text) return "";
-    
-    // 1. Remove stray backslashes at the end of lines (common AI markdown artifact)
     text = text.replace(/\\\n/g, '\n');
-    
-    // 2. Fix KaTeX parse errors where AI puts subscripts/superscripts inside \text{}
     text = text.replace(/\\text\{([^{}]+)_([^{}]+)\}/g, '\\text{$1}_$2');
     text = text.replace(/\\text\{([^{}]+)\^([^{}]+)\}/g, '\\text{$1}^$2');
 
     const mathSnippets = [];
     let processedText = text.replace(/(\$\$[\s\S]*?\$\$|\\\[[\s\S]*?\\\]|\$[\s\S]*?\$|\\\([\s\S]*?\\\))/g, function(match) {
-        // 3. Remove hidden newlines inside inline math ($...$) which causes KaTeX to instantly crash
         if (match.startsWith('$') && !match.startsWith('$$')) {
             match = match.replace(/\n/g, ' ');
         } else if (match.startsWith('\\(')) {
