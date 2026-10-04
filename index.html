@@ -30,7 +30,6 @@
 
     <nav class="navbar">
         <div class="nav-left">
-            <!-- PC Global Back Button -->
             <button class="pc-back-btn hide-on-mobile" onclick="window.history.back()" title="Go Back">❮</button>
             
             <div class="logo-container" onclick="goHome()">🩺 MCQsPrep<span class="compact-hide">.</span></div>
@@ -49,7 +48,7 @@
             <button class="search-icon-btn" onclick="openSearch()">🔍</button>
             <div class="search-input-container">
                 <input type="text" id="searchInput" placeholder="Search MCQs, chapters..." oninput="handleLiveSearch()" onblur="delayCloseSearch()">
-                <button class="search-close-btn" onclick="closeSearch()">✕</button>
+                <button class="search-close-btn" onclick="closeSearch()" onmousedown="closeSearch()">✕</button>
                 <div class="suggestions-dropdown" id="searchSuggestions"></div>
             </div>
         </div>
