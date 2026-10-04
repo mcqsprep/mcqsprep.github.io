@@ -2,7 +2,6 @@
 // 1. SYSTEM INITIALIZATION & CONFIGURATION
 // ==========================================
 
-// PWA Install Logic
 let deferredPrompt;
 window.addEventListener('beforeinstallprompt', (e) => {
     e.preventDefault();
@@ -11,7 +10,6 @@ window.addEventListener('beforeinstallprompt', (e) => {
     const btn1 = document.getElementById('installAppBtn');
     const btn2 = document.getElementById('installAppBtnMobile');
     
-    // Safety check: Only show install button if not currently running as an installed standalone app
     if (!window.matchMedia('(display-mode: standalone)').matches && window.navigator.standalone !== true) {
         if (btn1) btn1.style.display = 'flex';
         if (btn2) btn2.style.display = 'flex';
@@ -20,7 +18,6 @@ window.addEventListener('beforeinstallprompt', (e) => {
 
 function installPWA() {
     if (!deferredPrompt) {
-        // Fallback alert for iOS Safari which hides the API
         showNotification("To install: Tap your browser menu (or Share icon on iOS) and select 'Add to Home Screen'.");
         return;
     }
@@ -47,13 +44,6 @@ styleSheet.innerHTML = `
     @keyframes fadeSlideUp { 0% { transform: translateY(15px); opacity: 0; } 100% { transform: translateY(0); opacity: 1; } }
     .page-transition { animation: fadeSlideUp 0.3s cubic-bezier(0.25, 1, 0.5, 1) forwards; }
     
-    .ai-fullscreen-modal { background: #0a0a0f !important; overflow: hidden !important; border: none !important; height: 100dvh !important; max-height: 100dvh !important; box-sizing: border-box; }
-    .ai-fullscreen-modal * { box-sizing: border-box; }
-    .ai-ambient-glow { position: absolute; border-radius: 50%; pointer-events: none; filter: blur(140px); z-index: 1; }
-    .ai-glow-1 { top: -10%; left: -10%; width: 50vw; height: 50vh; background: #6228d7; opacity: 0.3; }
-    .ai-glow-2 { bottom: -10%; right: -5%; width: 60vw; height: 60vh; background: #fdb813; opacity: 0.15; }
-    .ai-glow-3 { top: 40%; left: 30%; width: 40vw; height: 40vh; background: #ff007f; opacity: 0.15; }
-    
     #gemini-chat-history::-webkit-scrollbar { width: 6px; }
     #gemini-chat-history::-webkit-scrollbar-track { background: transparent; }
     #gemini-chat-history::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 10px; }
@@ -68,9 +58,6 @@ styleSheet.innerHTML = `
     #ai-floating-btn { -webkit-user-select: none; -ms-user-select: none; user-select: none; touch-action: none; }
     .bookmarked { background: rgba(253, 184, 19, 0.2) !important; color: var(--primary-yellow) !important; border-color: var(--primary-yellow) !important; }
     
-    .nav-streak-badge { background: rgba(255, 87, 34, 0.15); color: #FF5722; padding: 5px 12px; border-radius: 20px; font-weight: bold; font-size: 13px; display: flex; align-items: center; gap: 5px; border: 1px solid rgba(255, 87, 34, 0.3); }
-
-    /* Forcing top-anchored snackbar UI to prevent bottom-bar collisions */
     #notification {
         position: fixed !important;
         top: 20px !important;
@@ -94,10 +81,25 @@ styleSheet.innerHTML = `
 `;
 document.head.appendChild(styleSheet);
 
+// FIX: Auto-Sanitizer to clean AI LaTeX outputs before KaTeX parses them
 function formatTextWithMath(text) {
     if (!text) return "";
+    
+    // 1. Remove stray backslashes at the end of lines (common AI markdown artifact)
+    text = text.replace(/\\\n/g, '\n');
+    
+    // 2. Fix KaTeX parse errors where AI puts subscripts/superscripts inside \text{}
+    text = text.replace(/\\text\{([^{}]+)_([^{}]+)\}/g, '\\text{$1}_$2');
+    text = text.replace(/\\text\{([^{}]+)\^([^{}]+)\}/g, '\\text{$1}^$2');
+
     const mathSnippets = [];
     let processedText = text.replace(/(\$\$[\s\S]*?\$\$|\\\[[\s\S]*?\\\]|\$[\s\S]*?\$|\\\([\s\S]*?\\\))/g, function(match) {
+        // 3. Remove hidden newlines inside inline math ($...$) which causes KaTeX to instantly crash
+        if (match.startsWith('$') && !match.startsWith('$$')) {
+            match = match.replace(/\n/g, ' ');
+        } else if (match.startsWith('\\(')) {
+            match = match.replace(/\n/g, ' ');
+        }
         mathSnippets.push(match);
         return `@@MATH_SPAWN_${mathSnippets.length - 1}@@`;
     });
@@ -105,7 +107,6 @@ function formatTextWithMath(text) {
     let html = marked.parse(processedText);
     
     mathSnippets.forEach((snippet, i) => {
-        // FIX: Using a callback function prevents JS from misinterpreting $1, $2, $3 in LaTeX as regex backreferences
         html = html.replace(`@@MATH_SPAWN_${i}@@`, () => snippet);
     });
     return html;
@@ -122,7 +123,6 @@ const firebaseConfig = {
 
 firebase.initializeApp(firebaseConfig); 
 
-// Enable True Offline-First Persistence for Firestore
 const db = firebase.firestore(); 
 db.enablePersistence({synchronizeTabs:true}).catch(function(err) {
     console.log("Offline persistence error:", err.code);
