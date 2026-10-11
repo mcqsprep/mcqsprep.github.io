@@ -191,7 +191,9 @@ body {
     
     .card { padding: 16px; margin-bottom: 12px; border-radius: 12px; }
     .category-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; }
-    .category-tile { flex-direction: column; text-align: center; justify-content: center; }
+    
+    /* MOBILE BOX FIX 1 */
+    .category-tile { flex-direction: column; text-align: center; justify-content: center; min-width: 0 !important; box-sizing: border-box !important; }
     
     #ai-floating-btn { bottom: 80px; right: 20px; padding: 12px 20px; }
     
@@ -303,6 +305,8 @@ body {
     .section-title { font-size: 16px !important; color: #8e8e93 !important; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; margin-bottom: 16px !important; margin-left: 4px !important;}
     
     .category-grid { display: grid !important; grid-template-columns: repeat(2, 1fr) !important; gap: 14px !important; }
+    
+    /* MOBILE APP BOX FIX 2 */
     .category-tile { 
         background: #141416 !important; 
         border: 1px solid rgba(255,255,255,0.06) !important; 
@@ -314,7 +318,11 @@ body {
         text-align: center !important;
         height: 120px !important;
         box-shadow: 0 8px 24px rgba(0,0,0,0.2) !important;
+        min-width: 0 !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
     }
+
     .cat-icon { width: 50px !important; height: 50px !important; font-size: 24px !important; border-radius: 16px !important; margin-bottom: 12px !important; box-shadow: inset 0 2px 4px rgba(255,255,255,0.1); }
     .cat-text { font-size: 14px !important; color: #fff !important; }
 
