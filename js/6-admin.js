@@ -5,7 +5,6 @@ let adminCurrentTab = 'upload'; let adminNewTopicPath = []; let adminSelectedPat
 let lastManageDoc = null;
 let isFetchingManageContent = false;
 
-// Inject sleek, modern Dashboard CSS dynamically
 const adminStyles = `
 <style>
     .admin-nav-pills { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 15px; margin-bottom: 25px; scrollbar-width: none; }
@@ -166,7 +165,7 @@ function _renderAdminPanel() {
                     <label class="admin-label">1. Select Parent Path (Where should it go?)</label>
                     <div id="dynamic-new-path-selectors" style="display:flex; gap:15px; flex-wrap:wrap;"></div>
                     <div id="new-topic-path-display" style="margin-top:10px; font-size:13px; color:var(--primary-yellow); margin-bottom: 20px;">
-                        <b>Path:</b> <span id="new-topic-path-text" style="color:white;">Root</span>
+                        <b>Path:</b> <span id="new-topic-path-text" style="color:white;">Root (Main Menu)</span>
                     </div>
                     
                     <div class="admin-grid-2">
@@ -178,9 +177,9 @@ function _renderAdminPanel() {
                         <div>
                             <label class="admin-label">3. Expected Content Type</label>
                             <select id="newFolderType" class="input-field">
-                                <option value="both">📂 Both (MCQs & PDFs)</option>
-                                <option value="mcq">📝 MCQs Practice</option>
-                                <option value="pdf">📄 PDF / Image Material</option>
+                                <option value="both">📂 Parent Category (To hold MCQs/PDFs inside)</option>
+                                <option value="mcq">📝 MCQs Practice (End Topic)</option>
+                                <option value="pdf">📄 PDF / Image Material (End Topic)</option>
                             </select>
                         </div>
                     </div>
@@ -312,11 +311,14 @@ function renderAdminTopicsList(topicsArray) {
     let html = '';
     topicsArray.forEach(d => {
         let cleanName = d.name.replace(/'/g, "\\'");
+        let typeBadgeStr = d.type === 'both' ? 'Parent Category' : d.type;
+        let parentStr = d.parentPath || 'Root (Main Menu)';
+        
         html += `
         <div style="background:#1c1c24; border:1px solid #2b2b36; border-radius:12px; padding:16px 20px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center; flex-wrap: wrap; gap: 15px;">
             <div>
-                <span style="color:var(--text-muted); font-size:12px; display:block; margin-bottom:4px;">${d.parentPath}</span>
-                <b style="font-size:16px; color:#fff;">📁 ${d.name}</b> <span style="font-size:11px; background:#333; color:#aaa; padding:3px 8px; border-radius:6px; margin-left:8px; text-transform:uppercase;">${d.type}</span>
+                <span style="color:var(--text-muted); font-size:12px; display:block; margin-bottom:4px;">Path: ${parentStr}</span>
+                <b style="font-size:16px; color:#fff;">📁 ${d.name}</b> <span style="font-size:11px; background:#333; color:#aaa; padding:3px 8px; border-radius:6px; margin-left:8px; text-transform:uppercase;">${typeBadgeStr}</span>
             </div>
             <div style="display:flex; gap:10px;">
                 <button onclick="openEditTopicModal('${d.id}', '${cleanName}', '${d.type}')" style="background:rgba(33, 150, 243, 0.15); border:1px solid rgba(33,150,243,0.3); color:#2196F3; padding:8px 16px; border-radius:8px; cursor:pointer; font-weight:bold; transition:0.2s;">Edit</button>
@@ -413,10 +415,6 @@ function handleAdminNewTopicPathChange(event, depth) {
 }
         
 async function createCustomTopic() {
-    if (adminNewTopicPath.length === 0) {
-        showNotification("⚠️ Please select a parent path.");
-        return;
-    }
     const folderNameInput = document.getElementById('newFolderName');
     const folderName = folderNameInput.value.trim();
     if (!folderName) {
@@ -426,14 +424,16 @@ async function createCustomTopic() {
     const folderType = document.getElementById('newFolderType').value;
     
     try {
-        const fullPath = adminNewTopicPath.join(' > ');
+        // FIX: Allows creation of Root level topics (empty parentPath)
+        const fullPath = adminNewTopicPath.length > 0 ? adminNewTopicPath.join(' > ') : "";
+        
         await db.collection("custom_topics").add({ 
             parentPath: fullPath, 
             name: folderName, 
             type: folderType, 
             timestamp: firebase.firestore.FieldValue.serverTimestamp() 
         });
-        showNotification("✅ Subtopic Created Successfully!"); 
+        showNotification("✅ Folder Created Successfully!"); 
         folderNameInput.value = ""; 
         await loadCustomTopics(); 
         _buildAdminNewTopicSelectors(); 
