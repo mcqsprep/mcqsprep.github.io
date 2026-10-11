@@ -36,21 +36,40 @@ function _renderView() {
 
         if (isEndpoint) {
             let topicNameRaw = currentPath[currentPath.length - 1]; 
-            let topicName = topicNameRaw.replace(/^\d+\.\s*/, ''); // Hides numbers from the main title
+            let topicName = topicNameRaw.replace(/^\d+\.\s*/, ''); 
             let checkPath = currentPath.join(" > ");
-            let isPdfSection = false;
+            
+            let isPdfOnly = false;
+            let isContainer = false;
             
             if (customTopicTypes[checkPath] === 'pdf') {
-                isPdfSection = true;
+                isPdfOnly = true;
+            } else if (customTopicTypes[checkPath] === 'both') {
+                isContainer = true;
             } else if (customTopicTypes[checkPath] !== 'mcq') {
                 let triggers = ["mcqs practice", "mock test", "general knowledge", "practice paper", "current affairs", "history", "geography", "daily quiz challenge"];
                 let reqQuiz = triggers.some(t => checkPath.toLowerCase().includes(t));
-                if (!reqQuiz) isPdfSection = true;
+                if (!reqQuiz) isPdfOnly = true;
             }
             
-            if (!isPdfSection) {
-                let studentName = (currentUser && currentUser.displayName) ? currentUser.displayName.split(" ")[0] : "Student";
-                
+            let studentName = (currentUser && currentUser.displayName) ? currentUser.displayName.split(" ")[0] : "Student";
+            
+            // FIX: If it is marked as a Container but the admin hasn't added subtopics yet, show an empty state instead of a Quiz button.
+            if (isContainer) {
+                mc.innerHTML = `
+                <div class="card page-transition">
+                    <h2 class="section-title">📂 ${topicName}</h2>
+                    <p style="color:var(--text-muted);">This category is currently empty. Subtopics will appear here once added by the Admin.</p>
+                    <button class="btn-exam" onclick="goBack()" style="background:#333; width:150px; margin-top:20px; font-size:16px; border:none;">&larr; Go Back</button>
+                </div>`;
+            } else if (isPdfOnly) {
+                mc.innerHTML = `
+                <div class="card page-transition">
+                    <h2 class="section-title">${topicName} Resources</h2>
+                    <p style="color:var(--text-muted);">Materials will appear here once uploaded via the Admin Panel.</p>
+                    <button class="btn-exam" onclick="goBack()" style="background:#333; width:150px; margin-top:20px; font-size:16px; border:none;">&larr; Go Back</button>
+                </div>`;
+            } else {
                 mc.innerHTML = `
                 <div class="card page-transition">
                     <h2 class="section-title">${topicName} Practice</h2>
@@ -59,13 +78,6 @@ function _renderView() {
                         <button class="btn-exam" onclick="forceStartQuiz()" style="background:var(--primary-yellow) !important; color:black !important; flex:1; min-width:150px; font-size:16px; font-weight:bold; border:none !important; box-shadow:0 4px 15px rgba(253,184,19,0.3) !important;">Start Quiz &rarr;</button>
                         <button class="btn-exam" onclick="goBack()" style="background:#333 !important; color:white !important; flex:1; min-width:120px; font-size:16px; border:none !important; font-weight:bold;">&larr; Go Back</button>
                     </div>
-                </div>`;
-            } else {
-                mc.innerHTML = `
-                <div class="card page-transition">
-                    <h2 class="section-title">${topicName} Resources</h2>
-                    <p style="color:var(--text-muted);">Materials will appear here once uploaded via the Admin Panel.</p>
-                    <button class="btn-exam" onclick="goBack()" style="background:#333; width:150px; margin-top:20px; font-size:16px; border:none;">&larr; Go Back</button>
                 </div>`;
             }
             return;
@@ -97,7 +109,6 @@ function _renderView() {
             if (idxA !== -1) return -1;
             if (idxB !== -1) return 1;
             
-            // Numeric sorting for prefixes (e.g. "01. Botany")
             let matchA = a.match(/^(\d+)\./);
             let matchB = b.match(/^(\d+)\./);
             if (matchA && matchB) return parseInt(matchA[1], 10) - parseInt(matchB[1], 10);
@@ -128,12 +139,18 @@ function _renderView() {
         for (let key of keys) { 
             if (currentPath.length === 0 && key === "Daily Quiz Challenge") continue; 
             let checkPath = currentPath.join(" > ") + (currentPath.length > 0 ? " > " : "") + key;
-            let typeLabel = ""; if (customTopicTypes[checkPath] === 'mcq') typeLabel = "📝"; else if (customTopicTypes[checkPath] === 'pdf') typeLabel = "📄";
+            
+            // Assign Dynamic Icons based on Type
+            let typeLabel = ""; 
+            if (customTopicTypes[checkPath] === 'mcq') typeLabel = "📝"; 
+            else if (customTopicTypes[checkPath] === 'pdf') typeLabel = "📄";
+            else if (customTopicTypes[checkPath] === 'both') typeLabel = "📂";
+            
             let safeKey = key.replace(/'/g, "\\'");
             
-            // Hides the numbers from the folder UI
             let displayKey = key.replace(/^\d+\.\s*/, '');
-            let iconData = iconMap[displayKey] || iconMap[key] || { i: typeLabel === '📄' ? "📄" : "📁", c: "#9e9ea7", bg: "rgba(255,255,255,0.08)" };
+            let fallbackIcon = typeLabel === '📄' ? "📄" : (typeLabel === '📝' ? "📝" : "📁");
+            let iconData = iconMap[displayKey] || iconMap[key] || { i: fallbackIcon, c: "#9e9ea7", bg: "rgba(255,255,255,0.08)" };
 
             h += `<button class="category-tile" onclick="navigateTo('${safeKey}')">
                     <div class="cat-icon" style="background: ${iconData.bg}; color: ${iconData.c};">${iconData.i}</div>
