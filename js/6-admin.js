@@ -178,6 +178,7 @@ function _renderAdminPanel() {
                         <div>
                             <label class="admin-label">3. Expected Content Type</label>
                             <select id="newFolderType" class="input-field">
+                                <option value="both">📂 Both (MCQs & PDFs)</option>
                                 <option value="mcq">📝 MCQs Practice</option>
                                 <option value="pdf">📄 PDF / Image Material</option>
                             </select>
