@@ -33,11 +33,18 @@ window.addEventListener('click', function(e) {
     } 
 });
 
-async function initApp() { 
-    await loadCustomTopics(); 
+function initApp() { 
+    // Instantly unlock routing to draw the hardcoded syllabus immediately
     dataLoaded = true; 
     if (!window.location.hash) window.location.hash = '#/home'; 
     handleRouting(); 
+    
+    // Load custom folders from Firebase in the background without blocking the screen
+    loadCustomTopics().then(() => {
+        if(window.location.hash === '#/home' || window.location.hash === '' || window.location.hash === '#/') {
+            _renderView(); 
+        }
+    });
 }
 
 auth.onAuthStateChanged((user) => {
