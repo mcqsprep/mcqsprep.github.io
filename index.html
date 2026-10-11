@@ -6,21 +6,20 @@
     <title>MCQsPrep - Dashboard</title>
     
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#000000">
+    <meta name="theme-color" content="#070709">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="apple-touch-icon" href="icon-192.png">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🩺</text></svg>">
     
-    <!-- Cache busting parameter bumped to v17 -->
-    <link rel="stylesheet" href="style.css?v=18">
+    <!-- Cache busting parameter bumped to v19 for Esports Redesign -->
+    <link rel="stylesheet" href="style.css?v=19">
     
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
-    <!-- FIX: Added 'defer' to background load heavy AI scripts -->
     <script defer src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
@@ -46,7 +45,7 @@
         </div>
 
         <div class="search-wrapper" id="searchWrapper">
-            <button class="search-icon-btn" onclick="openSearch()">🔍</button>
+            <button class="search-icon-btn" onclick="openSearch()">🔍 Search</button>
             <div class="search-input-container">
                 <input type="text" id="searchInput" placeholder="Search MCQs, chapters..." oninput="handleLiveSearch()" onblur="delayCloseSearch()">
                 <button class="search-close-btn" onclick="closeSearch()" onmousedown="closeSearch()">✕</button>
@@ -55,11 +54,11 @@
         </div>
         
         <div class="nav-right">
-            <button id="installAppBtn" class="install-btn hide-in-app-mode hide-on-mobile" onclick="installPWA()" style="display:none;">📱 Install App</button>
+            <button id="installAppBtn" class="install-btn hide-in-app-mode hide-on-mobile" onclick="installPWA()" style="display:none; background:rgba(255,255,255,0.05); color:white; border:1px solid rgba(255,255,255,0.1); padding:8px 14px; border-radius:6px; cursor:pointer; font-weight:bold; font-size:12px; text-transform:uppercase;">📱 Install App</button>
             <a class="nav-link-item hide-on-mobile hide-in-app-mode" onclick="goHome()">Home</a>
             <a class="nav-link-item hide-on-mobile hide-in-app-mode" onclick="showLeaderboardOptions()">Leaderboard</a>
             
-            <div id="loginNavBtn" class="user-badge" onclick="showAuthModal()" style="display:none; background: white; color: #444; border: none;">
+            <div id="loginNavBtn" class="user-badge" onclick="showAuthModal()" style="display:none; background: white; color: #000; border: none; padding:6px 16px;">
                 <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="G"><span class="compact-hide">Sign In</span>
             </div>
             
@@ -81,7 +80,7 @@
     </nav>
     
     <div class="mobile-web-subnav hide-on-pc hide-in-app-mode">
-        <button id="installAppBtnMobile" class="install-btn" onclick="installPWA()" style="display:flex;">📱 Install App</button>
+        <button id="installAppBtnMobile" class="install-btn" onclick="installPWA()" style="display:flex; background:rgba(255,255,255,0.05); color:white; border:1px solid rgba(255,255,255,0.1); padding:6px 12px; border-radius:4px; font-weight:bold; font-size:11px;">📱 Install</button>
         <div style="display: flex; gap: 20px;">
             <a onclick="goHome()">🏠 Home</a>
             <a onclick="showLeaderboardOptions()">🏆 Rank</a>
@@ -123,7 +122,7 @@
 
     <div id="notification">Action Triggered!</div>
     
-    <div id="ai-floating-btn" class="hide-in-app-mode" onclick="openAIModal()">✨ Ask AI</div>
+    <div id="ai-floating-btn" class="hide-in-app-mode" onclick="openAIModal()">✨ Ask AI Tutor</div>
 
     <div id="aiModal" class="modal-overlay" style="z-index: 4000; padding: 0; display: none;">
         <div class="modal-content ai-fullscreen-modal" style="display: flex; flex-direction: column;">
@@ -157,8 +156,8 @@
                         <img id="aiCropperImage" style="max-width: 100%; max-height: 100%; display: block;">
                     </div>
                     <div style="display: flex; gap: 15px; width: 100%; max-width: 600px;">
-                        <button class="btn-exam" onclick="cancelCropper()" style="flex: 1; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white; padding: 12px; border-radius: 25px;">Cancel</button>
-                        <button class="btn-exam" onclick="confirmCropAndSolve()" style="flex: 2; background: linear-gradient(135deg, var(--primary-yellow), #ff9800); color: black; border: none; padding: 12px; border-radius: 25px; font-weight: bold; font-size: 15px;">Crop & Continue 🚀</button>
+                        <button class="btn-exam" onclick="cancelCropper()" style="flex: 1; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white; padding: 12px; border-radius: 8px;">Cancel</button>
+                        <button class="btn-exam" onclick="confirmCropAndSolve()" style="flex: 2; background: linear-gradient(135deg, var(--primary-yellow), #ff9800); color: black; border: none; padding: 12px; border-radius: 8px; font-weight: bold; font-size: 15px;">Crop & Continue 🚀</button>
                     </div>
                 </div>
             </div>
@@ -194,16 +193,16 @@
     </div>
 
     <!-- Modals -->
-    <div id="authModal" class="modal-overlay"><div class="modal-content" style="text-align: center; max-width: 400px;"><button class="close-modal" onclick="skipSignIn()">✕</button><h2 style="color: var(--primary-yellow);">Welcome to MCQsPrep</h2><p style="color: var(--text-muted); margin-bottom: 25px;">Sign in securely to track your progress.</p><button class="google-btn" onclick="signInWithGoogle()"><img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google">Sign in with Google</button></div></div>
+    <div id="authModal" class="modal-overlay"><div class="modal-content" style="text-align: center; max-width: 400px;"><button class="close-modal" onclick="skipSignIn()">✕</button><h2 style="color: var(--primary-yellow); margin-top:0;">Welcome to MCQsPrep</h2><p style="color: var(--text-muted); margin-bottom: 25px;">Sign in securely to track your progress.</p><button class="btn-exam" onclick="signInWithGoogle()" style="width:100%; background:rgba(255,255,255,0.1); display:flex; align-items:center; gap:10px;"><img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" style="width:20px;">Sign in with Google</button></div></div>
     <div id="streakModal" class="modal-overlay"><div class="modal-content" style="text-align: center; max-width: 380px;"><button class="close-modal" onclick="closeStreakModal()">✕</button><div style="font-size: 45px; margin-bottom: 8px;">🔥</div><h2 style="color: #FF5722; margin-top: 0; margin-bottom: 15px;">Current Streak: <span id="modalStreakCount">0</span> Days</h2><div style="background: rgba(255, 87, 34, 0.1); border-left: 4px solid #FF5722; padding: 14px; margin-bottom: 20px; border-radius: 4px; text-align: left; font-size: 13px;"><b style="color: #FF5722;">How to build your streak:</b><br><span style="color: var(--text-light); line-height: 1.5; display: inline-block; margin-top: 6px;">Complete at least <b>one practice quiz every day</b>. If you miss a single day, your streak resets to zero!</span></div><button class="btn-exam" onclick="closeStreakModal(); jumpToSection(['Daily Quiz Challenge'])" style="width: 100%; background: #FF5722; color: white; border: none; font-size: 15px;">Keep Streak Alive 🚀</button></div></div>
-    <div id="userReportsModal" class="modal-overlay"><div class="modal-content" style="max-width: 600px;"><button class="close-modal" onclick="closeUserReportsModal()">✕</button><h2 style="color: var(--primary-yellow);">🚨 My Reports</h2><div id="user-reports-list" style="max-height: 50vh; overflow-y: auto;"></div></div></div>
-    <div id="reportModal" class="modal-overlay"><div class="modal-content" style="max-width: 450px;"><button class="close-modal" onclick="closeReportModal()">✕</button><h2 style="color: var(--wrong-red);">🚨 Report Mistake</h2><select id="reportReason" class="input-field"><option value="Wrong Option Provided">Wrong Option</option><option value="Typo">Typo</option><option value="Other">Other</option></select><textarea id="reportDescription" class="input-field" placeholder="Details..."></textarea><button class="btn-exam" onclick="submitReport()" style="width:100%; background:var(--wrong-red);">Submit</button></div></div>
-    <div id="feedbackModal" class="modal-overlay"><div class="modal-content" style="text-align: center;"><button class="close-modal" onclick="closeFeedbackModal()">✕</button><h2 style="color: var(--primary-yellow);">⭐ Feedback</h2><div style="background: #202026; padding: 22px; border-radius: 8px;"><div style="margin-bottom: 20px;"><button id="star-1" class="star-btn" onclick="updateStarUI(1)">★</button><button id="star-2" class="star-btn" onclick="updateStarUI(2)">★</button><button id="star-3" class="star-btn" onclick="updateStarUI(3)">★</button><button id="star-4" class="star-btn" onclick="updateStarUI(4)">★</button><button id="star-5" class="star-btn" onclick="updateStarUI(5)">★</button></div><textarea id="platformFeedbackText" class="input-field" placeholder="Tell us what you like..."></textarea><button id="submitFeedbackBtn" class="btn-exam" onclick="submitPlatformFeedback()" style="width: 100%; background: var(--primary-yellow); color: black;">Submit</button></div></div></div>
+    <div id="userReportsModal" class="modal-overlay"><div class="modal-content" style="max-width: 600px;"><button class="close-modal" onclick="closeUserReportsModal()">✕</button><h2 style="color: var(--primary-yellow); margin-top:0;">🚨 My Reports</h2><div id="user-reports-list" style="max-height: 50vh; overflow-y: auto;"></div></div></div>
+    <div id="reportModal" class="modal-overlay"><div class="modal-content" style="max-width: 450px;"><button class="close-modal" onclick="closeReportModal()">✕</button><h2 style="color: var(--wrong-red); margin-top:0;">🚨 Report Mistake</h2><select id="reportReason" class="input-field"><option value="Wrong Option Provided">Wrong Option</option><option value="Typo">Typo</option><option value="Other">Other</option></select><textarea id="reportDescription" class="input-field" placeholder="Details..."></textarea><button class="btn-exam" onclick="submitReport()" style="width:100%; background:var(--wrong-red);">Submit</button></div></div>
+    <div id="feedbackModal" class="modal-overlay"><div class="modal-content" style="text-align: center;"><button class="close-modal" onclick="closeFeedbackModal()">✕</button><h2 style="color: var(--primary-yellow); margin-top:0;">⭐ Feedback</h2><div style="background: rgba(0,0,0,0.5); padding: 22px; border-radius: 8px; border:1px solid rgba(255,255,255,0.05);"><div style="margin-bottom: 20px;"><button id="star-1" class="star-btn" onclick="updateStarUI(1)">★</button><button id="star-2" class="star-btn" onclick="updateStarUI(2)">★</button><button id="star-3" class="star-btn" onclick="updateStarUI(3)">★</button><button id="star-4" class="star-btn" onclick="updateStarUI(4)">★</button><button id="star-5" class="star-btn" onclick="updateStarUI(5)">★</button></div><textarea id="platformFeedbackText" class="input-field" placeholder="Tell us what you like..."></textarea><button id="submitFeedbackBtn" class="btn-exam" onclick="submitPlatformFeedback()" style="width: 100%; background: var(--primary-yellow); color: black;">Submit</button></div></div></div>
     
-    <div id="editTopicModal" class="modal-overlay"><div class="modal-content" style="max-width: 450px;"><button class="close-modal" onclick="closeEditTopicModal()">✕</button><h2 style="color: var(--primary-yellow);">✏️ Edit Folder</h2><input type="hidden" id="editTopicId"><input type="text" id="editTopicName" class="input-field"><select id="editTopicType" class="input-field"><option value="mcq">MCQs</option><option value="pdf">PDF</option></select><button class="btn-exam" onclick="saveEditedTopic()" style="width:100%; background:var(--correct-green);">Save</button></div></div>
-    <div id="editModal" class="modal-overlay"><div class="modal-content"><button class="close-modal" onclick="closeEditModal()">✕</button><h2 style="color: var(--primary-yellow);">✏️ Edit MCQ</h2><input type="hidden" id="editDocId"><textarea id="editQuestion" class="input-field"></textarea><div class="admin-row"><input type="text" id="editOptA" class="input-field" placeholder="A"><input type="text" id="editOptB" class="input-field" placeholder="B"></div><div class="admin-row"><input type="text" id="editOptC" class="input-field" placeholder="C"><input type="text" id="editOptD" class="input-field" placeholder="D"></div><div class="admin-checkbox-group"><label><input type="checkbox" value="A" class="editCorrectCb">A</label><label><input type="checkbox" value="B" class="editCorrectCb">B</label><label><input type="checkbox" value="C" class="editCorrectCb">C</label><label><input type="checkbox" value="D" class="editCorrectCb">D</label></div><select id="editDifficulty" class="input-field"><option value="Easy">Easy</option><option value="Medium">Medium</option><option value="Hard">Hard</option><option value="Mixed">Mixed</option></select><textarea id="editExplanation" class="input-field" placeholder="Explanation..."></textarea><button class="btn-exam" onclick="saveEditedMCQ()" style="width:100%; background:var(--correct-green);">Save</button></div></div>
+    <div id="editTopicModal" class="modal-overlay"><div class="modal-content" style="max-width: 450px;"><button class="close-modal" onclick="closeEditTopicModal()">✕</button><h2 style="color: var(--primary-yellow); margin-top:0;">✏️ Edit Folder</h2><input type="hidden" id="editTopicId"><input type="text" id="editTopicName" class="input-field"><select id="editTopicType" class="input-field"><option value="both">📂 Parent Category</option><option value="mcq">📝 MCQs Practice</option><option value="pdf">📄 PDF Material</option></select><button class="btn-exam" onclick="saveEditedTopic()" style="width:100%; background:var(--correct-green);">Save Changes</button></div></div>
+    <div id="editModal" class="modal-overlay"><div class="modal-content" style="max-width: 600px;"><button class="close-modal" onclick="closeEditModal()">✕</button><h2 style="color: var(--primary-yellow); margin-top:0;">✏️ Edit MCQ</h2><input type="hidden" id="editDocId"><textarea id="editQuestion" class="input-field" style="min-height:80px;"></textarea><div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;"><input type="text" id="editOptA" class="input-field" placeholder="A"><input type="text" id="editOptB" class="input-field" placeholder="B"></div><div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;"><input type="text" id="editOptC" class="input-field" placeholder="C"><input type="text" id="editOptD" class="input-field" placeholder="D"></div><div style="display:flex; gap:10px; margin-bottom:15px; flex-wrap:wrap;"><label style="background:rgba(255,255,255,0.05); padding:8px 15px; border-radius:6px; cursor:pointer;"><input type="checkbox" value="A" class="editCorrectCb"> A</label><label style="background:rgba(255,255,255,0.05); padding:8px 15px; border-radius:6px; cursor:pointer;"><input type="checkbox" value="B" class="editCorrectCb"> B</label><label style="background:rgba(255,255,255,0.05); padding:8px 15px; border-radius:6px; cursor:pointer;"><input type="checkbox" value="C" class="editCorrectCb"> C</label><label style="background:rgba(255,255,255,0.05); padding:8px 15px; border-radius:6px; cursor:pointer;"><input type="checkbox" value="D" class="editCorrectCb"> D</label></div><select id="editDifficulty" class="input-field"><option value="Easy">Easy</option><option value="Medium">Medium</option><option value="Hard">Hard</option><option value="Mixed">Mixed</option></select><textarea id="editExplanation" class="input-field" placeholder="Explanation..."></textarea><button class="btn-exam" onclick="saveEditedMCQ()" style="width:100%; background:var(--correct-green);">Save Changes</button></div></div>
 
-    <!-- 📱 FLOATING LIGHT DOCK -->
+    <!-- 📱 FLOATING LIGHT DOCK (UNTOUCHED FOR APP MODE) -->
     <div class="mobile-app-bottom-bar" id="mobileAppDock">
         <div class="app-tab active" onclick="goHome()">
             <div class="app-tab-icon"><svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg></div>
