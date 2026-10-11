@@ -292,7 +292,6 @@ body {
 /* ------------------------------------------------------------- */
 /* 📱 NATIVE APP BENTO-BOX WIDGET OVERHAUL (PWA Only)            */
 /* ------------------------------------------------------------- */
-
 @media (max-width: 768px) and (display-mode: standalone) {
     body { background-color: #000000 !important; padding-bottom: 90px; }
     .hide-in-app-mode { display: none !important; }
@@ -377,4 +376,13 @@ body {
     .app-tab.ai-tab-inner .app-tab-icon { width: 22px; height: 22px; }
     .app-tab.ai-tab-inner .app-tab-icon svg { fill: #000; }
     .app-tab.ai-tab-inner .app-tab-label { color: #000; font-weight: 800; font-size: 11px; }
+}
+
+/* 🔴 ADMIN MODE OVERRIDES (Hides extra UI elements for a clean workspace) */
+body.admin-mode .nav-badges-group,
+body.admin-mode .search-wrapper,
+body.admin-mode .nav-right,
+body.admin-mode #ai-floating-btn,
+body.admin-mode .mobile-web-subnav {
+    display: none !important;
 }
