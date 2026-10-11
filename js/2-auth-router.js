@@ -17,7 +17,10 @@ async function loadCustomTopics() {
             }
             if (typeof current === 'object' && !Array.isArray(current) && data.name) {
                 if (!current[data.name]) current[data.name] = {};
-                customTopicTypes[data.parentPath + " > " + data.name] = data.type; 
+                
+                // FIX: Handles Root-level topics safely
+                let fullKey = data.parentPath ? (data.parentPath + " > " + data.name) : data.name;
+                customTopicTypes[fullKey] = data.type; 
             }
         });
     } catch(e) { console.error("Custom topics loading error:", e); }
@@ -34,12 +37,10 @@ window.addEventListener('click', function(e) {
 });
 
 function initApp() { 
-    // Instantly unlock routing to draw the hardcoded syllabus immediately
     dataLoaded = true; 
     if (!window.location.hash) window.location.hash = '#/home'; 
     handleRouting(); 
     
-    // Load custom folders from Firebase in the background without blocking the screen
     loadCustomTopics().then(() => {
         if(window.location.hash === '#/home' || window.location.hash === '' || window.location.hash === '#/') {
             _renderView(); 
@@ -102,11 +103,16 @@ window.addEventListener('hashchange', handleRouting);
 function updateBottomNav(hash) {
     document.querySelectorAll('.app-tab').forEach(tab => tab.classList.remove('active'));
     
-    // Hide dock during active quizzes or admin mode so buttons are never covered
     if (hash === 'quiz' || hash === 'admin' || hash === 'admin-panel') {
         document.body.classList.add('hide-bottom-bar');
     } else {
         document.body.classList.remove('hide-bottom-bar');
+    }
+
+    if (hash === 'admin' || hash === 'admin-panel') {
+        document.body.classList.add('admin-mode');
+    } else {
+        document.body.classList.remove('admin-mode');
     }
 
     if (!hash || hash === 'home') {
@@ -130,7 +136,6 @@ function handleRouting() {
         let rawHash = window.location.hash.replace(/^#\/?/, ''); 
         let hash = decodeURIComponent(rawHash);
         
-        // 🔴 ACTIVATES ADMIN MODE (Hides distracting UI elements)
         if (hash === 'admin' || hash === 'admin-panel') {
             document.body.classList.add('admin-mode');
         } else {
@@ -139,7 +144,6 @@ function handleRouting() {
         
         let isRootHome = (!hash || hash === 'home');
         
-        // Desktop sidebar rule: only show on Home screen
         const sidebar = document.getElementById('main-sidebar');
         if (sidebar) {
             sidebar.style.display = isRootHome ? 'block' : 'none';
