@@ -130,6 +130,13 @@ function handleRouting() {
         let rawHash = window.location.hash.replace(/^#\/?/, ''); 
         let hash = decodeURIComponent(rawHash);
         
+        // 🔴 ACTIVATES ADMIN MODE (Hides distracting UI elements)
+        if (hash === 'admin' || hash === 'admin-panel') {
+            document.body.classList.add('admin-mode');
+        } else {
+            document.body.classList.remove('admin-mode');
+        }
+        
         let isRootHome = (!hash || hash === 'home');
         
         // Desktop sidebar rule: only show on Home screen
