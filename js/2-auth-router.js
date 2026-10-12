@@ -1,14 +1,21 @@
 // ==========================================
 // 2. DATA LOADING & AUTHENTICATION
 // ==========================================
+
+// CRITICAL FIX: Global fallbacks prevent the app from crashing on boot!
+window.customTopicTypes = window.customTopicTypes || {};
+window.currentUser = window.currentUser || null;
+window.userBookmarks = window.userBookmarks || [];
+window.dataLoaded = window.dataLoaded || false;
+
 async function loadCustomTopics() {
-    customTopicTypes = {};
     try {
         const snapshot = await db.collection("custom_topics").get();
         snapshot.forEach(doc => {
             let data = doc.data(); 
             let pathArr = (data.parentPath || "").split(' > '); 
             let current = appData;
+            
             for (let p of pathArr) { 
                 if (p) { 
                     if (!current[p]) current[p] = {}; 
@@ -18,17 +25,28 @@ async function loadCustomTopics() {
             if (typeof current === 'object' && !Array.isArray(current) && data.name) {
                 if (!current[data.name]) current[data.name] = {};
                 let fullKey = data.parentPath ? (data.parentPath + " > " + data.name) : data.name;
-                customTopicTypes[fullKey] = data.type; 
+                window.customTopicTypes[fullKey] = data.type; 
             }
         });
 
-        // FIX 3: Automatically mirror all Root topics inside "Daily Quiz Challenge"
+        // 🔴 CRITICAL NEW FEATURE: Auto-Inject Admin DB Topics into App Structure!
+        // This makes JEE show up in Daily Quizzes, Leaderboards, and Sidebars automatically.
         if (!appData["Daily Quiz Challenge"]) appData["Daily Quiz Challenge"] = {};
+        
         let rootKeys = Object.keys(appData).filter(k => k !== "Daily Quiz Challenge");
+        
+        Object.keys(window.customTopicTypes).forEach(key => {
+            let root = key.split(' > ')[0];
+            if(root && !rootKeys.includes(root) && root !== "Daily Quiz Challenge") {
+                rootKeys.push(root);
+                appData[root] = appData[root] || {}; 
+            }
+        });
+
         rootKeys.forEach(k => {
             if (!appData["Daily Quiz Challenge"][k]) {
                 appData["Daily Quiz Challenge"][k] = {};
-                customTopicTypes["Daily Quiz Challenge > " + k] = "mcq"; // Marks it as a functional Quiz endpoint
+                window.customTopicTypes["Daily Quiz Challenge > " + k] = "mcq"; 
             }
         });
 
@@ -46,7 +64,7 @@ window.addEventListener('click', function(e) {
 });
 
 function initApp() { 
-    dataLoaded = true; 
+    window.dataLoaded = true; 
     if (!window.location.hash) window.location.hash = '#/home'; 
     handleRouting(); 
     
@@ -58,7 +76,7 @@ function initApp() {
 }
 
 auth.onAuthStateChanged((user) => {
-    currentUser = user; 
+    window.currentUser = user; 
     const badge = document.getElementById('userBadge'); 
     const loginNavBtn = document.getElementById('loginNavBtn');
     if (user) {
@@ -91,12 +109,12 @@ auth.onAuthStateChanged((user) => {
         loginNavBtn.style.display = 'flex'; 
         document.getElementById('profileNotifDot').style.display = 'none';
         document.getElementById('nav-streak-display').innerText = "0";
-        userBookmarks = [];
+        window.userBookmarks = [];
         if (window.location.hash !== '#/admin' && window.location.hash !== '#/admin-panel' && !sessionStorage.getItem('auth_skipped')) {
             document.getElementById('authModal').style.display = 'flex';
         }
     }
-    if (dataLoaded) handleRouting(); 
+    if (window.dataLoaded) handleRouting(); 
 });
 
 initApp(); 
@@ -139,7 +157,6 @@ function updateBottomNav(hash) {
     }
 }
 
-// FIX 2: Fully Dynamic Sidebar that adapts to ANY selected root topic
 function updateSidebarLinks() {
     const sidebar = document.getElementById('main-sidebar');
     if (!sidebar) return;
@@ -147,12 +164,13 @@ function updateSidebarLinks() {
     let rootTopic = null;
     if (currentPath && currentPath.length > 0) rootTopic = currentPath[0]; 
 
-    // Hide sidebar on the absolute Root Home, Leaderboards, or Custom Setup screens.
+    // Hide sidebar on Root Home, Leaderboards, or Custom Setup screens.
     if (!rootTopic || window.location.hash === '#/home' || window.location.hash.includes('custom-setup') || window.location.hash.includes('leaderboard')) {
         sidebar.style.display = 'none';
         return;
     }
     
+    // Dynamically generate Sidebar links based on current folder
     if (appData[rootTopic]) {
         sidebar.style.display = 'block';
         let safeTopic = rootTopic.replace(/'/g, "\\'");
@@ -162,11 +180,11 @@ function updateSidebarLinks() {
             <h3 class="section-title">Quick Links</h3>
             <a class="action-link" onclick="jumpToSection(['${safeTopic}', 'NCERT Books'])">
                 <span class="link-icon" style="color: #9C27B0;">📚</span>
-                <span class="link-text">NCERT Books</span>
+                <span class="link-text">${rootTopic} NCERT Books</span>
             </a>
             <a class="action-link" onclick="jumpToSection(['${safeTopic}', 'Previous Year Papers'])">
                 <span class="link-icon" style="color: #607D8B;">📄</span>
-                <span class="link-text">Previous Year Papers</span>
+                <span class="link-text">${rootTopic} PYQs</span>
             </a>
         </div>
         <div class="card sidebar-card">
@@ -175,7 +193,7 @@ function updateSidebarLinks() {
                 <span class="link-icon" style="color: #00BCD4;">📝</span>
                 <span class="link-text">Subject-wise MCQs</span>
             </a>
-            <a class="action-link" onclick="jumpToSection(['${safeTopic}', 'Mock Tests'])">
+            <a class="action-link" onclick="jumpToSection(['${safeTopic}', 'Mock Test'])">
                 <span class="link-icon" style="color: #F44336;">⏱️</span>
                 <span class="link-text">Full-Length Mock Tests</span>
             </a>
@@ -191,7 +209,7 @@ function updateSidebarLinks() {
 
 function handleRouting() {
     try {
-        if(!dataLoaded) return; 
+        if(!window.dataLoaded) return; 
         let rawHash = window.location.hash.replace(/^#\/?/, ''); 
         let hash = decodeURIComponent(rawHash);
         
@@ -203,14 +221,13 @@ function handleRouting() {
         
         let isRootHome = (!hash || hash === 'home');
         
-        // Show Back Button Globally if not on Home
         const backBtn = document.getElementById('dynamic-back-container');
         if (backBtn) backBtn.style.display = isRootHome ? 'none' : 'block';
         
         updateBottomNav(rawHash);
         
         if (isRootHome) { currentPath = []; _renderView(); } 
-        else if (hash === 'custom-setup') { cwStep1(); } // FIX 1: Custom Practice is now a dedicated, isolated route!
+        else if (hash === 'custom-setup') { cwStep1(); } 
         else if (hash.startsWith('path/')) { currentPath = hash.replace('path/', '').split('/'); _renderView(); } 
         else if (hash === 'leaderboard') _renderLeaderboardOptions(); 
         else if (hash.startsWith('board/')) fetchLiveLeaderboard(hash.replace('board/', '')); 
@@ -222,7 +239,6 @@ function handleRouting() {
         else if (hash === 'admin') _renderAdminLogin(); 
         else if (hash === 'admin-panel') _renderAdminPanel();
         
-        // Sidebar update logic
         if (hash !== 'quiz' && hash !== 'admin' && hash !== 'admin-panel') {
             updateSidebarLinks();
         } else {
