@@ -305,7 +305,6 @@ body {
 
     .input-field { background: rgba(255,255,255,0.06) !important; border: 1px solid rgba(255,255,255,0.08) !important; border-radius: 14px !important; padding: 16px !important; font-size: 15px !important; margin-bottom: 14px !important; box-shadow:none !important;}
     
-    /* 🔴 LOWERED BOTTOM BAR FIX */
     .mobile-app-bottom-bar {
         display: flex !important; position: fixed; bottom: 5px; left: 12px; right: 12px; height: 65px;
         background: rgba(28, 28, 32, 0.85); backdrop-filter: blur(25px); border: 1px solid rgba(255, 255, 255, 0.1); 
