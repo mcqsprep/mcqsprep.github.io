@@ -2,15 +2,15 @@
 // 4. MAIN VIEW RENDERER & AUTO-SORTER
 // ==========================================
 
-window.forceStartQuiz = function() {
+function forceStartQuiz() {
     window.location.hash = '#/quiz';
     setTimeout(() => { _initiateQuizEngine(); }, 100);
-};
+}
 
-window.forceCwStep1 = function(e) {
+function forceCwStep1(e) {
     if (e) e.stopPropagation();
     window.location.hash = '#/custom-setup';
-};
+}
 
 function getSmartIcon(text) {
     let t = text.toLowerCase();
@@ -37,10 +37,10 @@ function _renderView() {
         const mc = document.getElementById('dynamic-content'); 
         if(!mc) return;
         const bc = document.getElementById('breadcrumb-text');
-        if(bc) bc.innerText = window.currentPath.length === 0 ? "Home" : "Home / " + window.currentPath.join(" / "); 
+        if(bc) bc.innerText = currentPath.length === 0 ? "Home" : "Home / " + currentPath.join(" / "); 
         
-        let currentLevel = window.appData || {};
-        for (let node of window.currentPath) { 
+        let currentLevel = appData || {};
+        for (let node of currentPath) { 
             if(currentLevel[node] !== undefined) {
                 currentLevel = currentLevel[node]; 
             } else {
@@ -48,8 +48,9 @@ function _renderView() {
             }
         }
 
-        let checkPath = window.currentPath.join(" > ");
-        let hasDbChildren = Object.keys(window.customTopicTypes).some(k => k.startsWith(checkPath + " > "));
+        let checkPath = currentPath.join(" > ");
+        let safeTopicTypes = typeof customTopicTypes !== 'undefined' ? customTopicTypes : {};
+        let hasDbChildren = Object.keys(safeTopicTypes).some(k => k.startsWith(checkPath + " > "));
         
         let isEndpoint = false;
         if (typeof currentLevel === 'string' || Array.isArray(currentLevel) || (typeof currentLevel === 'object' && Object.keys(currentLevel).length === 0 && !hasDbChildren)) {
@@ -57,19 +58,18 @@ function _renderView() {
         }
 
         if (isEndpoint) {
-            let topicNameRaw = window.currentPath[window.currentPath.length - 1]; 
+            let topicNameRaw = currentPath[currentPath.length - 1]; 
             let niceTitle = topicNameRaw.replace(/^\d+\.\s*/, '');
             let topicNameLower = niceTitle.toLowerCase(); 
             
             let isPdfOnly = false;
             let isContainer = false;
             
-            // 🔴 SMART DOCUMENT DETECTOR - Automatically prevents quizzes on PDF folders
-            if (window.customTopicTypes[checkPath] === 'pdf') {
+            if (safeTopicTypes[checkPath] === 'pdf') {
                 isPdfOnly = true;
-            } else if (window.customTopicTypes[checkPath] === 'both') {
+            } else if (safeTopicTypes[checkPath] === 'both') {
                 isContainer = true;
-            } else if (!window.customTopicTypes[checkPath] || window.customTopicTypes[checkPath] === 'mcq') {
+            } else if (!safeTopicTypes[checkPath] || safeTopicTypes[checkPath] === 'mcq') {
                 let pdfTriggers = ["ncert", "book", "pyq", "previous", "paper", "pdf", "notes", "material", "syllabus"];
                 let isPdf = pdfTriggers.some(t => topicNameLower.includes(t));
                 let mcqTriggers = ["mcq", "mock", "quiz", "test", "practice", "challenge"];
@@ -78,7 +78,7 @@ function _renderView() {
                 if (isPdf && !isMcq) isPdfOnly = true;
             }
             
-            let studentName = (window.currentUser && window.currentUser.displayName) ? window.currentUser.displayName.split(" ")[0] : "Student";
+            let studentName = (typeof currentUser !== 'undefined' && currentUser && currentUser.displayName) ? currentUser.displayName.split(" ")[0] : "Student";
             
             if (isContainer) {
                 mc.innerHTML = `
@@ -93,21 +93,22 @@ function _renderView() {
                     <p style="color:var(--text-muted);">Materials will appear here once uploaded via the Admin Panel.</p>
                 </div>`;
             } else {
+                let signPrompt = (typeof currentUser === 'undefined' || !currentUser) ? "Sign in to track your scores on the leaderboard!" : `Ready for practice, <span style="color:var(--primary-yellow);">${studentName}</span>?`;
                 mc.innerHTML = `
                 <div class="card page-transition">
                     <h2 class="section-title">📝 ${niceTitle} Practice</h2>
-                    <p style="color:var(--text-muted); margin-bottom:25px;">${!window.currentUser ? "Sign in to track your scores on the leaderboard!" : `Ready for practice, <span style="color:var(--primary-yellow);">${studentName}</span>?`}</p>
+                    <p style="color:var(--text-muted); margin-bottom:25px;">${signPrompt}</p>
                     <button class="btn-exam" onclick="forceStartQuiz()" style="background:var(--primary-yellow) !important; color:black !important; width:100%; max-width:250px; font-size:16px; font-weight:bold; border:none !important; box-shadow:0 4px 15px rgba(253,184,19,0.3) !important;">Start Quiz &rarr;</button>
                 </div>`;
             }
             return;
         }
 
-        let titleRaw = window.currentPath.length === 0 ? "Select Exam Category" : window.currentPath[window.currentPath.length - 1];
+        let titleRaw = currentPath.length === 0 ? "Select Exam Category" : currentPath[currentPath.length - 1];
         let title = titleRaw.replace(/^\d+\.\s*/, '');
         let h = ``;
 
-        if (window.currentPath.length === 0) {
+        if (currentPath.length === 0) {
             h += `
             <div class="card setup-hero-card" onclick="forceCwStep1(event)">
                 <div class="hero-badge">CUSTOM PRACTICE</div>
@@ -120,9 +121,9 @@ function _renderView() {
         h += `<div class="card category-section"><h3 class="section-title">${title}</h3><div class="category-grid">`;
         
         let keys = new Set(Object.keys(currentLevel));
-        Object.keys(window.customTopicTypes).forEach(dbKey => {
+        Object.keys(safeTopicTypes).forEach(dbKey => {
             let parts = dbKey.split(' > ');
-            if (window.currentPath.length === 0) {
+            if (currentPath.length === 0) {
                 keys.add(parts[0]);
             } else if (dbKey.startsWith(checkPath + " > ")) {
                 let nextLevel = dbKey.replace(checkPath + " > ", "").split(' > ')[0];
@@ -144,13 +145,13 @@ function _renderView() {
         });
 
         for (let key of keysArr) { 
-            if (window.currentPath.length === 0 && key === "Daily Quiz Challenge") continue; 
-            let fullCheckPath = window.currentPath.join(" > ") + (window.currentPath.length > 0 ? " > " : "") + key;
+            if (currentPath.length === 0 && key === "Daily Quiz Challenge") continue; 
+            let fullCheckPath = currentPath.join(" > ") + (currentPath.length > 0 ? " > " : "") + key;
             
             let typeLabel = ""; 
-            if (window.customTopicTypes[fullCheckPath] === 'mcq') typeLabel = "📝"; 
-            else if (window.customTopicTypes[fullCheckPath] === 'pdf') typeLabel = "📄";
-            else if (window.customTopicTypes[fullCheckPath] === 'both') typeLabel = "📂";
+            if (safeTopicTypes[fullCheckPath] === 'mcq') typeLabel = "📝"; 
+            else if (safeTopicTypes[fullCheckPath] === 'pdf') typeLabel = "📄";
+            else if (safeTopicTypes[fullCheckPath] === 'both') typeLabel = "📂";
             
             let safeKey = key.replace(/'/g, "\\'");
             let displayKey = key.replace(/^\d+\.\s*/, '');
@@ -164,7 +165,6 @@ function _renderView() {
                   </button>`; 
         }
         
-        // 🔴 NOTE: The giant inline "Go Back" button was successfully deleted.
         h += `</div></div>`; 
         mc.innerHTML = `<div class="page-transition">${h}</div>`;
         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -176,9 +176,9 @@ function _renderView() {
 // ==========================================
 async function getAttemptedIdsForPath(safePath) {
     let ids = [];
-    if (window.currentUser) {
+    if (typeof currentUser !== 'undefined' && currentUser) {
         try {
-            const subDoc = await db.collection("users").doc(window.currentUser.uid).collection("progress").doc(safePath).get();
+            const subDoc = await db.collection("users").doc(currentUser.uid).collection("progress").doc(safePath).get();
             if (subDoc.exists && Array.isArray(subDoc.data().attemptedIds)) return subDoc.data().attemptedIds;
         } catch(e) { console.error("Error fetching progress:", e); }
     } else {
@@ -190,9 +190,9 @@ async function getAttemptedIdsForPath(safePath) {
 
 async function saveAttemptedIdsForPath(safePath, newAttemptedIds) {
     if (!newAttemptedIds || newAttemptedIds.length === 0) return;
-    if (window.currentUser) {
+    if (typeof currentUser !== 'undefined' && currentUser) {
         try {
-            await db.collection("users").doc(window.currentUser.uid).collection("progress").doc(safePath).set({
+            await db.collection("users").doc(currentUser.uid).collection("progress").doc(safePath).set({
                 attemptedIds: firebase.firestore.FieldValue.arrayUnion(...newAttemptedIds),
                 lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
             }, { merge: true });
@@ -206,22 +206,25 @@ async function saveAttemptedIdsForPath(safePath, newAttemptedIds) {
 
 async function resetProgress(safePath) {
     if(!confirm("Are you sure you want to reset your progress for this section?")) return;
-    if (window.currentUser) {
-        try { await db.collection("users").doc(window.currentUser.uid).collection("progress").doc(safePath).delete(); } catch(e) {}
+    if (typeof currentUser !== 'undefined' && currentUser) {
+        try { await db.collection("users").doc(currentUser.uid).collection("progress").doc(safePath).delete(); } catch(e) {}
     } else {
         let localProg = JSON.parse(localStorage.getItem('mcq_progress') || '{}');
         delete localProg[safePath];
         localStorage.setItem('mcq_progress', JSON.stringify(localProg));
     }
     showNotification("🔄 Progress reset for this section!");
-    _initiateQuizEngine();
+    if(typeof _initiateQuizEngine === 'function') _initiateQuizEngine();
 }
 
 function _renderProgressSelection() {
-    if (!window.currentUser) return document.getElementById('dynamic-content').innerHTML = `<div class="card page-transition" style="text-align:center;"><h2>⚠ Sign In Required</h2><button class="btn-exam" onclick="goBack()" style="background:#333; border:none;">Back</button></div>`;
+    if (typeof currentUser === 'undefined' || !currentUser) {
+        document.getElementById('dynamic-content').innerHTML = `<div class="card page-transition" style="text-align:center;"><h2>⚠ Sign In Required</h2><button class="btn-exam" onclick="goBack()" style="background:#333; border:none;">Back</button></div>`;
+        return;
+    }
     document.getElementById('breadcrumb-text').innerText = "Home / Profile / Track Progress";
     
-    let rootKeys = Object.keys(window.appData || {}).filter(k => k !== "Daily Quiz Challenge");
+    let rootKeys = Object.keys(typeof appData !== 'undefined' ? appData : {}).filter(k => k !== "Daily Quiz Challenge");
     let optionsHtml = '';
     
     rootKeys.forEach(k => {
@@ -243,7 +246,7 @@ function _renderProgressSelection() {
 }
 
 async function _renderProgressDashboard(category) {
-    if (!window.currentUser) return;
+    if (typeof currentUser === 'undefined' || !currentUser) return;
     
     let displayCategory = category.replace(/^\d+\.\s*/, '');
     document.getElementById('breadcrumb-text').innerText = `Home / Profile / Progress / ${displayCategory}`;
@@ -251,7 +254,7 @@ async function _renderProgressDashboard(category) {
     mc.innerHTML = `<div class="card page-transition"><h2>📊 Compiling Diagnostics...</h2></div>`;
     
     try {
-        const snap = await db.collection("leaderboards").where("userId", "==", window.currentUser.uid).get();
+        const snap = await db.collection("leaderboards").where("userId", "==", currentUser.uid).get();
         let validDocs = [];
         let tempDocs = [];
         
@@ -399,6 +402,7 @@ async function _renderProgressDashboard(category) {
         </div>`;
 
         setTimeout(() => drawAccuracyChart(recentTrend), 50);
+
     } catch(e) { mc.innerHTML = `<div class="card"><p>Error: ${e.message}</p></div>`; }
 }
 
@@ -441,7 +445,7 @@ function drawAccuracyChart(dataPoints) {
 function _renderLeaderboardOptions() { 
     document.getElementById('breadcrumb-text').innerText = "Home / Leaderboard"; 
     
-    let rootKeys = Object.keys(window.appData || {}).filter(k => k !== "Daily Quiz Challenge");
+    let rootKeys = Object.keys(typeof appData !== 'undefined' ? appData : {}).filter(k => k !== "Daily Quiz Challenge");
     let optionsHtml = '';
     
     rootKeys.forEach(k => {
@@ -469,13 +473,13 @@ function _renderLeaderboardOptions() {
 }
 
 // -----------------------------------------
-// CUSTOM WORKOUT FEATURE (Fully Isolated Route & Input Restored)
+// CUSTOM WORKOUT FEATURE (FIXED: Route, Free Input & Chapter Dropdown)
 // -----------------------------------------
 let cwPath = ""; let cwSubject = "Mixed"; let cwDiff = "Mixed"; let cwLimit = 25;
 
 function cwStep1() {
     const mc = document.getElementById('dynamic-content');
-    let rootKeys = Object.keys(window.appData || {}).filter(k => k !== "Daily Quiz Challenge");
+    let rootKeys = Object.keys(typeof appData !== 'undefined' ? appData : {}).filter(k => k !== "Daily Quiz Challenge");
     
     let html = `
     <div class="card page-transition" style="max-width: 600px; margin: 0 auto; padding: 30px;">
@@ -506,17 +510,18 @@ function cwStep2() {
     let subjectsHtml = `<option value="Mixed">All Chapters / Subjects (Full Mock)</option>`;
     
     let dbTopics = new Set();
-    if (typeof window.appData !== 'undefined' && window.appData[cwPath]) {
-        Object.keys(window.appData[cwPath]).forEach(c => { 
+    if (typeof appData !== 'undefined' && appData[cwPath]) {
+        Object.keys(appData[cwPath]).forEach(c => { 
             if(c !== "MCQs Practice" && c !== "Mock Test") dbTopics.add(c);
         });
-        if (window.appData[cwPath]["MCQs Practice"]) {
-            Object.keys(window.appData[cwPath]["MCQs Practice"]).forEach(c => dbTopics.add(c));
+        if (appData[cwPath]["MCQs Practice"]) {
+            Object.keys(appData[cwPath]["MCQs Practice"]).forEach(c => dbTopics.add(c));
         }
     }
     
     let prefix = cwPath + " > ";
-    Object.keys(window.customTopicTypes).forEach(key => {
+    let safeTopicTypes = typeof customTopicTypes !== 'undefined' ? customTopicTypes : {};
+    Object.keys(safeTopicTypes).forEach(key => {
         if(key.startsWith(prefix)) {
             let sub = key.replace(prefix, '').split(' > ')[0];
             if(sub && sub !== "MCQs Practice" && sub !== "Mock Test") dbTopics.add(sub);
@@ -596,14 +601,16 @@ async function cwLaunch() {
         }
 
         allDocs.sort(() => Math.random() - 0.5);
-        currentQuestions = allDocs; 
-        currentQuizPath = targetPath;
-        currentIndex = 0;
-        userAnswers = {};
-        timeSpent = {};
+        if(typeof currentQuestions !== 'undefined') {
+            window.currentQuestions = allDocs; 
+            window.currentQuizPath = targetPath;
+            window.currentIndex = 0;
+            window.userAnswers = {};
+            window.timeSpent = {};
+        }
 
-        renderQuizInterface();
-        startQuestionTimer();
+        if(typeof renderQuizInterface === 'function') renderQuizInterface();
+        if(typeof startQuestionTimer === 'function') startQuestionTimer();
     } catch(err) {
         mc.innerHTML = `<div class="card"><h2 class="section-title" style="color:var(--wrong-red);">Error</h2><p>${err.message}</p></div>`;
     }
@@ -612,34 +619,36 @@ async function cwLaunch() {
 // -----------------------------------------
 // BOOKMARK MANAGER
 // -----------------------------------------
-let userBookmarks = [];
-
 async function loadUserBookmarks() {
-    if(!window.currentUser) return;
+    if(typeof currentUser === 'undefined' || !currentUser) return;
     try {
-        const doc = await db.collection("users").doc(window.currentUser.uid).collection("data").doc("bookmarks").get();
+        const doc = await db.collection("users").doc(currentUser.uid).collection("data").doc("bookmarks").get();
         if(doc.exists && Array.isArray(doc.data().list)) { window.userBookmarks = doc.data().list; }
     } catch(e){}
 }
 
 async function bookmarkQuestion(qId) {
-    if(!window.currentUser) { showAuthModal(); return; }
-    if(window.userBookmarks.includes(qId)) { showNotification("⚠️ Already bookmarked!"); return; }
+    if(typeof currentUser === 'undefined' || !currentUser) { showAuthModal(); return; }
+    let savedBookmarks = typeof userBookmarks !== 'undefined' ? userBookmarks : [];
+    if(savedBookmarks.includes(qId)) { showNotification("⚠️ Already bookmarked!"); return; }
     
-    window.userBookmarks.push(qId);
+    savedBookmarks.push(qId);
+    window.userBookmarks = savedBookmarks;
     try {
-        await db.collection("users").doc(window.currentUser.uid).collection("data").doc("bookmarks").set({
-            list: window.userBookmarks, lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+        await db.collection("users").doc(currentUser.uid).collection("data").doc("bookmarks").set({
+            list: savedBookmarks, lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
         }, {merge:true});
         showNotification("🔖 Question saved to Bookmarks!");
     } catch(e) { showNotification("❌ Failed to bookmark"); }
 }
 
 async function removeBookmark(qId) {
-    if(!window.currentUser) return;
-    window.userBookmarks = window.userBookmarks.filter(id => id !== qId);
+    if(typeof currentUser === 'undefined' || !currentUser) return;
+    let savedBookmarks = typeof userBookmarks !== 'undefined' ? userBookmarks : [];
+    savedBookmarks = savedBookmarks.filter(id => id !== qId);
+    window.userBookmarks = savedBookmarks;
     try {
-        await db.collection("users").doc(window.currentUser.uid).collection("data").doc("bookmarks").set({ list: window.userBookmarks }, {merge:true});
+        await db.collection("users").doc(currentUser.uid).collection("data").doc("bookmarks").set({ list: savedBookmarks }, {merge:true});
         let card = document.getElementById('bmCard_'+qId);
         if(card) card.remove();
         showNotification("🗑 Bookmark removed");
@@ -650,15 +659,16 @@ async function _initiateBookmarkQuiz() {
     const mc = document.getElementById('dynamic-content');
     document.getElementById('breadcrumb-text').innerText = "Home / Profile / My Bookmarks";
     
-    if(!window.currentUser) { mc.innerHTML = `<div class="card page-transition" style="text-align:center;"><h2>⚠ Sign In Required</h2><button class="btn-exam" onclick="goBack()" style="background:#333; border:none;">Back</button></div>`; return; }
-    if(window.userBookmarks.length === 0) { mc.innerHTML = `<div class="card page-transition" style="text-align:center;"><h2>🔖 No Bookmarks Yet</h2><p style="color:var(--text-muted);">Questions you bookmark during practice will appear here.</p><button class="btn-exam" onclick="goBack()" style="background:#333; border:none; margin-top:20px;">Back to Home</button></div>`; return; }
+    if(typeof currentUser === 'undefined' || !currentUser) { mc.innerHTML = `<div class="card page-transition" style="text-align:center;"><h2>⚠ Sign In Required</h2><button class="btn-exam" onclick="goBack()" style="background:#333; border:none;">Back</button></div>`; return; }
+    let savedBookmarks = typeof userBookmarks !== 'undefined' ? userBookmarks : [];
+    if(savedBookmarks.length === 0) { mc.innerHTML = `<div class="card page-transition" style="text-align:center;"><h2>🔖 No Bookmarks Yet</h2><p style="color:var(--text-muted);">Questions you bookmark during practice will appear here.</p><button class="btn-exam" onclick="goBack()" style="background:#333; border:none; margin-top:20px;">Back to Home</button></div>`; return; }
 
     mc.innerHTML = `<div class="card page-transition" style="text-align:center; padding:50px;"><h2 class="section-title" style="justify-content:center;">🔖 Loading Bookmarks...</h2></div>`;
 
     try {
         let allDocs = [];
-        for(let i=0; i<window.userBookmarks.length; i+=10) {
-            let chunk = window.userBookmarks.slice(i, i+10);
+        for(let i=0; i<savedBookmarks.length; i+=10) {
+            let chunk = savedBookmarks.slice(i, i+10);
             let snap = await db.collection("content").where(firebase.firestore.FieldPath.documentId(), "in", chunk).get();
             snap.forEach(doc => allDocs.push({ id: doc.id, ...doc.data() }));
         }
@@ -703,11 +713,11 @@ async function _initiateBookmarkQuiz() {
         mc.innerHTML = html;
 
         allDocs.forEach(q => {
-            let elQ = document.getElementById('bmQ_'+q.id); if(elQ) renderMathInElement(elQ, { delimiters: [ {left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}, {left: '\\(', right: '\\)', display: false}, {left: '[', right: ']', display: true} ], throwOnError: false });
+            let elQ = document.getElementById('bmQ_'+q.id); if(elQ && typeof renderMathInElement === 'function') renderMathInElement(elQ, { delimiters: [ {left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}, {left: '\\(', right: '\\)', display: false}, {left: '[', right: ']', display: true} ], throwOnError: false });
             ['A','B','C','D'].forEach(opt => {
-                let elO = document.getElementById(`bmOpt_${q.id}_${opt}`); if(elO) renderMathInElement(elO, { delimiters: [ {left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}, {left: '\\(', right: '\\)', display: false}, {left: '[', right: ']', display: true} ], throwOnError: false });
+                let elO = document.getElementById(`bmOpt_${q.id}_${opt}`); if(elO && typeof renderMathInElement === 'function') renderMathInElement(elO, { delimiters: [ {left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}, {left: '\\(', right: '\\)', display: false}, {left: '[', right: ']', display: true} ], throwOnError: false });
             });
-            let elE = document.getElementById('bmExp_'+q.id); if(elE) renderMathInElement(elE, { delimiters: [ {left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}, {left: '\\(', right: '\\)', display: false}, {left: '[', right: ']', display: true} ], throwOnError: false });
+            let elE = document.getElementById('bmExp_'+q.id); if(elE && typeof renderMathInElement === 'function') renderMathInElement(elE, { delimiters: [ {left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}, {left: '\\(', right: '\\)', display: false}, {left: '[', right: ']', display: true} ], throwOnError: false });
         });
 
     } catch(e) { mc.innerHTML = `<div class="card"><p>Error: ${e.message}</p></div>`; }
