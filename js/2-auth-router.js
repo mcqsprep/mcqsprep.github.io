@@ -17,8 +17,6 @@ async function loadCustomTopics() {
             }
             if (typeof current === 'object' && !Array.isArray(current) && data.name) {
                 if (!current[data.name]) current[data.name] = {};
-                
-                // FIX: Handles Root-level topics safely
                 let fullKey = data.parentPath ? (data.parentPath + " > " + data.name) : data.name;
                 customTopicTypes[fullKey] = data.type; 
             }
@@ -145,9 +143,10 @@ function handleRouting() {
         let isRootHome = (!hash || hash === 'home');
         
         const sidebar = document.getElementById('main-sidebar');
-        if (sidebar) {
-            sidebar.style.display = isRootHome ? 'block' : 'none';
-        }
+        if (sidebar) sidebar.style.display = isRootHome ? 'block' : 'none';
+        
+        const backBtn = document.getElementById('dynamic-back-container');
+        if (backBtn) backBtn.style.display = isRootHome ? 'none' : 'block';
         
         updateBottomNav(rawHash);
         
@@ -172,6 +171,8 @@ function goHome() {
         currentPath = [];
         const sidebar = document.getElementById('main-sidebar');
         if(sidebar) sidebar.style.display = 'block';
+        const backBtn = document.getElementById('dynamic-back-container');
+        if(backBtn) backBtn.style.display = 'none';
         _renderView();
     } else {
         window.location.replace(window.location.origin + window.location.pathname + '#/home');
