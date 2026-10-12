@@ -83,10 +83,33 @@ body {
 /* 🔴 Core Layout & Cards (Desktop Web View) */
 .breadcrumb { background-color: transparent; padding: 14px 35px 2px 35px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.8px; color: #52617a; }
 .container { display: flex; padding: 15px 35px 35px 35px; gap: 28px; max-width: 1400px; margin: 0 auto; min-height: 80vh; }
-.main-content { flex: 2; width: 100%; }
+.main-content { flex: 2; width: 100%; position: relative;}
 .sidebar { flex: 1; max-width: 320px; }
 
-.card { background-color: var(--card-bg); border-radius: 14px; padding: 24px; margin-bottom: 24px; border: 1px solid var(--border-color); box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25); }
+.card { background-color: var(--card-bg); border-radius: 14px; padding: 24px; margin-bottom: 24px; border: 1px solid var(--border-color); box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25); position: relative;}
+
+/* New Dedicated Container Back Button */
+.container-back-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border-color);
+    color: var(--text-muted);
+    cursor: pointer;
+    margin-bottom: 20px;
+    transition: all 0.2s ease;
+    font-size: 14px;
+}
+.container-back-btn:hover {
+    background: rgba(253, 184, 19, 0.1);
+    color: var(--primary-yellow);
+    border-color: var(--primary-yellow);
+    transform: translateX(-3px);
+}
 
 /* Sharp Section Headers */
 .section-title { margin-top: 0; margin-bottom: 18px; font-size: 16px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.6px; color: var(--text-light); display: flex; align-items: center; gap: 8px; }
@@ -284,7 +307,7 @@ body {
     
     /* 🔴 LOWERED BOTTOM BAR FIX */
     .mobile-app-bottom-bar {
-        display: flex !important; position: fixed; bottom: 8px; left: 12px; right: 12px; height: 65px;
+        display: flex !important; position: fixed; bottom: 5px; left: 12px; right: 12px; height: 65px;
         background: rgba(28, 28, 32, 0.85); backdrop-filter: blur(25px); border: 1px solid rgba(255, 255, 255, 0.1); 
         border-radius: 35px; box-shadow: 0 15px 35px rgba(0, 0, 0, 0.6), inset 0 1px 1px rgba(255,255,255,0.1);
         z-index: 3500; justify-content: space-between; align-items: center; padding: 0 8px; transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.2s ease;
