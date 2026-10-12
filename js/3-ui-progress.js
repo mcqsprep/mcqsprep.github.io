@@ -39,7 +39,7 @@ function _renderView() {
         const bc = document.getElementById('breadcrumb-text');
         if(bc) bc.innerText = currentPath.length === 0 ? "Home" : "Home / " + currentPath.join(" / "); 
         
-        let currentLevel = appData || {};
+        let currentLevel = typeof appData !== 'undefined' ? appData : {};
         for (let node of currentPath) { 
             if(currentLevel[node] !== undefined) {
                 currentLevel = currentLevel[node]; 
@@ -224,7 +224,8 @@ function _renderProgressSelection() {
     }
     document.getElementById('breadcrumb-text').innerText = "Home / Profile / Track Progress";
     
-    let rootKeys = Object.keys(typeof appData !== 'undefined' ? appData : {}).filter(k => k !== "Daily Quiz Challenge");
+    let safeAppData = typeof appData !== 'undefined' ? appData : {};
+    let rootKeys = Object.keys(safeAppData).filter(k => k !== "Daily Quiz Challenge");
     let optionsHtml = '';
     
     rootKeys.forEach(k => {
@@ -445,7 +446,8 @@ function drawAccuracyChart(dataPoints) {
 function _renderLeaderboardOptions() { 
     document.getElementById('breadcrumb-text').innerText = "Home / Leaderboard"; 
     
-    let rootKeys = Object.keys(typeof appData !== 'undefined' ? appData : {}).filter(k => k !== "Daily Quiz Challenge");
+    let safeAppData = typeof appData !== 'undefined' ? appData : {};
+    let rootKeys = Object.keys(safeAppData).filter(k => k !== "Daily Quiz Challenge");
     let optionsHtml = '';
     
     rootKeys.forEach(k => {
@@ -479,7 +481,8 @@ let cwPath = ""; let cwSubject = "Mixed"; let cwDiff = "Mixed"; let cwLimit = 25
 
 function cwStep1() {
     const mc = document.getElementById('dynamic-content');
-    let rootKeys = Object.keys(typeof appData !== 'undefined' ? appData : {}).filter(k => k !== "Daily Quiz Challenge");
+    let safeAppData = typeof appData !== 'undefined' ? appData : {};
+    let rootKeys = Object.keys(safeAppData).filter(k => k !== "Daily Quiz Challenge");
     
     let html = `
     <div class="card page-transition" style="max-width: 600px; margin: 0 auto; padding: 30px;">
@@ -602,11 +605,11 @@ async function cwLaunch() {
 
         allDocs.sort(() => Math.random() - 0.5);
         if(typeof currentQuestions !== 'undefined') {
-            window.currentQuestions = allDocs; 
-            window.currentQuizPath = targetPath;
-            window.currentIndex = 0;
-            window.userAnswers = {};
-            window.timeSpent = {};
+            currentQuestions = allDocs; 
+            currentQuizPath = targetPath;
+            currentIndex = 0;
+            userAnswers = {};
+            timeSpent = {};
         }
 
         if(typeof renderQuizInterface === 'function') renderQuizInterface();
@@ -623,7 +626,7 @@ async function loadUserBookmarks() {
     if(typeof currentUser === 'undefined' || !currentUser) return;
     try {
         const doc = await db.collection("users").doc(currentUser.uid).collection("data").doc("bookmarks").get();
-        if(doc.exists && Array.isArray(doc.data().list)) { window.userBookmarks = doc.data().list; }
+        if(doc.exists && Array.isArray(doc.data().list)) { userBookmarks = doc.data().list; }
     } catch(e){}
 }
 
@@ -633,7 +636,7 @@ async function bookmarkQuestion(qId) {
     if(savedBookmarks.includes(qId)) { showNotification("⚠️ Already bookmarked!"); return; }
     
     savedBookmarks.push(qId);
-    window.userBookmarks = savedBookmarks;
+    userBookmarks = savedBookmarks;
     try {
         await db.collection("users").doc(currentUser.uid).collection("data").doc("bookmarks").set({
             list: savedBookmarks, lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
@@ -646,7 +649,7 @@ async function removeBookmark(qId) {
     if(typeof currentUser === 'undefined' || !currentUser) return;
     let savedBookmarks = typeof userBookmarks !== 'undefined' ? userBookmarks : [];
     savedBookmarks = savedBookmarks.filter(id => id !== qId);
-    window.userBookmarks = savedBookmarks;
+    userBookmarks = savedBookmarks;
     try {
         await db.collection("users").doc(currentUser.uid).collection("data").doc("bookmarks").set({ list: savedBookmarks }, {merge:true});
         let card = document.getElementById('bmCard_'+qId);
