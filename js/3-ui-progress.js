@@ -57,6 +57,11 @@ function _renderView() {
             isEndpoint = true;
         }
 
+        // CRITICAL SAFEGUARD: Never treat the Home Screen as an endpoint
+        if (currentPath.length === 0) {
+            isEndpoint = false;
+        }
+
         if (isEndpoint) {
             let topicNameRaw = currentPath[currentPath.length - 1]; 
             let niceTitle = topicNameRaw.replace(/^\d+\.\s*/, '');
@@ -165,6 +170,7 @@ function _renderView() {
                   </button>`; 
         }
         
+        // NO GIANT GO BACK BUTTON HERE ANYMORE
         h += `</div></div>`; 
         mc.innerHTML = `<div class="page-transition">${h}</div>`;
         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -180,7 +186,7 @@ async function getAttemptedIdsForPath(safePath) {
         try {
             const subDoc = await db.collection("users").doc(currentUser.uid).collection("progress").doc(safePath).get();
             if (subDoc.exists && Array.isArray(subDoc.data().attemptedIds)) return subDoc.data().attemptedIds;
-        } catch(e) { console.error("Error fetching progress:", e); }
+        } catch(e) {}
     } else {
         let localProg = JSON.parse(localStorage.getItem('mcq_progress') || '{}');
         ids = localProg[safePath] || [];
@@ -605,11 +611,11 @@ async function cwLaunch() {
 
         allDocs.sort(() => Math.random() - 0.5);
         if(typeof currentQuestions !== 'undefined') {
-            currentQuestions = allDocs; 
-            currentQuizPath = targetPath;
-            currentIndex = 0;
-            userAnswers = {};
-            timeSpent = {};
+            window.currentQuestions = allDocs; 
+            window.currentQuizPath = targetPath;
+            window.currentIndex = 0;
+            window.userAnswers = {};
+            window.timeSpent = {};
         }
 
         if(typeof renderQuizInterface === 'function') renderQuizInterface();
@@ -626,7 +632,7 @@ async function loadUserBookmarks() {
     if(typeof currentUser === 'undefined' || !currentUser) return;
     try {
         const doc = await db.collection("users").doc(currentUser.uid).collection("data").doc("bookmarks").get();
-        if(doc.exists && Array.isArray(doc.data().list)) { userBookmarks = doc.data().list; }
+        if(doc.exists && Array.isArray(doc.data().list)) { window.userBookmarks = doc.data().list; }
     } catch(e){}
 }
 
@@ -636,7 +642,7 @@ async function bookmarkQuestion(qId) {
     if(savedBookmarks.includes(qId)) { showNotification("⚠️ Already bookmarked!"); return; }
     
     savedBookmarks.push(qId);
-    userBookmarks = savedBookmarks;
+    window.userBookmarks = savedBookmarks;
     try {
         await db.collection("users").doc(currentUser.uid).collection("data").doc("bookmarks").set({
             list: savedBookmarks, lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
@@ -649,7 +655,7 @@ async function removeBookmark(qId) {
     if(typeof currentUser === 'undefined' || !currentUser) return;
     let savedBookmarks = typeof userBookmarks !== 'undefined' ? userBookmarks : [];
     savedBookmarks = savedBookmarks.filter(id => id !== qId);
-    userBookmarks = savedBookmarks;
+    window.userBookmarks = savedBookmarks;
     try {
         await db.collection("users").doc(currentUser.uid).collection("data").doc("bookmarks").set({ list: savedBookmarks }, {merge:true});
         let card = document.getElementById('bmCard_'+qId);
@@ -694,7 +700,7 @@ async function _initiateBookmarkQuiz() {
                     ${['A','B','C','D'].map(opt => {
                         let text = q.options[opt]; if(!text) return '';
                         let isTrueCorrect = q.correctAnswers.includes(opt);
-                        let bg = isTrueCorrect ? "rgba(16, 185, 129, 0.15)" : "rgba(255,255,255,0.03)";
+                        let bg = isTrueCorrect ? "rgba(76, 175, 80, 0.15)" : "rgba(255,255,255,0.03)";
                         let border = isTrueCorrect ? "var(--correct-green)" : "#1a2744";
                         let color = isTrueCorrect ? "#fff" : "#aaa";
                         return `<div style="background:${bg}; border:1px solid ${border}; color:${color}; padding:10px 14px; border-radius:6px; font-size:14px; display:flex; align-items:center; gap:10px;" id="bmOpt_${q.id}_${opt}">
