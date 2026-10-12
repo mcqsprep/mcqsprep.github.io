@@ -12,7 +12,8 @@
     <link rel="apple-touch-icon" href="icon-192.png">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🩺</text></svg>">
     
-    <link rel="stylesheet" href="style.css?v=22">
+    <!-- Cache busting parameter bumped to v23 -->
+    <link rel="stylesheet" href="style.css?v=23">
     
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
@@ -87,6 +88,12 @@
     </div>
 
     <div class="breadcrumb" id="breadcrumb-text">Home</div>
+    
+    <!-- 🔴 Added Dedicated Back Button Container -->
+    <div style="padding: 10px 35px 0 35px; max-width: 1400px; margin: 0 auto; display: none;" id="dynamic-back-container">
+        <button class="container-back-btn" onclick="goBack()" title="Go Back">❮</button>
+    </div>
+
     <div class="container">
         <div class="main-content" id="dynamic-content"></div>
         <div class="sidebar" id="main-sidebar">
@@ -201,7 +208,7 @@
     <div id="editTopicModal" class="modal-overlay"><div class="modal-content" style="max-width: 450px;"><button class="close-modal" onclick="closeEditTopicModal()">✕</button><h2 style="color: var(--primary-yellow); margin-top:0;">✏️ Edit Folder</h2><input type="hidden" id="editTopicId"><input type="text" id="editTopicName" class="input-field"><select id="editTopicType" class="input-field"><option value="both">📂 Parent Category</option><option value="mcq">📝 MCQs Practice</option><option value="pdf">📄 PDF Material</option></select><button class="btn-exam" onclick="saveEditedTopic()" style="width:100%; background:var(--correct-green);">Save Changes</button></div></div>
     <div id="editModal" class="modal-overlay"><div class="modal-content" style="max-width: 600px;"><button class="close-modal" onclick="closeEditModal()">✕</button><h2 style="color: var(--primary-yellow); margin-top:0;">✏️ Edit MCQ</h2><input type="hidden" id="editDocId"><textarea id="editQuestion" class="input-field" style="min-height:80px;"></textarea><div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;"><input type="text" id="editOptA" class="input-field" placeholder="A"><input type="text" id="editOptB" class="input-field" placeholder="B"></div><div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;"><input type="text" id="editOptC" class="input-field" placeholder="C"><input type="text" id="editOptD" class="input-field" placeholder="D"></div><div style="display:flex; gap:10px; margin-bottom:15px; flex-wrap:wrap;"><label style="background:#090e1a; padding:8px 15px; border-radius:6px; cursor:pointer;"><input type="checkbox" value="A" class="editCorrectCb"> A</label><label style="background:#090e1a; padding:8px 15px; border-radius:6px; cursor:pointer;"><input type="checkbox" value="B" class="editCorrectCb"> B</label><label style="background:#090e1a; padding:8px 15px; border-radius:6px; cursor:pointer;"><input type="checkbox" value="C" class="editCorrectCb"> C</label><label style="background:#090e1a; padding:8px 15px; border-radius:6px; cursor:pointer;"><input type="checkbox" value="D" class="editCorrectCb"> D</label></div><select id="editDifficulty" class="input-field"><option value="Easy">Easy</option><option value="Medium">Medium</option><option value="Hard">Hard</option><option value="Mixed">Mixed</option></select><textarea id="editExplanation" class="input-field" placeholder="Explanation..."></textarea><button class="btn-exam" onclick="saveEditedMCQ()" style="width:100%; background:var(--correct-green);">Save Changes</button></div></div>
 
-    <!-- 📱 FLOATING LIGHT DOCK -->
+    <!-- 📱 FLOATING LIGHT DOCK (UNTOUCHED FOR APP MODE) -->
     <div class="mobile-app-bottom-bar" id="mobileAppDock">
         <div class="app-tab active" onclick="goHome()">
             <div class="app-tab-icon"><svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg></div>
