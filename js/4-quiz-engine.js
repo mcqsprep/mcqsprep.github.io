@@ -13,12 +13,11 @@ async function _initiateQuizEngine() {
     let targetPath = window.currentPath.join(" > ");
     if (!targetPath) { mc.innerHTML = "<div class='card'><p>Invalid quiz path.</p><button class='btn-exam' onclick='goBack()'>Go Back</button></div>"; return; }
 
-    // 🔴 SMART DAILY QUIZ ROUTER: If they clicked Daily Quiz Challenge -> JEE, actually fetch from JEE!
     let isDailyQuiz = false;
     let originalPath = targetPath;
     if (window.currentPath[0] === "Daily Quiz Challenge" && window.currentPath.length > 1) {
         isDailyQuiz = true;
-        targetPath = window.currentPath.slice(1).join(" > "); // Look inside the actual root folder
+        targetPath = window.currentPath.slice(1).join(" > "); 
     }
 
     mc.innerHTML = `<div class="card page-transition" style="text-align:center; padding: 50px 20px;">
@@ -129,10 +128,10 @@ function renderQuizInterface() {
 
     mc.innerHTML = html;
     
-    renderMathInElement(document.getElementById('qText'), { delimiters: [ {left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}, {left: '\\(', right: '\\)', display: false}, {left: '\\[', right: '\\]', display: true} ], throwOnError: false });
+    renderMathInElement(document.getElementById('qText'), { delimiters: [ {left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}, {left: '\\(', right: '\\)', display: false}, {left: '[', right: ']', display: true} ], throwOnError: false });
     ['A','B','C','D'].forEach(opt => {
         let el = document.getElementById('optText_'+opt);
-        if(el) renderMathInElement(el, { delimiters: [ {left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}, {left: '\\(', right: '\\)', display: false}, {left: '\\[', right: '\\]', display: true} ], throwOnError: false });
+        if(el) renderMathInElement(el, { delimiters: [ {left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}, {left: '\\(', right: '\\)', display: false}, {left: '[', right: ']', display: true} ], throwOnError: false });
     });
 }
 
@@ -339,7 +338,7 @@ function _renderQuizReview(filterMode) {
                     else if (isUserSelect && !isTrueCorrect) { bg = "rgba(244, 67, 54, 0.15)"; border = "var(--wrong-red)"; color = "#fff"; }
                     
                     return `<div style="background:${bg}; border:1px solid ${border}; color:${color}; padding:10px 14px; border-radius:6px; font-size:14px; display:flex; align-items:center; gap:10px;" id="revOpt_${q.id}_${opt}">
-                        <span style="font-weight:bold; font-size:12px; opacity:0.8;">${opt}</span> ${text}
+                        <span style="font-weight:bold; font-size:12px; opacity:0.8;">${opt}</span>${text}
                     </div>`;
                 }).join('')}
             </div>
@@ -365,11 +364,11 @@ function _renderQuizReview(filterMode) {
     mc.innerHTML = html;
     
     currentQuestions.forEach(q => {
-        let elQ = document.getElementById('revQ_'+q.id); if(elQ) renderMathInElement(elQ, { delimiters: [ {left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}, {left: '\\(', right: '\\)', display: false}, {left: '\\[', right: '\\]', display: true} ], throwOnError: false });
+        let elQ = document.getElementById('revQ_'+q.id); if(elQ) renderMathInElement(elQ, { delimiters: [ {left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}, {left: '\\(', right: '\\)', display: false}, {left: '[', right: ']', display: true} ], throwOnError: false });
         ['A','B','C','D'].forEach(opt => {
-            let elO = document.getElementById(`revOpt_${q.id}_${opt}`); if(elO) renderMathInElement(elO, { delimiters: [ {left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}, {left: '\\(', right: '\\)', display: false}, {left: '\\[', right: '\\]', display: true} ], throwOnError: false });
+            let elO = document.getElementById(`revOpt_${q.id}_${opt}`); if(elO) renderMathInElement(elO, { delimiters: [ {left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}, {left: '\\(', right: '\\)', display: false}, {left: '[', right: ']', display: true} ], throwOnError: false });
         });
-        let elE = document.getElementById('revExp_'+q.id); if(elE) renderMathInElement(elE, { delimiters: [ {left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}, {left: '\\(', right: '\\)', display: false}, {left: '\\[', right: '\\]', display: true} ], throwOnError: false });
+        let elE = document.getElementById('revExp_'+q.id); if(elE) renderMathInElement(elE, { delimiters: [ {left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}, {left: '\\(', right: '\\)', display: false}, {left: '[', right: ']', display: true} ], throwOnError: false });
     });
 }
 
