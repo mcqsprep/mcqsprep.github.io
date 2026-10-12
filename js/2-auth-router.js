@@ -2,11 +2,12 @@
 // 2. DATA LOADING & AUTHENTICATION
 // ==========================================
 
-// CRITICAL FIX: Global fallbacks prevent the app from crashing on boot!
-window.customTopicTypes = window.customTopicTypes || {};
-window.currentUser = window.currentUser || null;
-window.userBookmarks = window.userBookmarks || [];
-window.dataLoaded = window.dataLoaded || false;
+// 🔴 CRITICAL FIX: Global Variables restored to prevent blank screen crashes!
+window.currentPath = [];
+window.customTopicTypes = {};
+window.dataLoaded = false;
+window.currentUser = null;
+window.userBookmarks = [];
 
 async function loadCustomTopics() {
     try {
@@ -14,8 +15,7 @@ async function loadCustomTopics() {
         snapshot.forEach(doc => {
             let data = doc.data(); 
             let pathArr = (data.parentPath || "").split(' > '); 
-            let current = appData;
-            
+            let current = window.appData;
             for (let p of pathArr) { 
                 if (p) { 
                     if (!current[p]) current[p] = {}; 
@@ -29,23 +29,21 @@ async function loadCustomTopics() {
             }
         });
 
-        // 🔴 CRITICAL NEW FEATURE: Auto-Inject Admin DB Topics into App Structure!
-        // This makes JEE show up in Daily Quizzes, Leaderboards, and Sidebars automatically.
-        if (!appData["Daily Quiz Challenge"]) appData["Daily Quiz Challenge"] = {};
-        
-        let rootKeys = Object.keys(appData).filter(k => k !== "Daily Quiz Challenge");
+        // Auto-injects ALL root folders (like JEE) into the Daily Quiz Challenge engine
+        if (!window.appData["Daily Quiz Challenge"]) window.appData["Daily Quiz Challenge"] = {};
+        let rootKeys = Object.keys(window.appData).filter(k => k !== "Daily Quiz Challenge");
         
         Object.keys(window.customTopicTypes).forEach(key => {
             let root = key.split(' > ')[0];
             if(root && !rootKeys.includes(root) && root !== "Daily Quiz Challenge") {
                 rootKeys.push(root);
-                appData[root] = appData[root] || {}; 
+                window.appData[root] = window.appData[root] || {}; 
             }
         });
 
         rootKeys.forEach(k => {
-            if (!appData["Daily Quiz Challenge"][k]) {
-                appData["Daily Quiz Challenge"][k] = {};
+            if (!window.appData["Daily Quiz Challenge"][k]) {
+                window.appData["Daily Quiz Challenge"][k] = {};
                 window.customTopicTypes["Daily Quiz Challenge > " + k] = "mcq"; 
             }
         });
@@ -95,9 +93,7 @@ auth.onAuthStateChanged((user) => {
                 if(d.currentStreak) document.getElementById('nav-streak-display').innerText = d.currentStreak;
             }
             db.collection("users").doc(user.uid).set({ 
-                displayName: user.displayName, 
-                email: user.email, 
-                photoURL: user.photoURL, 
+                displayName: user.displayName, email: user.email, photoURL: user.photoURL, 
                 lastLogin: firebase.firestore.FieldValue.serverTimestamp() 
             }, { merge: true });
         });
@@ -157,21 +153,24 @@ function updateBottomNav(hash) {
     }
 }
 
+// 🔴 SMART SIDEBAR: Instantly adapts to JEE, NEET, or any new folder!
 function updateSidebarLinks() {
     const sidebar = document.getElementById('main-sidebar');
     if (!sidebar) return;
 
     let rootTopic = null;
-    if (currentPath && currentPath.length > 0) rootTopic = currentPath[0]; 
+    if (window.currentPath && window.currentPath.length > 0) rootTopic = window.currentPath[0]; 
 
-    // Hide sidebar on Root Home, Leaderboards, or Custom Setup screens.
     if (!rootTopic || window.location.hash === '#/home' || window.location.hash.includes('custom-setup') || window.location.hash.includes('leaderboard')) {
         sidebar.style.display = 'none';
         return;
     }
     
-    // Dynamically generate Sidebar links based on current folder
-    if (appData[rootTopic]) {
+    let hasRoot = false;
+    if (typeof window.appData !== 'undefined' && window.appData[rootTopic]) hasRoot = true;
+    if (Object.keys(window.customTopicTypes).some(k => k.startsWith(rootTopic))) hasRoot = true;
+
+    if (hasRoot) {
         sidebar.style.display = 'block';
         let safeTopic = rootTopic.replace(/'/g, "\\'");
 
@@ -184,7 +183,7 @@ function updateSidebarLinks() {
             </a>
             <a class="action-link" onclick="jumpToSection(['${safeTopic}', 'Previous Year Papers'])">
                 <span class="link-icon" style="color: #607D8B;">📄</span>
-                <span class="link-text">${rootTopic} PYQs</span>
+                <span class="link-text">${rootTopic} Previous Papers</span>
             </a>
         </div>
         <div class="card sidebar-card">
@@ -213,11 +212,8 @@ function handleRouting() {
         let rawHash = window.location.hash.replace(/^#\/?/, ''); 
         let hash = decodeURIComponent(rawHash);
         
-        if (hash === 'admin' || hash === 'admin-panel') {
-            document.body.classList.add('admin-mode');
-        } else {
-            document.body.classList.remove('admin-mode');
-        }
+        if (hash === 'admin' || hash === 'admin-panel') document.body.classList.add('admin-mode');
+        else document.body.classList.remove('admin-mode');
         
         let isRootHome = (!hash || hash === 'home');
         
@@ -226,9 +222,9 @@ function handleRouting() {
         
         updateBottomNav(rawHash);
         
-        if (isRootHome) { currentPath = []; _renderView(); } 
+        if (isRootHome) { window.currentPath = []; _renderView(); } 
         else if (hash === 'custom-setup') { cwStep1(); } 
-        else if (hash.startsWith('path/')) { currentPath = hash.replace('path/', '').split('/'); _renderView(); } 
+        else if (hash.startsWith('path/')) { window.currentPath = hash.replace('path/', '').split('/'); _renderView(); } 
         else if (hash === 'leaderboard') _renderLeaderboardOptions(); 
         else if (hash.startsWith('board/')) fetchLiveLeaderboard(hash.replace('board/', '')); 
         else if (hash === 'quiz') _initiateQuizEngine(); 
@@ -245,14 +241,12 @@ function handleRouting() {
             const sidebar = document.getElementById('main-sidebar');
             if (sidebar) sidebar.style.display = 'none';
         }
-    } catch (err) {
-        console.error("Routing Error:", err);
-    }
+    } catch (err) { console.error("Routing Error:", err); }
 }
 
 function goHome() { 
     if (window.location.hash === '#/home' || window.location.hash === '') {
-        currentPath = [];
+        window.currentPath = [];
         const backBtn = document.getElementById('dynamic-back-container');
         if(backBtn) backBtn.style.display = 'none';
         _renderView();
@@ -262,13 +256,10 @@ function goHome() {
     }
 }
 
-function navigateTo(key) { window.location.hash = '#/path/' + encodeURIComponent([...currentPath, key].join('/')).replace(/%2F/g, '/'); }
+function navigateTo(key) { window.location.hash = '#/path/' + encodeURIComponent([...window.currentPath, key].join('/')).replace(/%2F/g, '/'); }
 function jumpToSection(pathArray) { window.location.hash = '#/path/' + encodeURIComponent(pathArray.join('/')).replace(/%2F/g, '/'); }
 function showLeaderboardOptions() { window.location.hash = '#/leaderboard'; }
 function goBack() { 
-    if (window.history.length > 1 && window.location.hash !== '#/home') {
-        window.history.back(); 
-    } else {
-        goHome();
-    }
+    if (window.history.length > 1 && window.location.hash !== '#/home') { window.history.back(); } 
+    else { goHome(); }
 }
