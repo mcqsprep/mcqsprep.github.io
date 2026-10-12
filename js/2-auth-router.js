@@ -2,12 +2,12 @@
 // 2. DATA LOADING & AUTHENTICATION
 // ==========================================
 
-// 🔴 CRITICAL FIX: Global Variables restored to prevent blank screen crashes!
-window.currentPath = [];
-window.customTopicTypes = {};
-window.dataLoaded = false;
-window.currentUser = null;
-window.userBookmarks = [];
+// 🔴 CRITICAL FIX: Properly scoped global variables to prevent crashes
+var currentPath = [];
+var customTopicTypes = {};
+var dataLoaded = false;
+var currentUser = null;
+var userBookmarks = [];
 
 async function loadCustomTopics() {
     try {
@@ -15,7 +15,7 @@ async function loadCustomTopics() {
         snapshot.forEach(doc => {
             let data = doc.data(); 
             let pathArr = (data.parentPath || "").split(' > '); 
-            let current = window.appData;
+            let current = appData;
             for (let p of pathArr) { 
                 if (p) { 
                     if (!current[p]) current[p] = {}; 
@@ -25,26 +25,26 @@ async function loadCustomTopics() {
             if (typeof current === 'object' && !Array.isArray(current) && data.name) {
                 if (!current[data.name]) current[data.name] = {};
                 let fullKey = data.parentPath ? (data.parentPath + " > " + data.name) : data.name;
-                window.customTopicTypes[fullKey] = data.type; 
+                customTopicTypes[fullKey] = data.type; 
             }
         });
 
         // Auto-injects ALL root folders (like JEE) into the Daily Quiz Challenge engine
-        if (!window.appData["Daily Quiz Challenge"]) window.appData["Daily Quiz Challenge"] = {};
-        let rootKeys = Object.keys(window.appData).filter(k => k !== "Daily Quiz Challenge");
+        if (!appData["Daily Quiz Challenge"]) appData["Daily Quiz Challenge"] = {};
+        let rootKeys = Object.keys(appData).filter(k => k !== "Daily Quiz Challenge");
         
-        Object.keys(window.customTopicTypes).forEach(key => {
+        Object.keys(customTopicTypes).forEach(key => {
             let root = key.split(' > ')[0];
             if(root && !rootKeys.includes(root) && root !== "Daily Quiz Challenge") {
                 rootKeys.push(root);
-                window.appData[root] = window.appData[root] || {}; 
+                appData[root] = appData[root] || {}; 
             }
         });
 
         rootKeys.forEach(k => {
-            if (!window.appData["Daily Quiz Challenge"][k]) {
-                window.appData["Daily Quiz Challenge"][k] = {};
-                window.customTopicTypes["Daily Quiz Challenge > " + k] = "mcq"; 
+            if (!appData["Daily Quiz Challenge"][k]) {
+                appData["Daily Quiz Challenge"][k] = {};
+                customTopicTypes["Daily Quiz Challenge > " + k] = "mcq"; 
             }
         });
 
@@ -62,19 +62,20 @@ window.addEventListener('click', function(e) {
 });
 
 function initApp() { 
-    window.dataLoaded = true; 
+    dataLoaded = true; 
     if (!window.location.hash) window.location.hash = '#/home'; 
     handleRouting(); 
     
     loadCustomTopics().then(() => {
         if(window.location.hash === '#/home' || window.location.hash === '' || window.location.hash === '#/') {
             _renderView(); 
+            updateSidebarLinks();
         }
     });
 }
 
 auth.onAuthStateChanged((user) => {
-    window.currentUser = user; 
+    currentUser = user; 
     const badge = document.getElementById('userBadge'); 
     const loginNavBtn = document.getElementById('loginNavBtn');
     if (user) {
@@ -105,12 +106,12 @@ auth.onAuthStateChanged((user) => {
         loginNavBtn.style.display = 'flex'; 
         document.getElementById('profileNotifDot').style.display = 'none';
         document.getElementById('nav-streak-display').innerText = "0";
-        window.userBookmarks = [];
+        userBookmarks = [];
         if (window.location.hash !== '#/admin' && window.location.hash !== '#/admin-panel' && !sessionStorage.getItem('auth_skipped')) {
             document.getElementById('authModal').style.display = 'flex';
         }
     }
-    if (window.dataLoaded) handleRouting(); 
+    if (dataLoaded) handleRouting(); 
 });
 
 initApp(); 
@@ -125,7 +126,6 @@ window.addEventListener('hashchange', handleRouting);
 
 function updateBottomNav(hash) {
     document.querySelectorAll('.app-tab').forEach(tab => tab.classList.remove('active'));
-    
     if (hash === 'quiz' || hash === 'admin' || hash === 'admin-panel') {
         document.body.classList.add('hide-bottom-bar');
     } else {
@@ -153,62 +153,60 @@ function updateBottomNav(hash) {
     }
 }
 
-// 🔴 SMART SIDEBAR: Instantly adapts to JEE, NEET, or any new folder!
+// 🔴 SMART SIDEBAR: Restores sidebar to Home and adapts to JEE, NEET, etc.
 function updateSidebarLinks() {
     const sidebar = document.getElementById('main-sidebar');
     if (!sidebar) return;
 
-    let rootTopic = null;
-    if (window.currentPath && window.currentPath.length > 0) rootTopic = window.currentPath[0]; 
-
-    if (!rootTopic || window.location.hash === '#/home' || window.location.hash.includes('custom-setup') || window.location.hash.includes('leaderboard')) {
+    let hash = window.location.hash;
+    
+    // Only hide sidebar on these specific full-screen pages
+    if (hash.includes('custom-setup') || hash.includes('leaderboard') || hash.includes('progress') || hash.includes('bookmarks') || hash.includes('quiz') || hash.includes('admin') || hash === '#/diary') {
         sidebar.style.display = 'none';
         return;
     }
     
-    let hasRoot = false;
-    if (typeof window.appData !== 'undefined' && window.appData[rootTopic]) hasRoot = true;
-    if (Object.keys(window.customTopicTypes).some(k => k.startsWith(rootTopic))) hasRoot = true;
-
-    if (hasRoot) {
-        sidebar.style.display = 'block';
-        let safeTopic = rootTopic.replace(/'/g, "\\'");
-
-        sidebar.innerHTML = `
-        <div class="card sidebar-card">
-            <h3 class="section-title">Quick Links</h3>
-            <a class="action-link" onclick="jumpToSection(['${safeTopic}', 'NCERT Books'])">
-                <span class="link-icon" style="color: #9C27B0;">📚</span>
-                <span class="link-text">${rootTopic} NCERT Books</span>
-            </a>
-            <a class="action-link" onclick="jumpToSection(['${safeTopic}', 'Previous Year Papers'])">
-                <span class="link-icon" style="color: #607D8B;">📄</span>
-                <span class="link-text">${rootTopic} Previous Papers</span>
-            </a>
-        </div>
-        <div class="card sidebar-card">
-            <h3 class="section-title">Essential Practice</h3>
-            <a class="action-link" onclick="jumpToSection(['${safeTopic}', 'MCQs Practice'])">
-                <span class="link-icon" style="color: #00BCD4;">📝</span>
-                <span class="link-text">Subject-wise MCQs</span>
-            </a>
-            <a class="action-link" onclick="jumpToSection(['${safeTopic}', 'Mock Test'])">
-                <span class="link-icon" style="color: #F44336;">⏱️</span>
-                <span class="link-text">Full-Length Mock Tests</span>
-            </a>
-            <a class="action-link" onclick="jumpToSection(['Daily Quiz Challenge', '${safeTopic}'])">
-                <span class="link-icon" style="color: #fdb813;">📅</span>
-                <span class="link-text">Daily Quiz Challenge</span>
-            </a>
-        </div>`;
-    } else {
-        sidebar.style.display = 'none';
+    // Default to NEET if on the Home screen, otherwise use the active folder
+    let rootTopic = "NEET"; 
+    if (currentPath && currentPath.length > 0) {
+        rootTopic = currentPath[0]; 
     }
+    
+    sidebar.style.display = 'block';
+    let safeTopic = rootTopic.replace(/'/g, "\\'");
+
+    sidebar.innerHTML = `
+    <div class="card sidebar-card">
+        <h3 class="section-title">Quick Links</h3>
+        <a class="action-link" onclick="jumpToSection(['${safeTopic}', 'NCERT Book'])">
+            <span class="link-icon" style="color: #9C27B0;">📚</span>
+            <span class="link-text">${rootTopic} Books</span>
+        </a>
+        <a class="action-link" onclick="jumpToSection(['${safeTopic}', 'PYQs'])">
+            <span class="link-icon" style="color: #607D8B;">📄</span>
+            <span class="link-text">${rootTopic} Previous Papers</span>
+        </a>
+    </div>
+    <div class="card sidebar-card">
+        <h3 class="section-title">Essential Practice</h3>
+        <a class="action-link" onclick="jumpToSection(['${safeTopic}', 'MCQs Practice'])">
+            <span class="link-icon" style="color: #00BCD4;">📝</span>
+            <span class="link-text">Subject-wise MCQs</span>
+        </a>
+        <a class="action-link" onclick="jumpToSection(['${safeTopic}', 'Mock Test'])">
+            <span class="link-icon" style="color: #F44336;">⏱️</span>
+            <span class="link-text">Full Mock Tests</span>
+        </a>
+        <a class="action-link" onclick="jumpToSection(['Daily Quiz Challenge', '${safeTopic}'])">
+            <span class="link-icon" style="color: #fdb813;">📅</span>
+            <span class="link-text">Daily Challenge</span>
+        </a>
+    </div>`;
 }
 
 function handleRouting() {
     try {
-        if(!window.dataLoaded) return; 
+        if(!dataLoaded) return; 
         let rawHash = window.location.hash.replace(/^#\/?/, ''); 
         let hash = decodeURIComponent(rawHash);
         
@@ -222,9 +220,9 @@ function handleRouting() {
         
         updateBottomNav(rawHash);
         
-        if (isRootHome) { window.currentPath = []; _renderView(); } 
+        if (isRootHome) { currentPath = []; _renderView(); } 
         else if (hash === 'custom-setup') { cwStep1(); } 
-        else if (hash.startsWith('path/')) { window.currentPath = hash.replace('path/', '').split('/'); _renderView(); } 
+        else if (hash.startsWith('path/')) { currentPath = hash.replace('path/', '').split('/'); _renderView(); } 
         else if (hash === 'leaderboard') _renderLeaderboardOptions(); 
         else if (hash.startsWith('board/')) fetchLiveLeaderboard(hash.replace('board/', '')); 
         else if (hash === 'quiz') _initiateQuizEngine(); 
@@ -235,18 +233,13 @@ function handleRouting() {
         else if (hash === 'admin') _renderAdminLogin(); 
         else if (hash === 'admin-panel') _renderAdminPanel();
         
-        if (hash !== 'quiz' && hash !== 'admin' && hash !== 'admin-panel') {
-            updateSidebarLinks();
-        } else {
-            const sidebar = document.getElementById('main-sidebar');
-            if (sidebar) sidebar.style.display = 'none';
-        }
+        updateSidebarLinks();
     } catch (err) { console.error("Routing Error:", err); }
 }
 
 function goHome() { 
     if (window.location.hash === '#/home' || window.location.hash === '') {
-        window.currentPath = [];
+        currentPath = [];
         const backBtn = document.getElementById('dynamic-back-container');
         if(backBtn) backBtn.style.display = 'none';
         _renderView();
@@ -256,7 +249,7 @@ function goHome() {
     }
 }
 
-function navigateTo(key) { window.location.hash = '#/path/' + encodeURIComponent([...window.currentPath, key].join('/')).replace(/%2F/g, '/'); }
+function navigateTo(key) { window.location.hash = '#/path/' + encodeURIComponent([...currentPath, key].join('/')).replace(/%2F/g, '/'); }
 function jumpToSection(pathArray) { window.location.hash = '#/path/' + encodeURIComponent(pathArray.join('/')).replace(/%2F/g, '/'); }
 function showLeaderboardOptions() { window.location.hash = '#/leaderboard'; }
 function goBack() { 
