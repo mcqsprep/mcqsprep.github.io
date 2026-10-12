@@ -37,10 +37,10 @@ function _renderView() {
         const mc = document.getElementById('dynamic-content'); 
         if(!mc) return;
         const bc = document.getElementById('breadcrumb-text');
-        if(bc) bc.innerText = currentPath.length === 0 ? "Home" : "Home / " + currentPath.join(" / "); 
+        if(bc) bc.innerText = window.currentPath.length === 0 ? "Home" : "Home / " + window.currentPath.join(" / "); 
         
-        let currentLevel = appData;
-        for (let node of currentPath) { 
+        let currentLevel = window.appData || {};
+        for (let node of window.currentPath) { 
             if(currentLevel[node] !== undefined) {
                 currentLevel = currentLevel[node]; 
             } else {
@@ -48,7 +48,7 @@ function _renderView() {
             }
         }
 
-        let checkPath = currentPath.join(" > ");
+        let checkPath = window.currentPath.join(" > ");
         let hasDbChildren = Object.keys(window.customTopicTypes).some(k => k.startsWith(checkPath + " > "));
         
         let isEndpoint = false;
@@ -57,13 +57,14 @@ function _renderView() {
         }
 
         if (isEndpoint) {
-            let topicNameRaw = currentPath[currentPath.length - 1]; 
+            let topicNameRaw = window.currentPath[window.currentPath.length - 1]; 
             let niceTitle = topicNameRaw.replace(/^\d+\.\s*/, '');
             let topicNameLower = niceTitle.toLowerCase(); 
             
             let isPdfOnly = false;
             let isContainer = false;
             
+            // 🔴 SMART DOCUMENT DETECTOR - Automatically prevents quizzes on PDF folders
             if (window.customTopicTypes[checkPath] === 'pdf') {
                 isPdfOnly = true;
             } else if (window.customTopicTypes[checkPath] === 'both') {
@@ -102,11 +103,11 @@ function _renderView() {
             return;
         }
 
-        let titleRaw = currentPath.length === 0 ? "Select Exam Category" : currentPath[currentPath.length - 1];
+        let titleRaw = window.currentPath.length === 0 ? "Select Exam Category" : window.currentPath[window.currentPath.length - 1];
         let title = titleRaw.replace(/^\d+\.\s*/, '');
         let h = ``;
 
-        if (currentPath.length === 0) {
+        if (window.currentPath.length === 0) {
             h += `
             <div class="card setup-hero-card" onclick="forceCwStep1(event)">
                 <div class="hero-badge">CUSTOM PRACTICE</div>
@@ -118,11 +119,10 @@ function _renderView() {
 
         h += `<div class="card category-section"><h3 class="section-title">${title}</h3><div class="category-grid">`;
         
-        // Fetch Keys from Both Hardcoded Data AND Database Data!
         let keys = new Set(Object.keys(currentLevel));
         Object.keys(window.customTopicTypes).forEach(dbKey => {
             let parts = dbKey.split(' > ');
-            if (currentPath.length === 0) {
+            if (window.currentPath.length === 0) {
                 keys.add(parts[0]);
             } else if (dbKey.startsWith(checkPath + " > ")) {
                 let nextLevel = dbKey.replace(checkPath + " > ", "").split(' > ')[0];
@@ -144,8 +144,8 @@ function _renderView() {
         });
 
         for (let key of keysArr) { 
-            if (currentPath.length === 0 && key === "Daily Quiz Challenge") continue; 
-            let fullCheckPath = currentPath.join(" > ") + (currentPath.length > 0 ? " > " : "") + key;
+            if (window.currentPath.length === 0 && key === "Daily Quiz Challenge") continue; 
+            let fullCheckPath = window.currentPath.join(" > ") + (window.currentPath.length > 0 ? " > " : "") + key;
             
             let typeLabel = ""; 
             if (window.customTopicTypes[fullCheckPath] === 'mcq') typeLabel = "📝"; 
@@ -164,8 +164,7 @@ function _renderView() {
                   </button>`; 
         }
         
-        // GIANT GO BACK BUTTON DELETED!
-        
+        // 🔴 NOTE: The giant inline "Go Back" button was successfully deleted.
         h += `</div></div>`; 
         mc.innerHTML = `<div class="page-transition">${h}</div>`;
         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -208,9 +207,7 @@ async function saveAttemptedIdsForPath(safePath, newAttemptedIds) {
 async function resetProgress(safePath) {
     if(!confirm("Are you sure you want to reset your progress for this section?")) return;
     if (window.currentUser) {
-        try {
-            await db.collection("users").doc(window.currentUser.uid).collection("progress").doc(safePath).delete();
-        } catch(e) { }
+        try { await db.collection("users").doc(window.currentUser.uid).collection("progress").doc(safePath).delete(); } catch(e) {}
     } else {
         let localProg = JSON.parse(localStorage.getItem('mcq_progress') || '{}');
         delete localProg[safePath];
@@ -224,7 +221,7 @@ function _renderProgressSelection() {
     if (!window.currentUser) return document.getElementById('dynamic-content').innerHTML = `<div class="card page-transition" style="text-align:center;"><h2>⚠ Sign In Required</h2><button class="btn-exam" onclick="goBack()" style="background:#333; border:none;">Back</button></div>`;
     document.getElementById('breadcrumb-text').innerText = "Home / Profile / Track Progress";
     
-    let rootKeys = Object.keys(appData).filter(k => k !== "Daily Quiz Challenge");
+    let rootKeys = Object.keys(window.appData || {}).filter(k => k !== "Daily Quiz Challenge");
     let optionsHtml = '';
     
     rootKeys.forEach(k => {
@@ -256,9 +253,17 @@ async function _renderProgressDashboard(category) {
     try {
         const snap = await db.collection("leaderboards").where("userId", "==", window.currentUser.uid).get();
         let validDocs = [];
+        let tempDocs = [];
         
-        snap.forEach(doc => { 
-            let d = doc.data();
+        snap.forEach(doc => { tempDocs.push(doc.data()); });
+
+        tempDocs.sort((a, b) => {
+            let tA = a.timestamp ? a.timestamp.toMillis() : 0;
+            let tB = b.timestamp ? b.timestamp.toMillis() : 0;
+            return tA - tB;
+        });
+
+        tempDocs.forEach(d => {
             if (d.examCategory === category || (d.quizPath && d.quizPath.startsWith(category))) {
                 validDocs.push(d);
             }
@@ -271,8 +276,8 @@ async function _renderProgressDashboard(category) {
 
         let totalScore = 0; let totalQuestions = 0; let correctCount = 0; let wrongCount = 0;
         let aggregatedSubs = {}; let accuracyTrend = [];
-
-        validDocs.sort((a, b) => (a.timestamp ? a.timestamp.toMillis() : 0) - (b.timestamp ? b.timestamp.toMillis() : 0));
+        let totalAvgTimeC = 0; let countC = 0;
+        let totalAvgTimeW = 0; let countW = 0;
 
         validDocs.forEach(d => {
             totalScore += (d.score || 0); 
@@ -284,6 +289,9 @@ async function _renderProgressDashboard(category) {
             correctCount += c;
             wrongCount += w;
             accuracyTrend.push(d.accuracy || 0);
+            
+            if (d.avgTimeCorrect) { totalAvgTimeC += d.avgTimeCorrect; countC++; }
+            if (d.avgTimeWrong) { totalAvgTimeW += d.avgTimeWrong; countW++; }
             
             if (d.subjectBreakdown) {
                 for(let s in d.subjectBreakdown) {
@@ -297,13 +305,22 @@ async function _renderProgressDashboard(category) {
 
         let overallAccuracy = totalQuestions > 0 ? Math.round((correctCount / totalQuestions) * 100) : 0;
         let recentTrend = accuracyTrend.slice(-10);
+        let finalAvgTimeC = countC > 0 ? Math.round(totalAvgTimeC / countC) : 0;
+        let finalAvgTimeW = countW > 0 ? Math.round(totalAvgTimeW / countW) : 0;
 
         let subjectHtml = '';
+        let weakSubjects = [];
+        let validSubjectsCount = 0;
+
         Object.keys(aggregatedSubs).sort().forEach(subj => {
             let sData = aggregatedSubs[subj];
             if(sData.attempts > 0) {
+                validSubjectsCount++;
                 let acc = Math.round((sData.correct / sData.attempts) * 100);
                 let color = acc >= 70 ? 'var(--correct-green)' : (acc >= 50 ? 'var(--primary-yellow)' : 'var(--wrong-red)');
+                
+                if (acc < 50) weakSubjects.push(`${subj} (${acc}%)`);
+
                 subjectHtml += `
                     <div style="margin-bottom:15px;">
                         <div style="display:flex; justify-content:space-between; font-size:13px; margin-bottom:5px; font-weight:bold;">
@@ -318,33 +335,60 @@ async function _renderProgressDashboard(category) {
             }
         });
 
+        if (validSubjectsCount === 0) subjectHtml = `<p style="color:var(--text-muted); font-size:13px;">Detailed subject analytics generate for new quizzes.</p>`;
+        
+        let weakSpotsText = weakSubjects.length > 0 ? weakSubjects.join(' • ') : "<span style='color:var(--correct-green);'>✅ Excellent! All subjects are >50% accuracy. Keep it up!</span>";
+
         mc.innerHTML = `
         <div class="card page-transition" style="padding: 20px 15px;">
             <h2 class="section-title" style="margin-top:0; margin-bottom:15px; font-size:22px;">${displayCategory} Performance</h2>
             
             <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-bottom: 15px;">
-                <div style="flex:1; min-width: 100px; background:#0d1527; padding: 15px 10px; border-radius: 8px; text-align:center; border:1px solid var(--border-color);">
+                <div style="flex:1; min-width: 100px; max-width: 150px; background:#0d1527; padding: 15px 10px; border-radius: 8px; text-align:center; border:1px solid var(--border-color);">
                     <div style="font-size: 24px; color: white; font-weight: bold;">${totalQuestions}</div>
                     <div style="color: var(--text-muted); font-size: 11px; text-transform:uppercase; margin-top:4px;">Attempted</div>
                 </div>
-                <div style="flex:1; min-width: 100px; background:#0d1527; padding: 15px 10px; border-radius: 8px; text-align:center; border:1px solid var(--correct-green);">
+                <div style="flex:1; min-width: 100px; max-width: 150px; background:#0d1527; padding: 15px 10px; border-radius: 8px; text-align:center; border:1px solid var(--correct-green);">
                     <div style="font-size: 24px; color: var(--correct-green); font-weight: bold;">${correctCount}</div>
                     <div style="color: var(--text-muted); font-size: 11px; text-transform:uppercase; margin-top:4px;">Right</div>
                 </div>
-                <div style="flex:1; min-width: 100px; background:#0d1527; padding: 15px 10px; border-radius: 8px; text-align:center; border:1px solid var(--wrong-red);">
+                <div style="flex:1; min-width: 100px; max-width: 150px; background:#0d1527; padding: 15px 10px; border-radius: 8px; text-align:center; border:1px solid var(--wrong-red);">
                     <div style="font-size: 24px; color: var(--wrong-red); font-weight: bold;">${wrongCount}</div>
                     <div style="color: var(--text-muted); font-size: 11px; text-transform:uppercase; margin-top:4px;">Wrong</div>
                 </div>
-                <div style="flex:1; min-width: 100px; background:#0d1527; padding: 15px 10px; border-radius: 8px; text-align:center; border:1px solid var(--primary-yellow);">
-                    <div style="font-size: 24px; color: var(--primary-yellow); font-weight: bold;">${overallAccuracy}%</div>
+                <div style="flex:1; min-width: 100px; max-width: 150px; background:#0d1527; padding: 15px 10px; border-radius: 8px; text-align:center; border:1px solid var(--primary-yellow);">
+                    <div style="font-size: 24px; color: var(--primary-yellow); font-weight: bold;">${totalScore}</div>
+                    <div style="color: var(--text-muted); font-size: 11px; text-transform:uppercase; margin-top:4px;">Overall Mark</div>
+                </div>
+                <div style="flex:1; min-width: 100px; max-width: 150px; background:#0d1527; padding: 15px 10px; border-radius: 8px; text-align:center; border:1px solid var(--border-color);">
+                    <div style="font-size: 24px; color: white; font-weight: bold;">${overallAccuracy}%</div>
                     <div style="color: var(--text-muted); font-size: 11px; text-transform:uppercase; margin-top:4px;">Accuracy</div>
+                </div>
+            </div>
+
+            <div style="background:rgba(239, 68, 68, 0.05); border-left:3px solid var(--wrong-red); padding:12px; border-radius:4px; margin-bottom:20px;">
+                <div style="color:var(--wrong-red); font-size:11px; font-weight:bold; margin-bottom:5px; text-transform:uppercase;">Needs Improvement</div>
+                <div style="font-size:13px; color:#d1d5db; line-height:1.4;">${weakSpotsText}</div>
+            </div>
+            
+            <div style="background:#090e1a; border:1px solid var(--border-color); padding:15px; border-radius:6px; margin-bottom: 20px;">
+                <h3 style="margin-top:0; color:white; border-bottom:1px solid #1a2744; padding-bottom:8px; margin-bottom:15px; font-size:15px;">⏱️ Time to Accuracy Insights</h3>
+                <div style="display:flex; gap:15px; flex-wrap:wrap;">
+                    <div style="flex:1; background:rgba(16, 185, 129, 0.1); border:1px solid var(--correct-green); padding:15px; border-radius:6px; text-align:center;">
+                        <div style="font-size:24px; color:var(--correct-green); font-weight:bold;">${finalAvgTimeC}s</div>
+                        <div style="color:var(--text-muted); font-size:12px; margin-top:5px;">Avg Time on Correct Answers</div>
+                    </div>
+                    <div style="flex:1; background:rgba(239, 68, 68, 0.1); border:1px solid var(--wrong-red); padding:15px; border-radius:6px; text-align:center;">
+                        <div style="font-size:24px; color:var(--wrong-red); font-weight:bold;">${finalAvgTimeW}s</div>
+                        <div style="color:var(--text-muted); font-size:12px; margin-top:5px;">Avg Time on Wrong Answers</div>
+                    </div>
                 </div>
             </div>
 
             <div style="display:flex; gap:15px; flex-wrap:wrap;">
                 <div style="flex:1; min-width:280px; background:#090e1a; border:1px solid var(--border-color); padding:15px; border-radius:6px;">
                     <h3 style="margin-top:0; color:white; border-bottom:1px solid #1a2744; padding-bottom:8px; margin-bottom:15px; font-size:15px;">Subject-Wise Mastery</h3>
-                    ${subjectHtml || "<p style='color:#777; font-size:13px;'>No detailed subject breakdown available.</p>"}
+                    ${subjectHtml}
                 </div>
 
                 <div style="flex:1; min-width:280px; background:#090e1a; border:1px solid var(--border-color); padding:15px; border-radius:6px;">
@@ -355,7 +399,6 @@ async function _renderProgressDashboard(category) {
         </div>`;
 
         setTimeout(() => drawAccuracyChart(recentTrend), 50);
-
     } catch(e) { mc.innerHTML = `<div class="card"><p>Error: ${e.message}</p></div>`; }
 }
 
@@ -398,7 +441,7 @@ function drawAccuracyChart(dataPoints) {
 function _renderLeaderboardOptions() { 
     document.getElementById('breadcrumb-text').innerText = "Home / Leaderboard"; 
     
-    let rootKeys = Object.keys(appData).filter(k => k !== "Daily Quiz Challenge");
+    let rootKeys = Object.keys(window.appData || {}).filter(k => k !== "Daily Quiz Challenge");
     let optionsHtml = '';
     
     rootKeys.forEach(k => {
@@ -426,13 +469,13 @@ function _renderLeaderboardOptions() {
 }
 
 // -----------------------------------------
-// CUSTOM WORKOUT FEATURE (FIX 1: Route, Free Input & Chapter Dropdown)
+// CUSTOM WORKOUT FEATURE (Fully Isolated Route & Input Restored)
 // -----------------------------------------
 let cwPath = ""; let cwSubject = "Mixed"; let cwDiff = "Mixed"; let cwLimit = 25;
 
 function cwStep1() {
     const mc = document.getElementById('dynamic-content');
-    let rootKeys = Object.keys(appData).filter(k => k !== "Daily Quiz Challenge");
+    let rootKeys = Object.keys(window.appData || {}).filter(k => k !== "Daily Quiz Challenge");
     
     let html = `
     <div class="card page-transition" style="max-width: 600px; margin: 0 auto; padding: 30px;">
@@ -462,14 +505,13 @@ function cwStep2() {
     
     let subjectsHtml = `<option value="Mixed">All Chapters / Subjects (Full Mock)</option>`;
     
-    // Scan both AppData AND Database for Subtopics!
     let dbTopics = new Set();
-    if (appData[cwPath]) {
-        Object.keys(appData[cwPath]).forEach(c => { 
+    if (typeof window.appData !== 'undefined' && window.appData[cwPath]) {
+        Object.keys(window.appData[cwPath]).forEach(c => { 
             if(c !== "MCQs Practice" && c !== "Mock Test") dbTopics.add(c);
         });
-        if (appData[cwPath]["MCQs Practice"]) {
-            Object.keys(appData[cwPath]["MCQs Practice"]).forEach(c => dbTopics.add(c));
+        if (window.appData[cwPath]["MCQs Practice"]) {
+            Object.keys(window.appData[cwPath]["MCQs Practice"]).forEach(c => dbTopics.add(c));
         }
     }
     
@@ -527,7 +569,7 @@ async function cwLaunch() {
     mc.innerHTML = `<div class="card page-transition" style="text-align:center; padding: 50px 20px;"><h2 class="section-title" style="justify-content:center;">🔍 Compiling Custom Practice...</h2><p style="color:var(--text-muted);">Fetching ${cwLimit} questions from database...</p></div>`;
 
     let targetPath = cwPath;
-    if (cwSubject !== "Mixed") targetPath += " > " + cwSubject; // Automatically adapts to the subtopic
+    if (cwSubject !== "Mixed") targetPath += " > " + cwSubject;
 
     try {
         let query = db.collection("content")
