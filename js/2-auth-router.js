@@ -94,7 +94,7 @@ function signInWithGoogle() { auth.signInWithPopup(provider).catch(err => showNo
 function signOut() { if(confirm("Are you sure you want to sign out?")) auth.signOut(); }
 
 // ==========================================
-// 3. ROUTING ENGINE
+// 3. ROUTING ENGINE & DYNAMIC SIDEBAR
 // ==========================================
 window.addEventListener('hashchange', handleRouting);
 
@@ -128,6 +128,54 @@ function updateBottomNav(hash) {
     }
 }
 
+// 🔴 UPDATES THE SIDEBAR QUICK LINKS DYNAMICALLY
+function updateSidebarLinks() {
+    const sidebar = document.getElementById('main-sidebar');
+    if (!sidebar) return;
+
+    let rootTopic = "NEET"; // Fallback default
+    if (currentPath && currentPath.length > 0) {
+        rootTopic = currentPath[0]; 
+    }
+    
+    // Only show sidebar if the current root topic actually exists in the database
+    if (rootTopic && appData[rootTopic]) {
+        sidebar.style.display = 'block';
+        let cleanTopic = rootTopic.replace(/^\d+\.\s*/, '');
+        let safeTopic = rootTopic.replace(/'/g, "\\'");
+
+        sidebar.innerHTML = `
+        <div class="card sidebar-card">
+            <h3 class="section-title">Quick Links</h3>
+            <a class="action-link" onclick="jumpToSection(['${safeTopic}', 'NCERT Book'])">
+                <span class="link-icon" style="color: #9C27B0;">📚</span>
+                <span class="link-text">NCERT Books</span>
+            </a>
+            <a class="action-link" onclick="jumpToSection(['${safeTopic}', 'PYQs'])">
+                <span class="link-icon" style="color: #607D8B;">📄</span>
+                <span class="link-text">Previous Year Papers</span>
+            </a>
+        </div>
+        <div class="card sidebar-card">
+            <h3 class="section-title">Essential Practice</h3>
+            <a class="action-link" onclick="jumpToSection(['${safeTopic}', 'MCQs Practice'])">
+                <span class="link-icon" style="color: #00BCD4;">📝</span>
+                <span class="link-text">Subject-wise MCQs</span>
+            </a>
+            <a class="action-link" onclick="jumpToSection(['${safeTopic}', 'Mock Test'])">
+                <span class="link-icon" style="color: #F44336;">⏱️</span>
+                <span class="link-text">Full-Length Mock Tests</span>
+            </a>
+            <a class="action-link" onclick="jumpToSection(['Daily Quiz Challenge'])">
+                <span class="link-icon" style="color: #fdb813;">📅</span>
+                <span class="link-text">Daily Quiz Challenge</span>
+            </a>
+        </div>`;
+    } else {
+        sidebar.style.display = 'none'; // Hide sidebar on Root Home or if topic missing
+    }
+}
+
 function handleRouting() {
     try {
         if(!dataLoaded) return; 
@@ -141,9 +189,6 @@ function handleRouting() {
         }
         
         let isRootHome = (!hash || hash === 'home');
-        
-        const sidebar = document.getElementById('main-sidebar');
-        if (sidebar) sidebar.style.display = isRootHome ? 'block' : 'none';
         
         const backBtn = document.getElementById('dynamic-back-container');
         if (backBtn) backBtn.style.display = isRootHome ? 'none' : 'block';
@@ -161,6 +206,14 @@ function handleRouting() {
         else if (hash === 'diary') _renderDoubtDiary(); 
         else if (hash === 'admin') _renderAdminLogin(); 
         else if (hash === 'admin-panel') _renderAdminPanel();
+        
+        // Update Sidebar after routing is handled
+        if (hash !== 'quiz' && hash !== 'admin' && hash !== 'admin-panel') {
+            updateSidebarLinks();
+        } else {
+            const sidebar = document.getElementById('main-sidebar');
+            if (sidebar) sidebar.style.display = 'none';
+        }
     } catch (err) {
         console.error("Routing Error:", err);
     }
@@ -169,11 +222,10 @@ function handleRouting() {
 function goHome() { 
     if (window.location.hash === '#/home' || window.location.hash === '') {
         currentPath = [];
-        const sidebar = document.getElementById('main-sidebar');
-        if(sidebar) sidebar.style.display = 'block';
         const backBtn = document.getElementById('dynamic-back-container');
         if(backBtn) backBtn.style.display = 'none';
         _renderView();
+        updateSidebarLinks();
     } else {
         window.location.replace(window.location.origin + window.location.pathname + '#/home');
     }
