@@ -7,9 +7,10 @@ window.forceStartQuiz = function() {
     setTimeout(() => { _initiateQuizEngine(); }, 100);
 };
 
+// Routes cleanly to the isolated Custom Setup page
 window.forceCwStep1 = function(e) {
     if (e) e.stopPropagation();
-    if (typeof cwStep1 === 'function') cwStep1();
+    window.location.hash = '#/custom-setup';
 };
 
 function getSmartIcon(text) {
@@ -55,41 +56,49 @@ function _renderView() {
 
         if (isEndpoint) {
             let topicNameRaw = currentPath[currentPath.length - 1]; 
-            let topicName = topicNameRaw.replace(/^\d+\.\s*/, ''); 
+            let topicName = topicNameRaw.replace(/^\d+\.\s*/, '').toLowerCase(); 
             let checkPath = currentPath.join(" > ");
             
             let isPdfOnly = false;
             let isContainer = false;
             
+            // FIX 4: Flawless Rendering Logic - Checks name triggers if type is unassigned
             if (customTopicTypes[checkPath] === 'pdf') {
                 isPdfOnly = true;
             } else if (customTopicTypes[checkPath] === 'both') {
                 isContainer = true;
-            } else if (customTopicTypes[checkPath] !== 'mcq') {
-                let triggers = ["mcqs practice", "mock test", "general knowledge", "practice paper", "current affairs", "history", "geography", "daily quiz challenge"];
-                let reqQuiz = triggers.some(t => checkPath.toLowerCase().includes(t));
-                if (!reqQuiz) isPdfOnly = true;
+            } else if (!customTopicTypes[checkPath] || customTopicTypes[checkPath] === 'mcq') {
+                let pdfTriggers = ["ncert", "book", "pyq", "previous", "paper", "pdf", "notes", "material", "syllabus"];
+                let isPdf = pdfTriggers.some(t => topicName.includes(t));
+                let mcqTriggers = ["mcq", "mock", "quiz", "test", "practice", "challenge"];
+                let isMcq = mcqTriggers.some(t => topicName.includes(t));
+
+                if (isPdf && !isMcq) {
+                    isPdfOnly = true;
+                } else if (Object.keys(currentLevel).length > 0) {
+                    isContainer = true;
+                }
             }
             
             let studentName = (currentUser && currentUser.displayName) ? currentUser.displayName.split(" ")[0] : "Student";
+            let niceTitle = topicNameRaw.replace(/^\d+\.\s*/, '');
             
-            // REMOVED: Large inline "Go Back" buttons since we now have the top-left arrow
             if (isContainer) {
                 mc.innerHTML = `
                 <div class="card page-transition">
-                    <h2 class="section-title">📂 ${topicName}</h2>
+                    <h2 class="section-title">📂 ${niceTitle}</h2>
                     <p style="color:var(--text-muted);">This category is currently empty. Subtopics will appear here once added by the Admin.</p>
                 </div>`;
             } else if (isPdfOnly) {
                 mc.innerHTML = `
                 <div class="card page-transition">
-                    <h2 class="section-title">${topicName} Resources</h2>
+                    <h2 class="section-title">${niceTitle} Resources</h2>
                     <p style="color:var(--text-muted);">Materials will appear here once uploaded via the Admin Panel.</p>
                 </div>`;
             } else {
                 mc.innerHTML = `
                 <div class="card page-transition">
-                    <h2 class="section-title">${topicName} Practice</h2>
+                    <h2 class="section-title">${niceTitle} Practice</h2>
                     <p style="color:var(--text-muted); margin-bottom:25px;">${!currentUser ? "Sign in to track your scores on the leaderboard!" : `Ready for practice, <span style="color:var(--primary-yellow);">${studentName}</span>?`}</p>
                     <button class="btn-exam" onclick="forceStartQuiz()" style="background:var(--primary-yellow) !important; color:black !important; width:100%; max-width:250px; font-size:16px; font-weight:bold; border:none !important; box-shadow:0 4px 15px rgba(253,184,19,0.3) !important;">Start Quiz &rarr;</button>
                 </div>`;
@@ -222,14 +231,14 @@ function _renderProgressSelection() {
     if (!currentUser) return document.getElementById('dynamic-content').innerHTML = `<div class="card page-transition" style="text-align:center;"><h2>⚠ Sign In Required</h2><button class="btn-exam" onclick="goBack()" style="background:#333; border:none;">Back</button></div>`;
     document.getElementById('breadcrumb-text').innerText = "Home / Profile / Track Progress";
     
-    // Dynamic Root Fetching for Analytics Options
     let rootKeys = Object.keys(appData).filter(k => k !== "Daily Quiz Challenge");
     let optionsHtml = '';
     
     rootKeys.forEach(k => {
         let cleanKey = k.replace(/^\d+\.\s*/, '');
         let safeKey = k.replace(/'/g, "\\'");
-        optionsHtml += `<button class="btn-exam" onclick="window.location.hash='#/progress/${encodeURIComponent(safeKey)}'" style="width:100%; max-width:250px; padding:15px; font-size:14px;">📊 ${cleanKey} Analytics</button>`;
+        let icon = getSmartIcon(cleanKey) || { i: "📊" };
+        optionsHtml += `<button class="btn-exam" onclick="window.location.hash='#/progress/${encodeURIComponent(safeKey)}'" style="width:100%; max-width:250px; padding:15px; font-size:14px;">${icon.i} ${cleanKey} Analytics</button>`;
     });
 
     document.getElementById('dynamic-content').innerHTML = `
@@ -448,15 +457,12 @@ function drawAccuracyChart(dataPoints) {
 function _renderLeaderboardOptions() { 
     document.getElementById('breadcrumb-text').innerText = "Home / Leaderboard"; 
     
-    // Dynamic Root Fetching for Leaderboard Options
     let rootKeys = Object.keys(appData).filter(k => k !== "Daily Quiz Challenge");
     let optionsHtml = '';
     
     rootKeys.forEach(k => {
         let cleanKey = k.replace(/^\d+\.\s*/, '');
         let safeKey = k.replace(/'/g, "\\'");
-        
-        // Use smart icon for the leaderboard buttons too
         let smartData = getSmartIcon(cleanKey) || { i: "🥇" };
         
         optionsHtml += `<button class="btn-exam category-tile" onclick="window.location.hash='#/board/${encodeURIComponent(safeKey)}'" style="flex-direction:row; padding:15px; flex:1; min-width:200px;">
@@ -479,14 +485,12 @@ function _renderLeaderboardOptions() {
 }
 
 // -----------------------------------------
-// CUSTOM WORKOUT FEATURE (DYNAMIC ROOT LOADER)
+// CUSTOM WORKOUT FEATURE (FIX 1: Route, Free Input & Chapter Dropdown)
 // -----------------------------------------
-let cwPath = ""; let cwSubject = "Mixed"; let cwDiff = "Mixed"; let cwLimit = 20;
+let cwPath = ""; let cwSubject = "Mixed"; let cwDiff = "Mixed"; let cwLimit = 25;
 
 function cwStep1() {
     const mc = document.getElementById('dynamic-content');
-    
-    // Dynamically fetch Root Level folders from appData
     let rootKeys = Object.keys(appData).filter(k => k !== "Daily Quiz Challenge");
     
     let html = `
@@ -515,12 +519,12 @@ function cwSetPath(path) { cwPath = path; cwStep2(); }
 function cwStep2() {
     const mc = document.getElementById('dynamic-content');
     
-    let subjectsHtml = `<option value="Mixed">All Subjects (Full Mock)</option>`;
-    if (appData[cwPath] && appData[cwPath]["MCQs Practice"]) {
-        let subjects = Object.keys(appData[cwPath]["MCQs Practice"]);
-        subjects.forEach(s => { 
-            let cleanS = s.replace(/^\d+\.\s*/, '');
-            subjectsHtml += `<option value="${s.replace(/'/g, "\\'")}">${cleanS}</option>`; 
+    let subjectsHtml = `<option value="Mixed">All Chapters / Subjects (Full Mock)</option>`;
+    if (appData[cwPath]) {
+        let children = Object.keys(appData[cwPath]);
+        children.forEach(c => { 
+            let cleanC = c.replace(/^\d+\.\s*/, '');
+            subjectsHtml += `<option value="${c.replace(/'/g, "\\'")}">${cleanC}</option>`; 
         });
     }
 
@@ -545,14 +549,7 @@ function cwStep2() {
         
         <div style="margin-bottom: 30px;">
             <label style="display:block; color:var(--text-muted); margin-bottom:8px; font-size:12px; font-weight:bold; text-transform:uppercase;">Number of Questions</label>
-            <select id="cwNum" class="input-field" style="font-size:14px; padding:14px;">
-                <option value="10">10 Questions (Quick)</option>
-                <option value="25" selected>25 Questions (Standard)</option>
-                <option value="50">50 Questions (Half Mock)</option>
-                <option value="100">100 Questions (Full Length)</option>
-                <option value="200">200 Questions (Marathon)</option>
-                <option value="250">250 Questions (Extreme Limit)</option>
-            </select>
+            <input type="number" id="cwNum" class="input-field" style="font-size:14px; padding:14px;" value="25" min="1" max="500">
         </div>
 
         <div style="display:flex; gap:15px;">
@@ -566,12 +563,13 @@ async function cwLaunch() {
     cwSubject = document.getElementById('cwSubj').value;
     cwDiff = document.getElementById('cwDiffSelect').value;
     cwLimit = parseInt(document.getElementById('cwNum').value);
+    if(isNaN(cwLimit) || cwLimit < 1) cwLimit = 25;
     
     const mc = document.getElementById('dynamic-content');
     mc.innerHTML = `<div class="card page-transition" style="text-align:center; padding: 50px 20px;"><h2 class="section-title" style="justify-content:center;">🔍 Compiling Custom Practice...</h2><p style="color:var(--text-muted);">Fetching ${cwLimit} questions from database...</p></div>`;
 
     let targetPath = cwPath;
-    if (cwSubject !== "Mixed") targetPath += " > MCQs Practice > " + cwSubject;
+    if (cwSubject !== "Mixed") targetPath += " > " + cwSubject;
 
     try {
         let query = db.collection("content")
@@ -609,4 +607,108 @@ async function cwLaunch() {
     } catch(err) {
         mc.innerHTML = `<div class="card"><h2 class="section-title" style="color:var(--wrong-red);">Error</h2><p>${err.message}</p></div>`;
     }
+}
+
+// -----------------------------------------
+// BOOKMARK MANAGER
+// -----------------------------------------
+let userBookmarks = [];
+
+async function loadUserBookmarks() {
+    if(!currentUser) return;
+    try {
+        const doc = await db.collection("users").doc(currentUser.uid).collection("data").doc("bookmarks").get();
+        if(doc.exists && Array.isArray(doc.data().list)) { userBookmarks = doc.data().list; }
+    } catch(e){}
+}
+
+async function bookmarkQuestion(qId) {
+    if(!currentUser) { showAuthModal(); return; }
+    if(userBookmarks.includes(qId)) { showNotification("⚠️ Already bookmarked!"); return; }
+    
+    userBookmarks.push(qId);
+    try {
+        await db.collection("users").doc(currentUser.uid).collection("data").doc("bookmarks").set({
+            list: userBookmarks, lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+        }, {merge:true});
+        showNotification("🔖 Question saved to Bookmarks!");
+    } catch(e) { showNotification("❌ Failed to bookmark"); }
+}
+
+async function removeBookmark(qId) {
+    if(!currentUser) return;
+    userBookmarks = userBookmarks.filter(id => id !== qId);
+    try {
+        await db.collection("users").doc(currentUser.uid).collection("data").doc("bookmarks").set({ list: userBookmarks }, {merge:true});
+        let card = document.getElementById('bmCard_'+qId);
+        if(card) card.remove();
+        showNotification("🗑 Bookmark removed");
+    } catch(e){}
+}
+
+async function _initiateBookmarkQuiz() {
+    const mc = document.getElementById('dynamic-content');
+    document.getElementById('breadcrumb-text').innerText = "Home / Profile / My Bookmarks";
+    
+    if(!currentUser) { mc.innerHTML = `<div class="card page-transition" style="text-align:center;"><h2>⚠ Sign In Required</h2><button class="btn-exam" onclick="goBack()" style="background:#333; border:none;">Back</button></div>`; return; }
+    if(userBookmarks.length === 0) { mc.innerHTML = `<div class="card page-transition" style="text-align:center;"><h2>🔖 No Bookmarks Yet</h2><p style="color:var(--text-muted);">Questions you bookmark during practice will appear here.</p><button class="btn-exam" onclick="goBack()" style="background:#333; border:none; margin-top:20px;">Back to Home</button></div>`; return; }
+
+    mc.innerHTML = `<div class="card page-transition" style="text-align:center; padding:50px;"><h2 class="section-title" style="justify-content:center;">🔖 Loading Bookmarks...</h2></div>`;
+
+    try {
+        let allDocs = [];
+        for(let i=0; i<userBookmarks.length; i+=10) {
+            let chunk = userBookmarks.slice(i, i+10);
+            let snap = await db.collection("content").where(firebase.firestore.FieldPath.documentId(), "in", chunk).get();
+            snap.forEach(doc => allDocs.push({ id: doc.id, ...doc.data() }));
+        }
+
+        if(allDocs.length === 0) { mc.innerHTML = `<div class="card"><p>Bookmarks not found in database.</p></div>`; return; }
+
+        let html = `<div class="card page-transition"><h2 class="section-title">🔖 My Bookmarked Questions</h2><div style="background: rgba(33, 150, 243, 0.1); border-left: 3px solid #2196F3; padding: 10px; margin-bottom: 20px; font-size: 13px; border-radius: 4px;"><span style="color: #2196F3;"><b>Tip:</b></span> Use the 'Ask AI' button to instantly resolve any lingering doubts about these saved questions.</div>`;
+        
+        allDocs.forEach((q, index) => {
+            html += `
+            <div class="review-item" id="bmCard_${q.id}">
+                <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
+                    <span style="color:var(--text-muted); font-size:12px; font-weight:bold;">${q.path.split(' > ').pop()}</span>
+                    <button onclick="removeBookmark('${q.id}')" style="background:none; border:none; color:var(--wrong-red); cursor:pointer; font-size:18px;" title="Remove">✕</button>
+                </div>
+                <div style="font-weight:500; font-size:15px; margin-bottom:15px; color:#fff;" id="bmQ_${q.id}">${q.question}</div>
+                ${q.imageUrl ? `<img src="${q.imageUrl}" style="max-height:150px; border-radius:6px; margin-bottom:15px; display:block; border: 1px solid #333;">` : ''}
+                
+                <div style="display:grid; grid-template-columns:1fr; gap:8px; margin-bottom:15px;">
+                    ${['A','B','C','D'].map(opt => {
+                        let text = q.options[opt]; if(!text) return '';
+                        let isTrueCorrect = q.correctAnswers.includes(opt);
+                        let bg = isTrueCorrect ? "rgba(16, 185, 129, 0.15)" : "rgba(255,255,255,0.03)";
+                        let border = isTrueCorrect ? "var(--correct-green)" : "#1a2744";
+                        let color = isTrueCorrect ? "#fff" : "#aaa";
+                        return `<div style="background:${bg}; border:1px solid ${border}; color:${color}; padding:10px 14px; border-radius:6px; font-size:14px; display:flex; align-items:center; gap:10px;" id="bmOpt_${q.id}_${opt}">
+                            <span style="font-weight:bold; font-size:12px; opacity:0.8;">${opt}</span>${text}
+                        </div>`;
+                    }).join('')}
+                </div>
+                
+                <button onclick="toggleViewAnswer('bmSol_${q.id}')" style="background:#090e1a; color:white; border:1px solid var(--border-color); padding:8px 16px; border-radius:6px; cursor:pointer; font-size:12px; font-weight:bold;">👁 View Explanation</button>
+                
+                <div id="bmSol_${q.id}" class="quiz-explanation">
+                    <strong style="color:var(--primary-yellow); display:block; margin-bottom:8px;">Explanation:</strong>
+                    <span id="bmExp_${q.id}">${q.explanation || "No detailed explanation provided by the author."}</span>
+                </div>
+            </div>`;
+        });
+        
+        html += `</div>`;
+        mc.innerHTML = html;
+
+        allDocs.forEach(q => {
+            let elQ = document.getElementById('bmQ_'+q.id); if(elQ) renderMathInElement(elQ, { delimiters: [ {left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}, {left: '\\(', right: '\\)', display: false}, {left: '[', right: ']', display: true} ], throwOnError: false });
+            ['A','B','C','D'].forEach(opt => {
+                let elO = document.getElementById(`bmOpt_${q.id}_${opt}`); if(elO) renderMathInElement(elO, { delimiters: [ {left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}, {left: '\\(', right: '\\)', display: false}, {left: '[', right: ']', display: true} ], throwOnError: false });
+            });
+            let elE = document.getElementById('bmExp_'+q.id); if(elE) renderMathInElement(elE, { delimiters: [ {left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}, {left: '\\(', right: '\\)', display: false}, {left: '[', right: ']', display: true} ], throwOnError: false });
+        });
+
+    } catch(e) { mc.innerHTML = `<div class="card"><p>Error: ${e.message}</p></div>`; }
 }
