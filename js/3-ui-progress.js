@@ -39,7 +39,7 @@ function _renderView() {
         const bc = document.getElementById('breadcrumb-text');
         if(bc) bc.innerText = currentPath.length === 0 ? "Home" : "Home / " + currentPath.join(" / "); 
         
-        let currentLevel = typeof appData !== 'undefined' ? appData : {};
+        let currentLevel = appData;
         for (let node of currentPath) { 
             if(currentLevel[node] !== undefined) {
                 currentLevel = currentLevel[node]; 
@@ -49,8 +49,7 @@ function _renderView() {
         }
 
         let checkPath = currentPath.join(" > ");
-        let safeTopicTypes = typeof customTopicTypes !== 'undefined' ? customTopicTypes : {};
-        let hasDbChildren = Object.keys(safeTopicTypes).some(k => k.startsWith(checkPath + " > "));
+        let hasDbChildren = Object.keys(customTopicTypes).some(k => k.startsWith(checkPath + " > "));
         
         let isEndpoint = false;
         if (typeof currentLevel === 'string' || Array.isArray(currentLevel) || (typeof currentLevel === 'object' && Object.keys(currentLevel).length === 0 && !hasDbChildren)) {
@@ -70,11 +69,11 @@ function _renderView() {
             let isPdfOnly = false;
             let isContainer = false;
             
-            if (safeTopicTypes[checkPath] === 'pdf') {
+            if (customTopicTypes[checkPath] === 'pdf') {
                 isPdfOnly = true;
-            } else if (safeTopicTypes[checkPath] === 'both') {
+            } else if (customTopicTypes[checkPath] === 'both') {
                 isContainer = true;
-            } else if (!safeTopicTypes[checkPath] || safeTopicTypes[checkPath] === 'mcq') {
+            } else if (!customTopicTypes[checkPath] || customTopicTypes[checkPath] === 'mcq') {
                 let pdfTriggers = ["ncert", "book", "pyq", "previous", "paper", "pdf", "notes", "material", "syllabus"];
                 let isPdf = pdfTriggers.some(t => topicNameLower.includes(t));
                 let mcqTriggers = ["mcq", "mock", "quiz", "test", "practice", "challenge"];
@@ -83,7 +82,7 @@ function _renderView() {
                 if (isPdf && !isMcq) isPdfOnly = true;
             }
             
-            let studentName = (typeof currentUser !== 'undefined' && currentUser && currentUser.displayName) ? currentUser.displayName.split(" ")[0] : "Student";
+            let studentName = currentUser ? currentUser.displayName.split(" ")[0] : "Student";
             
             if (isContainer) {
                 mc.innerHTML = `
@@ -98,7 +97,7 @@ function _renderView() {
                     <p style="color:var(--text-muted);">Materials will appear here once uploaded via the Admin Panel.</p>
                 </div>`;
             } else {
-                let signPrompt = (typeof currentUser === 'undefined' || !currentUser) ? "Sign in to track your scores on the leaderboard!" : `Ready for practice, <span style="color:var(--primary-yellow);">${studentName}</span>?`;
+                let signPrompt = !currentUser ? "Sign in to track your scores on the leaderboard!" : `Ready for practice, <span style="color:var(--primary-yellow);">${studentName}</span>?`;
                 mc.innerHTML = `
                 <div class="card page-transition">
                     <h2 class="section-title">📝 ${niceTitle} Practice</h2>
@@ -126,7 +125,7 @@ function _renderView() {
         h += `<div class="card category-section"><h3 class="section-title">${title}</h3><div class="category-grid">`;
         
         let keys = new Set(Object.keys(currentLevel));
-        Object.keys(safeTopicTypes).forEach(dbKey => {
+        Object.keys(customTopicTypes).forEach(dbKey => {
             let parts = dbKey.split(' > ');
             if (currentPath.length === 0) {
                 keys.add(parts[0]);
@@ -154,9 +153,9 @@ function _renderView() {
             let fullCheckPath = currentPath.join(" > ") + (currentPath.length > 0 ? " > " : "") + key;
             
             let typeLabel = ""; 
-            if (safeTopicTypes[fullCheckPath] === 'mcq') typeLabel = "📝"; 
-            else if (safeTopicTypes[fullCheckPath] === 'pdf') typeLabel = "📄";
-            else if (safeTopicTypes[fullCheckPath] === 'both') typeLabel = "📂";
+            if (customTopicTypes[fullCheckPath] === 'mcq') typeLabel = "📝"; 
+            else if (customTopicTypes[fullCheckPath] === 'pdf') typeLabel = "📄";
+            else if (customTopicTypes[fullCheckPath] === 'both') typeLabel = "📂";
             
             let safeKey = key.replace(/'/g, "\\'");
             let displayKey = key.replace(/^\d+\.\s*/, '');
@@ -182,7 +181,7 @@ function _renderView() {
 // ==========================================
 async function getAttemptedIdsForPath(safePath) {
     let ids = [];
-    if (typeof currentUser !== 'undefined' && currentUser) {
+    if (currentUser) {
         try {
             const subDoc = await db.collection("users").doc(currentUser.uid).collection("progress").doc(safePath).get();
             if (subDoc.exists && Array.isArray(subDoc.data().attemptedIds)) return subDoc.data().attemptedIds;
@@ -196,7 +195,7 @@ async function getAttemptedIdsForPath(safePath) {
 
 async function saveAttemptedIdsForPath(safePath, newAttemptedIds) {
     if (!newAttemptedIds || newAttemptedIds.length === 0) return;
-    if (typeof currentUser !== 'undefined' && currentUser) {
+    if (currentUser) {
         try {
             await db.collection("users").doc(currentUser.uid).collection("progress").doc(safePath).set({
                 attemptedIds: firebase.firestore.FieldValue.arrayUnion(...newAttemptedIds),
@@ -212,7 +211,7 @@ async function saveAttemptedIdsForPath(safePath, newAttemptedIds) {
 
 async function resetProgress(safePath) {
     if(!confirm("Are you sure you want to reset your progress for this section?")) return;
-    if (typeof currentUser !== 'undefined' && currentUser) {
+    if (currentUser) {
         try { await db.collection("users").doc(currentUser.uid).collection("progress").doc(safePath).delete(); } catch(e) {}
     } else {
         let localProg = JSON.parse(localStorage.getItem('mcq_progress') || '{}');
@@ -224,14 +223,13 @@ async function resetProgress(safePath) {
 }
 
 function _renderProgressSelection() {
-    if (typeof currentUser === 'undefined' || !currentUser) {
+    if (!currentUser) {
         document.getElementById('dynamic-content').innerHTML = `<div class="card page-transition" style="text-align:center;"><h2>⚠ Sign In Required</h2><button class="btn-exam" onclick="goBack()" style="background:#333; border:none;">Back</button></div>`;
         return;
     }
     document.getElementById('breadcrumb-text').innerText = "Home / Profile / Track Progress";
     
-    let safeAppData = typeof appData !== 'undefined' ? appData : {};
-    let rootKeys = Object.keys(safeAppData).filter(k => k !== "Daily Quiz Challenge");
+    let rootKeys = Object.keys(appData).filter(k => k !== "Daily Quiz Challenge");
     let optionsHtml = '';
     
     rootKeys.forEach(k => {
@@ -253,7 +251,7 @@ function _renderProgressSelection() {
 }
 
 async function _renderProgressDashboard(category) {
-    if (typeof currentUser === 'undefined' || !currentUser) return;
+    if (!currentUser) return;
     
     let displayCategory = category.replace(/^\d+\.\s*/, '');
     document.getElementById('breadcrumb-text').innerText = `Home / Profile / Progress / ${displayCategory}`;
@@ -280,7 +278,7 @@ async function _renderProgressDashboard(category) {
         });
 
         if (validDocs.length === 0) {
-            mc.innerHTML = `<div class="card page-transition" style="text-align:center;"><h2>No Data Available</h2><p style="color:var(--text-muted); font-size:14px;">You haven't completed any quizzes in the ${displayCategory} category yet.</p></div>`;
+            mc.innerHTML = `<div class="card page-transition" style="text-align:center;"><h2>No Data Available</h2><p style="color:var(--text-muted); font-size:14px;">You haven't completed any quizzes in the ${displayCategory} category yet.</p><button class="btn-exam" onclick="goBack()" style="background:#0d1527; margin-top:20px;">&larr; Back</button></div>`;
             return;
         }
 
@@ -452,8 +450,7 @@ function drawAccuracyChart(dataPoints) {
 function _renderLeaderboardOptions() { 
     document.getElementById('breadcrumb-text').innerText = "Home / Leaderboard"; 
     
-    let safeAppData = typeof appData !== 'undefined' ? appData : {};
-    let rootKeys = Object.keys(safeAppData).filter(k => k !== "Daily Quiz Challenge");
+    let rootKeys = Object.keys(appData).filter(k => k !== "Daily Quiz Challenge");
     let optionsHtml = '';
     
     rootKeys.forEach(k => {
@@ -481,14 +478,13 @@ function _renderLeaderboardOptions() {
 }
 
 // -----------------------------------------
-// CUSTOM WORKOUT FEATURE (FIXED: Route, Free Input & Chapter Dropdown)
+// CUSTOM WORKOUT FEATURE (FIXED)
 // -----------------------------------------
 let cwPath = ""; let cwSubject = "Mixed"; let cwDiff = "Mixed"; let cwLimit = 25;
 
 function cwStep1() {
     const mc = document.getElementById('dynamic-content');
-    let safeAppData = typeof appData !== 'undefined' ? appData : {};
-    let rootKeys = Object.keys(safeAppData).filter(k => k !== "Daily Quiz Challenge");
+    let rootKeys = Object.keys(appData).filter(k => k !== "Daily Quiz Challenge");
     
     let html = `
     <div class="card page-transition" style="max-width: 600px; margin: 0 auto; padding: 30px;">
@@ -507,6 +503,7 @@ function cwStep1() {
         
     html += `
         </div>
+        <button class="btn-exam" onclick="goBack()" style="width:100%; background:transparent; border-color:#333; color:var(--text-muted);">&larr; Cancel</button>
     </div>`;
     mc.innerHTML = html;
 }
@@ -519,7 +516,7 @@ function cwStep2() {
     let subjectsHtml = `<option value="Mixed">All Chapters / Subjects (Full Mock)</option>`;
     
     let dbTopics = new Set();
-    if (typeof appData !== 'undefined' && appData[cwPath]) {
+    if (appData[cwPath]) {
         Object.keys(appData[cwPath]).forEach(c => { 
             if(c !== "MCQs Practice" && c !== "Mock Test") dbTopics.add(c);
         });
@@ -529,8 +526,7 @@ function cwStep2() {
     }
     
     let prefix = cwPath + " > ";
-    let safeTopicTypes = typeof customTopicTypes !== 'undefined' ? customTopicTypes : {};
-    Object.keys(safeTopicTypes).forEach(key => {
+    Object.keys(customTopicTypes).forEach(key => {
         if(key.startsWith(prefix)) {
             let sub = key.replace(prefix, '').split(' > ')[0];
             if(sub && sub !== "MCQs Practice" && sub !== "Mock Test") dbTopics.add(sub);
@@ -610,12 +606,14 @@ async function cwLaunch() {
         }
 
         allDocs.sort(() => Math.random() - 0.5);
-        if(typeof currentQuestions !== 'undefined') {
-            window.currentQuestions = allDocs; 
-            window.currentQuizPath = targetPath;
-            window.currentIndex = 0;
-            window.userAnswers = {};
-            window.timeSpent = {};
+        
+        // Save to global variables for quiz engine
+        if (typeof currentQuestions !== 'undefined') {
+            currentQuestions = allDocs; 
+            currentQuizPath = targetPath;
+            currentIndex = 0;
+            userAnswers = {};
+            timeSpent = {};
         }
 
         if(typeof renderQuizInterface === 'function') renderQuizInterface();
@@ -629,20 +627,20 @@ async function cwLaunch() {
 // BOOKMARK MANAGER
 // -----------------------------------------
 async function loadUserBookmarks() {
-    if(typeof currentUser === 'undefined' || !currentUser) return;
+    if(!currentUser) return;
     try {
         const doc = await db.collection("users").doc(currentUser.uid).collection("data").doc("bookmarks").get();
-        if(doc.exists && Array.isArray(doc.data().list)) { window.userBookmarks = doc.data().list; }
+        if(doc.exists && Array.isArray(doc.data().list)) { userBookmarks = doc.data().list; }
     } catch(e){}
 }
 
 async function bookmarkQuestion(qId) {
-    if(typeof currentUser === 'undefined' || !currentUser) { showAuthModal(); return; }
-    let savedBookmarks = typeof userBookmarks !== 'undefined' ? userBookmarks : [];
+    if(!currentUser) { showAuthModal(); return; }
+    let savedBookmarks = userBookmarks || [];
     if(savedBookmarks.includes(qId)) { showNotification("⚠️ Already bookmarked!"); return; }
     
     savedBookmarks.push(qId);
-    window.userBookmarks = savedBookmarks;
+    userBookmarks = savedBookmarks;
     try {
         await db.collection("users").doc(currentUser.uid).collection("data").doc("bookmarks").set({
             list: savedBookmarks, lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
@@ -652,10 +650,10 @@ async function bookmarkQuestion(qId) {
 }
 
 async function removeBookmark(qId) {
-    if(typeof currentUser === 'undefined' || !currentUser) return;
-    let savedBookmarks = typeof userBookmarks !== 'undefined' ? userBookmarks : [];
+    if(!currentUser) return;
+    let savedBookmarks = userBookmarks || [];
     savedBookmarks = savedBookmarks.filter(id => id !== qId);
-    window.userBookmarks = savedBookmarks;
+    userBookmarks = savedBookmarks;
     try {
         await db.collection("users").doc(currentUser.uid).collection("data").doc("bookmarks").set({ list: savedBookmarks }, {merge:true});
         let card = document.getElementById('bmCard_'+qId);
@@ -668,8 +666,8 @@ async function _initiateBookmarkQuiz() {
     const mc = document.getElementById('dynamic-content');
     document.getElementById('breadcrumb-text').innerText = "Home / Profile / My Bookmarks";
     
-    if(typeof currentUser === 'undefined' || !currentUser) { mc.innerHTML = `<div class="card page-transition" style="text-align:center;"><h2>⚠ Sign In Required</h2><button class="btn-exam" onclick="goBack()" style="background:#333; border:none;">Back</button></div>`; return; }
-    let savedBookmarks = typeof userBookmarks !== 'undefined' ? userBookmarks : [];
+    if(!currentUser) { mc.innerHTML = `<div class="card page-transition" style="text-align:center;"><h2>⚠ Sign In Required</h2><button class="btn-exam" onclick="goBack()" style="background:#333; border:none;">Back</button></div>`; return; }
+    let savedBookmarks = userBookmarks || [];
     if(savedBookmarks.length === 0) { mc.innerHTML = `<div class="card page-transition" style="text-align:center;"><h2>🔖 No Bookmarks Yet</h2><p style="color:var(--text-muted);">Questions you bookmark during practice will appear here.</p><button class="btn-exam" onclick="goBack()" style="background:#333; border:none; margin-top:20px;">Back to Home</button></div>`; return; }
 
     mc.innerHTML = `<div class="card page-transition" style="text-align:center; padding:50px;"><h2 class="section-title" style="justify-content:center;">🔖 Loading Bookmarks...</h2></div>`;
@@ -700,7 +698,7 @@ async function _initiateBookmarkQuiz() {
                     ${['A','B','C','D'].map(opt => {
                         let text = q.options[opt]; if(!text) return '';
                         let isTrueCorrect = q.correctAnswers.includes(opt);
-                        let bg = isTrueCorrect ? "rgba(76, 175, 80, 0.15)" : "rgba(255,255,255,0.03)";
+                        let bg = isTrueCorrect ? "rgba(16, 185, 129, 0.15)" : "rgba(255,255,255,0.03)";
                         let border = isTrueCorrect ? "var(--correct-green)" : "#1a2744";
                         let color = isTrueCorrect ? "#fff" : "#aaa";
                         return `<div style="background:${bg}; border:1px solid ${border}; color:${color}; padding:10px 14px; border-radius:6px; font-size:14px; display:flex; align-items:center; gap:10px;" id="bmOpt_${q.id}_${opt}">
