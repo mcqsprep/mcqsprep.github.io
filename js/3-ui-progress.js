@@ -12,6 +12,26 @@ window.forceCwStep1 = function(e) {
     if (typeof cwStep1 === 'function') cwStep1();
 };
 
+function getSmartIcon(text) {
+    let t = text.toLowerCase();
+    if(t.includes('neet')) return { i: "🩺", c: "#fdb813", bg: "rgba(253, 184, 19, 0.15)" };
+    if(t.includes('jee')) return { i: "🚀", c: "#2196F3", bg: "rgba(33, 150, 243, 0.15)" };
+    if(t.includes('physics')) return { i: "⚛️", c: "#9C27B0", bg: "rgba(156, 39, 176, 0.15)" };
+    if(t.includes('chemistry')) return { i: "🧪", c: "#00BCD4", bg: "rgba(0, 188, 212, 0.15)" };
+    if(t.includes('botany') || t.includes('plant')) return { i: "🌿", c: "#4CAF50", bg: "rgba(76, 175, 80, 0.15)" };
+    if(t.includes('zoology') || t.includes('animal') || t.includes('lion')) return { i: "🦁", c: "#FFC107", bg: "rgba(255, 193, 7, 0.15)" };
+    if(t.includes('biology')) return { i: "🧬", c: "#E91E63", bg: "rgba(233, 30, 99, 0.15)" };
+    if(t.includes('math')) return { i: "📐", c: "#3F51B5", bg: "rgba(63, 81, 181, 0.15)" };
+    if(t.includes('history')) return { i: "🏛️", c: "#FF9800", bg: "rgba(255, 152, 0, 0.15)" };
+    if(t.includes('geography')) return { i: "🗺️", c: "#4CAF50", bg: "rgba(76, 175, 80, 0.15)" };
+    if(t.includes('gk') || t.includes('general knowledge')) return { i: "🌍", c: "#4CAF50", bg: "rgba(76, 175, 80, 0.15)" };
+    if(t.includes('affairs')) return { i: "📰", c: "#2196F3", bg: "rgba(33, 150, 243, 0.15)" };
+    if(t.includes('ncert')) return { i: "📚", c: "#9C27B0", bg: "rgba(156, 39, 176, 0.15)" };
+    if(t.includes('pyq') || t.includes('previous')) return { i: "📄", c: "#607D8B", bg: "rgba(96, 125, 139, 0.15)" };
+    if(t.includes('mock') || t.includes('test')) return { i: "⏱️", c: "#F44336", bg: "rgba(244, 67, 54, 0.15)" };
+    return null; 
+}
+
 function _renderView() {
     try {
         const mc = document.getElementById('dynamic-content'); 
@@ -53,29 +73,25 @@ function _renderView() {
             
             let studentName = (currentUser && currentUser.displayName) ? currentUser.displayName.split(" ")[0] : "Student";
             
+            // REMOVED: Large inline "Go Back" buttons since we now have the top-left arrow
             if (isContainer) {
                 mc.innerHTML = `
                 <div class="card page-transition">
                     <h2 class="section-title">📂 ${topicName}</h2>
                     <p style="color:var(--text-muted);">This category is currently empty. Subtopics will appear here once added by the Admin.</p>
-                    <button class="btn-exam" onclick="goBack()" style="background:#333; width:150px; margin-top:20px; font-size:16px; border:none;">&larr; Go Back</button>
                 </div>`;
             } else if (isPdfOnly) {
                 mc.innerHTML = `
                 <div class="card page-transition">
                     <h2 class="section-title">${topicName} Resources</h2>
                     <p style="color:var(--text-muted);">Materials will appear here once uploaded via the Admin Panel.</p>
-                    <button class="btn-exam" onclick="goBack()" style="background:#333; width:150px; margin-top:20px; font-size:16px; border:none;">&larr; Go Back</button>
                 </div>`;
             } else {
                 mc.innerHTML = `
                 <div class="card page-transition">
                     <h2 class="section-title">${topicName} Practice</h2>
                     <p style="color:var(--text-muted); margin-bottom:25px;">${!currentUser ? "Sign in to track your scores on the leaderboard!" : `Ready for practice, <span style="color:var(--primary-yellow);">${studentName}</span>?`}</p>
-                    <div style="display:flex; flex-wrap:wrap; gap:15px; margin-top:20px;">
-                        <button class="btn-exam" onclick="forceStartQuiz()" style="background:var(--primary-yellow) !important; color:black !important; flex:1; min-width:150px; font-size:16px; font-weight:bold; border:none !important; box-shadow:0 4px 15px rgba(253,184,19,0.3) !important;">Start Quiz &rarr;</button>
-                        <button class="btn-exam" onclick="goBack()" style="background:#333 !important; color:white !important; flex:1; min-width:120px; font-size:16px; border:none !important; font-weight:bold;">&larr; Go Back</button>
-                    </div>
+                    <button class="btn-exam" onclick="forceStartQuiz()" style="background:var(--primary-yellow) !important; color:black !important; width:100%; max-width:250px; font-size:16px; font-weight:bold; border:none !important; box-shadow:0 4px 15px rgba(253,184,19,0.3) !important;">Start Quiz &rarr;</button>
                 </div>`;
             }
             return;
@@ -114,27 +130,6 @@ function _renderView() {
             return a.localeCompare(b);
         });
 
-        // 🔴 SMART DYNAMIC ICON MATCHER
-        function getSmartIcon(text) {
-            let t = text.toLowerCase();
-            if(t.includes('neet')) return { i: "🩺", c: "#fdb813", bg: "rgba(253, 184, 19, 0.15)" };
-            if(t.includes('jee')) return { i: "🚀", c: "#2196F3", bg: "rgba(33, 150, 243, 0.15)" };
-            if(t.includes('physics')) return { i: "⚛️", c: "#9C27B0", bg: "rgba(156, 39, 176, 0.15)" };
-            if(t.includes('chemistry')) return { i: "🧪", c: "#00BCD4", bg: "rgba(0, 188, 212, 0.15)" };
-            if(t.includes('botany') || t.includes('plant')) return { i: "🌿", c: "#4CAF50", bg: "rgba(76, 175, 80, 0.15)" };
-            if(t.includes('zoology') || t.includes('animal') || t.includes('lion')) return { i: "🦁", c: "#FFC107", bg: "rgba(255, 193, 7, 0.15)" };
-            if(t.includes('biology')) return { i: "🧬", c: "#E91E63", bg: "rgba(233, 30, 99, 0.15)" };
-            if(t.includes('math')) return { i: "📐", c: "#3F51B5", bg: "rgba(63, 81, 181, 0.15)" };
-            if(t.includes('history')) return { i: "🏛️", c: "#FF9800", bg: "rgba(255, 152, 0, 0.15)" };
-            if(t.includes('geography')) return { i: "🗺️", c: "#4CAF50", bg: "rgba(76, 175, 80, 0.15)" };
-            if(t.includes('gk') || t.includes('general knowledge')) return { i: "🌍", c: "#4CAF50", bg: "rgba(76, 175, 80, 0.15)" };
-            if(t.includes('affairs')) return { i: "📰", c: "#2196F3", bg: "rgba(33, 150, 243, 0.15)" };
-            if(t.includes('ncert')) return { i: "📚", c: "#9C27B0", bg: "rgba(156, 39, 176, 0.15)" };
-            if(t.includes('pyq') || t.includes('previous')) return { i: "📄", c: "#607D8B", bg: "rgba(96, 125, 139, 0.15)" };
-            if(t.includes('mock') || t.includes('test')) return { i: "⏱️", c: "#F44336", bg: "rgba(244, 67, 54, 0.15)" };
-            return null; // Return null if no match found
-        }
-
         for (let key of keys) { 
             if (currentPath.length === 0 && key === "Daily Quiz Challenge") continue; 
             let checkPath = currentPath.join(" > ") + (currentPath.length > 0 ? " > " : "") + key;
@@ -146,10 +141,8 @@ function _renderView() {
             
             let safeKey = key.replace(/'/g, "\\'");
             let displayKey = key.replace(/^\d+\.\s*/, '');
-            
             let fallbackIcon = typeLabel === '📄' ? "📄" : (typeLabel === '📝' ? "📝" : "📁");
             
-            // Tries Smart Matcher first, falls back to generic folder
             let iconData = getSmartIcon(displayKey) || { i: fallbackIcon, c: "#9e9ea7", bg: "rgba(255,255,255,0.08)" };
 
             h += `<button class="category-tile" onclick="navigateTo('${safeKey}')">
@@ -158,12 +151,6 @@ function _renderView() {
                   </button>`; 
         }
         
-        if (currentPath.length > 0) {
-            h += `<button class="category-tile" onclick="goBack()" style="background: #1c1c24; border-color: #333;">
-                    <div class="cat-icon" style="background: #222; color: #aaa;">&larr;</div>
-                    <div class="cat-text" style="color: #aaa;">Go Back</div>
-                  </button>`;
-        }
         h += `</div></div>`; 
         mc.innerHTML = `<div class="page-transition">${h}</div>`;
         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -234,16 +221,24 @@ async function resetProgress(safePath) {
 function _renderProgressSelection() {
     if (!currentUser) return document.getElementById('dynamic-content').innerHTML = `<div class="card page-transition" style="text-align:center;"><h2>⚠ Sign In Required</h2><button class="btn-exam" onclick="goBack()" style="background:#333; border:none;">Back</button></div>`;
     document.getElementById('breadcrumb-text').innerText = "Home / Profile / Track Progress";
+    
+    // Dynamic Root Fetching for Analytics Options
+    let rootKeys = Object.keys(appData).filter(k => k !== "Daily Quiz Challenge");
+    let optionsHtml = '';
+    
+    rootKeys.forEach(k => {
+        let cleanKey = k.replace(/^\d+\.\s*/, '');
+        let safeKey = k.replace(/'/g, "\\'");
+        optionsHtml += `<button class="btn-exam" onclick="window.location.hash='#/progress/${encodeURIComponent(safeKey)}'" style="width:100%; max-width:250px; padding:15px; font-size:14px;">📊 ${cleanKey} Analytics</button>`;
+    });
+
     document.getElementById('dynamic-content').innerHTML = `
         <div class="card page-transition" style="text-align:center; padding: 40px 20px;">
-            <h2 style="color:var(--primary-yellow); font-size:24px;">📊 Select Analytics Dashboard</h2>
+            <h2 class="section-title" style="justify-content:center;">📊 Select Analytics Dashboard</h2>
             <p style="color:var(--text-muted); margin-bottom:30px; font-size:14px;">Choose an exam category to view your detailed performance metrics and weak spots.</p>
             <div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
-                <button class="btn-exam" onclick="window.location.hash='#/progress/NEET_MCQ'" style="width:100%; max-width:250px; padding:15px; font-size:16px;">🩺 NEET MCQs Practice</button>
-                <button class="btn-exam" onclick="window.location.hash='#/progress/NEET_MOCK'" style="width:100%; max-width:250px; padding:15px; font-size:16px;">⏱️ NEET Mock Test</button>
-                <button class="btn-exam" onclick="window.location.hash='#/progress/GK'" style="width:100%; max-width:250px; padding:15px; font-size:16px;">🌍 GK Analytics</button>
+                ${optionsHtml}
             </div>
-            <button class="btn-exam" onclick="goBack()" style="margin-top:30px; background:#333; border:none;">&larr; Back</button>
         </div>
     `;
 }
@@ -251,7 +246,7 @@ function _renderProgressSelection() {
 async function _renderProgressDashboard(category) {
     if (!currentUser) return;
     
-    let displayCategory = category === 'NEET_MCQ' ? 'NEET MCQs Practice' : (category === 'NEET_MOCK' ? 'NEET Mock Tests' : 'General Knowledge');
+    let displayCategory = category.replace(/^\d+\.\s*/, '');
     document.getElementById('breadcrumb-text').innerText = `Home / Profile / Progress / ${displayCategory}`;
     const mc = document.getElementById('dynamic-content'); 
     mc.innerHTML = `<div class="card page-transition"><h2>📊 Compiling Diagnostics...</h2></div>`;
@@ -270,16 +265,13 @@ async function _renderProgressDashboard(category) {
         });
 
         tempDocs.forEach(d => {
-            let isNeet = d.examCategory === 'NEET' || (d.quizPath && d.quizPath.includes('NEET'));
-            let isMock = d.quizPath && d.quizPath.includes('Mock Test');
-            
-            if (category === 'NEET_MCQ' && isNeet && !isMock) validDocs.push(d);
-            else if (category === 'NEET_MOCK' && isNeet && isMock) validDocs.push(d);
-            else if (category === 'GK' && !isNeet) validDocs.push(d);
+            if (d.examCategory === category || (d.quizPath && d.quizPath.startsWith(category))) {
+                validDocs.push(d);
+            }
         });
 
         if (validDocs.length === 0) {
-            mc.innerHTML = `<div class="card page-transition" style="text-align:center;"><h2>No Data Available</h2><p style="color:var(--text-muted); font-size:14px;">You haven't completed any quizzes in the ${displayCategory} category yet.</p><button class="btn-exam" onclick="goBack()" style="background:#333; border:none;">&larr; Back</button></div>`;
+            mc.innerHTML = `<div class="card page-transition" style="text-align:center;"><h2>No Data Available</h2><p style="color:var(--text-muted); font-size:14px;">You haven't completed any quizzes in the ${displayCategory} category yet.</p></div>`;
             return;
         }
 
@@ -352,69 +344,66 @@ async function _renderProgressDashboard(category) {
 
         mc.innerHTML = `
         <div class="card page-transition" style="padding: 20px 15px;">
-            <h2 class="section-title" style="margin-top:0; margin-bottom:15px; font-size:22px;">${displayCategory}</h2>
+            <h2 class="section-title" style="margin-top:0; margin-bottom:15px; font-size:22px;">${displayCategory} Performance</h2>
             
             <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-bottom: 15px;">
-                <div style="flex:1; min-width: 100px; max-width: 150px; background:#2a2a2a; padding: 15px 10px; border-radius: 8px; text-align:center; border:1px solid var(--border-color);">
+                <div style="flex:1; min-width: 100px; max-width: 150px; background:#0d1527; padding: 15px 10px; border-radius: 8px; text-align:center; border:1px solid var(--border-color);">
                     <div style="font-size: 24px; color: white; font-weight: bold;">${totalQuestions}</div>
                     <div style="color: var(--text-muted); font-size: 11px; text-transform:uppercase; margin-top:4px;">Attempted</div>
                 </div>
-                <div style="flex:1; min-width: 100px; max-width: 150px; background:#2a2a2a; padding: 15px 10px; border-radius: 8px; text-align:center; border:1px solid var(--correct-green);">
+                <div style="flex:1; min-width: 100px; max-width: 150px; background:#0d1527; padding: 15px 10px; border-radius: 8px; text-align:center; border:1px solid var(--correct-green);">
                     <div style="font-size: 24px; color: var(--correct-green); font-weight: bold;">${correctCount}</div>
                     <div style="color: var(--text-muted); font-size: 11px; text-transform:uppercase; margin-top:4px;">Right</div>
                 </div>
-                <div style="flex:1; min-width: 100px; max-width: 150px; background:#2a2a2a; padding: 15px 10px; border-radius: 8px; text-align:center; border:1px solid var(--wrong-red);">
+                <div style="flex:1; min-width: 100px; max-width: 150px; background:#0d1527; padding: 15px 10px; border-radius: 8px; text-align:center; border:1px solid var(--wrong-red);">
                     <div style="font-size: 24px; color: var(--wrong-red); font-weight: bold;">${wrongCount}</div>
                     <div style="color: var(--text-muted); font-size: 11px; text-transform:uppercase; margin-top:4px;">Wrong</div>
                 </div>
-                <div style="flex:1; min-width: 100px; max-width: 150px; background:#2a2a2a; padding: 15px 10px; border-radius: 8px; text-align:center; border:1px solid var(--primary-yellow);">
+                <div style="flex:1; min-width: 100px; max-width: 150px; background:#0d1527; padding: 15px 10px; border-radius: 8px; text-align:center; border:1px solid var(--primary-yellow);">
                     <div style="font-size: 24px; color: var(--primary-yellow); font-weight: bold;">${totalScore}</div>
                     <div style="color: var(--text-muted); font-size: 11px; text-transform:uppercase; margin-top:4px;">Overall Mark</div>
                 </div>
-                <div style="flex:1; min-width: 100px; max-width: 150px; background:#2a2a2a; padding: 15px 10px; border-radius: 8px; text-align:center; border:1px solid var(--border-color);">
+                <div style="flex:1; min-width: 100px; max-width: 150px; background:#0d1527; padding: 15px 10px; border-radius: 8px; text-align:center; border:1px solid var(--border-color);">
                     <div style="font-size: 24px; color: white; font-weight: bold;">${overallAccuracy}%</div>
                     <div style="color: var(--text-muted); font-size: 11px; text-transform:uppercase; margin-top:4px;">Accuracy</div>
                 </div>
             </div>
 
-            <div style="background:rgba(244, 67, 54, 0.05); border-left:3px solid var(--wrong-red); padding:12px; border-radius:4px; margin-bottom:20px;">
+            <div style="background:rgba(239, 68, 68, 0.05); border-left:3px solid var(--wrong-red); padding:12px; border-radius:4px; margin-bottom:20px;">
                 <div style="color:var(--wrong-red); font-size:11px; font-weight:bold; margin-bottom:5px; text-transform:uppercase;">Needs Improvement</div>
-                <div style="font-size:13px; color:var(--text-light); line-height:1.4;">${weakSpotsText}</div>
+                <div style="font-size:13px; color:#d1d5db; line-height:1.4;">${weakSpotsText}</div>
             </div>
             
-            <div style="background:#1a1a1a; border:1px solid var(--border-color); padding:15px; border-radius:6px; margin-bottom: 20px;">
-                <h3 style="margin-top:0; color:white; border-bottom:1px solid #333; padding-bottom:8px; margin-bottom:15px; font-size:15px;">⏱️ Time to Accuracy Insights</h3>
+            <div style="background:#090e1a; border:1px solid var(--border-color); padding:15px; border-radius:6px; margin-bottom: 20px;">
+                <h3 style="margin-top:0; color:white; border-bottom:1px solid #1a2744; padding-bottom:8px; margin-bottom:15px; font-size:15px;">⏱️ Time to Accuracy Insights</h3>
                 <div style="display:flex; gap:15px; flex-wrap:wrap;">
-                    <div style="flex:1; background:rgba(76, 175, 80, 0.1); border:1px solid var(--correct-green); padding:15px; border-radius:6px; text-align:center;">
+                    <div style="flex:1; background:rgba(16, 185, 129, 0.1); border:1px solid var(--correct-green); padding:15px; border-radius:6px; text-align:center;">
                         <div style="font-size:24px; color:var(--correct-green); font-weight:bold;">${finalAvgTimeC}s</div>
                         <div style="color:var(--text-muted); font-size:12px; margin-top:5px;">Avg Time on Correct Answers</div>
                     </div>
-                    <div style="flex:1; background:rgba(244, 67, 54, 0.1); border:1px solid var(--wrong-red); padding:15px; border-radius:6px; text-align:center;">
+                    <div style="flex:1; background:rgba(239, 68, 68, 0.1); border:1px solid var(--wrong-red); padding:15px; border-radius:6px; text-align:center;">
                         <div style="font-size:24px; color:var(--wrong-red); font-weight:bold;">${finalAvgTimeW}s</div>
                         <div style="color:var(--text-muted); font-size:12px; margin-top:5px;">Avg Time on Wrong Answers</div>
                     </div>
                 </div>
-                <p style="font-size:12px; color:var(--text-light); margin-top:15px; line-height:1.5;">💡 If your time on wrong answers is significantly higher, it means you are getting stuck and wasting time on questions you ultimately don't know. Practice skipping difficult questions faster!</p>
             </div>
 
             <div style="display:flex; gap:15px; flex-wrap:wrap;">
-                <div style="flex:1; min-width:280px; background:#1a1a1a; border:1px solid var(--border-color); padding:15px; border-radius:6px;">
-                    <h3 style="margin-top:0; color:white; border-bottom:1px solid #333; padding-bottom:8px; margin-bottom:15px; font-size:15px;">Subject-Wise Mastery</h3>
+                <div style="flex:1; min-width:280px; background:#090e1a; border:1px solid var(--border-color); padding:15px; border-radius:6px;">
+                    <h3 style="margin-top:0; color:white; border-bottom:1px solid #1a2744; padding-bottom:8px; margin-bottom:15px; font-size:15px;">Subject-Wise Mastery</h3>
                     ${subjectHtml}
                 </div>
 
-                <div style="flex:1; min-width:280px; background:#1a1a1a; border:1px solid var(--border-color); padding:15px; border-radius:6px;">
-                    <h3 style="margin-top:0; color:white; border-bottom:1px solid #333; padding-bottom:8px; margin-bottom:15px; font-size:15px;">Accuracy Trajectory</h3>
+                <div style="flex:1; min-width:280px; background:#090e1a; border:1px solid var(--border-color); padding:15px; border-radius:6px;">
+                    <h3 style="margin-top:0; color:white; border-bottom:1px solid #1a2744; padding-bottom:8px; margin-bottom:15px; font-size:15px;">Accuracy Trajectory</h3>
                     <canvas id="accuracyChart" style="width:100%; height:160px;"></canvas>
                 </div>
             </div>
-
-            <button class="btn-exam" onclick="window.history.back()" style="margin-top:20px; background:#333; border:none; width:100%; max-width:200px;">&larr; Back to Selection</button>
         </div>`;
 
         setTimeout(() => drawAccuracyChart(recentTrend), 50);
 
-    } catch(e) { mc.innerHTML = `<div class="card"><p>Error: ${e.message}</p><button class="btn-exam" onclick="goBack()" style="background:#333; border:none;">&larr; Back</button></div>`; }
+    } catch(e) { mc.innerHTML = `<div class="card"><p>Error: ${e.message}</p></div>`; }
 }
 
 function drawAccuracyChart(dataPoints) {
@@ -433,11 +422,11 @@ function drawAccuracyChart(dataPoints) {
     const padding = 20; const maxVal = 100;
     const stepX = (w - padding*2) / Math.max(1, dataPoints.length - 1);
     
-    ctx.strokeStyle = '#333'; ctx.lineWidth = 1;
+    ctx.strokeStyle = '#1a2744'; ctx.lineWidth = 1;
     [0, 25, 50, 75, 100].forEach(val => {
         let y = h - padding - (val/maxVal)*(h - padding*2);
         ctx.beginPath(); ctx.moveTo(padding, y); ctx.lineTo(w-padding, y); ctx.stroke();
-        ctx.fillStyle = '#777'; ctx.font = '10px sans-serif'; ctx.fillText(val+'%', 0, y+3);
+        ctx.fillStyle = '#8492a6'; ctx.font = '10px sans-serif'; ctx.fillText(val+'%', 0, y+3);
     });
     
     if(dataPoints.length > 1) {
@@ -449,299 +438,175 @@ function drawAccuracyChart(dataPoints) {
         ctx.stroke();
     }
     
-    ctx.fillStyle = '#4CAF50';
+    ctx.fillStyle = '#10b981';
     dataPoints.forEach((val, i) => {
         let x = padding + i*stepX; let y = h - padding - (val/maxVal)*(h - padding*2);
         ctx.beginPath(); ctx.arc(x, y, 4, 0, Math.PI*2); ctx.fill();
     });
 }
 
-async function checkUserNotifications() {
-    if(!currentUser) return;
-    try {
-        let hasUnseen = false;
-        let reportsSnap = await db.collection("reported_mistakes").where("studentId", "==", currentUser.uid).get();
-        reportsSnap.forEach(doc => { let d = doc.data(); if(d.status === 'resolved' && d.seenByStudent === false) hasUnseen = true; });
-        let flagsSnap = await db.collection("flagged_doubts").where("studentId", "==", currentUser.uid).get();
-        flagsSnap.forEach(doc => { let d = doc.data(); if(d.status === 'resolved' && d.seenByStudent === false) hasUnseen = true; });
-        if(hasUnseen) { document.getElementById('profileNotifDot').style.display = 'block'; document.getElementById('reportMenuDot').style.display = 'inline'; }
-    } catch(e){}
-}
-
-let tempReportTarget = null;
-function openReportModal(questionId, qText, qPath) { 
-    if(!currentUser) { showAuthModal(); return; }
-    tempReportTarget = { id: questionId, text: qText, path: qPath }; 
-    document.getElementById('reportModal').style.display = 'flex'; 
-}
-function closeReportModal() { document.getElementById('reportModal').style.display = 'none'; tempReportTarget = null; }
-
-async function submitReport() {
-    if(!currentUser || !tempReportTarget) return;
-    const reason = document.getElementById('reportReason').value; 
-    const desc = document.getElementById('reportDescription').value;
-    const btn = document.querySelector('#reportModal .btn-exam'); btn.innerText = "Submitting..."; btn.disabled = true;
-    try {
-        await db.collection("reported_mistakes").add({
-            studentId: currentUser.uid, studentName: currentUser.displayName,
-            questionId: tempReportTarget.id, questionText: tempReportTarget.text, path: tempReportTarget.path,
-            reason: reason, description: desc, status: 'pending', seenByStudent: true, timestamp: firebase.firestore.FieldValue.serverTimestamp()
-        });
-        showNotification("✅ Report submitted to admins!"); 
-        closeReportModal(); document.getElementById('reportDescription').value = "";
-    } catch(e) { showNotification("❌ Error: " + e.message); }
-    btn.innerText = "Submit Report"; btn.disabled = false;
-}
-
-async function openUserReportsModal() {
-    if(!currentUser) return;
-    document.getElementById('userReportsModal').style.display = 'flex';
-    document.getElementById('profileNotifDot').style.display = 'none'; document.getElementById('reportMenuDot').style.display = 'none';
-    const list = document.getElementById('user-reports-list'); list.innerHTML = `<p style="color:var(--primary-yellow);">Loading reports...</p>`;
-    try {
-        let html = ''; let count = 0; let allItems = [];
-        let reportsSnap = await db.collection("reported_mistakes").where("studentId", "==", currentUser.uid).get();
-        reportsSnap.forEach(doc => { allItems.push({ _id: doc.id, _type: 'report', ...doc.data() }); });
-        let flagsSnap = await db.collection("flagged_doubts").where("studentId", "==", currentUser.uid).get();
-        flagsSnap.forEach(doc => { allItems.push({ _id: doc.id, _type: 'flag', ...doc.data() }); });
-        allItems.sort((a, b) => { let tA = a.timestamp ? a.timestamp.toMillis() : 0; let tB = b.timestamp ? b.timestamp.toMillis() : 0; return tB - tA; });
-        allItems.forEach(d => {
-            count++;
-            let badge = d.status === 'resolved' ? `<span style="background:var(--correct-green); color:white; padding:2px 6px; border-radius:4px; font-size:11px;">✅ ${d._type === 'flag' ? 'Reviewed' : 'Fixed'}</span>` : `<span style="background:#555; color:white; padding:2px 6px; border-radius:4px; font-size:11px;">⏳ Pending</span>`;
-            let title = d._type === 'flag' ? '⭐ Flagged Doubt' : `<b>${d.reason}</b>`;
-            html += `<div style="background:#1a1a1a; padding:12px; border:1px solid #333; border-radius:6px; margin-bottom:10px;"><div style="display:flex; justify-content:space-between; margin-bottom:5px;">${title} ${badge}</div><p style="font-size:13px; color:var(--text-muted); margin:0;">${d.questionText}</p></div>`;
-            if(d.status === 'resolved' && d.seenByStudent === false) { db.collection(d._type === 'flag' ? "flagged_doubts" : "reported_mistakes").doc(d._id).update({seenByStudent: true}); }
-        });
-        if(count === 0) { list.innerHTML = `<p style="color:var(--text-muted);">You haven't reported any questions yet.</p>`; } else { list.innerHTML = html; }
-    } catch(e) { list.innerHTML = `<p style="color:red;">Error: ${e.message}</p>`; }
-}
-function closeUserReportsModal() { document.getElementById('userReportsModal').style.display = 'none'; }
-
-let selectedStars = 0; let userFeedbackDocId = null; 
-function updateStarUI(stars) { selectedStars = stars; for(let i=1; i<=5; i++) { document.getElementById('star-'+i).classList.remove('active'); if(i <= stars) document.getElementById('star-'+i).classList.add('active'); } }
-async function openFeedbackModal() { 
-    if (!currentUser) { showNotification("⚠️ Please sign in to rate."); showAuthModal(); return; }
-    document.getElementById('feedbackModal').style.display = 'flex'; 
-    try {
-        const snap = await db.collection("platform_feedback").where("studentId", "==", currentUser.uid).limit(1).get();
-        if (!snap.empty) { userFeedbackDocId = snap.docs[0].id; updateStarUI(snap.docs[0].data().rating || 0); document.getElementById('platformFeedbackText').value = snap.docs[0].data().feedback || ""; document.getElementById('submitFeedbackBtn').innerText = "Update Feedback"; } 
-        else { userFeedbackDocId = null; updateStarUI(0); document.getElementById('platformFeedbackText').value = ""; document.getElementById('submitFeedbackBtn').innerText = "Submit Feedback"; }
-    } catch(e) {}
-}
-function closeFeedbackModal() { document.getElementById('feedbackModal').style.display = 'none'; }
-
-async function submitPlatformFeedback() {
-    if (!currentUser) return; 
-    if (selectedStars === 0) { showNotification("⚠️ Please select a star rating!"); return; }
-    const feedbackText = document.getElementById('platformFeedbackText').value.trim(); 
-    const btn = document.getElementById('submitFeedbackBtn'); 
-    btn.innerText = "Submitting..."; btn.disabled = true;
-    try {
-        const snap = await db.collection("platform_feedback").where("studentId", "==", currentUser.uid).limit(1).get();
-        let oldRating = 0;
-        let isUpdate = !snap.empty;
-
-        if (isUpdate) {
-            oldRating = snap.docs[0].data().rating || 0;
-            await db.collection("platform_feedback").doc(snap.docs[0].id).update({ 
-                rating: selectedStars, 
-                feedback: feedbackText, 
-                studentName: currentUser.displayName, 
-                timestamp: firebase.firestore.FieldValue.serverTimestamp() 
-            });
-            showNotification("✅ Feedback updated!");
-        } else { 
-            await db.collection("platform_feedback").add({ 
-                rating: selectedStars, 
-                feedback: feedbackText, 
-                studentName: currentUser.displayName, 
-                studentId: currentUser.uid, 
-                timestamp: firebase.firestore.FieldValue.serverTimestamp() 
-            }); 
-            showNotification("✅ Thank you!"); 
-        }
-
-        let ratingDelta = selectedStars - oldRating;
-        let countDelta = isUpdate ? 0 : 1;
-        await db.collection("settings").doc("platform_stats").set({
-            ratingSum: firebase.firestore.FieldValue.increment(ratingDelta),
-            ratingCount: firebase.firestore.FieldValue.increment(countDelta),
-            lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
-        }, { merge: true }).catch(() => {});
-
-        closeFeedbackModal(); 
-        fetchGlobalRating(); 
-    } catch(e) { showNotification("❌ Error: " + e.message); }
-    btn.innerText = "Submit Feedback"; btn.disabled = false;
-}
-
-async function fetchGlobalRating() {
-    const display = document.getElementById('global-rating-display'); 
-    if(!display) return;
-    try {
-        const statsDoc = await db.collection("settings").doc("platform_stats").get();
-        if (statsDoc.exists) {
-            let d = statsDoc.data();
-            let count = d.ratingCount || 0;
-            let sum = d.ratingSum || 0;
-            display.innerText = count > 0 ? (sum / count).toFixed(1) : "5.0";
-            return;
-        }
-
-        const snapshot = await db.collection("platform_feedback").limit(100).get(); 
-        if (snapshot.empty) { display.innerText = "5.0"; return; }
-        let total = 0; let count = 0; 
-        snapshot.forEach(doc => { total += (doc.data().rating || 5); count++; }); 
-        let avg = (total / count).toFixed(1);
-        display.innerText = avg;
-
-        db.collection("settings").doc("platform_stats").set({
-            ratingSum: total,
-            ratingCount: count,
-            lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
-        }, { merge: true }).catch(() => {});
-    } catch(e) { display.innerText = "5.0"; }
-}
-fetchGlobalRating();
-
-// ==========================================
-// 8. SEARCH ENGINE & LEADERBOARD
-// ==========================================
-function openSearch() { document.getElementById('searchWrapper').classList.add('active'); document.getElementById('searchInput').focus(); }
-function closeSearch() { document.getElementById('searchWrapper').classList.remove('active'); document.getElementById('searchInput').value = ''; document.getElementById('searchSuggestions').style.display = 'none'; }
-function delayCloseSearch() { setTimeout(closeSearch, 250); }
-
-function handleLiveSearch() { 
-    const query = document.getElementById('searchInput').value.trim().toLowerCase(); 
-    const dropdown = document.getElementById('searchSuggestions');
-    if(query === "") { dropdown.style.display = 'none'; return; }
-    
-    let results = [];
-    function searchDB(obj, q, path = []) { 
-        for (let key in obj) { 
-            let current = [...path, key]; 
-            if (key.toLowerCase().includes(q)) results.push({pathArray: current, matchWord: key}); 
-            if (typeof obj[key] === 'object' && !Array.isArray(obj[key])) searchDB(obj[key], q, current); 
-        } 
-    }
-    searchDB(appData, query);
-    
-    if(results.length > 0) { 
-        dropdown.innerHTML = results.slice(0, 8).map(res => { 
-            const cleanPath = JSON.stringify(res.pathArray).replace(/"/g, "'"); 
-            let regex = new RegExp(`(${query})`, 'gi');
-            
-            // Clean numeric prefixes from search results too
-            let cleanPathParts = res.pathArray.map(part => part.replace(/^\d+\.\s*/, ''));
-            
-            let highlightedText = cleanPathParts.map(part => part.replace(regex, "<span class='highlight-match'>$1</span>")).join(" <span style='color:var(--text-muted);font-size:12px;'>&rarr;</span> ");
-            return `<div class="suggestion-item" onclick="jumpToSection(${cleanPath}); closeSearch();">🔍 <span>${highlightedText}</span></div>`; 
-        }).join(''); 
-    } else { 
-        dropdown.innerHTML = `<div class="suggestion-item" style="color: var(--text-muted);">No results match "${query}"</div>`; 
-    }
-    dropdown.style.display = 'block';
-}
-
 function _renderLeaderboardOptions() { 
     document.getElementById('breadcrumb-text').innerText = "Home / Leaderboard"; 
+    
+    // Dynamic Root Fetching for Leaderboard Options
+    let rootKeys = Object.keys(appData).filter(k => k !== "Daily Quiz Challenge");
+    let optionsHtml = '';
+    
+    rootKeys.forEach(k => {
+        let cleanKey = k.replace(/^\d+\.\s*/, '');
+        let safeKey = k.replace(/'/g, "\\'");
+        
+        // Use smart icon for the leaderboard buttons too
+        let smartData = getSmartIcon(cleanKey) || { i: "🥇" };
+        
+        optionsHtml += `<button class="btn-exam category-tile" onclick="window.location.hash='#/board/${encodeURIComponent(safeKey)}'" style="flex-direction:row; padding:15px; flex:1; min-width:200px;">
+            <div class="cat-icon" style="background: rgba(255,255,255,0.05); color: #fff; width:30px; height:30px; font-size:14px;">${smartData.i}</div>
+            <div class="cat-text" style="font-size:13px; letter-spacing:0.5px; text-transform:uppercase;">${cleanKey} Leaderboard</div>
+        </button>`;
+    });
     
     document.getElementById('dynamic-content').innerHTML = `
         <div class="card page-transition">
             <h2 class="section-title">🏆 Global Leaderboards</h2>
             <p style="color:var(--text-muted); margin-bottom: 20px;">Select a category to view the top 10 scores.</p>
-            <div style="background: rgba(244, 67, 54, 0.1); border-left: 4px solid var(--wrong-red); padding: 12px; margin-bottom: 25px; border-radius: 4px;">
-                <span style="color: var(--wrong-red); font-weight: bold;">⚠️ CAUTION:</span> <span style="color: var(--text-light); font-size: 14px;">Only signed-in users will have their scores recorded and displayed on the leaderboard.</span>
+            <div style="background: rgba(239, 68, 68, 0.05); border-left: 4px solid var(--wrong-red); padding: 12px; margin-bottom: 25px; border-radius: 4px;">
+                <span style="color: var(--wrong-red); font-weight: bold;">⚠️ CAUTION:</span> <span style="color: #d1d5db; font-size: 14px;">Only signed-in users will have their scores recorded and displayed on the leaderboard.</span>
             </div>
-            <div class="category-grid">
-                <button class="btn-exam category-tile" onclick="window.location.hash='#/board/NEET > MCQs Practice'">
-                    <div class="cat-icon" style="background: rgba(253, 184, 19, 0.15); color: #fdb813;">🥇</div>
-                    <div class="cat-text">NEET Practice</div>
-                </button>
-                <button class="btn-exam category-tile" onclick="window.location.hash='#/board/NEET > Mock Test'">
-                    <div class="cat-icon" style="background: rgba(244, 67, 54, 0.15); color: #F44336;">⏱️</div>
-                    <div class="cat-text">Mock Tests</div>
-                </button>
-                <button class="btn-exam category-tile" onclick="window.location.hash='#/board/General Knowledge'">
-                    <div class="cat-icon" style="background: rgba(76, 175, 80, 0.15); color: #4CAF50;">🌍</div>
-                    <div class="cat-text">General Knowledge</div>
-                </button>
+            <div class="category-grid" style="grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px;">
+                ${optionsHtml}
             </div>
         </div>`; 
 }
 
-async function fetchLiveLeaderboard(pathPrefix) { 
-    const mainContent = document.getElementById('dynamic-content');
-    if (!currentUser) { 
-        mainContent.innerHTML = `<div class="card page-transition"><h2 class="section-title">🏆 Fetching Leaderboard...</h2><div style="background: rgba(244, 67, 54, 0.1); border-left: 4px solid var(--wrong-red); padding: 15px; margin: 20px 0; border-radius: 4px;"><span style="color: var(--wrong-red); font-weight: bold;">⚠ ACCESS DENIED:</span> <span style="color: var(--text-light); font-size: 14px;">You must be signed in with Google to view the global leaderboards.</span></div><button class="btn-exam" onclick="window.history.back()" style="background:#333; border:none; width:100%;">Back</button></div>`; 
-        return; 
-    }
+// -----------------------------------------
+// CUSTOM WORKOUT FEATURE (DYNAMIC ROOT LOADER)
+// -----------------------------------------
+let cwPath = ""; let cwSubject = "Mixed"; let cwDiff = "Mixed"; let cwLimit = 20;
 
-    mainContent.innerHTML = `<div class="card page-transition"><h2 class="section-title">🏆 Fetching Leaderboard...</h2></div>`;
-    try {
-        const userSnapshot = await db.collection("leaderboards").where("userId", "==", currentUser.uid).get();
-        let totalQuestions = 0; let totalTests = 0; let myBestScore = -99999; let myBestData = null;
-        userSnapshot.forEach(doc => {
-            let data = doc.data();
-            if (data.quizPath && data.quizPath.startsWith(pathPrefix)) {
-                totalTests++; totalQuestions += (data.attemptedQuestions || 0);
-                if (data.score > myBestScore) { myBestScore = data.score; myBestData = data; }
-            }
-        });
-
-        let isMockTest = pathPrefix.includes('Mock Test'); let thresholdMet = false; let requiredText = ""; let progressText = "";
-        if (isMockTest) { thresholdMet = (totalTests >= 5); requiredText = "5 Full Mock Tests"; progressText = `${totalTests} / 5 Tests Completed`; } 
-        else { thresholdMet = (totalQuestions >= 100); requiredText = "100 Practice Questions"; progressText = `${totalQuestions} / 100 Questions Attempted`; }
-
-        if (!thresholdMet) {
-            mainContent.innerHTML = `<div class="card page-transition" style="text-align:center; padding: 40px 20px;"><h2 class="section-title" style="font-size: 28px; margin-bottom: 10px;">🔒 Leaderboard Locked</h2><p style="color: var(--text-muted); font-size: 15px; max-width: 500px; margin: 0 auto 20px auto; line-height: 1.5;">To ensure competitive integrity, you must attempt a minimum of <b style="color: white;">${requiredText}</b> in this specific category before unlocking the global rankings.</p><div style="background: #2a2a2a; border: 1px solid var(--border-color); padding: 15px 25px; border-radius: 8px; display: inline-block; margin-bottom: 30px;"><span style="color: var(--primary-yellow); font-weight: bold; margin-right: 10px;">Your Progress:</span> <span style="color: white; font-weight: bold;">${progressText}</span></div><br><button class="btn-exam" onclick="window.history.back()" style="background:#333; border:none; width: 100%;">Back to Categories</button></div>`; return;
-        }
-
-        const boardSnapshot = await db.collection("leaderboards")
-            .where("quizPath", ">=", pathPrefix)
-            .where("quizPath", "<=", pathPrefix + "\uf8ff")
-            .orderBy("quizPath")
-            .orderBy("score", "desc")
-            .limit(10)
-            .get();
-            
-        // Clean prefix for header display
-        let displayPathPrefix = pathPrefix.split(' > ').pop().replace(/^\d+\.\s*/, '');
-            
-        let html = `<div class="card page-transition"><h2 class="section-title">🏆 Top 10: ${displayPathPrefix}</h2><div style="overflow-x:auto;"><table><tr><th>Rank</th><th>Student</th><th>Score</th><th>Accuracy</th><th>Time</th></tr>`;
-        let inTop10 = false; let docs = [];
-        boardSnapshot.forEach(doc => docs.push(doc.data()));
+function cwStep1() {
+    const mc = document.getElementById('dynamic-content');
+    
+    // Dynamically fetch Root Level folders from appData
+    let rootKeys = Object.keys(appData).filter(k => k !== "Daily Quiz Challenge");
+    
+    let html = `
+    <div class="card page-transition" style="max-width: 600px; margin: 0 auto; padding: 30px;">
+        <h2 class="section-title" style="margin-bottom: 25px; color:var(--primary-yellow); justify-content:center;">⚙️ Custom Practice Setup</h2>
+        <p style="color:var(--text-muted); margin-bottom: 25px; text-align:center;">Step 1: Which exam are you preparing for?</p>
         
-        for(let i = 0; i < docs.length; i++) { 
-            let data = docs[i]; 
-            let medal = (i === 0) ? "🥇 " : ((i === 1) ? "🥈 " : ((i === 2) ? "🥉 " : (i + 1) + ". "));
-            let isMe = (data.userId === currentUser.uid); 
-            if (isMe) inTop10 = true;
-            let rowStyle = isMe ? `style="background: rgba(253, 184, 19, 0.15);"` : "";
-            html += `<tr ${rowStyle}><td>${medal}</td><td><b>${data.userName}</b> ${isMe ? '<span style="color:var(--primary-yellow); font-size:12px; margin-left:5px;">(You)</span>' : ''}</td><td style="color:var(--correct-green); font-weight:bold;">${data.score}</td><td>${data.accuracy}%</td><td>${data.timeStr}</td></tr>`;
-        }
-        html += `</table></div>`;
-
-        let safeRankDisplay = inTop10 ? "Top 10" : "> 10";
-
-        if (!inTop10 && myBestData) { html += `<div style="margin-top: 30px; background: #2a2a2a; border: 1px solid var(--border-color); border-left: 4px solid var(--primary-yellow); padding: 20px; border-radius: 4px;"><h4 style="margin: 0 0 15px 0; color: var(--primary-yellow); font-size: 18px;">Your Personal Best</h4><div style="display: flex; gap: 30px; flex-wrap: wrap;"><div><span style="color:var(--text-muted); font-size:13px;">Global Rank</span><br><b style="font-size:20px; color: white;">${safeRankDisplay}</b></div><div><span style="color:var(--text-muted); font-size:13px;">Best Score</span><br><b style="font-size:20px; color:var(--correct-green);">${myBestData.score}</b></div><div><span style="color:var(--text-muted); font-size:13px;">Accuracy</span><br><b style="font-size:20px; color: white;">${myBestData.accuracy}%</b></div><div><span style="color:var(--text-muted); font-size:13px;">Total Tests Attempted</span><br><b style="font-size:20px; color: white;">${totalTests}</b></div></div></div>`; }
-        html += `<button class="btn-exam" onclick="window.history.back()" style="margin-top:25px; background:#333; border:none; width: 100%;">Back to Categories</button></div>`;
-        mainContent.innerHTML = html;
-
-    } catch(e) { mainContent.innerHTML = `<div class="card"><h2 style="color:var(--wrong-red);">Error</h2><p>${e.message}</p><button class="btn-exam" onclick="window.history.back()" style="background:#333; border:none; width: 100%;">Back</button></div>`; }
+        <div style="display:grid; grid-template-columns: 1fr; gap: 12px; margin-bottom: 25px;">`;
+        
+        rootKeys.forEach(k => {
+            let cleanKey = k.replace(/^\d+\.\s*/, '');
+            let safeKey = k.replace(/'/g, "\\'");
+            let smartData = getSmartIcon(cleanKey) || { i: "📁" };
+            
+            html += `<button class="btn-exam" onclick="cwSetPath('${safeKey}')" style="background:#0d1527; border-color:var(--border-color); padding:16px; font-size:15px; letter-spacing:0.5px;">${smartData.i} ${cleanKey}</button>`;
+        });
+        
+    html += `
+        </div>
+    </div>`;
+    mc.innerHTML = html;
 }
 
-function openStreakModal() {
-    if (!currentUser) { 
-        showNotification("⚠️ Please sign in to track your streak."); 
-        showAuthModal(); 
-        return; 
+function cwSetPath(path) { cwPath = path; cwStep2(); }
+
+function cwStep2() {
+    const mc = document.getElementById('dynamic-content');
+    
+    let subjectsHtml = `<option value="Mixed">All Subjects (Full Mock)</option>`;
+    if (appData[cwPath] && appData[cwPath]["MCQs Practice"]) {
+        let subjects = Object.keys(appData[cwPath]["MCQs Practice"]);
+        subjects.forEach(s => { 
+            let cleanS = s.replace(/^\d+\.\s*/, '');
+            subjectsHtml += `<option value="${s.replace(/'/g, "\\'")}">${cleanS}</option>`; 
+        });
     }
-    const currentStreakCount = document.getElementById('nav-streak-display').innerText;
-    document.getElementById('modalStreakCount').innerText = currentStreakCount;
-    document.getElementById('streakModal').style.display = 'flex';
+
+    mc.innerHTML = `
+    <div class="card page-transition" style="max-width: 600px; margin: 0 auto; padding: 30px;">
+        <h2 class="section-title" style="margin-bottom: 25px; color:var(--primary-yellow); justify-content:center;">🎯 Customize Your Test</h2>
+        
+        <div style="margin-bottom: 20px;">
+            <label style="display:block; color:var(--text-muted); margin-bottom:8px; font-size:12px; font-weight:bold; text-transform:uppercase;">Select Subject/Topic</label>
+            <select id="cwSubj" class="input-field" style="font-size:14px; padding:14px;">${subjectsHtml}</select>
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+            <label style="display:block; color:var(--text-muted); margin-bottom:8px; font-size:12px; font-weight:bold; text-transform:uppercase;">Difficulty Level</label>
+            <select id="cwDiffSelect" class="input-field" style="font-size:14px; padding:14px;">
+                <option value="Mixed">Mixed (Real Exam Balance)</option>
+                <option value="Easy">Easy (Warmup)</option>
+                <option value="Medium">Medium (Standard)</option>
+                <option value="Hard">Hard (Challenge)</option>
+            </select>
+        </div>
+        
+        <div style="margin-bottom: 30px;">
+            <label style="display:block; color:var(--text-muted); margin-bottom:8px; font-size:12px; font-weight:bold; text-transform:uppercase;">Number of Questions</label>
+            <select id="cwNum" class="input-field" style="font-size:14px; padding:14px;">
+                <option value="10">10 Questions (Quick)</option>
+                <option value="25" selected>25 Questions (Standard)</option>
+                <option value="50">50 Questions (Half Mock)</option>
+                <option value="100">100 Questions (Full Length)</option>
+                <option value="200">200 Questions (Marathon)</option>
+                <option value="250">250 Questions (Extreme Limit)</option>
+            </select>
+        </div>
+
+        <div style="display:flex; gap:15px;">
+            <button class="btn-exam" onclick="cwStep1()" style="flex:1; background:#0d1527;">&larr; Back</button>
+            <button class="btn-exam" onclick="cwLaunch()" style="flex:2; background:var(--primary-yellow); color:black; border:none; box-shadow: 0 4px 15px rgba(253,184,19,0.3);">Launch Practice 🚀</button>
+        </div>
+    </div>`;
 }
 
-function closeStreakModal() { 
-    document.getElementById('streakModal').style.display = 'none'; 
+async function cwLaunch() {
+    cwSubject = document.getElementById('cwSubj').value;
+    cwDiff = document.getElementById('cwDiffSelect').value;
+    cwLimit = parseInt(document.getElementById('cwNum').value);
+    
+    const mc = document.getElementById('dynamic-content');
+    mc.innerHTML = `<div class="card page-transition" style="text-align:center; padding: 50px 20px;"><h2 class="section-title" style="justify-content:center;">🔍 Compiling Custom Practice...</h2><p style="color:var(--text-muted);">Fetching ${cwLimit} questions from database...</p></div>`;
+
+    let targetPath = cwPath;
+    if (cwSubject !== "Mixed") targetPath += " > MCQs Practice > " + cwSubject;
+
+    try {
+        let query = db.collection("content")
+            .where("path", ">=", targetPath)
+            .where("path", "<=", targetPath + "\uf8ff")
+            .where("type", "==", "mcq");
+
+        if (cwDiff !== "Mixed") query = query.where("level", "==", cwDiff);
+
+        let randomStart = Math.random();
+        let snapshot = await query.where("randomKey", ">=", randomStart).orderBy("randomKey").limit(cwLimit).get();
+        let allDocs = [];
+        snapshot.forEach(doc => allDocs.push({ id: doc.id, ...doc.data() }));
+
+        if (allDocs.length < cwLimit) {
+            let remainder = cwLimit - allDocs.length;
+            let snapshot2 = await query.where("randomKey", "<", randomStart).orderBy("randomKey").limit(remainder).get();
+            snapshot2.forEach(doc => allDocs.push({ id: doc.id, ...doc.data() }));
+        }
+
+        if (allDocs.length === 0) {
+            mc.innerHTML = `<div class="card page-transition" style="text-align:center; padding: 40px 20px;"><h2 class="section-title" style="justify-content:center;">No Questions Found</h2><p style="color:var(--text-muted);">We couldn't find enough questions matching these exact filters.</p><button class="btn-exam" onclick="cwStep2()" style="margin-top:20px; background:#0d1527; border-color:var(--border-color);">&larr; Adjust Filters</button></div>`;
+            return;
+        }
+
+        allDocs.sort(() => Math.random() - 0.5);
+        currentQuestions = allDocs; 
+        currentQuizPath = targetPath;
+        currentIndex = 0;
+        userAnswers = {};
+        timeSpent = {};
+
+        renderQuizInterface();
+        startQuestionTimer();
+    } catch(err) {
+        mc.innerHTML = `<div class="card"><h2 class="section-title" style="color:var(--wrong-red);">Error</h2><p>${err.message}</p></div>`;
+    }
 }
