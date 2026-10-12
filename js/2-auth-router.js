@@ -2,12 +2,11 @@
 // 2. DATA LOADING & AUTHENTICATION
 // ==========================================
 
-// 🔴 CRITICAL FIX: Properly scoped global variables to prevent crashes
-var currentPath = [];
-var customTopicTypes = {};
-var dataLoaded = false;
-var currentUser = null;
-var userBookmarks = [];
+let currentPath = [];
+let customTopicTypes = {};
+let dataLoaded = false;
+let currentUser = null;
+let userBookmarks = [];
 
 async function loadCustomTopics() {
     try {
@@ -126,6 +125,7 @@ window.addEventListener('hashchange', handleRouting);
 
 function updateBottomNav(hash) {
     document.querySelectorAll('.app-tab').forEach(tab => tab.classList.remove('active'));
+    
     if (hash === 'quiz' || hash === 'admin' || hash === 'admin-panel') {
         document.body.classList.add('hide-bottom-bar');
     } else {
@@ -158,10 +158,10 @@ function updateSidebarLinks() {
     const sidebar = document.getElementById('main-sidebar');
     if (!sidebar) return;
 
-    let hash = window.location.hash;
+    let hash = window.location.hash.replace(/^#\/?/, '');
     
     // Only hide sidebar on these specific full-screen pages
-    if (hash.includes('custom-setup') || hash.includes('leaderboard') || hash.includes('progress') || hash.includes('bookmarks') || hash.includes('quiz') || hash.includes('admin') || hash === '#/diary') {
+    if (hash.includes('custom-setup') || hash.includes('leaderboard') || hash.includes('progress') || hash.includes('bookmarks') || hash.includes('quiz') || hash.includes('admin') || hash === 'diary') {
         sidebar.style.display = 'none';
         return;
     }
@@ -178,11 +178,11 @@ function updateSidebarLinks() {
     sidebar.innerHTML = `
     <div class="card sidebar-card">
         <h3 class="section-title">Quick Links</h3>
-        <a class="action-link" onclick="jumpToSection(['${safeTopic}', 'NCERT Book'])">
+        <a class="action-link" onclick="jumpToSection(['${safeTopic}', 'NCERT Books'])">
             <span class="link-icon" style="color: #9C27B0;">📚</span>
             <span class="link-text">${rootTopic} Books</span>
         </a>
-        <a class="action-link" onclick="jumpToSection(['${safeTopic}', 'PYQs'])">
+        <a class="action-link" onclick="jumpToSection(['${safeTopic}', 'Previous Year Papers'])">
             <span class="link-icon" style="color: #607D8B;">📄</span>
             <span class="link-text">${rootTopic} Previous Papers</span>
         </a>
