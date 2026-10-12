@@ -7,7 +7,6 @@ window.forceStartQuiz = function() {
     setTimeout(() => { _initiateQuizEngine(); }, 100);
 };
 
-// Routes cleanly to the isolated Custom Setup page
 window.forceCwStep1 = function(e) {
     if (e) e.stopPropagation();
     window.location.hash = '#/custom-setup';
@@ -49,39 +48,36 @@ function _renderView() {
             }
         }
 
+        let checkPath = currentPath.join(" > ");
+        let hasDbChildren = Object.keys(window.customTopicTypes).some(k => k.startsWith(checkPath + " > "));
+        
         let isEndpoint = false;
-        if (typeof currentLevel === 'string' || Array.isArray(currentLevel) || (typeof currentLevel === 'object' && Object.keys(currentLevel).length === 0)) {
+        if (typeof currentLevel === 'string' || Array.isArray(currentLevel) || (typeof currentLevel === 'object' && Object.keys(currentLevel).length === 0 && !hasDbChildren)) {
             isEndpoint = true;
         }
 
         if (isEndpoint) {
             let topicNameRaw = currentPath[currentPath.length - 1]; 
-            let topicName = topicNameRaw.replace(/^\d+\.\s*/, '').toLowerCase(); 
-            let checkPath = currentPath.join(" > ");
+            let niceTitle = topicNameRaw.replace(/^\d+\.\s*/, '');
+            let topicNameLower = niceTitle.toLowerCase(); 
             
             let isPdfOnly = false;
             let isContainer = false;
             
-            // FIX 4: Flawless Rendering Logic - Checks name triggers if type is unassigned
-            if (customTopicTypes[checkPath] === 'pdf') {
+            if (window.customTopicTypes[checkPath] === 'pdf') {
                 isPdfOnly = true;
-            } else if (customTopicTypes[checkPath] === 'both') {
+            } else if (window.customTopicTypes[checkPath] === 'both') {
                 isContainer = true;
-            } else if (!customTopicTypes[checkPath] || customTopicTypes[checkPath] === 'mcq') {
+            } else if (!window.customTopicTypes[checkPath] || window.customTopicTypes[checkPath] === 'mcq') {
                 let pdfTriggers = ["ncert", "book", "pyq", "previous", "paper", "pdf", "notes", "material", "syllabus"];
-                let isPdf = pdfTriggers.some(t => topicName.includes(t));
+                let isPdf = pdfTriggers.some(t => topicNameLower.includes(t));
                 let mcqTriggers = ["mcq", "mock", "quiz", "test", "practice", "challenge"];
-                let isMcq = mcqTriggers.some(t => topicName.includes(t));
+                let isMcq = mcqTriggers.some(t => topicNameLower.includes(t));
 
-                if (isPdf && !isMcq) {
-                    isPdfOnly = true;
-                } else if (Object.keys(currentLevel).length > 0) {
-                    isContainer = true;
-                }
+                if (isPdf && !isMcq) isPdfOnly = true;
             }
             
-            let studentName = (currentUser && currentUser.displayName) ? currentUser.displayName.split(" ")[0] : "Student";
-            let niceTitle = topicNameRaw.replace(/^\d+\.\s*/, '');
+            let studentName = (window.currentUser && window.currentUser.displayName) ? window.currentUser.displayName.split(" ")[0] : "Student";
             
             if (isContainer) {
                 mc.innerHTML = `
@@ -92,14 +88,14 @@ function _renderView() {
             } else if (isPdfOnly) {
                 mc.innerHTML = `
                 <div class="card page-transition">
-                    <h2 class="section-title">${niceTitle} Resources</h2>
+                    <h2 class="section-title">📄 ${niceTitle} Resources</h2>
                     <p style="color:var(--text-muted);">Materials will appear here once uploaded via the Admin Panel.</p>
                 </div>`;
             } else {
                 mc.innerHTML = `
                 <div class="card page-transition">
-                    <h2 class="section-title">${niceTitle} Practice</h2>
-                    <p style="color:var(--text-muted); margin-bottom:25px;">${!currentUser ? "Sign in to track your scores on the leaderboard!" : `Ready for practice, <span style="color:var(--primary-yellow);">${studentName}</span>?`}</p>
+                    <h2 class="section-title">📝 ${niceTitle} Practice</h2>
+                    <p style="color:var(--text-muted); margin-bottom:25px;">${!window.currentUser ? "Sign in to track your scores on the leaderboard!" : `Ready for practice, <span style="color:var(--primary-yellow);">${studentName}</span>?`}</p>
                     <button class="btn-exam" onclick="forceStartQuiz()" style="background:var(--primary-yellow) !important; color:black !important; width:100%; max-width:250px; font-size:16px; font-weight:bold; border:none !important; box-shadow:0 4px 15px rgba(253,184,19,0.3) !important;">Start Quiz &rarr;</button>
                 </div>`;
             }
@@ -122,31 +118,39 @@ function _renderView() {
 
         h += `<div class="card category-section"><h3 class="section-title">${title}</h3><div class="category-grid">`;
         
-        let keys = Object.keys(currentLevel);
+        // Fetch Keys from Both Hardcoded Data AND Database Data!
+        let keys = new Set(Object.keys(currentLevel));
+        Object.keys(window.customTopicTypes).forEach(dbKey => {
+            let parts = dbKey.split(' > ');
+            if (currentPath.length === 0) {
+                keys.add(parts[0]);
+            } else if (dbKey.startsWith(checkPath + " > ")) {
+                let nextLevel = dbKey.replace(checkPath + " > ", "").split(' > ')[0];
+                keys.add(nextLevel);
+            }
+        });
+        
+        let keysArr = Array.from(keys);
         const difficultyOrder = ["Easy", "Medium", "Hard", "Mixed"];
         
-        keys.sort((a, b) => {
-            let idxA = difficultyOrder.indexOf(a);
-            let idxB = difficultyOrder.indexOf(b);
+        keysArr.sort((a, b) => {
+            let idxA = difficultyOrder.indexOf(a); let idxB = difficultyOrder.indexOf(b);
             if (idxA !== -1 && idxB !== -1) return idxA - idxB;
-            if (idxA !== -1) return -1;
-            if (idxB !== -1) return 1;
+            if (idxA !== -1) return -1; if (idxB !== -1) return 1;
             
-            let matchA = a.match(/^(\d+)\./);
-            let matchB = b.match(/^(\d+)\./);
+            let matchA = a.match(/^(\d+)\./); let matchB = b.match(/^(\d+)\./);
             if (matchA && matchB) return parseInt(matchA[1], 10) - parseInt(matchB[1], 10);
-            
             return a.localeCompare(b);
         });
 
-        for (let key of keys) { 
+        for (let key of keysArr) { 
             if (currentPath.length === 0 && key === "Daily Quiz Challenge") continue; 
-            let checkPath = currentPath.join(" > ") + (currentPath.length > 0 ? " > " : "") + key;
+            let fullCheckPath = currentPath.join(" > ") + (currentPath.length > 0 ? " > " : "") + key;
             
             let typeLabel = ""; 
-            if (customTopicTypes[checkPath] === 'mcq') typeLabel = "📝"; 
-            else if (customTopicTypes[checkPath] === 'pdf') typeLabel = "📄";
-            else if (customTopicTypes[checkPath] === 'both') typeLabel = "📂";
+            if (window.customTopicTypes[fullCheckPath] === 'mcq') typeLabel = "📝"; 
+            else if (window.customTopicTypes[fullCheckPath] === 'pdf') typeLabel = "📄";
+            else if (window.customTopicTypes[fullCheckPath] === 'both') typeLabel = "📂";
             
             let safeKey = key.replace(/'/g, "\\'");
             let displayKey = key.replace(/^\d+\.\s*/, '');
@@ -160,6 +164,8 @@ function _renderView() {
                   </button>`; 
         }
         
+        // GIANT GO BACK BUTTON DELETED!
+        
         h += `</div></div>`; 
         mc.innerHTML = `<div class="page-transition">${h}</div>`;
         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -171,21 +177,10 @@ function _renderView() {
 // ==========================================
 async function getAttemptedIdsForPath(safePath) {
     let ids = [];
-    if (currentUser) {
+    if (window.currentUser) {
         try {
-            const subDoc = await db.collection("users").doc(currentUser.uid).collection("progress").doc(safePath).get();
-            if (subDoc.exists && Array.isArray(subDoc.data().attemptedIds)) {
-                return subDoc.data().attemptedIds;
-            }
-            const rootDoc = await db.collection("users").doc(currentUser.uid).get();
-            if (rootDoc.exists && Array.isArray(rootDoc.data()[safePath])) {
-                let legacyIds = rootDoc.data()[safePath];
-                db.collection("users").doc(currentUser.uid).collection("progress").doc(safePath).set({
-                    attemptedIds: legacyIds,
-                    lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
-                }, { merge: true }).catch(() => {});
-                return legacyIds;
-            }
+            const subDoc = await db.collection("users").doc(window.currentUser.uid).collection("progress").doc(safePath).get();
+            if (subDoc.exists && Array.isArray(subDoc.data().attemptedIds)) return subDoc.data().attemptedIds;
         } catch(e) { console.error("Error fetching progress:", e); }
     } else {
         let localProg = JSON.parse(localStorage.getItem('mcq_progress') || '{}');
@@ -196,13 +191,13 @@ async function getAttemptedIdsForPath(safePath) {
 
 async function saveAttemptedIdsForPath(safePath, newAttemptedIds) {
     if (!newAttemptedIds || newAttemptedIds.length === 0) return;
-    if (currentUser) {
+    if (window.currentUser) {
         try {
-            await db.collection("users").doc(currentUser.uid).collection("progress").doc(safePath).set({
+            await db.collection("users").doc(window.currentUser.uid).collection("progress").doc(safePath).set({
                 attemptedIds: firebase.firestore.FieldValue.arrayUnion(...newAttemptedIds),
                 lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
             }, { merge: true });
-        } catch(e) { console.error("Error saving progress:", e); }
+        } catch(e) {}
     } else {
         let localProg = JSON.parse(localStorage.getItem('mcq_progress') || '{}');
         localProg[safePath] = [...(localProg[safePath] || []), ...newAttemptedIds];
@@ -212,12 +207,10 @@ async function saveAttemptedIdsForPath(safePath, newAttemptedIds) {
 
 async function resetProgress(safePath) {
     if(!confirm("Are you sure you want to reset your progress for this section?")) return;
-    if (currentUser) {
+    if (window.currentUser) {
         try {
-            await db.collection("users").doc(currentUser.uid).collection("progress").doc(safePath).delete();
-            let clearField = {}; clearField[safePath] = firebase.firestore.FieldValue.delete();
-            await db.collection("users").doc(currentUser.uid).update(clearField).catch(() => {});
-        } catch(e) { console.error("Error resetting progress:", e); }
+            await db.collection("users").doc(window.currentUser.uid).collection("progress").doc(safePath).delete();
+        } catch(e) { }
     } else {
         let localProg = JSON.parse(localStorage.getItem('mcq_progress') || '{}');
         delete localProg[safePath];
@@ -228,7 +221,7 @@ async function resetProgress(safePath) {
 }
 
 function _renderProgressSelection() {
-    if (!currentUser) return document.getElementById('dynamic-content').innerHTML = `<div class="card page-transition" style="text-align:center;"><h2>⚠ Sign In Required</h2><button class="btn-exam" onclick="goBack()" style="background:#333; border:none;">Back</button></div>`;
+    if (!window.currentUser) return document.getElementById('dynamic-content').innerHTML = `<div class="card page-transition" style="text-align:center;"><h2>⚠ Sign In Required</h2><button class="btn-exam" onclick="goBack()" style="background:#333; border:none;">Back</button></div>`;
     document.getElementById('breadcrumb-text').innerText = "Home / Profile / Track Progress";
     
     let rootKeys = Object.keys(appData).filter(k => k !== "Daily Quiz Challenge");
@@ -253,7 +246,7 @@ function _renderProgressSelection() {
 }
 
 async function _renderProgressDashboard(category) {
-    if (!currentUser) return;
+    if (!window.currentUser) return;
     
     let displayCategory = category.replace(/^\d+\.\s*/, '');
     document.getElementById('breadcrumb-text').innerText = `Home / Profile / Progress / ${displayCategory}`;
@@ -261,19 +254,11 @@ async function _renderProgressDashboard(category) {
     mc.innerHTML = `<div class="card page-transition"><h2>📊 Compiling Diagnostics...</h2></div>`;
     
     try {
-        const snap = await db.collection("leaderboards").where("userId", "==", currentUser.uid).get();
+        const snap = await db.collection("leaderboards").where("userId", "==", window.currentUser.uid).get();
         let validDocs = [];
-        let tempDocs = [];
         
-        snap.forEach(doc => { tempDocs.push(doc.data()); });
-
-        tempDocs.sort((a, b) => {
-            let tA = a.timestamp ? a.timestamp.toMillis() : 0;
-            let tB = b.timestamp ? b.timestamp.toMillis() : 0;
-            return tA - tB;
-        });
-
-        tempDocs.forEach(d => {
+        snap.forEach(doc => { 
+            let d = doc.data();
             if (d.examCategory === category || (d.quizPath && d.quizPath.startsWith(category))) {
                 validDocs.push(d);
             }
@@ -286,8 +271,8 @@ async function _renderProgressDashboard(category) {
 
         let totalScore = 0; let totalQuestions = 0; let correctCount = 0; let wrongCount = 0;
         let aggregatedSubs = {}; let accuracyTrend = [];
-        let totalAvgTimeC = 0; let countC = 0;
-        let totalAvgTimeW = 0; let countW = 0;
+
+        validDocs.sort((a, b) => (a.timestamp ? a.timestamp.toMillis() : 0) - (b.timestamp ? b.timestamp.toMillis() : 0));
 
         validDocs.forEach(d => {
             totalScore += (d.score || 0); 
@@ -299,9 +284,6 @@ async function _renderProgressDashboard(category) {
             correctCount += c;
             wrongCount += w;
             accuracyTrend.push(d.accuracy || 0);
-            
-            if (d.avgTimeCorrect) { totalAvgTimeC += d.avgTimeCorrect; countC++; }
-            if (d.avgTimeWrong) { totalAvgTimeW += d.avgTimeWrong; countW++; }
             
             if (d.subjectBreakdown) {
                 for(let s in d.subjectBreakdown) {
@@ -315,22 +297,13 @@ async function _renderProgressDashboard(category) {
 
         let overallAccuracy = totalQuestions > 0 ? Math.round((correctCount / totalQuestions) * 100) : 0;
         let recentTrend = accuracyTrend.slice(-10);
-        let finalAvgTimeC = countC > 0 ? Math.round(totalAvgTimeC / countC) : 0;
-        let finalAvgTimeW = countW > 0 ? Math.round(totalAvgTimeW / countW) : 0;
 
         let subjectHtml = '';
-        let weakSubjects = [];
-        let validSubjectsCount = 0;
-
         Object.keys(aggregatedSubs).sort().forEach(subj => {
             let sData = aggregatedSubs[subj];
             if(sData.attempts > 0) {
-                validSubjectsCount++;
                 let acc = Math.round((sData.correct / sData.attempts) * 100);
                 let color = acc >= 70 ? 'var(--correct-green)' : (acc >= 50 ? 'var(--primary-yellow)' : 'var(--wrong-red)');
-                
-                if (acc < 50) weakSubjects.push(`${subj} (${acc}%)`);
-
                 subjectHtml += `
                     <div style="margin-bottom:15px;">
                         <div style="display:flex; justify-content:space-between; font-size:13px; margin-bottom:5px; font-weight:bold;">
@@ -345,62 +318,33 @@ async function _renderProgressDashboard(category) {
             }
         });
 
-        if (validSubjectsCount === 0) subjectHtml = `<p style="color:var(--text-muted); font-size:13px;">Detailed subject analytics generate for new quizzes.</p>`;
-        
-        let weakSpotsText = weakSubjects.length > 0 
-            ? weakSubjects.join(' • ') 
-            : "<span style='color:var(--correct-green);'>✅ Excellent! All subjects are >50% accuracy. Keep it up!</span>";
-
         mc.innerHTML = `
         <div class="card page-transition" style="padding: 20px 15px;">
             <h2 class="section-title" style="margin-top:0; margin-bottom:15px; font-size:22px;">${displayCategory} Performance</h2>
             
             <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-bottom: 15px;">
-                <div style="flex:1; min-width: 100px; max-width: 150px; background:#0d1527; padding: 15px 10px; border-radius: 8px; text-align:center; border:1px solid var(--border-color);">
+                <div style="flex:1; min-width: 100px; background:#0d1527; padding: 15px 10px; border-radius: 8px; text-align:center; border:1px solid var(--border-color);">
                     <div style="font-size: 24px; color: white; font-weight: bold;">${totalQuestions}</div>
                     <div style="color: var(--text-muted); font-size: 11px; text-transform:uppercase; margin-top:4px;">Attempted</div>
                 </div>
-                <div style="flex:1; min-width: 100px; max-width: 150px; background:#0d1527; padding: 15px 10px; border-radius: 8px; text-align:center; border:1px solid var(--correct-green);">
+                <div style="flex:1; min-width: 100px; background:#0d1527; padding: 15px 10px; border-radius: 8px; text-align:center; border:1px solid var(--correct-green);">
                     <div style="font-size: 24px; color: var(--correct-green); font-weight: bold;">${correctCount}</div>
                     <div style="color: var(--text-muted); font-size: 11px; text-transform:uppercase; margin-top:4px;">Right</div>
                 </div>
-                <div style="flex:1; min-width: 100px; max-width: 150px; background:#0d1527; padding: 15px 10px; border-radius: 8px; text-align:center; border:1px solid var(--wrong-red);">
+                <div style="flex:1; min-width: 100px; background:#0d1527; padding: 15px 10px; border-radius: 8px; text-align:center; border:1px solid var(--wrong-red);">
                     <div style="font-size: 24px; color: var(--wrong-red); font-weight: bold;">${wrongCount}</div>
                     <div style="color: var(--text-muted); font-size: 11px; text-transform:uppercase; margin-top:4px;">Wrong</div>
                 </div>
-                <div style="flex:1; min-width: 100px; max-width: 150px; background:#0d1527; padding: 15px 10px; border-radius: 8px; text-align:center; border:1px solid var(--primary-yellow);">
-                    <div style="font-size: 24px; color: var(--primary-yellow); font-weight: bold;">${totalScore}</div>
-                    <div style="color: var(--text-muted); font-size: 11px; text-transform:uppercase; margin-top:4px;">Overall Mark</div>
-                </div>
-                <div style="flex:1; min-width: 100px; max-width: 150px; background:#0d1527; padding: 15px 10px; border-radius: 8px; text-align:center; border:1px solid var(--border-color);">
-                    <div style="font-size: 24px; color: white; font-weight: bold;">${overallAccuracy}%</div>
+                <div style="flex:1; min-width: 100px; background:#0d1527; padding: 15px 10px; border-radius: 8px; text-align:center; border:1px solid var(--primary-yellow);">
+                    <div style="font-size: 24px; color: var(--primary-yellow); font-weight: bold;">${overallAccuracy}%</div>
                     <div style="color: var(--text-muted); font-size: 11px; text-transform:uppercase; margin-top:4px;">Accuracy</div>
-                </div>
-            </div>
-
-            <div style="background:rgba(239, 68, 68, 0.05); border-left:3px solid var(--wrong-red); padding:12px; border-radius:4px; margin-bottom:20px;">
-                <div style="color:var(--wrong-red); font-size:11px; font-weight:bold; margin-bottom:5px; text-transform:uppercase;">Needs Improvement</div>
-                <div style="font-size:13px; color:#d1d5db; line-height:1.4;">${weakSpotsText}</div>
-            </div>
-            
-            <div style="background:#090e1a; border:1px solid var(--border-color); padding:15px; border-radius:6px; margin-bottom: 20px;">
-                <h3 style="margin-top:0; color:white; border-bottom:1px solid #1a2744; padding-bottom:8px; margin-bottom:15px; font-size:15px;">⏱️ Time to Accuracy Insights</h3>
-                <div style="display:flex; gap:15px; flex-wrap:wrap;">
-                    <div style="flex:1; background:rgba(16, 185, 129, 0.1); border:1px solid var(--correct-green); padding:15px; border-radius:6px; text-align:center;">
-                        <div style="font-size:24px; color:var(--correct-green); font-weight:bold;">${finalAvgTimeC}s</div>
-                        <div style="color:var(--text-muted); font-size:12px; margin-top:5px;">Avg Time on Correct Answers</div>
-                    </div>
-                    <div style="flex:1; background:rgba(239, 68, 68, 0.1); border:1px solid var(--wrong-red); padding:15px; border-radius:6px; text-align:center;">
-                        <div style="font-size:24px; color:var(--wrong-red); font-weight:bold;">${finalAvgTimeW}s</div>
-                        <div style="color:var(--text-muted); font-size:12px; margin-top:5px;">Avg Time on Wrong Answers</div>
-                    </div>
                 </div>
             </div>
 
             <div style="display:flex; gap:15px; flex-wrap:wrap;">
                 <div style="flex:1; min-width:280px; background:#090e1a; border:1px solid var(--border-color); padding:15px; border-radius:6px;">
                     <h3 style="margin-top:0; color:white; border-bottom:1px solid #1a2744; padding-bottom:8px; margin-bottom:15px; font-size:15px;">Subject-Wise Mastery</h3>
-                    ${subjectHtml}
+                    ${subjectHtml || "<p style='color:#777; font-size:13px;'>No detailed subject breakdown available.</p>"}
                 </div>
 
                 <div style="flex:1; min-width:280px; background:#090e1a; border:1px solid var(--border-color); padding:15px; border-radius:6px;">
@@ -423,10 +367,7 @@ function drawAccuracyChart(dataPoints) {
     const h = canvas.height = 160;
     
     ctx.clearRect(0,0,w,h);
-    if(dataPoints.length === 0) {
-        ctx.fillStyle = '#a0a0a0'; ctx.font = '12px sans-serif';
-        ctx.fillText("Not enough data to display chart.", 10, 20); return;
-    }
+    if(dataPoints.length === 0) return;
     
     const padding = 20; const maxVal = 100;
     const stepX = (w - padding*2) / Math.max(1, dataPoints.length - 1);
@@ -520,13 +461,30 @@ function cwStep2() {
     const mc = document.getElementById('dynamic-content');
     
     let subjectsHtml = `<option value="Mixed">All Chapters / Subjects (Full Mock)</option>`;
+    
+    // Scan both AppData AND Database for Subtopics!
+    let dbTopics = new Set();
     if (appData[cwPath]) {
-        let children = Object.keys(appData[cwPath]);
-        children.forEach(c => { 
-            let cleanC = c.replace(/^\d+\.\s*/, '');
-            subjectsHtml += `<option value="${c.replace(/'/g, "\\'")}">${cleanC}</option>`; 
+        Object.keys(appData[cwPath]).forEach(c => { 
+            if(c !== "MCQs Practice" && c !== "Mock Test") dbTopics.add(c);
         });
+        if (appData[cwPath]["MCQs Practice"]) {
+            Object.keys(appData[cwPath]["MCQs Practice"]).forEach(c => dbTopics.add(c));
+        }
     }
+    
+    let prefix = cwPath + " > ";
+    Object.keys(window.customTopicTypes).forEach(key => {
+        if(key.startsWith(prefix)) {
+            let sub = key.replace(prefix, '').split(' > ')[0];
+            if(sub && sub !== "MCQs Practice" && sub !== "Mock Test") dbTopics.add(sub);
+        }
+    });
+
+    dbTopics.forEach(c => {
+        let cleanC = c.replace(/^\d+\.\s*/, '');
+        subjectsHtml += `<option value="${c.replace(/'/g, "\\'")}">${cleanC}</option>`; 
+    });
 
     mc.innerHTML = `
     <div class="card page-transition" style="max-width: 600px; margin: 0 auto; padding: 30px;">
@@ -569,7 +527,7 @@ async function cwLaunch() {
     mc.innerHTML = `<div class="card page-transition" style="text-align:center; padding: 50px 20px;"><h2 class="section-title" style="justify-content:center;">🔍 Compiling Custom Practice...</h2><p style="color:var(--text-muted);">Fetching ${cwLimit} questions from database...</p></div>`;
 
     let targetPath = cwPath;
-    if (cwSubject !== "Mixed") targetPath += " > " + cwSubject;
+    if (cwSubject !== "Mixed") targetPath += " > " + cwSubject; // Automatically adapts to the subtopic
 
     try {
         let query = db.collection("content")
@@ -615,31 +573,31 @@ async function cwLaunch() {
 let userBookmarks = [];
 
 async function loadUserBookmarks() {
-    if(!currentUser) return;
+    if(!window.currentUser) return;
     try {
-        const doc = await db.collection("users").doc(currentUser.uid).collection("data").doc("bookmarks").get();
-        if(doc.exists && Array.isArray(doc.data().list)) { userBookmarks = doc.data().list; }
+        const doc = await db.collection("users").doc(window.currentUser.uid).collection("data").doc("bookmarks").get();
+        if(doc.exists && Array.isArray(doc.data().list)) { window.userBookmarks = doc.data().list; }
     } catch(e){}
 }
 
 async function bookmarkQuestion(qId) {
-    if(!currentUser) { showAuthModal(); return; }
-    if(userBookmarks.includes(qId)) { showNotification("⚠️ Already bookmarked!"); return; }
+    if(!window.currentUser) { showAuthModal(); return; }
+    if(window.userBookmarks.includes(qId)) { showNotification("⚠️ Already bookmarked!"); return; }
     
-    userBookmarks.push(qId);
+    window.userBookmarks.push(qId);
     try {
-        await db.collection("users").doc(currentUser.uid).collection("data").doc("bookmarks").set({
-            list: userBookmarks, lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+        await db.collection("users").doc(window.currentUser.uid).collection("data").doc("bookmarks").set({
+            list: window.userBookmarks, lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
         }, {merge:true});
         showNotification("🔖 Question saved to Bookmarks!");
     } catch(e) { showNotification("❌ Failed to bookmark"); }
 }
 
 async function removeBookmark(qId) {
-    if(!currentUser) return;
-    userBookmarks = userBookmarks.filter(id => id !== qId);
+    if(!window.currentUser) return;
+    window.userBookmarks = window.userBookmarks.filter(id => id !== qId);
     try {
-        await db.collection("users").doc(currentUser.uid).collection("data").doc("bookmarks").set({ list: userBookmarks }, {merge:true});
+        await db.collection("users").doc(window.currentUser.uid).collection("data").doc("bookmarks").set({ list: window.userBookmarks }, {merge:true});
         let card = document.getElementById('bmCard_'+qId);
         if(card) card.remove();
         showNotification("🗑 Bookmark removed");
@@ -650,15 +608,15 @@ async function _initiateBookmarkQuiz() {
     const mc = document.getElementById('dynamic-content');
     document.getElementById('breadcrumb-text').innerText = "Home / Profile / My Bookmarks";
     
-    if(!currentUser) { mc.innerHTML = `<div class="card page-transition" style="text-align:center;"><h2>⚠ Sign In Required</h2><button class="btn-exam" onclick="goBack()" style="background:#333; border:none;">Back</button></div>`; return; }
-    if(userBookmarks.length === 0) { mc.innerHTML = `<div class="card page-transition" style="text-align:center;"><h2>🔖 No Bookmarks Yet</h2><p style="color:var(--text-muted);">Questions you bookmark during practice will appear here.</p><button class="btn-exam" onclick="goBack()" style="background:#333; border:none; margin-top:20px;">Back to Home</button></div>`; return; }
+    if(!window.currentUser) { mc.innerHTML = `<div class="card page-transition" style="text-align:center;"><h2>⚠ Sign In Required</h2><button class="btn-exam" onclick="goBack()" style="background:#333; border:none;">Back</button></div>`; return; }
+    if(window.userBookmarks.length === 0) { mc.innerHTML = `<div class="card page-transition" style="text-align:center;"><h2>🔖 No Bookmarks Yet</h2><p style="color:var(--text-muted);">Questions you bookmark during practice will appear here.</p><button class="btn-exam" onclick="goBack()" style="background:#333; border:none; margin-top:20px;">Back to Home</button></div>`; return; }
 
     mc.innerHTML = `<div class="card page-transition" style="text-align:center; padding:50px;"><h2 class="section-title" style="justify-content:center;">🔖 Loading Bookmarks...</h2></div>`;
 
     try {
         let allDocs = [];
-        for(let i=0; i<userBookmarks.length; i+=10) {
-            let chunk = userBookmarks.slice(i, i+10);
+        for(let i=0; i<window.userBookmarks.length; i+=10) {
+            let chunk = window.userBookmarks.slice(i, i+10);
             let snap = await db.collection("content").where(firebase.firestore.FieldPath.documentId(), "in", chunk).get();
             snap.forEach(doc => allDocs.push({ id: doc.id, ...doc.data() }));
         }
