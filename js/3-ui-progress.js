@@ -2,7 +2,6 @@
 // 4. MAIN VIEW RENDERER & AUTO-SORTER
 // ==========================================
 
-// FIX: Global Force Functions to bypass router hash locks
 window.forceStartQuiz = function() {
     window.location.hash = '#/quiz';
     setTimeout(() => { _initiateQuizEngine(); }, 100);
@@ -54,7 +53,6 @@ function _renderView() {
             
             let studentName = (currentUser && currentUser.displayName) ? currentUser.displayName.split(" ")[0] : "Student";
             
-            // FIX: If it is marked as a Container but the admin hasn't added subtopics yet, show an empty state instead of a Quiz button.
             if (isContainer) {
                 mc.innerHTML = `
                 <div class="card page-transition">
@@ -116,41 +114,43 @@ function _renderView() {
             return a.localeCompare(b);
         });
 
-        const iconMap = {
-            "NEET": { i: "🩺", c: "#fdb813", bg: "rgba(253, 184, 19, 0.15)" },
-            "General Knowledge": { i: "🌍", c: "#4CAF50", bg: "rgba(76, 175, 80, 0.15)" },
-            "Current Affairs": { i: "📰", c: "#2196F3", bg: "rgba(33, 150, 243, 0.15)" },
-            "History": { i: "🏛️", c: "#FF9800", bg: "rgba(255, 152, 0, 0.15)" },
-            "Geography": { i: "🗺️", c: "#4CAF50", bg: "rgba(76, 175, 80, 0.15)" },
-            "NCERT Book": { i: "📚", c: "#9C27B0", bg: "rgba(156, 39, 176, 0.15)" },
-            "PYQs": { i: "📄", c: "#607D8B", bg: "rgba(96, 125, 139, 0.15)" },
-            "Practice Paper": { i: "📝", c: "#795548", bg: "rgba(121, 85, 72, 0.15)" },
-            "MCQs Practice": { i: "✅", c: "#00BCD4", bg: "rgba(0, 188, 212, 0.15)" },
-            "Mock Test": { i: "⏱️", c: "#F44336", bg: "rgba(244, 67, 54, 0.15)" },
-            "Botany": { i: "🌿", c: "#4CAF50", bg: "rgba(76, 175, 80, 0.15)" },
-            "Zoology": { i: "🦁", c: "#FFC107", bg: "rgba(255, 193, 7, 0.15)" },
-            "Physics": { i: "⚛️", c: "#9C27B0", bg: "rgba(156, 39, 176, 0.15)" },
-            "Chemistry": { i: "🧪", c: "#00BCD4", bg: "rgba(0, 188, 212, 0.15)" },
-            "Organic Chemistry": { i: "🧪", c: "#00BCD4", bg: "rgba(0, 188, 212, 0.15)" },
-            "Physical Chemistry": { i: "⚗️", c: "#3F51B5", bg: "rgba(63, 81, 181, 0.15)" },
-            "Inorganic Chemistry": { i: "🧫", c: "#FF5722", bg: "rgba(255, 87, 34, 0.15)" }
-        };
+        // 🔴 SMART DYNAMIC ICON MATCHER
+        function getSmartIcon(text) {
+            let t = text.toLowerCase();
+            if(t.includes('neet')) return { i: "🩺", c: "#fdb813", bg: "rgba(253, 184, 19, 0.15)" };
+            if(t.includes('jee')) return { i: "🚀", c: "#2196F3", bg: "rgba(33, 150, 243, 0.15)" };
+            if(t.includes('physics')) return { i: "⚛️", c: "#9C27B0", bg: "rgba(156, 39, 176, 0.15)" };
+            if(t.includes('chemistry')) return { i: "🧪", c: "#00BCD4", bg: "rgba(0, 188, 212, 0.15)" };
+            if(t.includes('botany') || t.includes('plant')) return { i: "🌿", c: "#4CAF50", bg: "rgba(76, 175, 80, 0.15)" };
+            if(t.includes('zoology') || t.includes('animal') || t.includes('lion')) return { i: "🦁", c: "#FFC107", bg: "rgba(255, 193, 7, 0.15)" };
+            if(t.includes('biology')) return { i: "🧬", c: "#E91E63", bg: "rgba(233, 30, 99, 0.15)" };
+            if(t.includes('math')) return { i: "📐", c: "#3F51B5", bg: "rgba(63, 81, 181, 0.15)" };
+            if(t.includes('history')) return { i: "🏛️", c: "#FF9800", bg: "rgba(255, 152, 0, 0.15)" };
+            if(t.includes('geography')) return { i: "🗺️", c: "#4CAF50", bg: "rgba(76, 175, 80, 0.15)" };
+            if(t.includes('gk') || t.includes('general knowledge')) return { i: "🌍", c: "#4CAF50", bg: "rgba(76, 175, 80, 0.15)" };
+            if(t.includes('affairs')) return { i: "📰", c: "#2196F3", bg: "rgba(33, 150, 243, 0.15)" };
+            if(t.includes('ncert')) return { i: "📚", c: "#9C27B0", bg: "rgba(156, 39, 176, 0.15)" };
+            if(t.includes('pyq') || t.includes('previous')) return { i: "📄", c: "#607D8B", bg: "rgba(96, 125, 139, 0.15)" };
+            if(t.includes('mock') || t.includes('test')) return { i: "⏱️", c: "#F44336", bg: "rgba(244, 67, 54, 0.15)" };
+            return null; // Return null if no match found
+        }
 
         for (let key of keys) { 
             if (currentPath.length === 0 && key === "Daily Quiz Challenge") continue; 
             let checkPath = currentPath.join(" > ") + (currentPath.length > 0 ? " > " : "") + key;
             
-            // Assign Dynamic Icons based on Type
             let typeLabel = ""; 
             if (customTopicTypes[checkPath] === 'mcq') typeLabel = "📝"; 
             else if (customTopicTypes[checkPath] === 'pdf') typeLabel = "📄";
             else if (customTopicTypes[checkPath] === 'both') typeLabel = "📂";
             
             let safeKey = key.replace(/'/g, "\\'");
-            
             let displayKey = key.replace(/^\d+\.\s*/, '');
+            
             let fallbackIcon = typeLabel === '📄' ? "📄" : (typeLabel === '📝' ? "📝" : "📁");
-            let iconData = iconMap[displayKey] || iconMap[key] || { i: fallbackIcon, c: "#9e9ea7", bg: "rgba(255,255,255,0.08)" };
+            
+            // Tries Smart Matcher first, falls back to generic folder
+            let iconData = getSmartIcon(displayKey) || { i: fallbackIcon, c: "#9e9ea7", bg: "rgba(255,255,255,0.08)" };
 
             h += `<button class="category-tile" onclick="navigateTo('${safeKey}')">
                     <div class="cat-icon" style="background: ${iconData.bg}; color: ${iconData.c};">${iconData.i}</div>
