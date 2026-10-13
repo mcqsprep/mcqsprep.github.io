@@ -10,14 +10,14 @@ let timeSpent = {};
 
 async function _initiateQuizEngine() {
     const mc = document.getElementById('dynamic-content');
-    let targetPath = window.currentPath.join(" > ");
+    let targetPath = currentPath.join(" > ");
     if (!targetPath) { mc.innerHTML = "<div class='card'><p>Invalid quiz path.</p><button class='btn-exam' onclick='goBack()'>Go Back</button></div>"; return; }
 
     let isDailyQuiz = false;
     let originalPath = targetPath;
-    if (window.currentPath[0] === "Daily Quiz Challenge" && window.currentPath.length > 1) {
+    if (currentPath[0] === "Daily Quiz Challenge" && currentPath.length > 1) {
         isDailyQuiz = true;
-        targetPath = window.currentPath.slice(1).join(" > "); 
+        targetPath = currentPath.slice(1).join(" > ");
     }
 
     mc.innerHTML = `<div class="card page-transition" style="text-align:center; padding: 50px 20px;">

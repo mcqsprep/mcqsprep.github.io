@@ -175,13 +175,18 @@ function _renderAdminPanel() {
                             <span style="font-size: 11px; color: #777;">*Tip: Start with a number (01., 02.) to lock the sorting order!</span>
                         </div>
                         <div>
-                            <label class="admin-label">3. Expected Content Type</label>
-                            <select id="newFolderType" class="input-field">
-                                <option value="both">📂 Parent Category (To hold MCQs/PDFs inside)</option>
-                                <option value="mcq">📝 MCQs Practice (End Topic)</option>
-                                <option value="pdf">📄 PDF / Image Material (End Topic)</option>
-                            </select>
+                            <label class="admin-label">3. Custom Icon (Optional)</label>
+                            <input type="text" id="newFolderIcon" class="input-field" placeholder="e.g. 🧬, ⚛️, 📚" maxlength="2">
+                            <span style="font-size: 11px; color: #777;">Leave empty for auto-icon based on name</span>
                         </div>
+                    </div>
+                    <div>
+                        <label class="admin-label">4. Expected Content Type</label>
+                        <select id="newFolderType" class="input-field">
+                            <option value="both">📂 Parent Category (To hold MCQs/PDFs inside)</option>
+                            <option value="mcq">📝 MCQs Practice (End Topic)</option>
+                            <option value="pdf">📄 PDF / Image Material (End Topic)</option>
+                        </select>
                     </div>
                     <button class="btn-exam" onclick="createCustomTopic()" style="background-color:var(--primary-yellow); color:black; border:none; width:100%; max-width:250px; margin-top: 15px;">+ Create Folder</button>
                 </div>
@@ -311,17 +316,18 @@ function renderAdminTopicsList(topicsArray) {
     let html = '';
     topicsArray.forEach(d => {
         let cleanName = d.name.replace(/'/g, "\\'");
+        let cleanIcon = d.icon ? d.icon.replace(/'/g, "\\'") : '';
         let typeBadgeStr = d.type === 'both' ? 'Parent Category' : d.type;
         let parentStr = d.parentPath || 'Root (Main Menu)';
-        
+
         html += `
         <div style="background:#1c1c24; border:1px solid #2b2b36; border-radius:12px; padding:16px 20px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center; flex-wrap: wrap; gap: 15px;">
             <div>
                 <span style="color:var(--text-muted); font-size:12px; display:block; margin-bottom:4px;">Path: ${parentStr}</span>
-                <b style="font-size:16px; color:#fff;">📁 ${d.name}</b> <span style="font-size:11px; background:#333; color:#aaa; padding:3px 8px; border-radius:6px; margin-left:8px; text-transform:uppercase;">${typeBadgeStr}</span>
+                <b style="font-size:16px; color:#fff;">${d.icon || '📁'} ${d.name}</b> <span style="font-size:11px; background:#333; color:#aaa; padding:3px 8px; border-radius:6px; margin-left:8px; text-transform:uppercase;">${typeBadgeStr}</span>
             </div>
             <div style="display:flex; gap:10px;">
-                <button onclick="openEditTopicModal('${d.id}', '${cleanName}', '${d.type}')" style="background:rgba(33, 150, 243, 0.15); border:1px solid rgba(33,150,243,0.3); color:#2196F3; padding:8px 16px; border-radius:8px; cursor:pointer; font-weight:bold; transition:0.2s;">Edit</button>
+                <button onclick="openEditTopicModal('${d.id}', '${cleanName}', '${d.type}', '${cleanIcon}')" style="background:rgba(33, 150, 243, 0.15); border:1px solid rgba(33,150,243,0.3); color:#2196F3; padding:8px 16px; border-radius:8px; cursor:pointer; font-weight:bold; transition:0.2s;">Edit</button>
                 <button onclick="deleteCustomTopic('${d.id}')" style="background:rgba(244, 67, 54, 0.15); border:1px solid rgba(244,67,54,0.3); color:var(--wrong-red); padding:8px 16px; border-radius:8px; cursor:pointer; font-weight:bold; transition:0.2s;">Delete</button>
             </div>
         </div>`;
@@ -341,10 +347,11 @@ function filterAdminTopics() {
     renderAdminTopicsList(filtered);
 }
 
-function openEditTopicModal(id, name, type) {
+function openEditTopicModal(id, name, type, icon = null) {
     document.getElementById('editTopicId').value = id;
     document.getElementById('editTopicName').value = name;
     document.getElementById('editTopicType').value = type;
+    document.getElementById('editTopicIcon').value = icon || '';
     document.getElementById('editTopicModal').style.display = 'flex';
 }
 
@@ -354,9 +361,12 @@ async function saveEditedTopic() {
     let id = document.getElementById('editTopicId').value;
     let name = document.getElementById('editTopicName').value.trim();
     let type = document.getElementById('editTopicType').value;
+    let icon = document.getElementById('editTopicIcon').value.trim();
     if(!name) return alert("Folder name is required.");
     try {
-        await db.collection("custom_topics").doc(id).update({ name: name, type: type });
+        const updateData = { name: name, type: type };
+        if (icon) updateData.icon = icon;
+        await db.collection("custom_topics").doc(id).update(updateData);
         closeEditTopicModal(); showNotification("✅ Folder updated!");
         loadAdminTopicsList(); await loadCustomTopics();
     } catch(e) { alert("Error: " + e.message); }
@@ -422,24 +432,33 @@ async function createCustomTopic() {
         return;
     }
     const folderType = document.getElementById('newFolderType').value;
-    
+    const folderIcon = document.getElementById('newFolderIcon').value.trim();
+
     try {
         // FIX: Allows creation of Root level topics (empty parentPath)
         const fullPath = adminNewTopicPath.length > 0 ? adminNewTopicPath.join(' > ') : "";
-        
-        await db.collection("custom_topics").add({ 
-            parentPath: fullPath, 
-            name: folderName, 
-            type: folderType, 
-            timestamp: firebase.firestore.FieldValue.serverTimestamp() 
-        });
-        showNotification("✅ Folder Created Successfully!"); 
-        folderNameInput.value = ""; 
-        await loadCustomTopics(); 
-        _buildAdminNewTopicSelectors(); 
+
+        const topicData = {
+            parentPath: fullPath,
+            name: folderName,
+            type: folderType,
+            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        };
+
+        // Add custom icon if provided
+        if (folderIcon) {
+            topicData.icon = folderIcon;
+        }
+
+        await db.collection("custom_topics").add(topicData);
+        showNotification("✅ Folder Created Successfully!");
+        folderNameInput.value = "";
+        document.getElementById('newFolderIcon').value = "";
+        await loadCustomTopics();
+        _buildAdminNewTopicSelectors();
         loadAdminTopicsList();
-    } catch(error) { 
-        alert("⚠️ ERROR: " + error.message); 
+    } catch(error) {
+        alert("⚠️ ERROR: " + error.message);
     }
 }
 

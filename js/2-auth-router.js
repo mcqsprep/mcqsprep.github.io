@@ -2,48 +2,45 @@
 // 2. DATA LOADING & AUTHENTICATION
 // ==========================================
 
-let currentPath = [];
-let customTopicTypes = {};
-let dataLoaded = false;
-let currentUser = null;
-let userBookmarks = [];
+// Variables already declared in 1-config.js:
+// currentPath, customTopicTypes, dataLoaded, currentUser, userBookmarks
 
 async function loadCustomTopics() {
     try {
         const snapshot = await db.collection("custom_topics").get();
         snapshot.forEach(doc => {
-            let data = doc.data(); 
-            let pathArr = (data.parentPath || "").split(' > '); 
+            let data = doc.data();
+            let pathArr = (data.parentPath || "").split(' > ');
             let current = appData;
-            for (let p of pathArr) { 
-                if (p) { 
-                    if (!current[p]) current[p] = {}; 
-                    current = current[p]; 
-                } 
+            for (let p of pathArr) {
+                if (p) {
+                    if (!current[p]) current[p] = {};
+                    current = current[p];
+                }
             }
             if (typeof current === 'object' && !Array.isArray(current) && data.name) {
                 if (!current[data.name]) current[data.name] = {};
                 let fullKey = data.parentPath ? (data.parentPath + " > " + data.name) : data.name;
-                customTopicTypes[fullKey] = data.type; 
+                customTopicTypes[fullKey] = { type: data.type, icon: data.icon || null };
             }
         });
 
         // Auto-injects ALL root folders (like JEE) into the Daily Quiz Challenge engine
         if (!appData["Daily Quiz Challenge"]) appData["Daily Quiz Challenge"] = {};
         let rootKeys = Object.keys(appData).filter(k => k !== "Daily Quiz Challenge");
-        
+
         Object.keys(customTopicTypes).forEach(key => {
             let root = key.split(' > ')[0];
             if(root && !rootKeys.includes(root) && root !== "Daily Quiz Challenge") {
                 rootKeys.push(root);
-                appData[root] = appData[root] || {}; 
+                appData[root] = appData[root] || {};
             }
         });
 
         rootKeys.forEach(k => {
             if (!appData["Daily Quiz Challenge"][k]) {
                 appData["Daily Quiz Challenge"][k] = {};
-                customTopicTypes["Daily Quiz Challenge > " + k] = "mcq"; 
+                customTopicTypes["Daily Quiz Challenge > " + k] = { type: "mcq", icon: null };
             }
         });
 
@@ -159,48 +156,95 @@ function updateSidebarLinks() {
     if (!sidebar) return;
 
     let hash = window.location.hash.replace(/^#\/?/, '');
-    
-    // Only hide sidebar on these specific full-screen pages
+
+    // Hide sidebar on these specific full-screen pages
     if (hash.includes('custom-setup') || hash.includes('leaderboard') || hash.includes('progress') || hash.includes('bookmarks') || hash.includes('quiz') || hash.includes('admin') || hash === 'diary') {
         sidebar.style.display = 'none';
         return;
     }
-    
-    // Default to NEET if on the Home screen, otherwise use the active folder
-    let rootTopic = "NEET"; 
+
+    // Use the active folder's root topic, or default to first root topic on home screen
+    let rootTopic = "NEET"; // Default fallback
     if (currentPath && currentPath.length > 0) {
-        rootTopic = currentPath[0]; 
+        rootTopic = currentPath[0];
+    } else {
+        // On home screen, use the first available root topic from appData
+        const rootKeys = Object.keys(appData).filter(k => k !== "Daily Quiz Challenge");
+        if (rootKeys.length > 0) {
+            rootTopic = rootKeys[0];
+        }
     }
-    
+
     sidebar.style.display = 'block';
     let safeTopic = rootTopic.replace(/'/g, "\\'");
+
+    // Dynamically build links based on what's actually in appData for this root topic
+    let quickLinksHtml = '';
+    let essentialPracticeHtml = '';
+
+    if (appData[rootTopic]) {
+        const rootKeys = Object.keys(appData[rootTopic]);
+
+        // Build Quick Links section
+        let bookKey = rootKeys.find(k => k.toLowerCase().includes('ncert') || k.toLowerCase().includes('book'));
+        let pyqKey = rootKeys.find(k => k.toLowerCase().includes('pyq') || k.toLowerCase().includes('previous') || k.toLowerCase().includes('paper'));
+
+        if (bookKey) {
+            let safeBookKey = bookKey.replace(/'/g, "\\'");
+            quickLinksHtml += `
+                <a class="action-link" onclick="jumpToSection(['${safeTopic}', '${safeBookKey}'])">
+                    <span class="link-icon" style="color: #9C27B0;">📚</span>
+                    <span class="link-text">${bookKey}</span>
+                </a>`;
+        }
+
+        if (pyqKey) {
+            let safePyqKey = pyqKey.replace(/'/g, "\\'");
+            quickLinksHtml += `
+                <a class="action-link" onclick="jumpToSection(['${safeTopic}', '${safePyqKey}'])">
+                    <span class="link-icon" style="color: #607D8B;">📄</span>
+                    <span class="link-text">${pyqKey}</span>
+                </a>`;
+        }
+
+        // Build Essential Practice section
+        let mcqKey = rootKeys.find(k => k.toLowerCase().includes('mcq') || k.toLowerCase().includes('practice'));
+        let mockKey = rootKeys.find(k => k.toLowerCase().includes('mock') || k.toLowerCase().includes('test'));
+
+        if (mcqKey) {
+            let safeMcqKey = mcqKey.replace(/'/g, "\\'");
+            essentialPracticeHtml += `
+                <a class="action-link" onclick="jumpToSection(['${safeTopic}', '${safeMcqKey}'])">
+                    <span class="link-icon" style="color: #00BCD4;">📝</span>
+                    <span class="link-text">${mcqKey}</span>
+                </a>`;
+        }
+
+        if (mockKey) {
+            let safeMockKey = mockKey.replace(/'/g, "\\'");
+            essentialPracticeHtml += `
+                <a class="action-link" onclick="jumpToSection(['${safeTopic}', '${safeMockKey}'])">
+                    <span class="link-icon" style="color: #F44336;">⏱️</span>
+                    <span class="link-text">${mockKey}</span>
+                </a>`;
+        }
+    }
+
+    // Always add Daily Challenge
+    essentialPracticeHtml += `
+        <a class="action-link" onclick="jumpToSection(['Daily Quiz Challenge', '${safeTopic}'])">
+            <span class="link-icon" style="color: #fdb813;">📅</span>
+            <span class="link-text">Daily Challenge</span>
+        </a>`;
 
     sidebar.innerHTML = `
     <div class="card sidebar-card">
         <h3 class="section-title">Quick Links</h3>
-        <a class="action-link" onclick="jumpToSection(['${safeTopic}', 'NCERT Books'])">
-            <span class="link-icon" style="color: #9C27B0;">📚</span>
-            <span class="link-text">${rootTopic} Books</span>
-        </a>
-        <a class="action-link" onclick="jumpToSection(['${safeTopic}', 'Previous Year Papers'])">
-            <span class="link-icon" style="color: #607D8B;">📄</span>
-            <span class="link-text">${rootTopic} Previous Papers</span>
-        </a>
+        ${quickLinksHtml || '<p style="color:var(--text-muted); font-size:13px;">No resources available</p>'}
     </div>
     <div class="card sidebar-card">
         <h3 class="section-title">Essential Practice</h3>
-        <a class="action-link" onclick="jumpToSection(['${safeTopic}', 'MCQs Practice'])">
-            <span class="link-icon" style="color: #00BCD4;">📝</span>
-            <span class="link-text">Subject-wise MCQs</span>
-        </a>
-        <a class="action-link" onclick="jumpToSection(['${safeTopic}', 'Mock Test'])">
-            <span class="link-icon" style="color: #F44336;">⏱️</span>
-            <span class="link-text">Full Mock Tests</span>
-        </a>
-        <a class="action-link" onclick="jumpToSection(['Daily Quiz Challenge', '${safeTopic}'])">
-            <span class="link-icon" style="color: #fdb813;">📅</span>
-            <span class="link-text">Daily Challenge</span>
-        </a>
+        ${essentialPracticeHtml}
     </div>`;
 }
 

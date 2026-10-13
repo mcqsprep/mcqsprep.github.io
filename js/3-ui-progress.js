@@ -12,24 +12,57 @@ function forceCwStep1(e) {
     window.location.hash = '#/custom-setup';
 }
 
-function getSmartIcon(text) {
+function getSmartIcon(text, customIcon = null) {
+    // Prioritize custom icon from Firestore if provided
+    if (customIcon) {
+        return { i: customIcon, c: "#fdb813", bg: "rgba(253, 184, 19, 0.15)" };
+    }
+
     let t = text.toLowerCase();
+
+    // Exam Categories
     if(t.includes('neet')) return { i: "🩺", c: "#fdb813", bg: "rgba(253, 184, 19, 0.15)" };
     if(t.includes('jee')) return { i: "🚀", c: "#2196F3", bg: "rgba(33, 150, 243, 0.15)" };
+    if(t.includes('engineering')) return { i: "⚙️", c: "#2196F3", bg: "rgba(33, 150, 243, 0.15)" };
+    if(t.includes('medical')) return { i: "🩺", c: "#E91E63", bg: "rgba(233, 30, 99, 0.15)" };
+    if(t.includes('law')) return { i: "⚖️", c: "#9C27B0", bg: "rgba(156, 39, 176, 0.15)" };
+    if(t.includes('defense')) return { i: "🛡️", c: "#FF5722", bg: "rgba(255, 87, 34, 0.15)" };
+    if(t.includes('banking')) return { i: "🏦", c: "#4CAF50", bg: "rgba(76, 175, 80, 0.15)" };
+    if(t.includes('railway')) return { i: "🚂", c: "#FF9800", bg: "rgba(255, 152, 0, 0.15)" };
+    if(t.includes('ssc') || t.includes('staff selection')) return { i: "📋", c: "#607D8B", bg: "rgba(96, 125, 139, 0.15)" };
+    if(t.includes('upsc') || t.includes('civil')) return { i: "🏛️", c: "#795548", bg: "rgba(121, 85, 72, 0.15)" };
+    if(t.includes('gate')) return { i: "🎓", c: "#673AB7", bg: "rgba(103, 58, 183, 0.15)" };
+    if(t.includes('cat') || t.includes('mba')) return { i: "📊", c: "#00BCD4", bg: "rgba(0, 188, 212, 0.15)" };
+
+    // Subjects
     if(t.includes('physics')) return { i: "⚛️", c: "#9C27B0", bg: "rgba(156, 39, 176, 0.15)" };
     if(t.includes('chemistry')) return { i: "🧪", c: "#00BCD4", bg: "rgba(0, 188, 212, 0.15)" };
     if(t.includes('botany') || t.includes('plant')) return { i: "🌿", c: "#4CAF50", bg: "rgba(76, 175, 80, 0.15)" };
     if(t.includes('zoology') || t.includes('animal') || t.includes('lion')) return { i: "🦁", c: "#FFC107", bg: "rgba(255, 193, 7, 0.15)" };
     if(t.includes('biology')) return { i: "🧬", c: "#E91E63", bg: "rgba(233, 30, 99, 0.15)" };
-    if(t.includes('math')) return { i: "📐", c: "#3F51B5", bg: "rgba(63, 81, 181, 0.15)" };
+    if(t.includes('math') || t.includes('mathematics')) return { i: "📐", c: "#3F51B5", bg: "rgba(63, 81, 181, 0.15)" };
+    if(t.includes('reasoning')) return { i: "🧠", c: "#FF9800", bg: "rgba(255, 152, 0, 0.15)" };
+    if(t.includes('aptitude')) return { i: "📈", c: "#009688", bg: "rgba(0, 150, 136, 0.15)" };
+    if(t.includes('english')) return { i: "📖", c: "#795548", bg: "rgba(121, 85, 72, 0.15)" };
+    if(t.includes('hindi')) return { i: "🔤", c: "#FF5722", bg: "rgba(255, 87, 34, 0.15)" };
+
+    // General Knowledge & Current Affairs
     if(t.includes('history')) return { i: "🏛️", c: "#FF9800", bg: "rgba(255, 152, 0, 0.15)" };
     if(t.includes('geography')) return { i: "🗺️", c: "#4CAF50", bg: "rgba(76, 175, 80, 0.15)" };
     if(t.includes('gk') || t.includes('general knowledge')) return { i: "🌍", c: "#4CAF50", bg: "rgba(76, 175, 80, 0.15)" };
-    if(t.includes('affairs')) return { i: "📰", c: "#2196F3", bg: "rgba(33, 150, 243, 0.15)" };
+    if(t.includes('affairs') || t.includes('current')) return { i: "📰", c: "#2196F3", bg: "rgba(33, 150, 243, 0.15)" };
+    if(t.includes('politics') || t.includes('polity')) return { i: "🏛️", c: "#9C27B0", bg: "rgba(156, 39, 176, 0.15)" };
+    if(t.includes('economy') || t.includes('economics')) return { i: "💰", c: "#4CAF50", bg: "rgba(76, 175, 80, 0.15)" };
+
+    // Materials & Practice
     if(t.includes('ncert')) return { i: "📚", c: "#9C27B0", bg: "rgba(156, 39, 176, 0.15)" };
     if(t.includes('pyq') || t.includes('previous')) return { i: "📄", c: "#607D8B", bg: "rgba(96, 125, 139, 0.15)" };
     if(t.includes('mock') || t.includes('test')) return { i: "⏱️", c: "#F44336", bg: "rgba(244, 67, 54, 0.15)" };
-    return null; 
+    if(t.includes('quiz') || t.includes('practice')) return { i: "📝", c: "#00BCD4", bg: "rgba(0, 188, 212, 0.15)" };
+    if(t.includes('notes')) return { i: "📝", c: "#FFC107", bg: "rgba(255, 193, 7, 0.15)" };
+    if(t.includes('syllabus')) return { i: "📋", c: "#607D8B", bg: "rgba(96, 125, 139, 0.15)" };
+
+    return null;
 }
 
 function _renderView() {
@@ -68,12 +101,15 @@ function _renderView() {
             
             let isPdfOnly = false;
             let isContainer = false;
-            
-            if (customTopicTypes[checkPath] === 'pdf') {
+
+            const topicType = customTopicTypes[checkPath];
+            const typeValue = topicType ? (typeof topicType === 'object' ? topicType.type : topicType) : null;
+
+            if (typeValue === 'pdf') {
                 isPdfOnly = true;
-            } else if (customTopicTypes[checkPath] === 'both') {
+            } else if (typeValue === 'both') {
                 isContainer = true;
-            } else if (!customTopicTypes[checkPath] || customTopicTypes[checkPath] === 'mcq') {
+            } else if (!typeValue || typeValue === 'mcq') {
                 let pdfTriggers = ["ncert", "book", "pyq", "previous", "paper", "pdf", "notes", "material", "syllabus"];
                 let isPdf = pdfTriggers.some(t => topicNameLower.includes(t));
                 let mcqTriggers = ["mcq", "mock", "quiz", "test", "practice", "challenge"];
@@ -152,16 +188,20 @@ function _renderView() {
             if (currentPath.length === 0 && key === "Daily Quiz Challenge") continue; 
             let fullCheckPath = currentPath.join(" > ") + (currentPath.length > 0 ? " > " : "") + key;
             
-            let typeLabel = ""; 
-            if (customTopicTypes[fullCheckPath] === 'mcq') typeLabel = "📝"; 
-            else if (customTopicTypes[fullCheckPath] === 'pdf') typeLabel = "📄";
-            else if (customTopicTypes[fullCheckPath] === 'both') typeLabel = "📂";
-            
+            let typeLabel = "";
+            const topicType = customTopicTypes[fullCheckPath];
+            const typeValue = topicType ? (typeof topicType === 'object' ? topicType.type : topicType) : null;
+            const customIcon = topicType ? (typeof topicType === 'object' ? topicType.icon : null) : null;
+
+            if (typeValue === 'mcq') typeLabel = "📝";
+            else if (typeValue === 'pdf') typeLabel = "📄";
+            else if (typeValue === 'both') typeLabel = "📂";
+
             let safeKey = key.replace(/'/g, "\\'");
             let displayKey = key.replace(/^\d+\.\s*/, '');
             let fallbackIcon = typeLabel === '📄' ? "📄" : (typeLabel === '📝' ? "📝" : "📁");
-            
-            let iconData = getSmartIcon(displayKey) || { i: fallbackIcon, c: "#9e9ea7", bg: "rgba(255,255,255,0.08)" };
+
+            let iconData = getSmartIcon(displayKey, customIcon) || { i: fallbackIcon, c: "#9e9ea7", bg: "rgba(255,255,255,0.08)" };
 
             h += `<button class="category-tile" onclick="navigateTo('${safeKey}')">
                     <div class="cat-icon" style="background: ${iconData.bg}; color: ${iconData.c};">${iconData.i}</div>
@@ -235,7 +275,10 @@ function _renderProgressSelection() {
     rootKeys.forEach(k => {
         let cleanKey = k.replace(/^\d+\.\s*/, '');
         let safeKey = k.replace(/'/g, "\\'");
-        let icon = getSmartIcon(cleanKey) || { i: "📊" };
+        // Check for custom icon from customTopics
+        const topicType = customTopicTypes[k];
+        const customIcon = topicType ? (typeof topicType === 'object' ? topicType.icon : null) : null;
+        let icon = getSmartIcon(cleanKey, customIcon) || { i: "📊" };
         optionsHtml += `<button class="btn-exam" onclick="window.location.hash='#/progress/${encodeURIComponent(safeKey)}'" style="width:100%; max-width:250px; padding:15px; font-size:14px;">${icon.i} ${cleanKey} Analytics</button>`;
     });
 
@@ -456,8 +499,11 @@ function _renderLeaderboardOptions() {
     rootKeys.forEach(k => {
         let cleanKey = k.replace(/^\d+\.\s*/, '');
         let safeKey = k.replace(/'/g, "\\'");
-        let smartData = getSmartIcon(cleanKey) || { i: "🥇" };
-        
+        // Check for custom icon from customTopics
+        const topicType = customTopicTypes[k];
+        const customIcon = topicType ? (typeof topicType === 'object' ? topicType.icon : null) : null;
+        let smartData = getSmartIcon(cleanKey, customIcon) || { i: "🥇" };
+
         optionsHtml += `<button class="btn-exam category-tile" onclick="window.location.hash='#/board/${encodeURIComponent(safeKey)}'" style="flex-direction:row; padding:15px; flex:1; min-width:200px;">
             <div class="cat-icon" style="background: rgba(255,255,255,0.05); color: #fff; width:30px; height:30px; font-size:14px;">${smartData.i}</div>
             <div class="cat-text" style="font-size:13px; letter-spacing:0.5px; text-transform:uppercase;">${cleanKey} Leaderboard</div>
@@ -496,8 +542,11 @@ function cwStep1() {
         rootKeys.forEach(k => {
             let cleanKey = k.replace(/^\d+\.\s*/, '');
             let safeKey = k.replace(/'/g, "\\'");
-            let smartData = getSmartIcon(cleanKey) || { i: "📁" };
-            
+            // Check for custom icon from customTopics
+            const topicType = customTopicTypes[k];
+            const customIcon = topicType ? (typeof topicType === 'object' ? topicType.icon : null) : null;
+            let smartData = getSmartIcon(cleanKey, customIcon) || { i: "📁" };
+
             html += `<button class="btn-exam" onclick="cwSetPath('${safeKey}')" style="background:#0d1527; border-color:var(--border-color); padding:16px; font-size:15px; letter-spacing:0.5px;">${smartData.i} ${cleanKey}</button>`;
         });
         
@@ -512,19 +561,25 @@ function cwSetPath(path) { cwPath = path; cwStep2(); }
 
 function cwStep2() {
     const mc = document.getElementById('dynamic-content');
-    
+
+    // Safety check: ensure cwPath exists in appData
+    if (!appData[cwPath]) {
+        mc.innerHTML = `<div class="card page-transition" style="text-align:center; padding: 40px 20px;"><h2 class="section-title" style="color:var(--wrong-red);">Error</h2><p style="color:var(--text-muted);">Selected topic not found. Please go back and try again.</p><button class="btn-exam" onclick="cwStep1()" style="margin-top:20px;">&larr; Back</button></div>`;
+        return;
+    }
+
     let subjectsHtml = `<option value="Mixed">All Chapters / Subjects (Full Mock)</option>`;
-    
+
     let dbTopics = new Set();
     if (appData[cwPath]) {
-        Object.keys(appData[cwPath]).forEach(c => { 
+        Object.keys(appData[cwPath]).forEach(c => {
             if(c !== "MCQs Practice" && c !== "Mock Test") dbTopics.add(c);
         });
         if (appData[cwPath]["MCQs Practice"]) {
             Object.keys(appData[cwPath]["MCQs Practice"]).forEach(c => dbTopics.add(c));
         }
     }
-    
+
     let prefix = cwPath + " > ";
     Object.keys(customTopicTypes).forEach(key => {
         if(key.startsWith(prefix)) {
@@ -535,7 +590,12 @@ function cwStep2() {
 
     dbTopics.forEach(c => {
         let cleanC = c.replace(/^\d+\.\s*/, '');
-        subjectsHtml += `<option value="${c.replace(/'/g, "\\'")}">${cleanC}</option>`; 
+        subjectsHtml += `<option value="${c.replace(/'/g, "\\'")}">${cleanC}</option>`;
+    });
+
+    dbTopics.forEach(c => {
+        let cleanC = c.replace(/^\d+\.\s*/, '');
+        subjectsHtml += `<option value="${c.replace(/'/g, "\\'")}">${cleanC}</option>`;
     });
 
     mc.innerHTML = `
@@ -570,11 +630,20 @@ function cwStep2() {
 }
 
 async function cwLaunch() {
-    cwSubject = document.getElementById('cwSubj').value;
-    cwDiff = document.getElementById('cwDiffSelect').value;
-    cwLimit = parseInt(document.getElementById('cwNum').value);
+    const cwSubjEl = document.getElementById('cwSubj');
+    const cwDiffEl = document.getElementById('cwDiffSelect');
+    const cwNumEl = document.getElementById('cwNum');
+
+    if (!cwSubjEl || !cwDiffEl || !cwNumEl) {
+        console.error("Custom practice form elements not found");
+        return;
+    }
+
+    cwSubject = cwSubjEl.value;
+    cwDiff = cwDiffEl.value;
+    cwLimit = parseInt(cwNumEl.value);
     if(isNaN(cwLimit) || cwLimit < 1) cwLimit = 25;
-    
+
     const mc = document.getElementById('dynamic-content');
     mc.innerHTML = `<div class="card page-transition" style="text-align:center; padding: 50px 20px;"><h2 class="section-title" style="justify-content:center;">🔍 Compiling Custom Practice...</h2><p style="color:var(--text-muted);">Fetching ${cwLimit} questions from database...</p></div>`;
 
@@ -728,4 +797,119 @@ async function _initiateBookmarkQuiz() {
         });
 
     } catch(e) { mc.innerHTML = `<div class="card"><p>Error: ${e.message}</p></div>`; }
+}
+
+// ==========================================
+// MODAL & UI HELPER FUNCTIONS
+// ==========================================
+
+// Feedback Modal
+function openFeedbackModal() {
+    document.getElementById('feedbackModal').style.display = 'flex';
+}
+function closeFeedbackModal() {
+    document.getElementById('feedbackModal').style.display = 'none';
+}
+let currentRating = 0;
+function updateStarUI(rating) {
+    currentRating = rating;
+    for(let i=1; i<=5; i++) {
+        const btn = document.getElementById('star-'+i);
+        if(btn) {
+            btn.style.color = i <= rating ? '#fdb813' : '#666';
+            btn.style.fontSize = i <= rating ? '32px' : '28px';
+        }
+    }
+}
+async function submitPlatformFeedback() {
+    const text = document.getElementById('platformFeedbackText').value;
+    if(!text.trim()) { showNotification("⚠️ Please enter your feedback"); return; }
+    if(currentRating === 0) { showNotification("⚠️ Please select a rating"); return; }
+
+    try {
+        await db.collection("feedback").add({
+            rating: currentRating,
+            text: text,
+            timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+            userId: currentUser ? currentUser.uid : 'anonymous'
+        });
+        showNotification("✅ Thank you for your feedback!");
+        closeFeedbackModal();
+        document.getElementById('platformFeedbackText').value = '';
+        updateStarUI(0);
+    } catch(e) {
+        showNotification("❌ Failed to submit feedback");
+    }
+}
+
+// Streak Modal
+function openStreakModal() {
+    const streakDisplay = document.getElementById('nav-streak-display');
+    const modalCount = document.getElementById('modalStreakCount');
+    if(streakDisplay && modalCount) modalCount.innerText = streakDisplay.innerText;
+    document.getElementById('streakModal').style.display = 'flex';
+}
+function closeStreakModal() {
+    document.getElementById('streakModal').style.display = 'none';
+}
+
+// Search Modal
+function openSearch() {
+    const wrapper = document.getElementById('searchWrapper');
+    if(wrapper) {
+        wrapper.classList.add('active');
+        document.getElementById('searchInput').focus();
+    }
+}
+function closeSearch() {
+    const wrapper = document.getElementById('searchWrapper');
+    if(wrapper) wrapper.classList.remove('active');
+}
+let searchTimeout;
+function delayCloseSearch() {
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(() => {
+        const wrapper = document.getElementById('searchWrapper');
+        if(wrapper && !wrapper.contains(document.activeElement)) {
+            closeSearch();
+        }
+    }, 200);
+}
+async function handleLiveSearch() {
+    const query = document.getElementById('searchInput').value.trim();
+    const suggestions = document.getElementById('searchSuggestions');
+    if(!suggestions) return;
+
+    if(query.length < 2) {
+        suggestions.style.display = 'none';
+        return;
+    }
+
+    try {
+        const snap = await db.collection("content")
+            .where("question", ">=", query)
+            .where("question", "<=", query + "\uf8ff")
+            .limit(10)
+            .get();
+
+        if(snap.empty) {
+            suggestions.style.display = 'none';
+            return;
+        }
+
+        let html = '';
+        snap.forEach(doc => {
+            const data = doc.data();
+            const cleanPath = data.path ? data.path.split(' > ').pop() : 'General';
+            html += `<div class="search-result-item" onclick="window.location.hash='#/path/${encodeURIComponent(data.path.replace(/ > /g, '/'))}'; closeSearch();">
+                <div style="font-size:13px; color:#fff; margin-bottom:4px;">${data.question.substring(0, 60)}${data.question.length > 60 ? '...' : ''}</div>
+                <div style="font-size:11px; color:var(--text-muted);">${cleanPath}</div>
+            </div>`;
+        });
+
+        suggestions.innerHTML = html;
+        suggestions.style.display = 'block';
+    } catch(e) {
+        console.error("Search error:", e);
+    }
 }

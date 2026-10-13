@@ -1,15 +1,27 @@
 // ==========================================
 // 7. GEMINI-STYLE AI CHAT ENGINE
 // ==========================================
-const aiBtn = document.getElementById('ai-floating-btn');
+let aiBtn;
 let pressTimer; let isDragging = false; let wasDragging = false; let startX, startY, initialX, initialY;
 
-aiBtn.addEventListener('mousedown', startPress);
-aiBtn.addEventListener('touchstart', startPress, {passive: true});
-document.addEventListener('mouseup', endPress);
-document.addEventListener('touchend', endPress);
-document.addEventListener('mousemove', drag);
-document.addEventListener('touchmove', drag, {passive: false});
+// Initialize AI button event listeners after DOM is ready
+function initAIButton() {
+    aiBtn = document.getElementById('ai-floating-btn');
+    if (aiBtn) {
+        aiBtn.addEventListener('mousedown', startPress);
+        aiBtn.addEventListener('touchstart', startPress, {passive: true});
+    }
+    document.addEventListener('mouseup', endPress);
+    document.addEventListener('touchend', endPress);
+    document.addEventListener('mousemove', drag);
+    document.addEventListener('touchmove', drag, {passive: false});
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initAIButton);
+} else {
+    initAIButton();
+}
 
 function startPress(e) {
     if(e.type === 'touchstart') {
