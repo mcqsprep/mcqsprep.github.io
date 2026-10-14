@@ -171,7 +171,6 @@ window.addEventListener('hashchange', handleRouting);
 function updateBottomNav(hash) {
     document.querySelectorAll('.app-tab').forEach(tab => tab.classList.remove('active'));
     
-    // Hide both mobile bottom dock AND Ask AI Floating Button on Custom Practice & Quiz pages
     if (hash === 'quiz' || hash === 'custom-setup' || hash === 'admin' || hash === 'admin-panel') {
         document.body.classList.add('hide-bottom-bar');
         document.body.classList.add('hide-ai-btn');
@@ -201,7 +200,7 @@ function updateBottomNav(hash) {
     }
 }
 
-// Sidebar ONLY displays on the main Root Home screen (#/home) and hides inside all topics
+// Sidebar ONLY displays on the main Root Home screen (#/home) with colored glowing cards
 function updateSidebarLinks() {
     const sidebar = document.getElementById('main-sidebar');
     if (!sidebar) return;
@@ -235,16 +234,16 @@ function updateSidebarLinks() {
         if (bookKey) {
             let safeBookKey = bookKey.replace(/'/g, "\\'");
             quickLinksHtml += `
-                <a class="action-link" onclick="jumpToSection(['${safeTopic}', '${safeBookKey}'])">
-                    <span class="link-icon" style="color: #9C27B0;">📚</span>
+                <a class="action-link colored-link" style="--topic-color:#a855f7; --topic-border:rgba(168,85,247,0.55); --topic-glow:rgba(168,85,247,0.22); --topic-bg:rgba(168,85,247,0.14);" onclick="jumpToSection(['${safeTopic}', '${safeBookKey}'])">
+                    <span class="link-icon" style="color: #a855f7;">📚</span>
                     <span class="link-text">${bookKey.replace(/^\d+\.\s*/, '')}</span>
                 </a>`;
         }
         if (pyqKey) {
             let safePyqKey = pyqKey.replace(/'/g, "\\'");
             quickLinksHtml += `
-                <a class="action-link" onclick="jumpToSection(['${safeTopic}', '${safePyqKey}'])">
-                    <span class="link-icon" style="color: #607D8B;">📄</span>
+                <a class="action-link colored-link" style="--topic-color:#ec4899; --topic-border:rgba(236,72,153,0.55); --topic-glow:rgba(236,72,153,0.22); --topic-bg:rgba(236,72,153,0.14);" onclick="jumpToSection(['${safeTopic}', '${safePyqKey}'])">
+                    <span class="link-icon" style="color: #ec4899;">📄</span>
                     <span class="link-text">${pyqKey.replace(/^\d+\.\s*/, '')}</span>
                 </a>`;
         }
@@ -252,23 +251,23 @@ function updateSidebarLinks() {
         if (mcqKey) {
             let safeMcqKey = mcqKey.replace(/'/g, "\\'");
             essentialPracticeHtml += `
-                <a class="action-link" onclick="jumpToSection(['${safeTopic}', '${safeMcqKey}'])">
-                    <span class="link-icon" style="color: #00BCD4;">📝</span>
+                <a class="action-link colored-link" style="--topic-color:#06b6d4; --topic-border:rgba(6,182,212,0.55); --topic-glow:rgba(6,182,212,0.22); --topic-bg:rgba(6,182,212,0.14);" onclick="jumpToSection(['${safeTopic}', '${safeMcqKey}'])">
+                    <span class="link-icon" style="color: #06b6d4;">📝</span>
                     <span class="link-text">${mcqKey.replace(/^\d+\.\s*/, '')}</span>
                 </a>`;
         }
         if (mockKey) {
             let safeMockKey = mockKey.replace(/'/g, "\\'");
             essentialPracticeHtml += `
-                <a class="action-link" onclick="jumpToSection(['${safeTopic}', '${safeMockKey}'])">
-                    <span class="link-icon" style="color: #F44336;">⏱️</span>
+                <a class="action-link colored-link" style="--topic-color:#f97316; --topic-border:rgba(249,115,22,0.55); --topic-glow:rgba(249,115,22,0.22); --topic-bg:rgba(249,115,22,0.14);" onclick="jumpToSection(['${safeTopic}', '${safeMockKey}'])">
+                    <span class="link-icon" style="color: #f97316;">⏱️</span>
                     <span class="link-text">${mockKey.replace(/^\d+\.\s*/, '')}</span>
                 </a>`;
         }
     }
 
     essentialPracticeHtml += `
-        <a class="action-link" onclick="jumpToSection(['Daily Quiz Challenge', '${safeTopic}'])">
+        <a class="action-link colored-link" style="--topic-color:#fdb813; --topic-border:rgba(253,184,19,0.55); --topic-glow:rgba(253,184,19,0.22); --topic-bg:rgba(253,184,19,0.14);" onclick="jumpToSection(['Daily Quiz Challenge', '${safeTopic}'])">
             <span class="link-icon" style="color: #fdb813;">📅</span>
             <span class="link-text">Daily Challenge (${rootTopic.replace(/^\d+\.\s*/, '')})</span>
         </a>`;
