@@ -289,12 +289,8 @@ const CLOUDINARY_URL = "https://api.cloudinary.com/v1_1/h5gdez7a/auto/upload";
 const CLOUDINARY_PRESET = "mcq_uploads"; 
 const AI_WORKER_URL = "https://shy-waterfall-08a4.md-habibullah9957.workers.dev/";
 
-// Standard sections automatically synced across NEET, JEE, General Knowledge, and all future root exams
-const STANDARD_QUICK_LINKS = ["NCERT Book", "PYQs"];
-const STANDARD_ESSENTIAL_PRACTICE = ["Practice Paper", "MCQs Practice", "Mock Test"];
-
+// FIXED (Requirement 1): Deleted all subtopics under General Knowledge ("General Knowledge": {})
 const DEFAULT_APP_DATA = { 
-    "Daily Quiz Challenge": { "NEET": {}, "JEE": {}, "General Knowledge": {} }, 
     "NEET": { 
         "NCERT Book": {}, 
         "PYQs": {}, 
@@ -305,39 +301,31 @@ const DEFAULT_APP_DATA = {
         }, 
         "Mock Test": {} 
     },
-    "JEE": {
-        "NCERT Book": {},
-        "PYQs": {},
-        "Practice Paper": {},
-        "MCQs Practice": {
-            "Physics": {}, "Organic Chemistry": {}, "Physical Chemistry": {}, "Inorganic Chemistry": {}, "Mathematics": {}
-        },
-        "Mock Test": {}
-    },
-    "General Knowledge": { 
-        "NCERT Book": {},
-        "PYQs": {},
-        "Practice Paper": {},
-        "MCQs Practice": {
-            "Current Affairs": {}, "History": {}, "Geography": {}
-        },
-        "Mock Test": {},
-        "Current Affairs": {}, 
-        "History": {}, 
-        "Geography": {} 
-    } 
+    "General Knowledge": {} 
 };
 
 let appData = JSON.parse(JSON.stringify(DEFAULT_APP_DATA));
 let customTopicTypes = {};
+let topicOverrides = { deletedPaths: [], editedPaths: {} };
+
+// FIXED (Requirement 2): Quick Links & Essential Practice start with 0 auto-subtopics; 100% manually controlled from Admin Panel
+window.sidebarConfig = {
+    quickLinks: [],        // Array of { id, title, path, icon }
+    essentialPractice: []  // Array of { id, title, path, icon }
+};
+
+// FIXED (Requirement 3): Manual Custom Practice Subjects & Chapters config controlled from Admin Panel
+window.customPracticeConfig = {
+    // examKey -> { subjects: [ { path, label, chapters: [ { path, label } ] } ] }
+    exams: {}
+};
+
 let currentUser = null; 
 window.currentUser = null;
 let currentPath = []; 
 let dataLoaded = false; 
 let userBookmarks = [];
 window.activeHubSection = null;
-window.dynamicQuickLinks = [...STANDARD_QUICK_LINKS];
-window.dynamicEssentialPractice = ["Practice Paper", "Mock Test"];
 
 let notifTimer = null;
 function showNotification(message) { 
