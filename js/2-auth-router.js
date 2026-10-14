@@ -2,6 +2,19 @@
 // 2. DATA LOADING & AUTHENTICATION
 // ==========================================
 
+function isResourceSectionName(name, typeVal = null) {
+    if (typeVal === 'pdf') return true;
+    let lower = (name || "").replace(/^\d+\.\s*/, '').trim().toLowerCase();
+    const resKeywords = ["ncert", "book", "pyq", "previous", "pdf", "note", "material", "syllabus", "formula"];
+    return resKeywords.some(k => lower.includes(k));
+}
+
+function isPracticeSectionName(name, typeVal = null) {
+    let lower = (name || "").replace(/^\d+\.\s*/, '').trim().toLowerCase();
+    const pracKeywords = ["practice paper", "sample paper", "model paper", "paper", "mock", "test", "mcqs practice", "quiz"];
+    return pracKeywords.some(k => lower.includes(k));
+}
+
 async function loadCustomTopics() {
     try {
         appData = JSON.parse(JSON.stringify(DEFAULT_APP_DATA));
@@ -34,10 +47,55 @@ async function loadCustomTopics() {
             }
         });
 
-        rootKeys.forEach(k => {
-            if (!appData["Daily Quiz Challenge"][k]) {
-                appData["Daily Quiz Challenge"][k] = {};
-                customTopicTypes["Daily Quiz Challenge > " + k] = { type: "mcq", icon: null };
+        let quickLinksSet = new Set(STANDARD_QUICK_LINKS);
+        let essentialPracticeSet = new Set(["Practice Paper", "Mock Test"]);
+
+        // Auto-sync standard Quick Links & Essential Practice sections into EVERY Root Exam (NEET, JEE, GK & future topics)
+        rootKeys.forEach(examKey => {
+            let rootMeta = customTopicTypes[examKey];
+            let rootType = rootMeta ? (typeof rootMeta === 'object' ? rootMeta.type : rootMeta) : 'both';
+
+            // Ensure Daily Quiz Challenge includes every root exam
+            if (!appData["Daily Quiz Challenge"][examKey]) {
+                appData["Daily Quiz Challenge"][examKey] = {};
+                customTopicTypes["Daily Quiz Challenge > " + examKey] = { type: "mcq", icon: null };
+            }
+
+            if (rootType !== 'pdf' && rootType !== 'mcq' && typeof appData[examKey] === 'object') {
+                STANDARD_QUICK_LINKS.forEach(sec => {
+                    if (!appData[examKey][sec]) appData[examKey][sec] = {};
+                });
+                STANDARD_ESSENTIAL_PRACTICE.forEach(sec => {
+                    if (!appData[examKey][sec]) appData[examKey][sec] = {};
+                });
+            }
+
+            // Scan 2nd-level sections under each exam to auto-discover new Quick Links or Essential Practice sections
+            Object.keys(appData[examKey] || {}).forEach(subKey => {
+                let fullSubKey = `${examKey} > ${subKey}`;
+                let subMeta = customTopicTypes[fullSubKey];
+                let subType = subMeta ? (typeof subMeta === 'object' ? subMeta.type : subMeta) : null;
+
+                if (isResourceSectionName(subKey, subType) && !isPracticeSectionName(subKey, subType)) {
+                    quickLinksSet.add(subKey);
+                } else if (isPracticeSectionName(subKey, subType) && subKey !== "MCQs Practice") {
+                    essentialPracticeSet.add(subKey);
+                }
+            });
+        });
+
+        window.dynamicQuickLinks = Array.from(quickLinksSet);
+        window.dynamicEssentialPractice = Array.from(essentialPracticeSet);
+
+        // Ensure all discovered Quick Links & Essential Practice sections exist across all root exams
+        rootKeys.forEach(examKey => {
+            if (typeof appData[examKey] === 'object') {
+                window.dynamicQuickLinks.forEach(sec => {
+                    if (!appData[examKey][sec]) appData[examKey][sec] = {};
+                });
+                window.dynamicEssentialPractice.forEach(sec => {
+                    if (!appData[examKey][sec]) appData[examKey][sec] = {};
+                });
             }
         });
 
@@ -164,9 +222,23 @@ function signInWithGoogle() { auth.signInWithPopup(provider).catch(err => showNo
 function signOut() { if(confirm("Are you sure you want to sign out?")) auth.signOut(); }
 
 // ==========================================
-// 3. ROUTING ENGINE & DYNAMIC SIDEBAR
+// 3. ROUTING ENGINE & GLOBAL HUB SIDEBAR
 // ==========================================
 window.addEventListener('hashchange', handleRouting);
+
+function openGlobalHub(sectionName) {
+    window.activeHubSection = sectionName;
+    window.location.hash = '#/hub/' + encodeURIComponent(sectionName);
+}
+
+function openExamFromHub(examKey, sectionName) {
+    window.activeHubSection = sectionName;
+    if (sectionName === "Daily Quiz Challenge") {
+        jumpToSection(["Daily Quiz Challenge", examKey]);
+    } else {
+        jumpToSection([examKey, sectionName]);
+    }
+}
 
 function updateBottomNav(hash) {
     document.querySelectorAll('.app-tab').forEach(tab => tab.classList.remove('active'));
@@ -200,7 +272,7 @@ function updateBottomNav(hash) {
     }
 }
 
-// Sidebar ONLY displays on the main Root Home screen (#/home) with colored glowing cards
+// Global Quick Links & Essential Practice Sidebar (Works for NEET, JEE, GK & all future root topics)
 function updateSidebarLinks() {
     const sidebar = document.getElementById('main-sidebar');
     if (!sidebar) return;
@@ -213,69 +285,61 @@ function updateSidebarLinks() {
         return;
     }
 
-    let rootTopic = "NEET";
-    const rootKeys = Object.keys(appData).filter(k => k !== "Daily Quiz Challenge");
-    if (rootKeys.length > 0) rootTopic = rootKeys[0];
-
     sidebar.style.display = 'block';
-    let safeTopic = rootTopic.replace(/'/g, "\\'");
+
+    let quickLinksList = window.dynamicQuickLinks && window.dynamicQuickLinks.length > 0
+        ? window.dynamicQuickLinks
+        : STANDARD_QUICK_LINKS;
+
+    let essentialList = window.dynamicEssentialPractice && window.dynamicEssentialPractice.length > 0
+        ? window.dynamicEssentialPractice
+        : ["Practice Paper", "Mock Test"];
 
     let quickLinksHtml = '';
+    let usedColorsQ = new Set();
+
+    quickLinksList.forEach((secName, idx) => {
+        let safeSec = secName.replace(/'/g, "\\'");
+        let cleanSec = secName.replace(/^\d+\.\s*/, '');
+        let theme = typeof getAutoTopicTheme === 'function'
+            ? getAutoTopicTheme(cleanSec, null, idx, usedColorsQ)
+            : { i: "📚", c: "#a855f7", bg: "rgba(168,85,247,0.16)", border: "rgba(168,85,247,0.6)", glow: "rgba(168,85,247,0.24)" };
+
+        quickLinksHtml += `
+            <a class="action-link colored-link" style="--topic-color:${theme.c}; --topic-border:${theme.border}; --topic-glow:${theme.glow}; --topic-bg:${theme.bg};" onclick="openGlobalHub('${safeSec}')">
+                <span class="link-icon" style="color: ${theme.c};">${theme.i}</span>
+                <span class="link-text">${cleanSec}</span>
+            </a>`;
+    });
+
     let essentialPracticeHtml = '';
+    let usedColorsE = new Set();
 
-    if (appData[rootTopic]) {
-        const subKeys = Object.keys(appData[rootTopic]);
+    essentialList.forEach((secName, idx) => {
+        let safeSec = secName.replace(/'/g, "\\'");
+        let cleanSec = secName.replace(/^\d+\.\s*/, '');
+        let theme = typeof getAutoTopicTheme === 'function'
+            ? getAutoTopicTheme(cleanSec, null, idx + 3, usedColorsE)
+            : { i: "📝", c: "#06b6d4", bg: "rgba(6,182,212,0.16)", border: "rgba(6,182,212,0.6)", glow: "rgba(6,182,212,0.24)" };
 
-        let bookKey = subKeys.find(k => k.toLowerCase().includes('ncert') || k.toLowerCase().includes('book') || k.toLowerCase().includes('note'));
-        let pyqKey = subKeys.find(k => k.toLowerCase().includes('pyq') || k.toLowerCase().includes('previous') || k.toLowerCase().includes('paper'));
-        let mcqKey = subKeys.find(k => k.toLowerCase().includes('mcq') || k.toLowerCase().includes('practice'));
-        let mockKey = subKeys.find(k => k.toLowerCase().includes('mock') || k.toLowerCase().includes('test'));
+        essentialPracticeHtml += `
+            <a class="action-link colored-link" style="--topic-color:${theme.c}; --topic-border:${theme.border}; --topic-glow:${theme.glow}; --topic-bg:${theme.bg};" onclick="openGlobalHub('${safeSec}')">
+                <span class="link-icon" style="color: ${theme.c};">${theme.i}</span>
+                <span class="link-text">${cleanSec}</span>
+            </a>`;
+    });
 
-        if (bookKey) {
-            let safeBookKey = bookKey.replace(/'/g, "\\'");
-            quickLinksHtml += `
-                <a class="action-link colored-link" style="--topic-color:#a855f7; --topic-border:rgba(168,85,247,0.55); --topic-glow:rgba(168,85,247,0.22); --topic-bg:rgba(168,85,247,0.14);" onclick="jumpToSection(['${safeTopic}', '${safeBookKey}'])">
-                    <span class="link-icon" style="color: #a855f7;">📚</span>
-                    <span class="link-text">${bookKey.replace(/^\d+\.\s*/, '')}</span>
-                </a>`;
-        }
-        if (pyqKey) {
-            let safePyqKey = pyqKey.replace(/'/g, "\\'");
-            quickLinksHtml += `
-                <a class="action-link colored-link" style="--topic-color:#ec4899; --topic-border:rgba(236,72,153,0.55); --topic-glow:rgba(236,72,153,0.22); --topic-bg:rgba(236,72,153,0.14);" onclick="jumpToSection(['${safeTopic}', '${safePyqKey}'])">
-                    <span class="link-icon" style="color: #ec4899;">📄</span>
-                    <span class="link-text">${pyqKey.replace(/^\d+\.\s*/, '')}</span>
-                </a>`;
-        }
-
-        if (mcqKey) {
-            let safeMcqKey = mcqKey.replace(/'/g, "\\'");
-            essentialPracticeHtml += `
-                <a class="action-link colored-link" style="--topic-color:#06b6d4; --topic-border:rgba(6,182,212,0.55); --topic-glow:rgba(6,182,212,0.22); --topic-bg:rgba(6,182,212,0.14);" onclick="jumpToSection(['${safeTopic}', '${safeMcqKey}'])">
-                    <span class="link-icon" style="color: #06b6d4;">📝</span>
-                    <span class="link-text">${mcqKey.replace(/^\d+\.\s*/, '')}</span>
-                </a>`;
-        }
-        if (mockKey) {
-            let safeMockKey = mockKey.replace(/'/g, "\\'");
-            essentialPracticeHtml += `
-                <a class="action-link colored-link" style="--topic-color:#f97316; --topic-border:rgba(249,115,22,0.55); --topic-glow:rgba(249,115,22,0.22); --topic-bg:rgba(249,115,22,0.14);" onclick="jumpToSection(['${safeTopic}', '${safeMockKey}'])">
-                    <span class="link-icon" style="color: #f97316;">⏱️</span>
-                    <span class="link-text">${mockKey.replace(/^\d+\.\s*/, '')}</span>
-                </a>`;
-        }
-    }
-
+    // Global Daily Challenge Hub across all exams (NEET, JEE, GK & future topics)
     essentialPracticeHtml += `
-        <a class="action-link colored-link" style="--topic-color:#fdb813; --topic-border:rgba(253,184,19,0.55); --topic-glow:rgba(253,184,19,0.22); --topic-bg:rgba(253,184,19,0.14);" onclick="jumpToSection(['Daily Quiz Challenge', '${safeTopic}'])">
+        <a class="action-link colored-link" style="--topic-color:#fdb813; --topic-border:rgba(253,184,19,0.65); --topic-glow:rgba(253,184,19,0.26); --topic-bg:rgba(253,184,19,0.16);" onclick="openGlobalHub('Daily Quiz Challenge')">
             <span class="link-icon" style="color: #fdb813;">📅</span>
-            <span class="link-text">Daily Challenge (${rootTopic.replace(/^\d+\.\s*/, '')})</span>
+            <span class="link-text">Daily Challenge</span>
         </a>`;
 
     sidebar.innerHTML = `
     <div class="card sidebar-card">
         <h3 class="section-title">Quick Links</h3>
-        ${quickLinksHtml || '<p style="color:var(--text-muted); font-size:13px;">Select a category to view resources</p>'}
+        ${quickLinksHtml}
     </div>
     <div class="card sidebar-card">
         <h3 class="section-title">Essential Practice</h3>
@@ -293,6 +357,7 @@ function handleRouting() {
         else document.body.classList.remove('admin-mode');
         
         let isRootHome = (!hash || hash === 'home');
+        if (isRootHome) window.activeHubSection = null;
         
         const bottomBackBtn = document.getElementById('dynamic-back-container');
         if (bottomBackBtn) bottomBackBtn.style.display = 'none';
@@ -302,6 +367,11 @@ function handleRouting() {
         
         if (isRootHome) { currentPath = []; if (typeof _renderView === 'function') _renderView(); } 
         else if (hash === 'custom-setup') { if (typeof cwStep1 === 'function') cwStep1(); } 
+        else if (hash.startsWith('hub/')) {
+            let hubSection = decodeURIComponent(rawHash.replace('hub/', ''));
+            currentPath = [];
+            if (typeof _renderHubView === 'function') _renderHubView(hubSection);
+        }
         else if (hash.startsWith('path/')) { currentPath = hash.replace('path/', '').split('/').filter(Boolean); if (typeof _renderView === 'function') _renderView(); } 
         else if (hash === 'leaderboard') { if (typeof _renderLeaderboardOptions === 'function') _renderLeaderboardOptions(); } 
         else if (hash.startsWith('board/')) { if (typeof fetchLiveLeaderboard === 'function') fetchLiveLeaderboard(decodeURIComponent(hash.replace('board/', ''))); } 
@@ -319,6 +389,7 @@ function handleRouting() {
 
 function goHome() { 
     if (typeof currentTimer !== 'undefined' && currentTimer) clearInterval(currentTimer);
+    window.activeHubSection = null;
     document.body.classList.remove('hide-ai-btn');
     document.body.classList.remove('hide-bottom-bar');
     if (window.location.hash === '#/home' || window.location.hash === '') {
@@ -340,12 +411,19 @@ function goBack() {
     let rawHash = window.location.hash.replace(/^#\/?/, '');
     let hash = decodeURIComponent(rawHash);
 
-    if (hash.startsWith('path/')) {
+    if (hash.startsWith('hub/')) {
+        goHome();
+    } else if (hash.startsWith('path/')) {
         let parts = hash.replace('path/', '').split('/').filter(Boolean);
+        // If user entered this exam section from a Global Quick Link / Essential Practice Hub, step back to that Hub
+        if (parts.length === 2 && window.activeHubSection && (parts[1] === window.activeHubSection || parts[0] === window.activeHubSection)) {
+            openGlobalHub(window.activeHubSection);
+            return;
+        }
         if (parts.length > 1) {
             parts.pop();
             if (parts.length === 1 && parts[0] === 'Daily Quiz Challenge') {
-                goHome();
+                openGlobalHub('Daily Quiz Challenge');
             } else {
                 jumpToSection(parts);
             }
@@ -354,7 +432,11 @@ function goBack() {
         }
     } else if (hash === 'quiz') {
         if (currentPath && currentPath.length > 0) {
-            jumpToSection(currentPath);
+            if (currentPath.length === 2 && currentPath[0] === 'Daily Quiz Challenge') {
+                openGlobalHub('Daily Quiz Challenge');
+            } else {
+                jumpToSection(currentPath);
+            }
         } else {
             goHome();
         }
