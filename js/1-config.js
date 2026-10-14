@@ -39,12 +39,11 @@ if ('serviceWorker' in navigator) {
     });
 }
 
-// 🔴 NEW: PC Back Button Visibility Logic
+// PC Back Button Visibility Logic
 function handlePCBackButton() {
     const backBtn = document.querySelector('.pc-back-btn');
     if (!backBtn) return;
     const hash = window.location.hash || '';
-    // Hide the back button if we are on the main Home page
     if (hash === '' || hash === '#/' || hash.startsWith('#/home')) {
         backBtn.style.display = 'none';
     } else {
@@ -73,6 +72,8 @@ styleSheet.innerHTML = `
     #ai-floating-btn { -webkit-user-select: none; -ms-user-select: none; user-select: none; touch-action: none; }
     .bookmarked { background: rgba(253, 184, 19, 0.2) !important; color: var(--primary-yellow) !important; border-color: var(--primary-yellow) !important; }
     
+    .badge-path { background: rgba(253, 184, 19, 0.12); color: var(--primary-yellow); padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 700; border: 1px solid rgba(253, 184, 19, 0.25); display: inline-block; }
+
     #notification {
         position: fixed !important;
         top: 20px !important;
@@ -113,7 +114,7 @@ function formatTextWithMath(text) {
         return `@@MATH_SPAWN_${mathSnippets.length - 1}@@`;
     });
     
-    let html = marked.parse(processedText);
+    let html = (typeof marked !== 'undefined' && marked.parse) ? marked.parse(processedText) : processedText.replace(/\n/g, '<br>');
     
     mathSnippets.forEach((snippet, i) => {
         html = html.replace(`@@MATH_SPAWN_${i}@@`, () => snippet);
@@ -130,7 +131,9 @@ const firebaseConfig = {
     appId: "1:920181103186:web:14c2ba261d4a6163db5d8b" 
 };
 
-firebase.initializeApp(firebaseConfig); 
+if (!firebase.apps.length) {
+    firebase.initializeApp(firebaseConfig);
+}
 
 const db = firebase.firestore(); 
 db.enablePersistence({synchronizeTabs:true}).catch(function(err) {
@@ -144,7 +147,7 @@ const CLOUDINARY_URL = "https://api.cloudinary.com/v1_1/h5gdez7a/auto/upload";
 const CLOUDINARY_PRESET = "mcq_uploads"; 
 const AI_WORKER_URL = "https://shy-waterfall-08a4.md-habibullah9957.workers.dev/";
 
-let appData = { 
+const DEFAULT_APP_DATA = { 
     "Daily Quiz Challenge": { "NEET": {}, "General Knowledge": {} }, 
     "NEET": { 
         "NCERT Book": {}, 
@@ -159,15 +162,20 @@ let appData = {
     "General Knowledge": { "Current Affairs": {}, "History": {}, "Geography": {} } 
 };
 
+let appData = JSON.parse(JSON.stringify(DEFAULT_APP_DATA));
 let customTopicTypes = {};
 let currentUser = null; 
+window.currentUser = null;
 let currentPath = []; 
 let dataLoaded = false; 
 let userBookmarks = [];
 
+let notifTimer = null;
 function showNotification(message) { 
     const notif = document.getElementById('notification'); 
+    if (!notif) return;
     notif.innerText = message; 
     notif.style.display = 'block'; 
-    setTimeout(() => { notif.style.display = 'none'; }, 4000); 
+    if (notifTimer) clearTimeout(notifTimer);
+    notifTimer = setTimeout(() => { notif.style.display = 'none'; }, 4000); 
 }
