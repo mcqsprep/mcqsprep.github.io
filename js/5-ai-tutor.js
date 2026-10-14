@@ -4,12 +4,20 @@
 let aiBtn;
 let pressTimer; let isDragging = false; let wasDragging = false; let startX, startY, initialX, initialY;
 
-// Initialize AI button event listeners after DOM is ready
 function initAIButton() {
     aiBtn = document.getElementById('ai-floating-btn');
     if (aiBtn) {
         aiBtn.addEventListener('mousedown', startPress);
         aiBtn.addEventListener('touchstart', startPress, {passive: true});
+        aiBtn.onclick = function(e) {
+            if (wasDragging) {
+                e.preventDefault();
+                e.stopPropagation();
+                wasDragging = false;
+                return false;
+            }
+            openAIModal();
+        };
     }
     document.addEventListener('mouseup', endPress);
     document.addEventListener('touchend', endPress);
@@ -24,6 +32,7 @@ if (document.readyState === 'loading') {
 }
 
 function startPress(e) {
+    if (!aiBtn) return;
     if(e.type === 'touchstart') {
         initialX = e.touches[0].clientX - aiBtn.getBoundingClientRect().left;
         initialY = e.touches[0].clientY - aiBtn.getBoundingClientRect().top;
@@ -40,7 +49,7 @@ function startPress(e) {
 }
 
 function drag(e) {
-    if (!isDragging) return;
+    if (!isDragging || !aiBtn) return;
     e.preventDefault();
     wasDragging = true;
     let currentX = e.type === 'touchmove' ? e.touches[0].clientX : e.clientX;
@@ -59,28 +68,19 @@ function drag(e) {
     aiBtn.style.bottom = 'auto';
 }
 
-function endPress(e) {
+function endPress() {
     clearTimeout(pressTimer);
-    if (isDragging) {
+    if (isDragging && aiBtn) {
         isDragging = false;
         aiBtn.classList.remove('draggable');
     }
 }
 
-aiBtn.onclick = function(e) {
-    if (wasDragging) {
-        e.preventDefault();
-        e.stopPropagation();
-        wasDragging = false;
-        return false;
-    }
-    openAIModal();
-};
-
 let cropper = null; let aiChatHistory = []; let lastExtractedQuestion = null;
 let pendingBase64Image = null; 
 
 function autoExpandTextarea(field) {
+    if (!field) return;
     field.style.height = 'auto';
     field.style.height = Math.min(field.scrollHeight, 200) + 'px';
     if (field.scrollHeight > 200) {
@@ -92,7 +92,7 @@ function autoExpandTextarea(field) {
 
 function toggleAttachMenu() {
     const menu = document.getElementById('ai-attach-menu');
-    menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+    if (menu) menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
 }
 
 function handleAIPaste(e) {
@@ -116,7 +116,9 @@ function handleAIPaste(e) {
                 const imgNode = document.getElementById('aiCropperImage'); 
                 imgNode.src = event.target.result;
                 if(cropper) cropper.destroy(); 
-                cropper = new Cropper(imgNode, { viewMode: 1, autoCropArea: 0.85, background: false });
+                if(typeof Cropper !== 'undefined') {
+                    cropper = new Cropper(imgNode, { viewMode: 1, autoCropArea: 0.85, background: false });
+                }
             };
             reader.readAsDataURL(file);
             break; 
@@ -139,8 +141,10 @@ function openAIModal() {
     });
 
     const input = document.getElementById('aiTextInput');
-    input.value = '';
-    autoExpandTextarea(input);
+    if (input) {
+        input.value = '';
+        autoExpandTextarea(input);
+    }
     document.getElementById('ai-fuzzy-box').style.display = 'none'; 
     document.getElementById('ai-attach-menu').style.display = 'none';
     clearPendingImage();
@@ -151,7 +155,10 @@ function openAIModal() {
 
 function closeAIModal() { 
     document.getElementById('aiModal').style.display = 'none'; 
-    document.body.classList.remove('hide-bottom-bar');
+    let rawHash = window.location.hash.replace(/^#\/?/, '');
+    if (rawHash !== 'quiz' && rawHash !== 'admin' && rawHash !== 'admin-panel') {
+        document.body.classList.remove('hide-bottom-bar');
+    }
     if(cropper) { cropper.destroy(); cropper = null; } 
 }
 
@@ -162,6 +169,7 @@ function handleAIFuzzySuggestions() {
     const tokens = raw.split(/\s+/).filter(w => w.length > 2); let matches = [];
     function scanTree(obj, path=[]) {
         for(let k in obj) { 
+            if (k === "Daily Quiz Challenge") continue;
             let full = [...path, k]; let kLower = k.toLowerCase(); 
             let hit = tokens.some(t => kLower.includes(t));
             if(hit) matches.push({ type: 'Topic', title: full.join(' > '), text: k });
@@ -201,7 +209,9 @@ function handleAIImageUpload(e) {
         const imgNode = document.getElementById('aiCropperImage'); 
         imgNode.src = event.target.result;
         if(cropper) cropper.destroy(); 
-        cropper = new Cropper(imgNode, { viewMode: 1, autoCropArea: 0.85, background: false });
+        if (typeof Cropper !== 'undefined') {
+            cropper = new Cropper(imgNode, { viewMode: 1, autoCropArea: 0.85, background: false });
+        }
     };
     reader.readAsDataURL(file);
 }
@@ -210,7 +220,6 @@ function cancelCropper() {
     if(cropper) { cropper.destroy(); cropper = null; } 
     document.getElementById('ai-cropper-view').style.display = 'none'; 
     
-    // FIX: Changed from 'block' to '' to preserve the flexbox alignment of chat bubbles
     Array.from(document.getElementById('gemini-chat-history').children).forEach(child => {
         if (child.id !== 'ai-idle-view' && child.id !== 'ai-cropper-view') {
             child.style.display = '';
@@ -236,7 +245,8 @@ function confirmCropAndSolve() {
 
 function clearPendingImage() {
     pendingBase64Image = null;
-    document.getElementById('ai-image-preview-container').style.display = 'none';
+    const prevContainer = document.getElementById('ai-image-preview-container');
+    if (prevContainer) prevContainer.style.display = 'none';
 }
 
 function editUserMessage(btn) {
@@ -287,12 +297,13 @@ function appendChatBubble(role, htmlContent, rawText = "") {
         bubble.innerHTML = htmlContent;
         historyContainer.appendChild(bubble);
         
-        // FIX: errorColor safety net to prevent glaring red UI if KaTeX fails
-        renderMathInElement(bubble, { 
-            delimiters: [ {left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}, {left: '\\(', right: '\\)', display: false}, {left: '\\[', right: '\\]', display: true} ], 
-            throwOnError: false, 
-            errorColor: "#fdb813" 
-        });
+        if (typeof renderMathInElement === 'function') {
+            renderMathInElement(bubble, { 
+                delimiters: [ {left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}, {left: '\\(', right: '\\)', display: false}, {left: '\\[', right: '\\]', display: true} ], 
+                throwOnError: false, 
+                errorColor: "#fdb813" 
+            });
+        }
     }
     
     historyContainer.scrollTop = historyContainer.scrollHeight;
@@ -375,7 +386,7 @@ async function callAIWorker(payload, retries = 3, originalUserText = "") {
             }
             return; 
         } catch(e) {
-            let errorMsg = e.message.toLowerCase();
+            let errorMsg = (e.message || "").toLowerCase();
             let isHighDemand = errorMsg.includes("high demand") || errorMsg.includes("overloaded") || errorMsg.includes("503") || errorMsg.includes("429");
             
             if (isHighDemand && attempt < retries) {
@@ -458,7 +469,7 @@ async function checkDatabaseForQuestion(keywords) {
         const snap = await db.collection("content").where("type", "==", "mcq").limit(100).get(); 
         let foundDoc = null;
         snap.forEach(doc => { 
-            const qText = doc.data().question.toLowerCase(); 
+            const qText = (doc.data().question || "").toLowerCase(); 
             let matchCount = 0; 
             keywords.forEach(k => { if (qText.includes(k.toLowerCase())) matchCount++; }); 
             if (matchCount >= Math.min(3, keywords.length)) foundDoc = doc.data(); 
@@ -482,9 +493,10 @@ async function _renderDoubtDiary() {
     const mc = document.getElementById('dynamic-content'); 
     mc.innerHTML = `<div class="card page-transition"><h2>📔 Loading Doubt Diary...</h2></div>`;
     try {
-        const snap = await db.collection("ai_doubt_diary").where("userId", "==", currentUser.uid).orderBy("timestamp", "desc").limit(30).get();
+        const snap = await db.collection("ai_doubt_diary").where("userId", "==", currentUser.uid).limit(50).get();
         let items = [];
         snap.forEach(doc => items.push({ id: doc.id, ...doc.data() }));
+        items.sort((a, b) => (b.timestamp?.toMillis() || 0) - (a.timestamp?.toMillis() || 0));
 
         if(items.length === 0) { 
             mc.innerHTML = `<div class="card page-transition" style="text-align:center;"><h2>📔 Doubt Diary Empty</h2><p style="color:var(--text-muted);">Use the ✨ Ask AI feature to scan questions and save explanations here for rapid revision.</p><button class="btn-exam" onclick="goBack()" style="background:#333; border:none;">Back</button></div>`; 
@@ -494,13 +506,17 @@ async function _renderDoubtDiary() {
         let html = `<div class="card page-transition"><h2 style="color:var(--primary-yellow);">📔 Your Saved Explanations</h2><p style="color:var(--text-muted); margin-bottom:18px;">Review your previously solved doubts here.</p>`;
         items.forEach(d => {
             let dateStr = d.timestamp ? new Date(d.timestamp.toMillis()).toLocaleDateString() : '';
-            let md = `**Core Concept:** ${d.solution.keyConcept}\n\n**Step-by-Step:**\n${d.solution.stepByStep}\n\n**Final Answer:** ${d.solution.finalAnswer}`;
-            html += `<div style="background:#13131a; border-left: 4px solid var(--primary-yellow); padding: 14px; border-radius: 6px; margin-bottom: 16px;"><div style="display:flex; justify-content:space-between; margin-bottom:8px;"><span class="badge-path">${d.subject}</span><span style="font-size:11px; color:var(--text-muted);">${dateStr}</span></div><p style="font-weight:600; font-size:15px; margin: 0 0 10px 0;">Q: ${d.questionText}</p><button onclick="toggleViewAnswer('diary_sol_${d.id}')" style="background:#222; color:white; border:none; padding:5px 10px; border-radius:4px; cursor:pointer; font-size:12px;">👁 Show Solution</button><div id="diary_sol_${d.id}" class="katex-render-target" style="display:none; margin-top:12px; padding-top:12px; border-top:1px solid #282834; line-height:1.6; font-size:14px;">${formatTextWithMath(md)}</div></div>`;
+            let sol = d.solution || {};
+            let md = `**Core Concept:** ${sol.keyConcept || ''}\n\n**Step-by-Step:**\n${sol.stepByStep || ''}\n\n**Final Answer:** ${sol.finalAnswer || ''}`;
+            html += `<div style="background:#13131a; border-left: 4px solid var(--primary-yellow); padding: 14px; border-radius: 6px; margin-bottom: 16px;"><div style="display:flex; justify-content:space-between; margin-bottom:8px;"><span class="badge-path">${d.subject || 'General'}</span><span style="font-size:11px; color:var(--text-muted);">${dateStr}</span></div><p style="font-weight:600; font-size:15px; margin: 0 0 10px 0;">Q: ${d.questionText}</p><button onclick="toggleViewAnswer('diary_sol_${d.id}')" style="background:#222; color:white; border:none; padding:5px 10px; border-radius:4px; cursor:pointer; font-size:12px;">👁 Show Solution</button><div id="diary_sol_${d.id}" class="katex-render-target" style="display:none; margin-top:12px; padding-top:12px; border-top:1px solid #282834; line-height:1.6; font-size:14px;">${formatTextWithMath(md)}</div></div>`;
         });
         html += `<button class="btn-exam" onclick="goBack()" style="background:#333; border:none;">Back</button></div>`; 
         mc.innerHTML = html;
         
-        // FIX: errorColor safety net to prevent glaring red UI if KaTeX fails
-        document.querySelectorAll('.katex-render-target').forEach(el => { renderMathInElement(el, { delimiters: [ {left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}, {left: '\\(', right: '\\)', display: false}, {left: '\\[', right: '\\]', display: true} ], throwOnError: false, errorColor: "#fdb813" }); });
+        if (typeof renderMathInElement === 'function') {
+            document.querySelectorAll('.katex-render-target').forEach(el => {
+                renderMathInElement(el, { delimiters: [ {left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}, {left: '\\(', right: '\\)', display: false}, {left: '[', right: ']', display: true} ], throwOnError: false, errorColor: "#fdb813" });
+            });
+        }
     } catch(e) { mc.innerHTML = `<div class="card"><h2>Error</h2><p>${e.message}</p></div>`; }
 }
