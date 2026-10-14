@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mcqsprep-cache-v31';
+const CACHE_NAME = 'mcqsprep-cache-v32';
 const ASSETS = [
   '/',
   '/index.html',
@@ -27,19 +27,21 @@ self.addEventListener('activate', (event) => {
                     if (cache !== CACHE_NAME) return caches.delete(cache);
                 })
             );
-        })
+        }).then(() => self.clients.claim())
     );
 });
 
 self.addEventListener('fetch', (event) => {
-    if (event.request.method === 'GET' && !event.request.url.includes('firestore.googleapis.com')) {
+    if (event.request.method === 'GET' && !event.request.url.includes('firestore.googleapis.com') && !event.request.url.includes('googleapis.com')) {
         event.respondWith(
             caches.open(CACHE_NAME).then((cache) => {
                 return cache.match(event.request).then((cachedResponse) => {
                     const fetchedResponse = fetch(event.request).then((networkResponse) => {
-                        cache.put(event.request, networkResponse.clone());
+                        if (networkResponse && networkResponse.status === 200) {
+                            cache.put(event.request, networkResponse.clone());
+                        }
                         return networkResponse;
-                    }).catch(() => {});
+                    }).catch(() => cachedResponse);
                     return cachedResponse || fetchedResponse;
                 });
             })
