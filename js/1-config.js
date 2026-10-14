@@ -44,7 +44,6 @@ function handlePCBackButton() {
     const backBtn = document.querySelector('.pc-back-btn');
     if (!backBtn) return;
 
-    // Ensure clicking the upper back button always triggers our smart goBack() function
     backBtn.onclick = function(e) {
         e.preventDefault();
         e.stopPropagation();
@@ -67,8 +66,11 @@ styleSheet.innerHTML = `
     @keyframes fadeSlideUp { 0% { transform: translateY(15px); opacity: 0; } 100% { transform: translateY(0); opacity: 1; } }
     .page-transition { animation: fadeSlideUp 0.3s cubic-bezier(0.25, 1, 0.5, 1) forwards; }
     
-    /* Permanently hide the duplicate bottom back button container */
+    /* Permanently hide duplicate bottom back button container */
     #dynamic-back-container { display: none !important; }
+
+    /* Hide Ask AI Floating Button on Custom Practice & Active Quiz screens */
+    body.hide-ai-btn #ai-floating-btn { display: none !important; }
 
     /* Keep upper back button accessible on both desktop and mobile when inside pages */
     .pc-back-btn.hide-on-mobile { display: flex; }
@@ -89,12 +91,29 @@ styleSheet.innerHTML = `
     
     .badge-path { background: rgba(253, 184, 19, 0.12); color: var(--primary-yellow); padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 700; border: 1px solid rgba(253, 184, 19, 0.25); display: inline-block; }
 
-    /* Custom Practice Multi-Select Chip Styles */
-    .cw-multi-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(175px, 1fr)); gap: 10px; max-height: 240px; overflow-y: auto; padding: 10px; background: #080d17; border: 1px solid var(--border-color); border-radius: 10px; }
-    .cw-check-card { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: #0d1527; border: 1px solid var(--border-color); border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 600; color: #d1d5db; transition: 0.2s; user-select: none; }
-    .cw-check-card:hover { border-color: rgba(253, 184, 19, 0.5); color: #fff; }
+    /* Custom Practice Wide Desktop & Responsive Mobile Layout */
+    .cw-wide-card { max-width: 1180px; width: 100%; margin: 0 auto; padding: 32px 36px; box-sizing: border-box; }
+    .cw-exam-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; }
+    .cw-multi-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; max-height: 280px; overflow-y: auto; padding: 14px; background: #080d17; border: 1px solid var(--border-color); border-radius: 12px; }
+    .cw-check-card { display: flex; align-items: center; gap: 10px; padding: 12px 14px; background: #0d1527; border: 1px solid var(--border-color); border-radius: 10px; cursor: pointer; font-size: 13.5px; font-weight: 600; color: #d1d5db; transition: 0.2s; user-select: none; box-sizing: border-box; }
+    .cw-check-card:hover { border-color: rgba(253, 184, 19, 0.5); color: #fff; background: #111d35; }
     .cw-check-card.selected { background: rgba(253, 184, 19, 0.14); border-color: var(--primary-yellow); color: #fff; }
-    .cw-check-card input[type="checkbox"] { accent-color: var(--primary-yellow); width: 16px; height: 16px; margin: 0; cursor: pointer; flex-shrink: 0; }
+    .cw-check-card input[type="checkbox"] { accent-color: var(--primary-yellow); width: 17px; height: 17px; margin: 0; cursor: pointer; flex-shrink: 0; }
+
+    /* Live Chapter Search Bar & Suggestions Dropdown */
+    .cw-chapter-search-wrap { position: relative; margin-bottom: 12px; }
+    .cw-chapter-search-input { width: 100%; padding: 12px 38px 12px 14px !important; margin-bottom: 0 !important; border-radius: 10px !important; background: #080d17 !important; border: 1px solid var(--border-color) !important; color: #fff !important; font-size: 13.5px !important; box-sizing: border-box; }
+    .cw-chapter-search-input:focus { border-color: var(--primary-yellow) !important; }
+    .cw-chapter-suggestions { display: none; position: absolute; top: calc(100% + 6px); left: 0; right: 0; background: #0d1527; border: 1px solid var(--primary-yellow); border-radius: 10px; max-height: 230px; overflow-y: auto; z-index: 2500; box-shadow: 0 12px 30px rgba(0,0,0,0.85); }
+    .cw-chapter-sug-item { padding: 11px 16px; border-bottom: 1px solid rgba(255,255,255,0.05); cursor: pointer; display: flex; justify-content: space-between; align-items: center; font-size: 13px; color: #fff; transition: 0.15s; }
+    .cw-chapter-sug-item:hover { background: rgba(253, 184, 19, 0.12); }
+
+    @media (max-width: 768px) {
+        .cw-wide-card { padding: 18px 14px !important; }
+        .cw-exam-grid { grid-template-columns: 1fr; gap: 10px; }
+        .cw-multi-grid { grid-template-columns: 1fr; max-height: 230px; padding: 10px; gap: 8px; }
+        .cw-check-card { padding: 11px 12px; font-size: 13px; }
+    }
 
     #notification {
         position: fixed !important;
