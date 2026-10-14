@@ -631,7 +631,7 @@ async function loadContentForManagement(isNextPage = false) {
         snapshot.forEach(doc => {
             const data = doc.data(); 
             loadedItemsCache[doc.id] = data;
-            if (data.type === 'mcq') {
+            if (data.type === 'mcq' || !data.type) {
                 let answersStr = (data.correctAnswers || []).join(', ');
                 let lvlBadge = data.level ? `<span style="margin-left:10px; background:#444; color:white; padding:3px 8px; border-radius:6px; font-size:11px; text-transform:uppercase;">${data.level}</span>` : '';
                 html += `<div class="content-item-card" id="item_${doc.id}" style="background:#1c1c24; border:1px solid #2b2b36; border-radius:12px; padding:20px; margin-bottom:15px;"><div class="content-item-header" style="display:flex; justify-content:space-between; margin-bottom:15px; border-bottom: 1px solid #333; padding-bottom: 12px; flex-wrap:wrap; gap:8px;"><div><span class="badge-path">${data.path || 'Uncategorized'}</span>${lvlBadge}</div><div style="display:flex; gap:10px;"><button class="btn-exam" onclick="openEditModal('${doc.id}')" style="padding:6px 12px; font-size:13px; background:rgba(33, 150, 243, 0.15); color:#2196F3; border:1px solid rgba(33,150,243,0.3);">✏️ Edit</button><button class="btn-exam" onclick="deleteContentItem('${doc.id}')" style="padding:6px 12px; font-size:13px; background:rgba(244, 67, 54, 0.15); color:var(--wrong-red); border:1px solid rgba(244,67,54,0.3);">🗑️ Delete</button></div></div><div style="font-weight:bold; margin-bottom:12px; font-size: 15px;">${data.question}</div>${data.imageUrl ? `<img src="${data.imageUrl}" style="max-height:100px; border-radius:6px; margin-bottom:12px; display:block;">` : ''}<div style="font-size:13px; color:var(--text-muted); line-height:1.6; background: #131318; padding: 12px; border-radius: 8px;"><b>A:</b> ${data.options?.A || '-'}<br><b>B:</b> ${data.options?.B || '-'}<br><b>C:</b> ${data.options?.C || '-'}<br><b>D:</b> ${data.options?.D || '-'}</div><div style="margin-top:12px; font-size:14px; color:var(--correct-green); font-weight: bold;">✅ Correct: ${answersStr}</div></div>`;
@@ -664,11 +664,12 @@ async function runRandomKeyMigration() {
     const btn = document.getElementById('btnMigrateKeys');
     if (btn) { btn.innerText = "Indexing in progress..."; btn.disabled = true; }
     try {
-        let snap = await db.collection("content").where("type", "==", "mcq").limit(400).get();
+        let snap = await db.collection("content").limit(400).get();
         let batch = db.batch();
         let count = 0;
         snap.forEach(doc => {
-            if (doc.data().randomKey === undefined) {
+            let d = doc.data();
+            if ((!d.type || d.type === "mcq") && d.randomKey === undefined) {
                 batch.update(doc.ref, { randomKey: Math.random() });
                 count++;
             }
@@ -772,18 +773,21 @@ async function openEditModalFromReport(questionId) {
     } catch (e) { showNotification("❌ Error fetching question: " + e.message); }
 }
 
+// Reads ratings from both users collection and platform_feedback if available
 async function loadAdminUsers() {
     const container = document.getElementById('users-table-container'); 
     if (!container) return;
     container.innerHTML = `<p style="color:var(--primary-yellow); padding: 20px;">Fetching students and feedback...</p>`;
     try {
-        const feedbackSnap = await db.collection("platform_feedback").limit(100).get();
         let feedbacks = {};
-        feedbackSnap.forEach(doc => {
-            let d = doc.data();
-            let uid = d.studentId || d.userId;
-            if (uid) feedbacks[uid] = { rating: d.rating, feedback: d.feedback || d.text || '-' };
-        });
+        try {
+            const feedbackSnap = await db.collection("platform_feedback").limit(100).get();
+            feedbackSnap.forEach(doc => {
+                let d = doc.data();
+                let uid = d.studentId || d.userId || doc.id;
+                if (uid) feedbacks[uid] = { rating: d.rating, feedback: d.feedback || d.text || '-' };
+            });
+        } catch (fbErr) {}
 
         const snapshot = await db.collection("users").orderBy("lastLogin", "desc").limit(100).get();
         let html = `<table style="width:100%; text-align:left; border-collapse: collapse;">
@@ -798,14 +802,15 @@ async function loadAdminUsers() {
         snapshot.forEach(doc => { 
             let d = doc.data();
             let uid = doc.id;
-            let fb = feedbacks[uid] || { rating: '-', feedback: '-' };
-            let stars = fb.rating !== '-' ? '⭐'.repeat(Number(fb.rating) || 0) : '-';
+            let ratingVal = d.rating || feedbacks[uid]?.rating || '-';
+            let feedbackVal = d.feedback || feedbacks[uid]?.feedback || '-';
+            let stars = ratingVal !== '-' ? '⭐'.repeat(Number(ratingVal) || 0) : '-';
             html += `<tr style="border-bottom: 1px solid #2b2b36;">
                 <td style="padding: 15px; font-weight:bold;">${d.displayName || 'Unknown'}</td>
                 <td style="padding: 15px; color:#aaa;">${d.email || '-'}</td>
                 <td style="padding: 15px; color:#aaa; font-size: 13px;">${d.lastLogin ? d.lastLogin.toDate().toLocaleString() : "Unknown"}</td>
                 <td style="padding: 15px; color:var(--primary-yellow);">${stars}</td>
-                <td style="padding: 15px; max-width:250px; font-size:13px; color:var(--text-muted); line-height:1.4;">${fb.feedback}</td>
+                <td style="padding: 15px; max-width:250px; font-size:13px; color:var(--text-muted); line-height:1.4;">${feedbackVal}</td>
             </tr>`; 
         });
         container.innerHTML = html + `</table>`;
