@@ -171,10 +171,13 @@ window.addEventListener('hashchange', handleRouting);
 function updateBottomNav(hash) {
     document.querySelectorAll('.app-tab').forEach(tab => tab.classList.remove('active'));
     
-    if (hash === 'quiz' || hash === 'admin' || hash === 'admin-panel') {
+    // Hide both mobile bottom dock AND Ask AI Floating Button on Custom Practice & Quiz pages
+    if (hash === 'quiz' || hash === 'custom-setup' || hash === 'admin' || hash === 'admin-panel') {
         document.body.classList.add('hide-bottom-bar');
+        document.body.classList.add('hide-ai-btn');
     } else {
         document.body.classList.remove('hide-bottom-bar');
+        document.body.classList.remove('hide-ai-btn');
     }
 
     if (hash === 'admin' || hash === 'admin-panel') {
@@ -292,7 +295,6 @@ function handleRouting() {
         
         let isRootHome = (!hash || hash === 'home');
         
-        // Permanently hide the duplicate bottom back button container
         const bottomBackBtn = document.getElementById('dynamic-back-container');
         if (bottomBackBtn) bottomBackBtn.style.display = 'none';
         
@@ -318,6 +320,8 @@ function handleRouting() {
 
 function goHome() { 
     if (typeof currentTimer !== 'undefined' && currentTimer) clearInterval(currentTimer);
+    document.body.classList.remove('hide-ai-btn');
+    document.body.classList.remove('hide-bottom-bar');
     if (window.location.hash === '#/home' || window.location.hash === '') {
         currentPath = [];
         if (typeof _renderView === 'function') _renderView();
