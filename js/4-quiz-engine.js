@@ -8,10 +8,20 @@ let userAnswers = {};
 let currentTimer = null;
 let timeSpent = {};
 
+const QUIZ_MATH_DELIMS = [
+    {left: '$$', right: '$$', display: true},
+    {left: '$', right: '$', display: false},
+    {left: '\\(', right: '\\)', display: false},
+    {left: '\\[', right: '\\]', display: true}
+];
+
 async function _initiateQuizEngine() {
     const mc = document.getElementById('dynamic-content');
     let targetPath = currentPath.join(" > ");
-    if (!targetPath) { mc.innerHTML = "<div class='card'><p>Invalid quiz path.</p><button class='btn-exam' onclick='goBack()'>Go Back</button></div>"; return; }
+    if (!targetPath) {
+        mc.innerHTML = "<div class='card'><p>Invalid quiz path.</p><button class='btn-exam' onclick='goBack()'>Go Back</button></div>";
+        return;
+    }
 
     let isDailyQuiz = false;
     let originalPath = targetPath;
@@ -22,33 +32,19 @@ async function _initiateQuizEngine() {
 
     mc.innerHTML = `<div class="card page-transition" style="text-align:center; padding: 50px 20px;">
         <h2 class="section-title" style="justify-content:center;">⚙️ Preparing Practice Session...</h2>
-        <p style="color:var(--text-muted);">Fetching the latest questions for ${originalPath}.</p>
+        <p style="color:var(--text-muted);">Fetching the latest questions for ${originalPath.replace(/^\d+\.\s*/, '')}.</p>
     </div>`;
 
     try {
-        let query = db.collection("content")
+        let snapshot = await db.collection("content")
             .where("path", ">=", targetPath)
             .where("path", "<=", targetPath + "\uf8ff")
-            .where("type", "==", "mcq");
+            .where("type", "==", "mcq")
+            .limit(250)
+            .get();
 
         let allDocs = [];
-        
-        if (isDailyQuiz) {
-            let randomStart = Math.random();
-            let snapshot = await query.where("randomKey", ">=", randomStart).orderBy("randomKey").limit(25).get();
-            snapshot.forEach(doc => allDocs.push({ id: doc.id, ...doc.data() }));
-            
-            if (allDocs.length < 25) {
-                let remainder = 25 - allDocs.length;
-                let snapshot2 = await query.where("randomKey", "<", randomStart).orderBy("randomKey").limit(remainder).get();
-                snapshot2.forEach(doc => allDocs.push({ id: doc.id, ...doc.data() }));
-            }
-        } else {
-            let snapshot = await query.limit(100).get();
-            snapshot.forEach(doc => allDocs.push({ id: doc.id, ...doc.data() }));
-            allDocs.sort(() => Math.random() - 0.5);
-            allDocs = allDocs.slice(0, 50); 
-        }
+        snapshot.forEach(doc => allDocs.push({ id: doc.id, ...doc.data() }));
 
         if (allDocs.length === 0) {
             mc.innerHTML = `<div class="card page-transition" style="text-align:center; padding: 40px 20px;">
@@ -59,7 +55,25 @@ async function _initiateQuizEngine() {
             return;
         }
 
-        currentQuestions = allDocs; 
+        // Fisher-Yates shuffle
+        for (let i = allDocs.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [allDocs[i], allDocs[j]] = [allDocs[j], allDocs[i]];
+        }
+
+        // Prioritize unattempted questions for standard topic practice
+        let limitCount = isDailyQuiz ? 25 : 50;
+        if (!isDailyQuiz && typeof getAttemptedIdsForPath === 'function') {
+            let attemptedIds = await getAttemptedIdsForPath(originalPath);
+            if (attemptedIds && attemptedIds.length > 0) {
+                let attemptedSet = new Set(attemptedIds);
+                let freshDocs = allDocs.filter(q => !attemptedSet.has(q.id));
+                let seenDocs = allDocs.filter(q => attemptedSet.has(q.id));
+                allDocs = [...freshDocs, ...seenDocs];
+            }
+        }
+
+        currentQuestions = allDocs.slice(0, limitCount);
         currentQuizPath = originalPath;
         currentIndex = 0;
         userAnswers = {};
@@ -72,36 +86,76 @@ async function _initiateQuizEngine() {
     }
 }
 
+function jumpToQuestion(idx) {
+    if (idx < 0 || idx >= currentQuestions.length || idx === currentIndex) return;
+    stopQuestionTimer();
+    currentIndex = idx;
+    renderQuizInterface();
+    startQuestionTimer();
+}
+
+async function flagQuestionDoubt(qId) {
+    let q = currentQuestions.find(item => item.id === qId);
+    if (!q) return;
+    let activeUser = currentUser || window.currentUser;
+    try {
+        await db.collection("flagged_doubts").add({
+            questionId: q.id,
+            questionText: q.question || '',
+            path: q.path || currentQuizPath,
+            studentId: activeUser ? activeUser.uid : 'anonymous',
+            studentName: activeUser ? (activeUser.displayName || activeUser.email) : 'Guest Student',
+            status: 'pending',
+            seenByStudent: true,
+            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        showNotification("🚩 Question flagged for Admin & Faculty review!");
+    } catch (e) {
+        showNotification("❌ Could not flag question: " + e.message);
+    }
+}
+
 function renderQuizInterface() {
     const mc = document.getElementById('dynamic-content');
     let q = currentQuestions[currentIndex];
     if(!q) return;
 
     let total = currentQuestions.length;
-    let progressPct = ((currentIndex) / total) * 100;
-    
+    let progressPct = ((currentIndex + 1) / total) * 100;
     let savedAnswer = userAnswers[q.id];
+    let isBookmarked = Array.isArray(userBookmarks) && userBookmarks.includes(q.id);
+
+    let paletteHtml = currentQuestions.map((item, idx) => {
+        let isCurrent = idx === currentIndex;
+        let isAnswered = !!userAnswers[item.id];
+        let bg = isCurrent ? 'var(--primary-yellow)' : (isAnswered ? 'rgba(16, 185, 129, 0.2)' : '#111a2e');
+        let color = isCurrent ? '#000' : (isAnswered ? 'var(--correct-green)' : 'var(--text-muted)');
+        let border = isCurrent ? 'var(--primary-yellow)' : (isAnswered ? 'var(--correct-green)' : 'var(--border-color)');
+        return `<button onclick="jumpToQuestion(${idx})" style="width:30px; height:30px; border-radius:6px; border:1px solid ${border}; background:${bg}; color:${color}; font-weight:700; font-size:12px; cursor:pointer;">${idx + 1}</button>`;
+    }).join('');
 
     let html = `
     <div class="card page-transition">
         <div class="quiz-header">
             <div>
-                <span class="badge-path">${q.path.split(' > ').pop()}</span>
+                <span class="badge-path">${(q.path || currentQuizPath).split(' > ').pop().replace(/^\d+\.\s*/, '')}</span>
                 <div style="font-size: 12px; color: var(--text-muted); margin-top: 6px; text-transform: uppercase; font-weight: 600;">Question ${currentIndex + 1} of ${total}</div>
             </div>
             <div class="quiz-timer" id="qTimerDisplay">⏱ 00:00</div>
         </div>
         
-        <div style="width: 100%; background: #1c1c24; height: 6px; border-radius: 3px; margin-bottom: 25px; overflow: hidden; border: 1px solid var(--border-color);">
+        <div style="width: 100%; background: #1c1c24; height: 6px; border-radius: 3px; margin-bottom: 16px; overflow: hidden; border: 1px solid var(--border-color);">
             <div style="width: ${progressPct}%; background: var(--primary-yellow); height: 100%; transition: width 0.3s ease;"></div>
         </div>
+
+        <div class="question-palette">${paletteHtml}</div>
 
         <div class="quiz-question-text" id="qText">${q.question}</div>
         ${q.imageUrl ? `<img src="${q.imageUrl}" class="quiz-image" onclick="window.open(this.src, '_blank')">` : ''}
         
         <div id="options-container">
             ${['A', 'B', 'C', 'D'].map(opt => {
-                let text = q.options[opt];
+                let text = q.options ? q.options[opt] : '';
                 if(!text) return '';
                 
                 let btnClass = 'quiz-option';
@@ -114,11 +168,12 @@ function renderQuizInterface() {
             }).join('')}
         </div>
 
-        <div style="display:flex; justify-content:space-between; margin-top:30px; gap:10px;">
-            <button class="btn-exam" onclick="prevQuestion()" ${currentIndex === 0 ? 'disabled' : ''} style="flex:1; max-width: 120px; background:#1c1c24;">&larr; Prev</button>
-            <div style="display:flex; gap:10px; flex:1; justify-content:flex-end;">
-                <button class="btn-exam" onclick="bookmarkQuestion('${q.id}')" style="background:rgba(255,255,255,0.05); color:var(--text-light); border: 1px solid rgba(255,255,255,0.1);">🔖 Bookmark</button>
-                <button class="btn-exam" onclick="openReportModal('${q.id}', '${q.question.replace(/'/g, "\\'")}', '${q.path}')" style="background:rgba(244, 67, 54, 0.1); color:var(--wrong-red); border: 1px solid rgba(244,67,54,0.3);">🚨 Report</button>
+        <div style="display:flex; justify-content:space-between; margin-top:30px; gap:10px; flex-wrap:wrap;">
+            <button class="btn-exam" onclick="prevQuestion()" ${currentIndex === 0 ? 'disabled' : ''} style="flex:1; min-width: 90px; max-width: 120px; background:#1c1c24;">&larr; Prev</button>
+            <div style="display:flex; gap:8px; flex:2; justify-content:flex-end; flex-wrap:wrap;">
+                <button class="btn-exam ${isBookmarked ? 'bookmarked' : ''}" onclick="bookmarkQuestion('${q.id}')" style="background:rgba(255,255,255,0.05); color:var(--text-light); border: 1px solid rgba(255,255,255,0.1);">🔖 ${isBookmarked ? 'Saved' : 'Save'}</button>
+                <button class="btn-exam" onclick="flagQuestionDoubt('${q.id}')" style="background:rgba(253, 184, 19, 0.1); color:var(--primary-yellow); border: 1px solid rgba(253,184,19,0.3);" title="Flag for Doubt Review">🚩 Doubt</button>
+                <button class="btn-exam" onclick="openReportModal('${q.id}')" style="background:rgba(244, 67, 54, 0.1); color:var(--wrong-red); border: 1px solid rgba(244,67,54,0.3);">🚨 Report</button>
                 ${currentIndex === total - 1 
                     ? `<button class="btn-exam" onclick="submitQuiz()" style="background: var(--correct-green); color: white; border: none; font-size: 15px; box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);">Submit Quiz ✔</button>` 
                     : `<button class="btn-exam" onclick="nextQuestion()" style="background: var(--primary-yellow); color: black; border: none; font-size: 15px; box-shadow: 0 4px 15px rgba(253, 184, 19, 0.3);">Next &rarr;</button>`}
@@ -128,16 +183,23 @@ function renderQuizInterface() {
 
     mc.innerHTML = html;
     
-    renderMathInElement(document.getElementById('qText'), { delimiters: [ {left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}, {left: '\\(', right: '\\)', display: false}, {left: '[', right: ']', display: true} ], throwOnError: false });
-    ['A','B','C','D'].forEach(opt => {
-        let el = document.getElementById('optText_'+opt);
-        if(el) renderMathInElement(el, { delimiters: [ {left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}, {left: '\\(', right: '\\)', display: false}, {left: '[', right: ']', display: true} ], throwOnError: false });
-    });
+    if (typeof renderMathInElement === 'function') {
+        const qEl = document.getElementById('qText');
+        if (qEl) renderMathInElement(qEl, { delimiters: QUIZ_MATH_DELIMS, throwOnError: false });
+        ['A','B','C','D'].forEach(opt => {
+            let el = document.getElementById('optText_'+opt);
+            if(el) renderMathInElement(el, { delimiters: QUIZ_MATH_DELIMS, throwOnError: false });
+        });
+    }
 }
 
 function selectOption(opt) {
     let q = currentQuestions[currentIndex];
-    userAnswers[q.id] = opt;
+    if (userAnswers[q.id] === opt) {
+        delete userAnswers[q.id]; // Allow unselecting an option by tapping it again
+    } else {
+        userAnswers[q.id] = opt;
+    }
     renderQuizInterface();
 }
 
@@ -162,6 +224,7 @@ function prevQuestion() {
 let qStartTime = 0;
 function startQuestionTimer() {
     qStartTime = Date.now();
+    if (!currentQuestions[currentIndex]) return;
     let qId = currentQuestions[currentIndex].id;
     if(!timeSpent[qId]) timeSpent[qId] = 0;
     
@@ -177,8 +240,9 @@ function startQuestionTimer() {
 
 function stopQuestionTimer() {
     if(currentTimer) clearInterval(currentTimer);
+    if (!currentQuestions[currentIndex]) return;
     let qId = currentQuestions[currentIndex].id;
-    timeSpent[qId] += (Date.now() - qStartTime);
+    timeSpent[qId] = (timeSpent[qId] || 0) + (Date.now() - qStartTime);
 }
 
 async function submitQuiz() {
@@ -193,11 +257,14 @@ async function submitQuiz() {
 
     currentQuestions.forEach(q => {
         let uAns = userAnswers[q.id];
-        let isCorrect = q.correctAnswers.includes(uAns);
+        let isCorrect = Array.isArray(q.correctAnswers) && q.correctAnswers.includes(uAns);
         let tSpent = Math.floor((timeSpent[q.id] || 0) / 1000);
         
-        let pathParts = q.path.split(' > ');
+        let pathParts = (q.path || currentQuizPath).split(' > ');
         let subject = pathParts.length > 1 ? pathParts[1] : 'General';
+        if ((subject === 'MCQs Practice' || subject === 'Mock Test') && pathParts.length > 2) {
+            subject = pathParts[2];
+        }
         if(!subjectBreakdown[subject]) subjectBreakdown[subject] = { attempts: 0, correct: 0 };
 
         if(uAns) {
@@ -213,43 +280,59 @@ async function submitQuiz() {
     let totalTimeTaken = Math.floor(Object.values(timeSpent).reduce((a, b) => a + b, 0) / 1000);
     
     let timeM = Math.floor(totalTimeTaken / 60); let timeS = totalTimeTaken % 60; let timeStr = `${timeM}m ${timeS}s`;
-    let attemptedIds = currentQuestions.map(q => q.id);
+    let attemptedIds = currentQuestions.filter(q => !!userAnswers[q.id]).map(q => q.id);
 
-    if (window.currentUser) {
+    // Save attempted question IDs for both guest and signed-in users
+    if (typeof saveAttemptedIdsForPath === 'function' && attemptedIds.length > 0) {
+        await saveAttemptedIdsForPath(currentQuizPath, attemptedIds);
+    }
+
+    let activeUser = currentUser || window.currentUser;
+    if (activeUser) {
         try {
+            let rootParts = currentQuizPath.split(' > ');
+            let examCat = (rootParts[0] === "Daily Quiz Challenge" && rootParts.length > 1) ? rootParts[1] : rootParts[0];
+
             await db.collection("leaderboards").add({
-                userId: window.currentUser.uid,
-                userName: window.currentUser.displayName,
+                userId: activeUser.uid,
+                userName: activeUser.displayName || activeUser.email || "Student",
                 quizPath: currentQuizPath,
-                examCategory: currentQuizPath.split(' > ')[0],
-                score: score, accuracy: accuracy, attemptedQuestions: currentQuestions.length,
+                examCategory: examCat,
+                score: score, accuracy: accuracy, attemptedQuestions: correctCount + wrongCount,
+                totalQuestions: currentQuestions.length,
                 correctCount: correctCount, wrongCount: wrongCount, skippedCount: skippedCount,
                 timeTakenSeconds: totalTimeTaken, timeStr: timeStr,
                 avgTimeCorrect: avgTimeCorrect, avgTimeWrong: avgTimeWrong,
                 subjectBreakdown: subjectBreakdown, timestamp: firebase.firestore.FieldValue.serverTimestamp()
             });
-
-            await saveAttemptedIdsForPath(currentQuizPath, attemptedIds);
             
-            const userRef = db.collection("users").doc(window.currentUser.uid);
+            const userRef = db.collection("users").doc(activeUser.uid);
             await db.runTransaction(async (transaction) => {
                 const doc = await transaction.get(userRef);
+                let todayStr = new Date().toISOString().split('T')[0];
+                let yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1);
+                let yesterdayStr = yesterday.toISOString().split('T')[0];
+
                 if (doc.exists) {
                     let d = doc.data();
-                    let todayStr = new Date().toISOString().split('T')[0];
                     let lastActiveStr = d.lastActiveDate || "";
                     let streak = d.currentStreak || 0;
                     
                     if (lastActiveStr !== todayStr) {
-                        let yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1);
-                        let yesterdayStr = yesterday.toISOString().split('T')[0];
                         if (lastActiveStr === yesterdayStr) { streak++; } else { streak = 1; }
                         transaction.update(userRef, { currentStreak: streak, lastActiveDate: todayStr });
-                        document.getElementById('nav-streak-display').innerText = streak;
+                        const streakEl = document.getElementById('nav-streak-display');
+                        if (streakEl) streakEl.innerText = streak;
                     }
+                } else {
+                    transaction.set(userRef, { currentStreak: 1, lastActiveDate: todayStr }, { merge: true });
+                    const streakEl = document.getElementById('nav-streak-display');
+                    if (streakEl) streakEl.innerText = 1;
                 }
             });
-        } catch(e) {}
+        } catch(e) {
+            console.error("Error saving quiz results:", e);
+        }
     }
 
     _renderQuizResults(score, accuracy, correctCount, wrongCount, skippedCount, timeStr);
@@ -287,6 +370,7 @@ function _renderQuizResults(score, accuracy, correctCount, wrongCount, skippedCo
 
         <div style="display:flex; gap:15px; justify-content:center; flex-wrap:wrap;">
             <button class="btn-exam" onclick="_renderQuizReview('all')" style="background:var(--primary-yellow); color:black; border:none; padding:12px 24px; font-size:15px; box-shadow: 0 4px 15px rgba(253, 184, 19, 0.3);">Review Solutions 📚</button>
+            <button class="btn-exam" onclick="resetProgress('${currentQuizPath.replace(/'/g, "\\'")}')" style="background:#0d1527; border:1px solid var(--border-color); padding:12px 24px; font-size:15px;">🔄 Reset Topic Progress</button>
             <button class="btn-exam" onclick="goBack()" style="background:#1c1c24; border:1px solid #333; padding:12px 24px; font-size:15px;">Exit to Dashboard</button>
         </div>
     </div>`;
@@ -307,7 +391,7 @@ function _renderQuizReview(filterMode) {
     let count = 0;
     currentQuestions.forEach((q, index) => {
         let uAns = userAnswers[q.id];
-        let isCorrect = q.correctAnswers.includes(uAns);
+        let isCorrect = Array.isArray(q.correctAnswers) && q.correctAnswers.includes(uAns);
         
         if (filterMode === 'wrong' && (isCorrect || !uAns)) return;
         if (filterMode === 'skipped' && uAns) return;
@@ -320,17 +404,15 @@ function _renderQuizReview(filterMode) {
         html += `
         <div class="review-item">
             <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
-                <span style="color:var(--text-muted); font-size:12px; font-weight:bold;">Q${index + 1}</span>
-                ${badge}
+                <span style="color:var(--text-muted); font-size:12px; font-weight:bold;">Q${index + 1}</span>${badge}
             </div>
-            <div style="font-weight:500; font-size:15px; margin-bottom:15px; color:#fff;" id="revQ_${q.id}">${q.question}</div>
-            ${q.imageUrl ? `<img src="${q.imageUrl}" style="max-height:150px; border-radius:6px; margin-bottom:15px; display:block; border: 1px solid #333;">` : ''}
+            <div style="font-weight:500; font-size:15px; margin-bottom:15px; color:#fff;" id="revQ_${q.id}">${q.question}</div>${q.imageUrl ? `<img src="${q.imageUrl}" style="max-height:150px; border-radius:6px; margin-bottom:15px; display:block; border: 1px solid #333;">` : ''}
             
             <div style="display:grid; grid-template-columns:1fr; gap:8px; margin-bottom:15px;">
                 ${['A','B','C','D'].map(opt => {
-                    let text = q.options[opt];
+                    let text = q.options ? q.options[opt] : '';
                     if(!text) return '';
-                    let isTrueCorrect = q.correctAnswers.includes(opt);
+                    let isTrueCorrect = Array.isArray(q.correctAnswers) && q.correctAnswers.includes(opt);
                     let isUserSelect = (uAns === opt);
                     
                     let bg = "rgba(255,255,255,0.03)"; let border = "#333"; let color = "#aaa";
@@ -347,7 +429,8 @@ function _renderQuizReview(filterMode) {
                 <button onclick="toggleViewAnswer('sol_${q.id}')" style="background:#1c1c24; color:white; border:1px solid #444; padding:8px 16px; border-radius:6px; cursor:pointer; font-size:12px; font-weight:bold; transition:0.2s;">👁 View Explanation</button>
                 <div style="display:flex; gap:10px;">
                     <button onclick="bookmarkQuestion('${q.id}')" style="background:transparent; color:var(--text-muted); border:none; cursor:pointer; font-size:18px;" title="Bookmark">🔖</button>
-                    <button onclick="openReportModal('${q.id}', '${q.question.replace(/'/g, "\\'")}', '${q.path}')" style="background:transparent; color:var(--wrong-red); border:none; cursor:pointer; font-size:18px;" title="Report Mistake">🚨</button>
+                    <button onclick="flagQuestionDoubt('${q.id}')" style="background:transparent; color:var(--primary-yellow); border:none; cursor:pointer; font-size:18px;" title="Flag Doubt">🚩</button>
+                    <button onclick="openReportModal('${q.id}')" style="background:transparent; color:var(--wrong-red); border:none; cursor:pointer; font-size:18px;" title="Report Mistake">🚨</button>
                 </div>
             </div>
             
@@ -363,17 +446,20 @@ function _renderQuizReview(filterMode) {
     html += `<button class="btn-exam" onclick="goBack()" style="width:100%; margin-top:20px; background:#1c1c24; border-color:#333;">&larr; Exit to Dashboard</button></div></div>`;
     mc.innerHTML = html;
     
-    currentQuestions.forEach(q => {
-        let elQ = document.getElementById('revQ_'+q.id); if(elQ) renderMathInElement(elQ, { delimiters: [ {left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}, {left: '\\(', right: '\\)', display: false}, {left: '[', right: ']', display: true} ], throwOnError: false });
-        ['A','B','C','D'].forEach(opt => {
-            let elO = document.getElementById(`revOpt_${q.id}_${opt}`); if(elO) renderMathInElement(elO, { delimiters: [ {left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}, {left: '\\(', right: '\\)', display: false}, {left: '[', right: ']', display: true} ], throwOnError: false });
+    if (typeof renderMathInElement === 'function') {
+        currentQuestions.forEach(q => {
+            let elQ = document.getElementById('revQ_'+q.id); if(elQ) renderMathInElement(elQ, { delimiters: QUIZ_MATH_DELIMS, throwOnError: false });
+            ['A','B','C','D'].forEach(opt => {
+                let elO = document.getElementById(`revOpt_${q.id}_${opt}`); if(elO) renderMathInElement(elO, { delimiters: QUIZ_MATH_DELIMS, throwOnError: false });
+            });
+            let elE = document.getElementById('revExp_'+q.id); if(elE) renderMathInElement(elE, { delimiters: QUIZ_MATH_DELIMS, throwOnError: false });
         });
-        let elE = document.getElementById('revExp_'+q.id); if(elE) renderMathInElement(elE, { delimiters: [ {left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}, {left: '\\(', right: '\\)', display: false}, {left: '[', right: ']', display: true} ], throwOnError: false });
-    });
+    }
 }
 
 function toggleViewAnswer(id) {
     const el = document.getElementById(id);
+    if (!el) return;
     if(el.style.display === 'none' || el.style.display === '') el.style.display = 'block';
     else el.style.display = 'none';
 }
