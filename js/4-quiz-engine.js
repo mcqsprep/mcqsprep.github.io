@@ -12,7 +12,7 @@ const QUIZ_MATH_DELIMS = [
     {left: '$$', right: '$$', display: true},
     {left: '$', right: '$', display: false},
     {left: '\\(', right: '\\)', display: false},
-    {left: '\\[', right: '\\]', display: true}
+    {left: '[', right: ']', display: true}
 ];
 
 async function _initiateQuizEngine() {
@@ -36,20 +36,26 @@ async function _initiateQuizEngine() {
     </div>`;
 
     try {
+        // FIXED: Single-field range query on "path" ONLY — never requires a composite index!
         let snapshot = await db.collection("content")
             .where("path", ">=", targetPath)
             .where("path", "<=", targetPath + "\uf8ff")
-            .where("type", "==", "mcq")
-            .limit(250)
+            .limit(350)
             .get();
 
         let allDocs = [];
-        snapshot.forEach(doc => allDocs.push({ id: doc.id, ...doc.data() }));
+        snapshot.forEach(doc => {
+            let d = doc.data();
+            // Filter MCQs client-side to avoid Firestore composite index error
+            if (!d.type || d.type === "mcq") {
+                allDocs.push({ id: doc.id, ...d });
+            }
+        });
 
         if (allDocs.length === 0) {
             mc.innerHTML = `<div class="card page-transition" style="text-align:center; padding: 40px 20px;">
                 <h2 class="section-title" style="justify-content:center;">No Questions Found</h2>
-                <p style="color:var(--text-muted); margin-bottom:25px;">Content for this topic is currently being updated. Please check back later.</p>
+                <p style="color:var(--text-muted); margin-bottom:25px;">No MCQs have been uploaded to <b>${targetPath}</b> yet.</p>
                 <button class="btn-exam" onclick="goBack()" style="background:#0d1527; border:1px solid var(--border-color); width: 150px;">&larr; Go Back</button>
             </div>`;
             return;
@@ -61,7 +67,7 @@ async function _initiateQuizEngine() {
             [allDocs[i], allDocs[j]] = [allDocs[j], allDocs[i]];
         }
 
-        // Prioritize unattempted questions for standard topic practice
+        // Prioritize unattempted questions
         let limitCount = isDailyQuiz ? 25 : 50;
         if (!isDailyQuiz && typeof getAttemptedIdsForPath === 'function') {
             let attemptedIds = await getAttemptedIdsForPath(originalPath);
@@ -196,7 +202,7 @@ function renderQuizInterface() {
 function selectOption(opt) {
     let q = currentQuestions[currentIndex];
     if (userAnswers[q.id] === opt) {
-        delete userAnswers[q.id]; // Allow unselecting an option by tapping it again
+        delete userAnswers[q.id];
     } else {
         userAnswers[q.id] = opt;
     }
@@ -282,7 +288,6 @@ async function submitQuiz() {
     let timeM = Math.floor(totalTimeTaken / 60); let timeS = totalTimeTaken % 60; let timeStr = `${timeM}m ${timeS}s`;
     let attemptedIds = currentQuestions.filter(q => !!userAnswers[q.id]).map(q => q.id);
 
-    // Save attempted question IDs for both guest and signed-in users
     if (typeof saveAttemptedIdsForPath === 'function' && attemptedIds.length > 0) {
         await saveAttemptedIdsForPath(currentQuizPath, attemptedIds);
     }
@@ -363,7 +368,7 @@ function _renderQuizResults(score, accuracy, correctCount, wrongCount, skippedCo
 
         <div style="display:flex; justify-content:center; gap:20px; margin-bottom:30px; flex-wrap:wrap;">
             <span style="background:rgba(76, 175, 80, 0.1); color:var(--correct-green); padding:8px 16px; border-radius:8px; font-weight:bold; font-size:13px; border:1px solid rgba(76,175,80,0.3);">✅ Correct: ${correctCount}</span>
-            <span style="background:rgba(244, 67, 54, 0.1); color:var(--wrong-red); padding:8px 16px; border-radius:8px; font-weight:bold; font-size:13px; border:1px solid rgba(244,67,54,0.3);">❌ Wrong: ${wrongCount}</span>
+            <span style="background:rgba(244, 67, 54, 0.1); color:var(--wrong-red); padding:8px 16px; border-radius:8px; font-size:13px; border:1px solid rgba(244,67,54,0.3);">❌ Wrong: ${wrongCount}</span>
             <span style="background:rgba(255, 255, 255, 0.05); color:#aaa; padding:8px 16px; border-radius:8px; font-weight:bold; font-size:13px; border:1px solid rgba(255,255,255,0.1);">⏭ Skipped: ${skippedCount}</span>
             <span style="background:rgba(33, 150, 243, 0.1); color:#2196F3; padding:8px 16px; border-radius:8px; font-weight:bold; font-size:13px; border:1px solid rgba(33,150,243,0.3);">⏱ Time: ${timeStr}</span>
         </div>
@@ -404,9 +409,11 @@ function _renderQuizReview(filterMode) {
         html += `
         <div class="review-item">
             <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
-                <span style="color:var(--text-muted); font-size:12px; font-weight:bold;">Q${index + 1}</span>${badge}
+                <span style="color:var(--text-muted); font-size:12px; font-weight:bold;">Q${index + 1}</span>
+                ${badge}
             </div>
-            <div style="font-weight:500; font-size:15px; margin-bottom:15px; color:#fff;" id="revQ_${q.id}">${q.question}</div>${q.imageUrl ? `<img src="${q.imageUrl}" style="max-height:150px; border-radius:6px; margin-bottom:15px; display:block; border: 1px solid #333;">` : ''}
+            <div style="font-weight:500; font-size:15px; margin-bottom:15px; color:#fff;" id="revQ_${q.id}">${q.question}</div>
+            ${q.imageUrl ? `<img src="${q.imageUrl}" style="max-height:150px; border-radius:6px; margin-bottom:15px; display:block; border: 1px solid #333;">` : ''}
             
             <div style="display:grid; grid-template-columns:1fr; gap:8px; margin-bottom:15px;">
                 ${['A','B','C','D'].map(opt => {
