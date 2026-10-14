@@ -36,7 +36,6 @@ async function _initiateQuizEngine() {
     </div>`;
 
     try {
-        // FIXED: Single-field range query on "path" ONLY — never requires a composite index!
         let snapshot = await db.collection("content")
             .where("path", ">=", targetPath)
             .where("path", "<=", targetPath + "\uf8ff")
@@ -46,7 +45,6 @@ async function _initiateQuizEngine() {
         let allDocs = [];
         snapshot.forEach(doc => {
             let d = doc.data();
-            // Filter MCQs client-side to avoid Firestore composite index error
             if (!d.type || d.type === "mcq") {
                 allDocs.push({ id: doc.id, ...d });
             }
@@ -61,13 +59,11 @@ async function _initiateQuizEngine() {
             return;
         }
 
-        // Fisher-Yates shuffle
         for (let i = allDocs.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
             [allDocs[i], allDocs[j]] = [allDocs[j], allDocs[i]];
         }
 
-        // Prioritize unattempted questions
         let limitCount = isDailyQuiz ? 25 : 50;
         if (!isDailyQuiz && typeof getAttemptedIdsForPath === 'function') {
             let attemptedIds = await getAttemptedIdsForPath(originalPath);
@@ -368,7 +364,7 @@ function _renderQuizResults(score, accuracy, correctCount, wrongCount, skippedCo
 
         <div style="display:flex; justify-content:center; gap:20px; margin-bottom:30px; flex-wrap:wrap;">
             <span style="background:rgba(76, 175, 80, 0.1); color:var(--correct-green); padding:8px 16px; border-radius:8px; font-weight:bold; font-size:13px; border:1px solid rgba(76,175,80,0.3);">✅ Correct: ${correctCount}</span>
-            <span style="background:rgba(244, 67, 54, 0.1); color:var(--wrong-red); padding:8px 16px; border-radius:8px; font-size:13px; border:1px solid rgba(244,67,54,0.3);">❌ Wrong: ${wrongCount}</span>
+            <span style="background:rgba(244, 67, 54, 0.1); color:var(--wrong-red); padding:8px 16px; border-radius:8px; font-weight:bold; font-size:13px; border:1px solid rgba(244,67,54,0.3);">❌ Wrong: ${wrongCount}</span>
             <span style="background:rgba(255, 255, 255, 0.05); color:#aaa; padding:8px 16px; border-radius:8px; font-weight:bold; font-size:13px; border:1px solid rgba(255,255,255,0.1);">⏭ Skipped: ${skippedCount}</span>
             <span style="background:rgba(33, 150, 243, 0.1); color:#2196F3; padding:8px 16px; border-radius:8px; font-weight:bold; font-size:13px; border:1px solid rgba(33,150,243,0.3);">⏱ Time: ${timeStr}</span>
         </div>
