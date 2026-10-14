@@ -4,7 +4,7 @@
 
 function forceStartQuiz() {
     window.location.hash = '#/quiz';
-    setTimeout(() => { _initiateQuizEngine(); }, 100);
+    setTimeout(() => { if (typeof _initiateQuizEngine === 'function') _initiateQuizEngine(); }, 50);
 }
 
 function forceCwStep1(e) {
@@ -13,56 +13,110 @@ function forceCwStep1(e) {
 }
 
 function getSmartIcon(text, customIcon = null) {
-    // Prioritize custom icon from Firestore if provided
-    if (customIcon) {
-        return { i: customIcon, c: "#fdb813", bg: "rgba(253, 184, 19, 0.15)" };
+    if (customIcon && String(customIcon).trim() !== "") {
+        return { i: String(customIcon).trim(), c: "#fdb813", bg: "rgba(253, 184, 19, 0.15)" };
     }
 
-    let t = text.toLowerCase();
+    let t = (text || "").toLowerCase();
 
     // Exam Categories
     if(t.includes('neet')) return { i: "🩺", c: "#fdb813", bg: "rgba(253, 184, 19, 0.15)" };
     if(t.includes('jee')) return { i: "🚀", c: "#2196F3", bg: "rgba(33, 150, 243, 0.15)" };
     if(t.includes('engineering')) return { i: "⚙️", c: "#2196F3", bg: "rgba(33, 150, 243, 0.15)" };
-    if(t.includes('medical')) return { i: "🩺", c: "#E91E63", bg: "rgba(233, 30, 99, 0.15)" };
-    if(t.includes('law')) return { i: "⚖️", c: "#9C27B0", bg: "rgba(156, 39, 176, 0.15)" };
-    if(t.includes('defense')) return { i: "🛡️", c: "#FF5722", bg: "rgba(255, 87, 34, 0.15)" };
-    if(t.includes('banking')) return { i: "🏦", c: "#4CAF50", bg: "rgba(76, 175, 80, 0.15)" };
-    if(t.includes('railway')) return { i: "🚂", c: "#FF9800", bg: "rgba(255, 152, 0, 0.15)" };
+    if(t.includes('medical') || t.includes('aiims') || t.includes('paramedical')) return { i: "🩺", c: "#E91E63", bg: "rgba(233, 30, 99, 0.15)" };
+    if(t.includes('law') || t.includes('clat')) return { i: "⚖️", c: "#9C27B0", bg: "rgba(156, 39, 176, 0.15)" };
+    if(t.includes('defense') || t.includes('nda') || t.includes('cds')) return { i: "🛡️", c: "#FF5722", bg: "rgba(255, 87, 34, 0.15)" };
+    if(t.includes('banking') || t.includes('ibps') || t.includes('sbi')) return { i: "🏦", c: "#4CAF50", bg: "rgba(76, 175, 80, 0.15)" };
+    if(t.includes('railway') || t.includes('rrb')) return { i: "🚂", c: "#FF9800", bg: "rgba(255, 152, 0, 0.15)" };
     if(t.includes('ssc') || t.includes('staff selection')) return { i: "📋", c: "#607D8B", bg: "rgba(96, 125, 139, 0.15)" };
     if(t.includes('upsc') || t.includes('civil')) return { i: "🏛️", c: "#795548", bg: "rgba(121, 85, 72, 0.15)" };
     if(t.includes('gate')) return { i: "🎓", c: "#673AB7", bg: "rgba(103, 58, 183, 0.15)" };
-    if(t.includes('cat') || t.includes('mba')) return { i: "📊", c: "#00BCD4", bg: "rgba(0, 188, 212, 0.15)" };
+    if(t.includes('cat') || t.includes('mba') || t.includes('cuet')) return { i: "📊", c: "#00BCD4", bg: "rgba(0, 188, 212, 0.15)" };
 
-    // Subjects
-    if(t.includes('physics')) return { i: "⚛️", c: "#9C27B0", bg: "rgba(156, 39, 176, 0.15)" };
-    if(t.includes('chemistry')) return { i: "🧪", c: "#00BCD4", bg: "rgba(0, 188, 212, 0.15)" };
-    if(t.includes('botany') || t.includes('plant')) return { i: "🌿", c: "#4CAF50", bg: "rgba(76, 175, 80, 0.15)" };
-    if(t.includes('zoology') || t.includes('animal') || t.includes('lion')) return { i: "🦁", c: "#FFC107", bg: "rgba(255, 193, 7, 0.15)" };
-    if(t.includes('biology')) return { i: "🧬", c: "#E91E63", bg: "rgba(233, 30, 99, 0.15)" };
-    if(t.includes('math') || t.includes('mathematics')) return { i: "📐", c: "#3F51B5", bg: "rgba(63, 81, 181, 0.15)" };
-    if(t.includes('reasoning')) return { i: "🧠", c: "#FF9800", bg: "rgba(255, 152, 0, 0.15)" };
-    if(t.includes('aptitude')) return { i: "📈", c: "#009688", bg: "rgba(0, 150, 136, 0.15)" };
-    if(t.includes('english')) return { i: "📖", c: "#795548", bg: "rgba(121, 85, 72, 0.15)" };
+    // Specific Science & Exam Subtopics
+    if(t.includes('organic')) return { i: "⌬", c: "#10b981", bg: "rgba(16, 185, 129, 0.15)" };
+    if(t.includes('inorganic')) return { i: "💎", c: "#38bdf8", bg: "rgba(56, 189, 248, 0.15)" };
+    if(t.includes('physical')) return { i: "⚡", c: "#f59e0b", bg: "rgba(245, 158, 11, 0.15)" };
+    if(t.includes('physics') || t.includes('mechanics') || t.includes('optics') || t.includes('electro')) return { i: "⚛️", c: "#9C27B0", bg: "rgba(156, 39, 176, 0.15)" };
+    if(t.includes('chemistry') || t.includes('chemical') || t.includes('thermodynamics')) return { i: "🧪", c: "#00BCD4", bg: "rgba(0, 188, 212, 0.15)" };
+    if(t.includes('botany') || t.includes('plant') || t.includes('ecology') || t.includes('photosynthesis')) return { i: "🌿", c: "#4CAF50", bg: "rgba(76, 175, 80, 0.15)" };
+    if(t.includes('zoology') || t.includes('animal') || t.includes('human') || t.includes('physiology')) return { i: "🦁", c: "#FFC107", bg: "rgba(255, 193, 7, 0.15)" };
+    if(t.includes('biology') || t.includes('genetics') || t.includes('cell') || t.includes('biomolecule') || t.includes('biotech')) return { i: "🧬", c: "#E91E63", bg: "rgba(233, 30, 99, 0.15)" };
+    if(t.includes('math') || t.includes('calculus') || t.includes('algebra') || t.includes('geometry')) return { i: "📐", c: "#3F51B5", bg: "rgba(63, 81, 181, 0.15)" };
+    if(t.includes('reasoning') || t.includes('logic')) return { i: "🧠", c: "#FF9800", bg: "rgba(255, 152, 0, 0.15)" };
+    if(t.includes('aptitude') || t.includes('quant')) return { i: "📈", c: "#009688", bg: "rgba(0, 150, 136, 0.15)" };
+    if(t.includes('english') || t.includes('grammar') || t.includes('vocab')) return { i: "📖", c: "#795548", bg: "rgba(121, 85, 72, 0.15)" };
     if(t.includes('hindi')) return { i: "🔤", c: "#FF5722", bg: "rgba(255, 87, 34, 0.15)" };
 
     // General Knowledge & Current Affairs
-    if(t.includes('history')) return { i: "🏛️", c: "#FF9800", bg: "rgba(255, 152, 0, 0.15)" };
-    if(t.includes('geography')) return { i: "🗺️", c: "#4CAF50", bg: "rgba(76, 175, 80, 0.15)" };
+    if(t.includes('history') || t.includes('ancient') || t.includes('modern')) return { i: "🏛️", c: "#FF9800", bg: "rgba(255, 152, 0, 0.15)" };
+    if(t.includes('geography') || t.includes('earth')) return { i: "🗺️", c: "#4CAF50", bg: "rgba(76, 175, 80, 0.15)" };
     if(t.includes('gk') || t.includes('general knowledge')) return { i: "🌍", c: "#4CAF50", bg: "rgba(76, 175, 80, 0.15)" };
-    if(t.includes('affairs') || t.includes('current')) return { i: "📰", c: "#2196F3", bg: "rgba(33, 150, 243, 0.15)" };
-    if(t.includes('politics') || t.includes('polity')) return { i: "🏛️", c: "#9C27B0", bg: "rgba(156, 39, 176, 0.15)" };
+    if(t.includes('affairs') || t.includes('current') || t.includes('news')) return { i: "📰", c: "#2196F3", bg: "rgba(33, 150, 243, 0.15)" };
+    if(t.includes('politics') || t.includes('polity') || t.includes('constitution')) return { i: "🏛️", c: "#9C27B0", bg: "rgba(156, 39, 176, 0.15)" };
     if(t.includes('economy') || t.includes('economics')) return { i: "💰", c: "#4CAF50", bg: "rgba(76, 175, 80, 0.15)" };
 
     // Materials & Practice
-    if(t.includes('ncert')) return { i: "📚", c: "#9C27B0", bg: "rgba(156, 39, 176, 0.15)" };
-    if(t.includes('pyq') || t.includes('previous')) return { i: "📄", c: "#607D8B", bg: "rgba(96, 125, 139, 0.15)" };
+    if(t.includes('ncert') || t.includes('book')) return { i: "📚", c: "#9C27B0", bg: "rgba(156, 39, 176, 0.15)" };
+    if(t.includes('pyq') || t.includes('previous') || t.includes('paper')) return { i: "📄", c: "#607D8B", bg: "rgba(96, 125, 139, 0.15)" };
     if(t.includes('mock') || t.includes('test')) return { i: "⏱️", c: "#F44336", bg: "rgba(244, 67, 54, 0.15)" };
-    if(t.includes('quiz') || t.includes('practice')) return { i: "📝", c: "#00BCD4", bg: "rgba(0, 188, 212, 0.15)" };
-    if(t.includes('notes')) return { i: "📝", c: "#FFC107", bg: "rgba(255, 193, 7, 0.15)" };
+    if(t.includes('quiz') || t.includes('practice') || t.includes('mcq')) return { i: "📝", c: "#00BCD4", bg: "rgba(0, 188, 212, 0.15)" };
+    if(t.includes('note') || t.includes('formula') || t.includes('short')) return { i: "📒", c: "#FFC107", bg: "rgba(255, 193, 7, 0.15)" };
     if(t.includes('syllabus')) return { i: "📋", c: "#607D8B", bg: "rgba(96, 125, 139, 0.15)" };
 
     return null;
+}
+
+async function _renderPdfResources(checkPath, niceTitle) {
+    const mc = document.getElementById('dynamic-content');
+    if (!mc) return;
+    mc.innerHTML = `
+    <div class="card page-transition">
+        <h2 class="section-title">📄 ${niceTitle} Resources</h2>
+        <p style="color:var(--text-muted);">Loading study materials...</p>
+    </div>`;
+
+    try {
+        const snap = await db.collection("content")
+            .where("path", "==", checkPath)
+            .where("type", "==", "material")
+            .get();
+
+        if (snap.empty) {
+            mc.innerHTML = `
+            <div class="card page-transition">
+                <h2 class="section-title">📄 ${niceTitle} Resources</h2>
+                <p style="color:var(--text-muted);">No study materials uploaded to this folder yet. Materials will appear here once uploaded via the Admin Panel.</p>
+                <button class="btn-exam" onclick="goBack()" style="margin-top:15px; background:#0d1527;">&larr; Go Back</button>
+            </div>`;
+            return;
+        }
+
+        let items = [];
+        snap.forEach(doc => items.push({ id: doc.id, ...doc.data() }));
+        items.sort((a, b) => ((b.timestamp?.toMillis() || 0) - (a.timestamp?.toMillis() || 0)));
+
+        let listHtml = items.map(item => `
+            <div style="background:#090e1a; border:1px solid var(--border-color); border-radius:10px; padding:16px 20px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <div class="cat-icon" style="background:rgba(156, 39, 176, 0.15); color:#9C27B0;">📄</div>
+                    <div>
+                        <div style="font-weight:700; font-size:15px; color:#fff;">${item.title || 'Study Material'}</div>
+                        <div style="font-size:12px; color:var(--text-muted);">${niceTitle}</div>
+                    </div>
+                </div>
+                <a href="${item.fileUrl}" target="_blank" rel="noopener noreferrer" class="btn-exam" style="background:var(--primary-yellow); color:#000; border:none; text-decoration:none;">Open / Download ↗</a>
+            </div>
+        `).join('');
+
+        mc.innerHTML = `
+        <div class="card page-transition">
+            <h2 class="section-title">📄 ${niceTitle} Resources</h2>
+            <div style="margin-top:15px;">${listHtml}</div>
+        </div>`;
+    } catch (e) {
+        mc.innerHTML = `<div class="card"><h2 class="section-title">📄 ${niceTitle}</h2><p style="color:var(--wrong-red);">Error loading materials: ${e.message}</p></div>`;
+    }
 }
 
 function _renderView() {
@@ -89,7 +143,6 @@ function _renderView() {
             isEndpoint = true;
         }
 
-        // CRITICAL SAFEGUARD: Never treat the Home Screen as an endpoint
         if (currentPath.length === 0) {
             isEndpoint = false;
         }
@@ -118,7 +171,7 @@ function _renderView() {
                 if (isPdf && !isMcq) isPdfOnly = true;
             }
             
-            let studentName = currentUser ? currentUser.displayName.split(" ")[0] : "Student";
+            let studentName = (currentUser && currentUser.displayName) ? currentUser.displayName.split(" ")[0] : "Student";
             
             if (isContainer) {
                 mc.innerHTML = `
@@ -127,11 +180,7 @@ function _renderView() {
                     <p style="color:var(--text-muted);">This category is currently empty. Subtopics will appear here once added by the Admin.</p>
                 </div>`;
             } else if (isPdfOnly) {
-                mc.innerHTML = `
-                <div class="card page-transition">
-                    <h2 class="section-title">📄 ${niceTitle} Resources</h2>
-                    <p style="color:var(--text-muted);">Materials will appear here once uploaded via the Admin Panel.</p>
-                </div>`;
+                _renderPdfResources(checkPath, niceTitle);
             } else {
                 let signPrompt = !currentUser ? "Sign in to track your scores on the leaderboard!" : `Ready for practice, <span style="color:var(--primary-yellow);">${studentName}</span>?`;
                 mc.innerHTML = `
@@ -209,7 +258,6 @@ function _renderView() {
                   </button>`; 
         }
         
-        // NO GIANT GO BACK BUTTON HERE ANYMORE
         h += `</div></div>`; 
         mc.innerHTML = `<div class="page-transition">${h}</div>`;
         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -217,13 +265,14 @@ function _renderView() {
 }
 
 // ==========================================
-// 6. SCALED TRACK PROGRESS, REPORTS & FEEDBACK
+// 6. SCALED TRACK PROGRESS, LEADERBOARDS, REPORTS & FEEDBACK
 // ==========================================
 async function getAttemptedIdsForPath(safePath) {
+    let docKey = encodeURIComponent(safePath);
     let ids = [];
     if (currentUser) {
         try {
-            const subDoc = await db.collection("users").doc(currentUser.uid).collection("progress").doc(safePath).get();
+            const subDoc = await db.collection("users").doc(currentUser.uid).collection("progress").doc(docKey).get();
             if (subDoc.exists && Array.isArray(subDoc.data().attemptedIds)) return subDoc.data().attemptedIds;
         } catch(e) {}
     } else {
@@ -235,24 +284,27 @@ async function getAttemptedIdsForPath(safePath) {
 
 async function saveAttemptedIdsForPath(safePath, newAttemptedIds) {
     if (!newAttemptedIds || newAttemptedIds.length === 0) return;
+    let docKey = encodeURIComponent(safePath);
     if (currentUser) {
         try {
-            await db.collection("users").doc(currentUser.uid).collection("progress").doc(safePath).set({
+            await db.collection("users").doc(currentUser.uid).collection("progress").doc(docKey).set({
+                path: safePath,
                 attemptedIds: firebase.firestore.FieldValue.arrayUnion(...newAttemptedIds),
                 lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
             }, { merge: true });
         } catch(e) {}
     } else {
         let localProg = JSON.parse(localStorage.getItem('mcq_progress') || '{}');
-        localProg[safePath] = [...(localProg[safePath] || []), ...newAttemptedIds];
+        localProg[safePath] = Array.from(new Set([...(localProg[safePath] || []), ...newAttemptedIds]));
         localStorage.setItem('mcq_progress', JSON.stringify(localProg));
     }
 }
 
 async function resetProgress(safePath) {
     if(!confirm("Are you sure you want to reset your progress for this section?")) return;
+    let docKey = encodeURIComponent(safePath);
     if (currentUser) {
-        try { await db.collection("users").doc(currentUser.uid).collection("progress").doc(safePath).delete(); } catch(e) {}
+        try { await db.collection("users").doc(currentUser.uid).collection("progress").doc(docKey).delete(); } catch(e) {}
     } else {
         let localProg = JSON.parse(localStorage.getItem('mcq_progress') || '{}');
         delete localProg[safePath];
@@ -264,7 +316,7 @@ async function resetProgress(safePath) {
 
 function _renderProgressSelection() {
     if (!currentUser) {
-        document.getElementById('dynamic-content').innerHTML = `<div class="card page-transition" style="text-align:center;"><h2>⚠ Sign In Required</h2><button class="btn-exam" onclick="goBack()" style="background:#333; border:none;">Back</button></div>`;
+        document.getElementById('dynamic-content').innerHTML = `<div class="card page-transition" style="text-align:center;"><h2>⚠ Sign In Required</h2><p style="color:var(--text-muted); margin-bottom:20px;">Please sign in to view your personalized exam analytics.</p><button class="btn-exam" onclick="showAuthModal()" style="background:var(--primary-yellow); color:#000; border:none; margin-right:10px;">Sign In</button><button class="btn-exam" onclick="goBack()" style="background:#333; border:none;">Back</button></div>`;
         return;
     }
     document.getElementById('breadcrumb-text').innerText = "Home / Profile / Track Progress";
@@ -274,12 +326,10 @@ function _renderProgressSelection() {
     
     rootKeys.forEach(k => {
         let cleanKey = k.replace(/^\d+\.\s*/, '');
-        let safeKey = k.replace(/'/g, "\\'");
-        // Check for custom icon from customTopics
         const topicType = customTopicTypes[k];
         const customIcon = topicType ? (typeof topicType === 'object' ? topicType.icon : null) : null;
         let icon = getSmartIcon(cleanKey, customIcon) || { i: "📊" };
-        optionsHtml += `<button class="btn-exam" onclick="window.location.hash='#/progress/${encodeURIComponent(safeKey)}'" style="width:100%; max-width:250px; padding:15px; font-size:14px;">${icon.i} ${cleanKey} Analytics</button>`;
+        optionsHtml += `<button class="btn-exam" onclick="window.location.hash='#/progress/${encodeURIComponent(k)}'" style="width:100%; max-width:250px; padding:15px; font-size:14px;">${icon.i} ${cleanKey} Analytics</button>`;
     });
 
     document.getElementById('dynamic-content').innerHTML = `
@@ -294,7 +344,7 @@ function _renderProgressSelection() {
 }
 
 async function _renderProgressDashboard(category) {
-    if (!currentUser) return;
+    if (!currentUser) { _renderProgressSelection(); return; }
     
     let displayCategory = category.replace(/^\d+\.\s*/, '');
     document.getElementById('breadcrumb-text').innerText = `Home / Profile / Progress / ${displayCategory}`;
@@ -315,7 +365,7 @@ async function _renderProgressDashboard(category) {
         });
 
         tempDocs.forEach(d => {
-            if (d.examCategory === category || (d.quizPath && d.quizPath.startsWith(category))) {
+            if (d.examCategory === category || (d.quizPath && (d.quizPath.startsWith(category) || d.quizPath.startsWith("Daily Quiz Challenge > " + category)))) {
                 validDocs.push(d);
             }
         });
@@ -354,7 +404,7 @@ async function _renderProgressDashboard(category) {
             }
         });
 
-        let overallAccuracy = totalQuestions > 0 ? Math.round((correctCount / totalQuestions) * 100) : 0;
+        let overallAccuracy = (correctCount + wrongCount) > 0 ? Math.round((correctCount / (correctCount + wrongCount)) * 100) : 0;
         let recentTrend = accuracyTrend.slice(-10);
         let finalAvgTimeC = countC > 0 ? Math.round(totalAvgTimeC / countC) : 0;
         let finalAvgTimeW = countW > 0 ? Math.round(totalAvgTimeW / countW) : 0;
@@ -498,13 +548,11 @@ function _renderLeaderboardOptions() {
     
     rootKeys.forEach(k => {
         let cleanKey = k.replace(/^\d+\.\s*/, '');
-        let safeKey = k.replace(/'/g, "\\'");
-        // Check for custom icon from customTopics
         const topicType = customTopicTypes[k];
         const customIcon = topicType ? (typeof topicType === 'object' ? topicType.icon : null) : null;
         let smartData = getSmartIcon(cleanKey, customIcon) || { i: "🥇" };
 
-        optionsHtml += `<button class="btn-exam category-tile" onclick="window.location.hash='#/board/${encodeURIComponent(safeKey)}'" style="flex-direction:row; padding:15px; flex:1; min-width:200px;">
+        optionsHtml += `<button class="btn-exam category-tile" onclick="window.location.hash='#/board/${encodeURIComponent(k)}'" style="flex-direction:row; padding:15px; flex:1; min-width:200px;">
             <div class="cat-icon" style="background: rgba(255,255,255,0.05); color: #fff; width:30px; height:30px; font-size:14px;">${smartData.i}</div>
             <div class="cat-text" style="font-size:13px; letter-spacing:0.5px; text-transform:uppercase;">${cleanKey} Leaderboard</div>
         </button>`;
@@ -513,9 +561,9 @@ function _renderLeaderboardOptions() {
     document.getElementById('dynamic-content').innerHTML = `
         <div class="card page-transition">
             <h2 class="section-title">🏆 Global Leaderboards</h2>
-            <p style="color:var(--text-muted); margin-bottom: 20px;">Select a category to view the top 10 scores.</p>
+            <p style="color:var(--text-muted); margin-bottom: 20px;">Select a category to view the top performers.</p>
             <div style="background: rgba(239, 68, 68, 0.05); border-left: 4px solid var(--wrong-red); padding: 12px; margin-bottom: 25px; border-radius: 4px;">
-                <span style="color: var(--wrong-red); font-weight: bold;">⚠️ CAUTION:</span> <span style="color: #d1d5db; font-size: 14px;">Only signed-in users will have their scores recorded and displayed on the leaderboard.</span>
+                <span style="color: var(--wrong-red); font-weight: bold;">⚠️ NOTE:</span> <span style="color: #d1d5db; font-size: 14px;">Only signed-in users will have their scores recorded and displayed on the leaderboard.</span>
             </div>
             <div class="category-grid" style="grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px;">
                 ${optionsHtml}
@@ -523,13 +571,95 @@ function _renderLeaderboardOptions() {
         </div>`; 
 }
 
+// RESTORED: Live Leaderboard Renderer for #/board/:category
+async function fetchLiveLeaderboard(category) {
+    const mc = document.getElementById('dynamic-content');
+    let cleanCategory = category.replace(/^\d+\.\s*/, '');
+    document.getElementById('breadcrumb-text').innerText = `Home / Leaderboard / ${cleanCategory}`;
+    mc.innerHTML = `<div class="card page-transition" style="text-align:center; padding:40px;"><h2 class="section-title" style="justify-content:center;">🏆 Loading ${cleanCategory} Leaderboard...</h2></div>`;
+
+    try {
+        const snap = await db.collection("leaderboards").limit(300).get();
+        let bestByUser = {};
+
+        snap.forEach(doc => {
+            let d = doc.data();
+            let matchesCategory = (d.examCategory === category) ||
+                (d.quizPath && (d.quizPath.startsWith(category) || d.quizPath.startsWith("Daily Quiz Challenge > " + category)));
+            if (!matchesCategory) return;
+
+            let uid = d.userId || d.userName || doc.id;
+            if (!bestByUser[uid]) {
+                bestByUser[uid] = {
+                    userId: d.userId,
+                    userName: d.userName || "Student",
+                    totalScore: 0,
+                    bestScore: d.score || 0,
+                    accuracy: d.accuracy || 0,
+                    quizzesPlayed: 0
+                };
+            }
+            bestByUser[uid].totalScore += (d.score || 0);
+            bestByUser[uid].quizzesPlayed += 1;
+            if ((d.score || 0) >= bestByUser[uid].bestScore) {
+                bestByUser[uid].bestScore = d.score || 0;
+                bestByUser[uid].accuracy = d.accuracy || 0;
+            }
+        });
+
+        let rankings = Object.values(bestByUser).sort((a, b) => b.totalScore - a.totalScore || b.accuracy - a.accuracy).slice(0, 20);
+
+        if (rankings.length === 0) {
+            mc.innerHTML = `
+            <div class="card page-transition" style="text-align:center; padding:40px 20px;">
+                <h2 class="section-title" style="justify-content:center;">🏆 ${cleanCategory} Leaderboard</h2>
+                <p style="color:var(--text-muted); margin-bottom:25px;">No scores recorded for ${cleanCategory} yet. Be the first to claim #1!</p>
+                <button class="btn-exam" onclick="goBack()" style="background:#0d1527;">&larr; Back</button>
+            </div>`;
+            return;
+        }
+
+        let rowsHtml = rankings.map((r, idx) => {
+            let rankBadge = idx === 0 ? "🥇" : (idx === 1 ? "🥈" : (idx === 2 ? "🥉" : `#${idx + 1}`));
+            let isMe = currentUser && r.userId === currentUser.uid;
+            let rowBg = isMe ? "rgba(253, 184, 19, 0.12)" : "#090e1a";
+            let rowBorder = isMe ? "var(--primary-yellow)" : "var(--border-color)";
+
+            return `
+            <div style="display:flex; align-items:center; justify-content:space-between; background:${rowBg}; border:1px solid ${rowBorder}; padding:14px 18px; border-radius:10px; margin-bottom:10px; gap:10px;">
+                <div style="display:flex; align-items:center; gap:14px;">
+                    <span style="font-size:18px; font-weight:800; min-width:32px; text-align:center; color:var(--primary-yellow);">${rankBadge}</span>
+                    <div>
+                        <div style="font-weight:700; color:#fff; font-size:15px;">${r.userName} ${isMe ? '<span style="font-size:11px; color:var(--primary-yellow);">(You)</span>' : ''}</div>
+                        <div style="font-size:11px; color:var(--text-muted);">${r.quizzesPlayed} Quiz${r.quizzesPlayed > 1 ? 'zes' : ''} • Best Accuracy: ${r.accuracy}%</div>
+                    </div>
+                </div>
+                <div style="text-align:right;">
+                    <div style="font-size:18px; font-weight:800; color:var(--correct-green);">${r.totalScore} pts</div>
+                    <div style="font-size:11px; color:var(--text-muted);">Best: ${r.bestScore}</div>
+                </div>
+            </div>`;
+        }).join('');
+
+        mc.innerHTML = `
+        <div class="card page-transition">
+            <h2 class="section-title">🏆 ${cleanCategory} Top Performers</h2>
+            <p style="color:var(--text-muted); font-size:13px; margin-bottom:20px;">Ranked by cumulative score across ${cleanCategory} practice sessions.</p>
+            <div>${rowsHtml}</div>
+        </div>`;
+    } catch (e) {
+        mc.innerHTML = `<div class="card"><h2 class="section-title">Error</h2><p style="color:var(--wrong-red);">${e.message}</p></div>`;
+    }
+}
+
 // -----------------------------------------
-// CUSTOM WORKOUT FEATURE (FIXED)
+// CUSTOM PRACTICE FEATURE (FIXED PATH RESOLUTION & QUERY)
 // -----------------------------------------
 let cwPath = ""; let cwSubject = "Mixed"; let cwDiff = "Mixed"; let cwLimit = 25;
 
 function cwStep1() {
     const mc = document.getElementById('dynamic-content');
+    document.getElementById('breadcrumb-text').innerText = "Home / Custom Practice";
     let rootKeys = Object.keys(appData).filter(k => k !== "Daily Quiz Challenge");
     
     let html = `
@@ -542,7 +672,6 @@ function cwStep1() {
         rootKeys.forEach(k => {
             let cleanKey = k.replace(/^\d+\.\s*/, '');
             let safeKey = k.replace(/'/g, "\\'");
-            // Check for custom icon from customTopics
             const topicType = customTopicTypes[k];
             const customIcon = topicType ? (typeof topicType === 'object' ? topicType.icon : null) : null;
             let smartData = getSmartIcon(cleanKey, customIcon) || { i: "📁" };
@@ -562,40 +691,55 @@ function cwSetPath(path) { cwPath = path; cwStep2(); }
 function cwStep2() {
     const mc = document.getElementById('dynamic-content');
 
-    // Safety check: ensure cwPath exists in appData
     if (!appData[cwPath]) {
         mc.innerHTML = `<div class="card page-transition" style="text-align:center; padding: 40px 20px;"><h2 class="section-title" style="color:var(--wrong-red);">Error</h2><p style="color:var(--text-muted);">Selected topic not found. Please go back and try again.</p><button class="btn-exam" onclick="cwStep1()" style="margin-top:20px;">&larr; Back</button></div>`;
         return;
     }
 
     let subjectsHtml = `<option value="Mixed">All Chapters / Subjects (Full Mock)</option>`;
+    let topicMap = new Map(); // relativePath -> displayLabel
 
-    let dbTopics = new Set();
-    if (appData[cwPath]) {
-        Object.keys(appData[cwPath]).forEach(c => {
-            if(c !== "MCQs Practice" && c !== "Mock Test") dbTopics.add(c);
-        });
-        if (appData[cwPath]["MCQs Practice"]) {
-            Object.keys(appData[cwPath]["MCQs Practice"]).forEach(c => dbTopics.add(c));
-        }
+    let pdfKeywords = ["ncert", "book", "pyq", "previous", "paper", "pdf", "notes", "material", "syllabus"];
+    function isPdfFolder(fullKey, name) {
+        let tObj = customTopicTypes[fullKey];
+        let tVal = tObj ? (typeof tObj === 'object' ? tObj.type : tObj) : null;
+        if (tVal === 'pdf') return true;
+        if (tVal === 'mcq' || tVal === 'both') return false;
+        let lower = name.toLowerCase();
+        return pdfKeywords.some(k => lower.includes(k)) && !lower.includes('mcq') && !lower.includes('practice') && !lower.includes('mock');
     }
+
+    Object.keys(appData[cwPath]).forEach(topKey => {
+        let fullTopKey = cwPath + " > " + topKey;
+        if (isPdfFolder(fullTopKey, topKey)) return;
+
+        if (topKey === "MCQs Practice" && typeof appData[cwPath][topKey] === 'object') {
+            Object.keys(appData[cwPath][topKey]).forEach(subKey => {
+                let relPath = `MCQs Practice > ${subKey}`;
+                topicMap.set(relPath, subKey.replace(/^\d+\.\s*/, ''));
+            });
+        } else if (topKey !== "Mock Test") {
+            topicMap.set(topKey, topKey.replace(/^\d+\.\s*/, ''));
+        }
+    });
 
     let prefix = cwPath + " > ";
     Object.keys(customTopicTypes).forEach(key => {
-        if(key.startsWith(prefix)) {
-            let sub = key.replace(prefix, '').split(' > ')[0];
-            if(sub && sub !== "MCQs Practice" && sub !== "Mock Test") dbTopics.add(sub);
+        if (key.startsWith(prefix)) {
+            if (isPdfFolder(key, key.split(' > ').pop())) return;
+            let rel = key.slice(prefix.length);
+            let parts = rel.split(' > ');
+            if (parts[0] === "MCQs Practice" && parts.length >= 2) {
+                let subRel = `MCQs Practice > ${parts[1]}`;
+                if (!topicMap.has(subRel)) topicMap.set(subRel, parts[1].replace(/^\d+\.\s*/, ''));
+            } else if (parts[0] !== "Mock Test" && parts[0] !== "MCQs Practice") {
+                if (!topicMap.has(parts[0])) topicMap.set(parts[0], parts[0].replace(/^\d+\.\s*/, ''));
+            }
         }
     });
 
-    dbTopics.forEach(c => {
-        let cleanC = c.replace(/^\d+\.\s*/, '');
-        subjectsHtml += `<option value="${c.replace(/'/g, "\\'")}">${cleanC}</option>`;
-    });
-
-    dbTopics.forEach(c => {
-        let cleanC = c.replace(/^\d+\.\s*/, '');
-        subjectsHtml += `<option value="${c.replace(/'/g, "\\'")}">${cleanC}</option>`;
+    Array.from(topicMap.entries()).forEach(([relPath, label]) => {
+        subjectsHtml += `<option value="${relPath.replace(/"/g, '&quot;')}">${label}</option>`;
     });
 
     mc.innerHTML = `
@@ -634,14 +778,11 @@ async function cwLaunch() {
     const cwDiffEl = document.getElementById('cwDiffSelect');
     const cwNumEl = document.getElementById('cwNum');
 
-    if (!cwSubjEl || !cwDiffEl || !cwNumEl) {
-        console.error("Custom practice form elements not found");
-        return;
-    }
+    if (!cwSubjEl || !cwDiffEl || !cwNumEl) return;
 
     cwSubject = cwSubjEl.value;
     cwDiff = cwDiffEl.value;
-    cwLimit = parseInt(cwNumEl.value);
+    cwLimit = parseInt(cwNumEl.value, 10);
     if(isNaN(cwLimit) || cwLimit < 1) cwLimit = 25;
 
     const mc = document.getElementById('dynamic-content');
@@ -651,44 +792,45 @@ async function cwLaunch() {
     if (cwSubject !== "Mixed") targetPath += " > " + cwSubject;
 
     try {
-        let query = db.collection("content")
+        // Safe query that avoids Firestore multi-field inequality composite index errors
+        let snapshot = await db.collection("content")
             .where("path", ">=", targetPath)
             .where("path", "<=", targetPath + "\uf8ff")
-            .where("type", "==", "mcq");
+            .where("type", "==", "mcq")
+            .limit(300)
+            .get();
 
-        if (cwDiff !== "Mixed") query = query.where("level", "==", cwDiff);
-
-        let randomStart = Math.random();
-        let snapshot = await query.where("randomKey", ">=", randomStart).orderBy("randomKey").limit(cwLimit).get();
         let allDocs = [];
-        snapshot.forEach(doc => allDocs.push({ id: doc.id, ...doc.data() }));
-
-        if (allDocs.length < cwLimit) {
-            let remainder = cwLimit - allDocs.length;
-            let snapshot2 = await query.where("randomKey", "<", randomStart).orderBy("randomKey").limit(remainder).get();
-            snapshot2.forEach(doc => allDocs.push({ id: doc.id, ...doc.data() }));
-        }
+        snapshot.forEach(doc => {
+            let d = doc.data();
+            if (cwDiff === "Mixed" || d.level === cwDiff) {
+                allDocs.push({ id: doc.id, ...d });
+            }
+        });
 
         if (allDocs.length === 0) {
-            mc.innerHTML = `<div class="card page-transition" style="text-align:center; padding: 40px 20px;"><h2 class="section-title" style="justify-content:center;">No Questions Found</h2><p style="color:var(--text-muted);">We couldn't find enough questions matching these exact filters.</p><button class="btn-exam" onclick="cwStep2()" style="margin-top:20px; background:#0d1527; border-color:var(--border-color);">&larr; Adjust Filters</button></div>`;
+            mc.innerHTML = `<div class="card page-transition" style="text-align:center; padding: 40px 20px;"><h2 class="section-title" style="justify-content:center;">No Questions Found</h2><p style="color:var(--text-muted);">We couldn't find any questions matching "${targetPath}" (${cwDiff}).</p><button class="btn-exam" onclick="cwStep2()" style="margin-top:20px; background:#0d1527; border-color:var(--border-color);">&larr; Adjust Filters</button></div>`;
             return;
         }
 
-        allDocs.sort(() => Math.random() - 0.5);
-        
-        // Save to global variables for quiz engine
-        if (typeof currentQuestions !== 'undefined') {
-            currentQuestions = allDocs; 
-            currentQuizPath = targetPath;
-            currentIndex = 0;
-            userAnswers = {};
-            timeSpent = {};
+        // Fisher-Yates shuffle
+        for (let i = allDocs.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [allDocs[i], allDocs[j]] = [allDocs[j], allDocs[i]];
         }
+        allDocs = allDocs.slice(0, cwLimit);
+        
+        currentQuestions = allDocs; 
+        currentQuizPath = targetPath;
+        currentIndex = 0;
+        userAnswers = {};
+        timeSpent = {};
 
+        document.body.classList.add('hide-bottom-bar');
         if(typeof renderQuizInterface === 'function') renderQuizInterface();
         if(typeof startQuestionTimer === 'function') startQuestionTimer();
     } catch(err) {
-        mc.innerHTML = `<div class="card"><h2 class="section-title" style="color:var(--wrong-red);">Error</h2><p>${err.message}</p></div>`;
+        mc.innerHTML = `<div class="card"><h2 class="section-title" style="color:var(--wrong-red);">Error</h2><p>${err.message}</p><button class="btn-exam" onclick="cwStep2()">&larr; Back</button></div>`;
     }
 }
 
@@ -715,6 +857,7 @@ async function bookmarkQuestion(qId) {
             list: savedBookmarks, lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
         }, {merge:true});
         showNotification("🔖 Question saved to Bookmarks!");
+        if (typeof renderQuizInterface === 'function' && window.location.hash === '#/quiz') renderQuizInterface();
     } catch(e) { showNotification("❌ Failed to bookmark"); }
 }
 
@@ -753,11 +896,11 @@ async function _initiateBookmarkQuiz() {
 
         let html = `<div class="card page-transition"><h2 class="section-title">🔖 My Bookmarked Questions</h2><div style="background: rgba(33, 150, 243, 0.1); border-left: 3px solid #2196F3; padding: 10px; margin-bottom: 20px; font-size: 13px; border-radius: 4px;"><span style="color: #2196F3;"><b>Tip:</b></span> Use the 'Ask AI' button to instantly resolve any lingering doubts about these saved questions.</div>`;
         
-        allDocs.forEach((q, index) => {
+        allDocs.forEach((q) => {
             html += `
             <div class="review-item" id="bmCard_${q.id}">
                 <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
-                    <span style="color:var(--text-muted); font-size:12px; font-weight:bold;">${q.path.split(' > ').pop()}</span>
+                    <span style="color:var(--text-muted); font-size:12px; font-weight:bold;">${(q.path || '').split(' > ').pop()}</span>
                     <button onclick="removeBookmark('${q.id}')" style="background:none; border:none; color:var(--wrong-red); cursor:pointer; font-size:18px;" title="Remove">✕</button>
                 </div>
                 <div style="font-weight:500; font-size:15px; margin-bottom:15px; color:#fff;" id="bmQ_${q.id}">${q.question}</div>
@@ -765,8 +908,8 @@ async function _initiateBookmarkQuiz() {
                 
                 <div style="display:grid; grid-template-columns:1fr; gap:8px; margin-bottom:15px;">
                     ${['A','B','C','D'].map(opt => {
-                        let text = q.options[opt]; if(!text) return '';
-                        let isTrueCorrect = q.correctAnswers.includes(opt);
+                        let text = q.options ? q.options[opt] : ''; if(!text) return '';
+                        let isTrueCorrect = (q.correctAnswers || []).includes(opt);
                         let bg = isTrueCorrect ? "rgba(16, 185, 129, 0.15)" : "rgba(255,255,255,0.03)";
                         let border = isTrueCorrect ? "var(--correct-green)" : "#1a2744";
                         let color = isTrueCorrect ? "#fff" : "#aaa";
@@ -788,20 +931,38 @@ async function _initiateBookmarkQuiz() {
         html += `</div>`;
         mc.innerHTML = html;
 
+        const mathDelims = [ {left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}, {left: '\\(', right: '\\)', display: false}, {left: '[', right: ']', display: true} ];
         allDocs.forEach(q => {
-            let elQ = document.getElementById('bmQ_'+q.id); if(elQ && typeof renderMathInElement === 'function') renderMathInElement(elQ, { delimiters: [ {left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}, {left: '\\(', right: '\\)', display: false}, {left: '[', right: ']', display: true} ], throwOnError: false });
+            let elQ = document.getElementById('bmQ_'+q.id); if(elQ && typeof renderMathInElement === 'function') renderMathInElement(elQ, { delimiters: mathDelims, throwOnError: false });
             ['A','B','C','D'].forEach(opt => {
-                let elO = document.getElementById(`bmOpt_${q.id}_${opt}`); if(elO && typeof renderMathInElement === 'function') renderMathInElement(elO, { delimiters: [ {left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}, {left: '\\(', right: '\\)', display: false}, {left: '[', right: ']', display: true} ], throwOnError: false });
+                let elO = document.getElementById(`bmOpt_${q.id}_${opt}`); if(elO && typeof renderMathInElement === 'function') renderMathInElement(elO, { delimiters: mathDelims, throwOnError: false });
             });
-            let elE = document.getElementById('bmExp_'+q.id); if(elE && typeof renderMathInElement === 'function') renderMathInElement(elE, { delimiters: [ {left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}, {left: '\\(', right: '\\)', display: false}, {left: '[', right: ']', display: true} ], throwOnError: false });
+            let elE = document.getElementById('bmExp_'+q.id); if(elE && typeof renderMathInElement === 'function') renderMathInElement(elE, { delimiters: mathDelims, throwOnError: false });
         });
 
     } catch(e) { mc.innerHTML = `<div class="card"><p>Error: ${e.message}</p></div>`; }
 }
 
 // ==========================================
-// MODAL & UI HELPER FUNCTIONS
+// MODAL, REPORTS, RATING & SEARCH FUNCTIONS
 // ==========================================
+
+// Global Rating Loader
+async function loadGlobalRating() {
+    try {
+        const snap = await db.collection("platform_feedback").limit(100).get();
+        if (snap.empty) return;
+        let sum = 0; let count = 0;
+        snap.forEach(doc => {
+            let r = Number(doc.data().rating);
+            if (r >= 1 && r <= 5) { sum += r; count++; }
+        });
+        if (count > 0) {
+            const el = document.getElementById('global-rating-display');
+            if (el) el.innerText = (sum / count).toFixed(1);
+        }
+    } catch (e) {}
+}
 
 // Feedback Modal
 function openFeedbackModal() {
@@ -816,30 +977,158 @@ function updateStarUI(rating) {
     for(let i=1; i<=5; i++) {
         const btn = document.getElementById('star-'+i);
         if(btn) {
-            btn.style.color = i <= rating ? '#fdb813' : '#666';
-            btn.style.fontSize = i <= rating ? '32px' : '28px';
+            btn.classList.toggle('active', i <= rating);
+            btn.style.color = i <= rating ? '#fdb813' : '#3b4961';
         }
     }
 }
 async function submitPlatformFeedback() {
-    const text = document.getElementById('platformFeedbackText').value;
-    if(!text.trim()) { showNotification("⚠️ Please enter your feedback"); return; }
-    if(currentRating === 0) { showNotification("⚠️ Please select a rating"); return; }
+    const text = document.getElementById('platformFeedbackText').value.trim();
+    if(!text) { showNotification("⚠️ Please enter your feedback"); return; }
+    if(currentRating === 0) { showNotification("⚠️ Please select a star rating"); return; }
+
+    const btn = document.getElementById('submitFeedbackBtn');
+    if (btn) { btn.innerText = "Submitting..."; btn.disabled = true; }
 
     try {
-        await db.collection("feedback").add({
+        let uid = currentUser ? currentUser.uid : 'anonymous_' + Date.now();
+        await db.collection("platform_feedback").add({
             rating: currentRating,
+            feedback: text,
             text: text,
-            timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-            userId: currentUser ? currentUser.uid : 'anonymous'
+            studentId: uid,
+            userId: uid,
+            studentName: currentUser ? currentUser.displayName : 'Anonymous',
+            timestamp: firebase.firestore.FieldValue.serverTimestamp()
         });
         showNotification("✅ Thank you for your feedback!");
         closeFeedbackModal();
         document.getElementById('platformFeedbackText').value = '';
         updateStarUI(0);
+        loadGlobalRating();
     } catch(e) {
         showNotification("❌ Failed to submit feedback");
     }
+    if (btn) { btn.innerText = "Submit"; btn.disabled = false; }
+}
+
+// Report Mistake Modal (RESTORED)
+let activeReportPayload = { questionId: '', questionText: '', path: '' };
+
+function openReportModal(questionId, questionText = '', path = '') {
+    if ((!questionText || !path) && typeof currentQuestions !== 'undefined') {
+        let found = currentQuestions.find(q => q.id === questionId);
+        if (found) {
+            questionText = found.question || '';
+            path = found.path || '';
+        }
+    }
+    activeReportPayload = { questionId, questionText, path };
+    const descEl = document.getElementById('reportDescription');
+    if (descEl) descEl.value = '';
+    const modal = document.getElementById('reportModal');
+    if (modal) modal.style.display = 'flex';
+}
+
+function closeReportModal() {
+    const modal = document.getElementById('reportModal');
+    if (modal) modal.style.display = 'none';
+}
+
+async function submitReport() {
+    if (!activeReportPayload.questionId) { closeReportModal(); return; }
+    const reason = document.getElementById('reportReason').value;
+    const description = document.getElementById('reportDescription').value.trim();
+
+    try {
+        await db.collection("reported_mistakes").add({
+            questionId: activeReportPayload.questionId,
+            questionText: activeReportPayload.questionText,
+            path: activeReportPayload.path,
+            reason: reason,
+            description: description,
+            studentId: currentUser ? currentUser.uid : 'anonymous',
+            studentName: currentUser ? (currentUser.displayName || currentUser.email) : 'Guest Student',
+            status: 'pending',
+            seenByStudent: true,
+            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        showNotification("🚨 Report submitted! Admin will review this question.");
+        closeReportModal();
+    } catch (e) {
+        showNotification("❌ Failed to submit report: " + e.message);
+    }
+}
+
+// User Reports Status Modal (RESTORED)
+async function openUserReportsModal() {
+    const modal = document.getElementById('userReportsModal');
+    const listEl = document.getElementById('user-reports-list');
+    if (!modal || !listEl) return;
+    modal.style.display = 'flex';
+
+    if (!currentUser) {
+        listEl.innerHTML = `<p style="color:var(--text-muted); text-align:center; padding:20px;">Please sign in to track your submitted reports.</p>`;
+        return;
+    }
+
+    listEl.innerHTML = `<p style="color:var(--primary-yellow); text-align:center; padding:20px;">Loading your reports...</p>`;
+    try {
+        const snap = await db.collection("reported_mistakes")
+            .where("studentId", "==", currentUser.uid)
+            .get();
+
+        if (snap.empty) {
+            listEl.innerHTML = `<p style="color:var(--text-muted); text-align:center; padding:20px;">You haven't reported any questions yet.</p>`;
+            return;
+        }
+
+        let items = [];
+        let unseenBatch = db.batch();
+        let hasUnseen = false;
+
+        snap.forEach(doc => {
+            let d = doc.data();
+            items.push({ id: doc.id, ...d });
+            if (d.seenByStudent === false) {
+                unseenBatch.update(doc.ref, { seenByStudent: true });
+                hasUnseen = true;
+            }
+        });
+
+        items.sort((a, b) => (b.timestamp?.toMillis() || 0) - (a.timestamp?.toMillis() || 0));
+
+        listEl.innerHTML = items.map(r => {
+            let isResolved = r.status === 'resolved';
+            let statusBadge = isResolved
+                ? `<span style="background:rgba(16,185,129,0.15); color:var(--correct-green); padding:3px 8px; border-radius:6px; font-size:11px; font-weight:bold;">✅ Resolved by Admin</span>`
+                : `<span style="background:rgba(253,184,19,0.15); color:var(--primary-yellow); padding:3px 8px; border-radius:6px; font-size:11px; font-weight:bold;">⏳ Under Review</span>`;
+            return `
+            <div style="background:#090e1a; border:1px solid var(--border-color); border-radius:8px; padding:14px; margin-bottom:10px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                    <span style="font-size:11px; color:var(--text-muted);">${r.path || 'General'}</span>
+                    ${statusBadge}
+                </div>
+                <div style="font-size:13px; color:#fff; font-weight:600; margin-bottom:6px;">${r.questionText || 'Reported Question'}</div>
+                <div style="font-size:12px; color:var(--wrong-red);">Issue: ${r.reason} ${r.description ? `— ${r.description}` : ''}</div>
+            </div>`;
+        }).join('');
+
+        if (hasUnseen) {
+            await unseenBatch.commit();
+            const profileDot = document.getElementById('profileNotifDot');
+            const reportDot = document.getElementById('reportMenuDot');
+            if (profileDot) profileDot.style.display = 'none';
+            if (reportDot) reportDot.style.display = 'none';
+        }
+    } catch (e) {
+        listEl.innerHTML = `<p style="color:var(--wrong-red); text-align:center;">Error loading reports: ${e.message}</p>`;
+    }
+}
+
+function closeUserReportsModal() {
+    const modal = document.getElementById('userReportsModal');
+    if (modal) modal.style.display = 'none';
 }
 
 // Streak Modal
@@ -853,17 +1142,20 @@ function closeStreakModal() {
     document.getElementById('streakModal').style.display = 'none';
 }
 
-// Search Modal
+// Search Engine (Searches both Dynamic Topic Tree AND Firestore Questions)
 function openSearch() {
     const wrapper = document.getElementById('searchWrapper');
     if(wrapper) {
         wrapper.classList.add('active');
-        document.getElementById('searchInput').focus();
+        const input = document.getElementById('searchInput');
+        if (input) input.focus();
     }
 }
 function closeSearch() {
     const wrapper = document.getElementById('searchWrapper');
+    const suggestions = document.getElementById('searchSuggestions');
     if(wrapper) wrapper.classList.remove('active');
+    if(suggestions) suggestions.style.display = 'none';
 }
 let searchTimeout;
 function delayCloseSearch() {
@@ -873,43 +1165,72 @@ function delayCloseSearch() {
         if(wrapper && !wrapper.contains(document.activeElement)) {
             closeSearch();
         }
-    }, 200);
+    }, 250);
 }
 async function handleLiveSearch() {
-    const query = document.getElementById('searchInput').value.trim();
+    const rawQuery = document.getElementById('searchInput').value.trim();
     const suggestions = document.getElementById('searchSuggestions');
     if(!suggestions) return;
 
-    if(query.length < 2) {
+    if(rawQuery.length < 2) {
         suggestions.style.display = 'none';
         return;
     }
 
+    const qLower = rawQuery.toLowerCase();
+    let html = '';
+
+    // 1. Search Topics/Folders in appData (case-insensitive)
+    let topicMatches = [];
+    function scanTopics(obj, pathArr = []) {
+        for (let k in obj) {
+            if (k === "Daily Quiz Challenge") continue;
+            let nextPath = [...pathArr, k];
+            if (k.toLowerCase().includes(qLower)) {
+                topicMatches.push(nextPath);
+            }
+            if (obj[k] && typeof obj[k] === 'object' && !Array.isArray(obj[k])) {
+                scanTopics(obj[k], nextPath);
+            }
+        }
+    }
+    scanTopics(appData);
+
+    topicMatches.slice(0, 5).forEach(pathArr => {
+        let leaf = pathArr[pathArr.length - 1].replace(/^\d+\.\s*/, '');
+        let encodedPath = pathArr.map(encodeURIComponent).join('/');
+        html += `<div class="search-result-item" onmousedown="window.location.hash='#/path/${encodedPath}'; closeSearch();">
+            <div style="font-size:13px; color:var(--primary-yellow); font-weight:700; margin-bottom:2px;">📂 ${leaf}</div>
+            <div style="font-size:11px; color:var(--text-muted);">${pathArr.join(' > ')}</div>
+        </div>`;
+    });
+
+    // 2. Search Questions in Firestore
     try {
         const snap = await db.collection("content")
-            .where("question", ">=", query)
-            .where("question", "<=", query + "\uf8ff")
-            .limit(10)
+            .where("question", ">=", rawQuery)
+            .where("question", "<=", rawQuery + "\uf8ff")
+            .limit(8)
             .get();
 
-        if(snap.empty) {
-            suggestions.style.display = 'none';
-            return;
-        }
-
-        let html = '';
         snap.forEach(doc => {
             const data = doc.data();
-            const cleanPath = data.path ? data.path.split(' > ').pop() : 'General';
-            html += `<div class="search-result-item" onclick="window.location.hash='#/path/${encodeURIComponent(data.path.replace(/ > /g, '/'))}'; closeSearch();">
-                <div style="font-size:13px; color:#fff; margin-bottom:4px;">${data.question.substring(0, 60)}${data.question.length > 60 ? '...' : ''}</div>
+            if (!data.path || !data.question) return;
+            const cleanPath = data.path.split(' > ').pop();
+            const encodedPath = data.path.split(' > ').map(encodeURIComponent).join('/');
+            html += `<div class="search-result-item" onmousedown="window.location.hash='#/path/${encodedPath}'; closeSearch();">
+                <div style="font-size:13px; color:#fff; margin-bottom:4px;">📝 ${data.question.substring(0, 65)}${data.question.length > 65 ? '...' : ''}</div>
                 <div style="font-size:11px; color:var(--text-muted);">${cleanPath}</div>
             </div>`;
         });
-
-        suggestions.innerHTML = html;
-        suggestions.style.display = 'block';
     } catch(e) {
         console.error("Search error:", e);
     }
+
+    if (!html) {
+        html = `<div style="padding:14px 18px; color:var(--text-muted); font-size:13px;">No matching chapters or questions found.</div>`;
+    }
+
+    suggestions.innerHTML = html;
+    suggestions.style.display = 'block';
 }
