@@ -4,7 +4,6 @@
 
 async function loadCustomTopics() {
     try {
-        // Reset appData to clean base tree so deleted folders are removed immediately
         appData = JSON.parse(JSON.stringify(DEFAULT_APP_DATA));
         customTopicTypes = {};
 
@@ -24,7 +23,6 @@ async function loadCustomTopics() {
             }
         });
 
-        // Auto-inject ALL root folders (like JEE) into the Daily Quiz Challenge engine
         if (!appData["Daily Quiz Challenge"]) appData["Daily Quiz Challenge"] = {};
         let rootKeys = Object.keys(appData).filter(k => k !== "Daily Quiz Challenge");
 
@@ -68,17 +66,19 @@ window.addEventListener('click', function(e) {
     } 
 });
 
-// Check for resolved reports or doubts to alert the student via the red notification dot
+// Single-field query so Firestore never requires a composite index
 async function checkUserNotifications() {
     if (!currentUser) return;
     try {
         const snap = await db.collection("reported_mistakes")
             .where("studentId", "==", currentUser.uid)
-            .where("seenByStudent", "==", false)
-            .limit(1)
             .get();
         
-        const hasUnseen = !snap.empty;
+        let hasUnseen = false;
+        snap.forEach(doc => {
+            if (doc.data().seenByStudent === false) hasUnseen = true;
+        });
+
         const profileDot = document.getElementById('profileNotifDot');
         const reportDot = document.getElementById('reportMenuDot');
         if (profileDot) profileDot.style.display = hasUnseen ? 'block' : 'none';
@@ -92,10 +92,8 @@ async function initApp() {
     dataLoaded = true; 
     if (!window.location.hash) window.location.hash = '#/home'; 
     
-    // Initial render so UI mounts immediately
     handleRouting(); 
     
-    // Load dynamic Firestore topics and global rating, then refresh active route
     await loadCustomTopics();
     if (typeof loadGlobalRating === 'function') loadGlobalRating();
     handleRouting();
@@ -128,6 +126,9 @@ auth.onAuthStateChanged((user) => {
                     const streakEl = document.getElementById('nav-streak-display');
                     if (streakEl) streakEl.innerText = d.currentStreak;
                 }
+                if (d.rating && typeof syncUserRatingUI === 'function') {
+                    syncUserRatingUI(d.rating, d.feedback || '');
+                }
             }
             db.collection("users").doc(user.uid).set({ 
                 displayName: user.displayName, email: user.email, photoURL: user.photoURL, 
@@ -137,6 +138,7 @@ auth.onAuthStateChanged((user) => {
         
         checkUserNotifications();
         if (typeof loadUserBookmarks === 'function') loadUserBookmarks();
+        if (typeof loadGlobalRating === 'function') loadGlobalRating();
     } else {
         if (badge) badge.style.display = 'none'; 
         if (loginNavBtn) loginNavBtn.style.display = 'flex'; 
@@ -153,7 +155,6 @@ auth.onAuthStateChanged((user) => {
     if (dataLoaded) handleRouting(); 
 });
 
-// CRITICAL FIX: Wait until all script files (3-ui, 4-quiz, 5-ai, 6-admin) are parsed before running initApp()
 if (document.readyState === 'loading') {
     window.addEventListener('DOMContentLoaded', initApp);
 } else {
@@ -198,25 +199,22 @@ function updateBottomNav(hash) {
     }
 }
 
-// SMART SIDEBAR: Adapts to NEET, JEE, General Knowledge, and any new custom Root Category
+// FIXED: Sidebar ONLY displays on the main Root Home screen (#/home) and hides inside all topics
 function updateSidebarLinks() {
     const sidebar = document.getElementById('main-sidebar');
     if (!sidebar) return;
 
     let hash = window.location.hash.replace(/^#\/?/, '');
+    let isRootHome = (!hash || hash === 'home') && (!currentPath || currentPath.length === 0);
 
-    if (hash.includes('custom-setup') || hash.includes('leaderboard') || hash.includes('board/') || hash.includes('progress') || hash.includes('bookmarks') || hash.includes('quiz') || hash.includes('admin') || hash === 'diary') {
+    if (!isRootHome) {
         sidebar.style.display = 'none';
         return;
     }
 
     let rootTopic = "NEET";
-    if (currentPath && currentPath.length > 0 && currentPath[0] !== "Daily Quiz Challenge") {
-        rootTopic = currentPath[0];
-    } else {
-        const rootKeys = Object.keys(appData).filter(k => k !== "Daily Quiz Challenge");
-        if (rootKeys.length > 0) rootTopic = rootKeys[0];
-    }
+    const rootKeys = Object.keys(appData).filter(k => k !== "Daily Quiz Challenge");
+    if (rootKeys.length > 0) rootTopic = rootKeys[0];
 
     sidebar.style.display = 'block';
     let safeTopic = rootTopic.replace(/'/g, "\\'");
@@ -247,20 +245,6 @@ function updateSidebarLinks() {
                     <span class="link-icon" style="color: #607D8B;">📄</span>
                     <span class="link-text">${pyqKey.replace(/^\d+\.\s*/, '')}</span>
                 </a>`;
-        }
-
-        // Dynamic Fallback: If a custom category doesn't use standard book/pyq names, list its top sub-folders
-        if (!bookKey && !pyqKey && subKeys.length > 0) {
-            subKeys.slice(0, 3).forEach(k => {
-                let safeK = k.replace(/'/g, "\\'");
-                let cleanK = k.replace(/^\d+\.\s*/, '');
-                let iconObj = typeof getSmartIcon === 'function' ? getSmartIcon(cleanK) : null;
-                quickLinksHtml += `
-                    <a class="action-link" onclick="jumpToSection(['${safeTopic}', '${safeK}'])">
-                        <span class="link-icon">${iconObj ? iconObj.i : '📂'}</span>
-                        <span class="link-text">${cleanK}</span>
-                    </a>`;
-            });
         }
 
         if (mcqKey) {
@@ -309,9 +293,11 @@ function handleRouting() {
         
         let isRootHome = (!hash || hash === 'home');
         
-        const backBtn = document.getElementById('dynamic-back-container');
-        if (backBtn) backBtn.style.display = isRootHome ? 'none' : 'block';
+        // Keep duplicate bottom back button hidden at all times
+        const bottomBackBtn = document.getElementById('dynamic-back-container');
+        if (bottomBackBtn) bottomBackBtn.style.display = 'none';
         
+        if (typeof handlePCBackButton === 'function') handlePCBackButton();
         updateBottomNav(rawHash);
         
         if (isRootHome) { currentPath = []; if (typeof _renderView === 'function') _renderView(); } 
@@ -332,12 +318,12 @@ function handleRouting() {
 }
 
 function goHome() { 
+    if (typeof currentTimer !== 'undefined' && currentTimer) clearInterval(currentTimer);
     if (window.location.hash === '#/home' || window.location.hash === '') {
         currentPath = [];
-        const backBtn = document.getElementById('dynamic-back-container');
-        if(backBtn) backBtn.style.display = 'none';
         if (typeof _renderView === 'function') _renderView();
         updateSidebarLinks();
+        if (typeof handlePCBackButton === 'function') handlePCBackButton();
     } else {
         window.location.hash = '#/home';
     }
@@ -346,7 +332,37 @@ function goHome() {
 function navigateTo(key) { window.location.hash = '#/path/' + [...currentPath, key].map(encodeURIComponent).join('/'); }
 function jumpToSection(pathArray) { window.location.hash = '#/path/' + pathArray.map(encodeURIComponent).join('/'); }
 function showLeaderboardOptions() { window.location.hash = '#/leaderboard'; }
+
+// Smart hierarchical goBack() for the upper navbar back button
 function goBack() { 
-    if (window.history.length > 1 && window.location.hash !== '#/home') { window.history.back(); } 
-    else { goHome(); }
+    if (typeof currentTimer !== 'undefined' && currentTimer) clearInterval(currentTimer);
+    let rawHash = window.location.hash.replace(/^#\/?/, '');
+    let hash = decodeURIComponent(rawHash);
+
+    if (hash.startsWith('path/')) {
+        let parts = hash.replace('path/', '').split('/').filter(Boolean);
+        if (parts.length > 1) {
+            parts.pop();
+            // If stepping back lands on the hidden "Daily Quiz Challenge" root node, go straight Home
+            if (parts.length === 1 && parts[0] === 'Daily Quiz Challenge') {
+                goHome();
+            } else {
+                jumpToSection(parts);
+            }
+        } else {
+            goHome();
+        }
+    } else if (hash === 'quiz') {
+        if (currentPath && currentPath.length > 0) {
+            jumpToSection(currentPath);
+        } else {
+            goHome();
+        }
+    } else if (hash.startsWith('board/')) {
+        window.location.hash = '#/leaderboard';
+    } else if (hash.startsWith('progress/')) {
+        window.location.hash = '#/progress';
+    } else {
+        goHome();
+    }
 }
