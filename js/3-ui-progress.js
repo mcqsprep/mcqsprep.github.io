@@ -16,57 +16,107 @@ function forceCwStep1(e) {
     window.location.hash = '#/custom-setup';
 }
 
-function getSmartIcon(text, customIcon = null) {
-    if (customIcon && String(customIcon).trim() !== "") {
-        return { i: String(customIcon).trim(), c: "#fdb813", bg: "rgba(253, 184, 19, 0.15)" };
+// Converts a hex color (#rrggbb) into a complete glowing theme object
+function makeTopicTheme(icon, hexColor) {
+    let hex = hexColor.replace('#', '');
+    let r = parseInt(hex.substring(0, 2), 16) || 253;
+    let g = parseInt(hex.substring(2, 4), 16) || 184;
+    let b = parseInt(hex.substring(4, 6), 16) || 19;
+    return {
+        i: icon,
+        c: hexColor,
+        bg: `rgba(${r}, ${g}, ${b}, 0.16)`,
+        border: `rgba(${r}, ${g}, ${b}, 0.6)`,
+        glow: `rgba(${r}, ${g}, ${b}, 0.28)`
+    };
+}
+
+const TOPIC_COLOR_PALETTE = [
+    "#f43f5e", // Vibrant Rose-Crimson
+    "#38bdf8", // Electric Sky Blue
+    "#10b981", // Neon Emerald
+    "#a855f7", // Royal Violet
+    "#f97316", // Fiery Orange
+    "#06b6d4", // Cyber Cyan
+    "#ec4899", // Hot Pink
+    "#eab308", // Golden Amber
+    "#6366f1", // Indigo Glow
+    "#14b8a6"  // Teal Mint
+];
+
+function getPaletteColorForText(text) {
+    let str = String(text || "");
+    let hash = 0;
+    for (let idx = 0; idx < str.length; idx++) {
+        hash = str.charCodeAt(idx) + ((hash << 5) - hash);
     }
+    return TOPIC_COLOR_PALETTE[Math.abs(hash) % TOPIC_COLOR_PALETTE.length];
+}
 
+function getSmartIcon(text, customIcon = null) {
     let t = (text || "").toLowerCase();
+    let matchedIcon = null;
+    let matchedColor = null;
 
-    // Exam Categories
-    if(t.includes('neet')) return { i: "🩺", c: "#fdb813", bg: "rgba(253, 184, 19, 0.15)" };
-    if(t.includes('jee')) return { i: "🚀", c: "#2196F3", bg: "rgba(33, 150, 243, 0.15)" };
-    if(t.includes('engineering')) return { i: "⚙️", c: "#2196F3", bg: "rgba(33, 150, 243, 0.15)" };
-    if(t.includes('medical') || t.includes('aiims') || t.includes('paramedical')) return { i: "🩺", c: "#E91E63", bg: "rgba(233, 30, 99, 0.15)" };
-    if(t.includes('law') || t.includes('clat')) return { i: "⚖️", c: "#9C27B0", bg: "rgba(156, 39, 176, 0.15)" };
-    if(t.includes('defense') || t.includes('nda') || t.includes('cds')) return { i: "🛡️", c: "#FF5722", bg: "rgba(255, 87, 34, 0.15)" };
-    if(t.includes('banking') || t.includes('ibps') || t.includes('sbi')) return { i: "🏦", c: "#4CAF50", bg: "rgba(76, 175, 80, 0.15)" };
-    if(t.includes('railway') || t.includes('rrb')) return { i: "🚂", c: "#FF9800", bg: "rgba(255, 152, 0, 0.15)" };
-    if(t.includes('ssc') || t.includes('staff selection')) return { i: "📋", c: "#607D8B", bg: "rgba(96, 125, 139, 0.15)" };
-    if(t.includes('upsc') || t.includes('civil')) return { i: "🏛️", c: "#795548", bg: "rgba(121, 85, 72, 0.15)" };
-    if(t.includes('gate')) return { i: "🎓", c: "#673AB7", bg: "rgba(103, 58, 183, 0.15)" };
-    if(t.includes('cat') || t.includes('mba') || t.includes('cuet')) return { i: "📊", c: "#00BCD4", bg: "rgba(0, 188, 212, 0.15)" };
+    // Exam Categories (Each has a distinct signature color)
+    if(t.includes('neet')) { matchedIcon = "🩺"; matchedColor = "#f43f5e"; } // Medical Rose-Crimson
+    else if(t.includes('jee')) { matchedIcon = "🚀"; matchedColor = "#38bdf8"; } // Electric Sky Blue
+    else if(t.includes('gk') || t.includes('general knowledge')) { matchedIcon = "🌍"; matchedColor = "#10b981"; } // Neon Emerald
+    else if(t.includes('engineering')) { matchedIcon = "⚙️"; matchedColor = "#0ea5e9"; }
+    else if(t.includes('medical') || t.includes('aiims') || t.includes('paramedical')) { matchedIcon = "🩺"; matchedColor = "#ec4899"; }
+    else if(t.includes('law') || t.includes('clat')) { matchedIcon = "⚖️"; matchedColor = "#a855f7"; }
+    else if(t.includes('defense') || t.includes('nda') || t.includes('cds')) { matchedIcon = "🛡️"; matchedColor = "#f97316"; }
+    else if(t.includes('banking') || t.includes('ibps') || t.includes('sbi')) { matchedIcon = "🏦"; matchedColor = "#22c55e"; }
+    else if(t.includes('railway') || t.includes('rrb')) { matchedIcon = "🚂"; matchedColor = "#f59e0b"; }
+    else if(t.includes('ssc') || t.includes('staff selection')) { matchedIcon = "📋"; matchedColor = "#06b6d4"; }
+    else if(t.includes('upsc') || t.includes('civil')) { matchedIcon = "🏛️"; matchedColor = "#eab308"; }
+    else if(t.includes('gate')) { matchedIcon = "🎓"; matchedColor = "#8b5cf6"; }
+    else if(t.includes('cat') || t.includes('mba') || t.includes('cuet')) { matchedIcon = "📊"; matchedColor = "#14b8a6"; }
 
     // Specific Science & Exam Subtopics
-    if(t.includes('organic')) return { i: "⌬", c: "#10b981", bg: "rgba(16, 185, 129, 0.15)" };
-    if(t.includes('inorganic')) return { i: "💎", c: "#38bdf8", bg: "rgba(56, 189, 248, 0.15)" };
-    if(t.includes('physical')) return { i: "⚡", c: "#f59e0b", bg: "rgba(245, 158, 11, 0.15)" };
-    if(t.includes('physics') || t.includes('mechanics') || t.includes('optics') || t.includes('electro')) return { i: "⚛️", c: "#9C27B0", bg: "rgba(156, 39, 176, 0.15)" };
-    if(t.includes('chemistry') || t.includes('chemical') || t.includes('thermodynamics')) return { i: "🧪", c: "#00BCD4", bg: "rgba(0, 188, 212, 0.15)" };
-    if(t.includes('botany') || t.includes('plant') || t.includes('ecology') || t.includes('photosynthesis')) return { i: "🌿", c: "#4CAF50", bg: "rgba(76, 175, 80, 0.15)" };
-    if(t.includes('zoology') || t.includes('animal') || t.includes('human') || t.includes('physiology')) return { i: "🦁", c: "#FFC107", bg: "rgba(255, 193, 7, 0.15)" };
-    if(t.includes('biology') || t.includes('genetics') || t.includes('cell') || t.includes('biomolecule') || t.includes('biotech')) return { i: "🧬", c: "#E91E63", bg: "rgba(233, 30, 99, 0.15)" };
-    if(t.includes('math') || t.includes('calculus') || t.includes('algebra') || t.includes('geometry')) return { i: "📐", c: "#3F51B5", bg: "rgba(63, 81, 181, 0.15)" };
-    if(t.includes('reasoning') || t.includes('logic')) return { i: "🧠", c: "#FF9800", bg: "rgba(255, 152, 0, 0.15)" };
-    if(t.includes('aptitude') || t.includes('quant')) return { i: "📈", c: "#009688", bg: "rgba(0, 150, 136, 0.15)" };
-    if(t.includes('english') || t.includes('grammar') || t.includes('vocab')) return { i: "📖", c: "#795548", bg: "rgba(121, 85, 72, 0.15)" };
-    if(t.includes('hindi')) return { i: "🔤", c: "#FF5722", bg: "rgba(255, 87, 34, 0.15)" };
+    else if(t.includes('organic')) { matchedIcon = "⌬"; matchedColor = "#10b981"; }
+    else if(t.includes('inorganic')) { matchedIcon = "💎"; matchedColor = "#ec4899"; }
+    else if(t.includes('physical')) { matchedIcon = "⚡"; matchedColor = "#38bdf8"; }
+    else if(t.includes('physics') || t.includes('mechanics') || t.includes('optics') || t.includes('electro')) { matchedIcon = "⚛️"; matchedColor = "#a855f7"; }
+    else if(t.includes('chemistry') || t.includes('chemical') || t.includes('thermodynamics')) { matchedIcon = "🧪"; matchedColor = "#06b6d4"; }
+    else if(t.includes('botany') || t.includes('plant') || t.includes('ecology') || t.includes('photosynthesis')) { matchedIcon = "🌿"; matchedColor = "#22c55e"; }
+    else if(t.includes('zoology') || t.includes('animal') || t.includes('human') || t.includes('physiology')) { matchedIcon = "🦁"; matchedColor = "#f59e0b"; }
+    else if(t.includes('biology') || t.includes('genetics') || t.includes('cell') || t.includes('biomolecule') || t.includes('biotech')) { matchedIcon = "🧬"; matchedColor = "#f43f5e"; }
+    else if(t.includes('math') || t.includes('calculus') || t.includes('algebra') || t.includes('geometry')) { matchedIcon = "📐"; matchedColor = "#6366f1"; }
+    else if(t.includes('reasoning') || t.includes('logic')) { matchedIcon = "🧠"; matchedColor = "#f97316"; }
+    else if(t.includes('aptitude') || t.includes('quant')) { matchedIcon = "📈"; matchedColor = "#14b8a6"; }
+    else if(t.includes('english') || t.includes('grammar') || t.includes('vocab')) { matchedIcon = "📖"; matchedColor = "#ec4899"; }
+    else if(t.includes('hindi')) { matchedIcon = "🔤"; matchedColor = "#f97316"; }
 
     // General Knowledge & Current Affairs
-    if(t.includes('history') || t.includes('ancient') || t.includes('modern')) return { i: "🏛️", c: "#FF9800", bg: "rgba(255, 152, 0, 0.15)" };
-    if(t.includes('geography') || t.includes('earth')) return { i: "🗺️", c: "#4CAF50", bg: "rgba(76, 175, 80, 0.15)" };
-    if(t.includes('gk') || t.includes('general knowledge')) return { i: "🌍", c: "#4CAF50", bg: "rgba(76, 175, 80, 0.15)" };
-    if(t.includes('affairs') || t.includes('current') || t.includes('news')) return { i: "📰", c: "#2196F3", bg: "rgba(33, 150, 243, 0.15)" };
-    if(t.includes('politics') || t.includes('polity') || t.includes('constitution')) return { i: "🏛️", c: "#9C27B0", bg: "rgba(156, 39, 176, 0.15)" };
-    if(t.includes('economy') || t.includes('economics')) return { i: "💰", c: "#4CAF50", bg: "rgba(76, 175, 80, 0.15)" };
+    else if(t.includes('history') || t.includes('ancient') || t.includes('modern')) { matchedIcon = "🏛️"; matchedColor = "#f97316"; }
+    else if(t.includes('geography') || t.includes('earth')) { matchedIcon = "🗺️"; matchedColor = "#10b981"; }
+    else if(t.includes('affairs') || t.includes('current') || t.includes('news')) { matchedIcon = "📰"; matchedColor = "#38bdf8"; }
+    else if(t.includes('politics') || t.includes('polity') || t.includes('constitution')) { matchedIcon = "🏛️"; matchedColor = "#a855f7"; }
+    else if(t.includes('economy') || t.includes('economics')) { matchedIcon = "💰"; matchedColor = "#22c55e"; }
 
     // Materials & Practice
-    if(t.includes('ncert') || t.includes('book')) return { i: "📚", c: "#9C27B0", bg: "rgba(156, 39, 176, 0.15)" };
-    if(t.includes('pyq') || t.includes('previous') || t.includes('paper')) return { i: "📄", c: "#607D8B", bg: "rgba(96, 125, 139, 0.15)" };
-    if(t.includes('mock') || t.includes('test')) return { i: "⏱️", c: "#F44336", bg: "rgba(244, 67, 54, 0.15)" };
-    if(t.includes('quiz') || t.includes('practice') || t.includes('mcq')) return { i: "📝", c: "#00BCD4", bg: "rgba(0, 188, 212, 0.15)" };
-    if(t.includes('note') || t.includes('formula') || t.includes('short')) return { i: "📒", c: "#FFC107", bg: "rgba(255, 193, 7, 0.15)" };
-    if(t.includes('syllabus')) return { i: "📋", c: "#607D8B", bg: "rgba(96, 125, 139, 0.15)" };
+    else if(t.includes('ncert') || t.includes('book')) { matchedIcon = "📚"; matchedColor = "#a855f7"; }
+    else if(t.includes('pyq') || t.includes('previous')) { matchedIcon = "📄"; matchedColor = "#ec4899"; }
+    else if(t.includes('paper')) { matchedIcon = "📋"; matchedColor = "#eab308"; }
+    else if(t.includes('mock') || t.includes('test')) { matchedIcon = "⏱️"; matchedColor = "#f97316"; }
+    else if(t.includes('quiz') || t.includes('practice') || t.includes('mcq')) { matchedIcon = "📝"; matchedColor = "#06b6d4"; }
+    else if(t.includes('note') || t.includes('formula') || t.includes('short')) { matchedIcon = "📒"; matchedColor = "#eab308"; }
+    else if(t.includes('syllabus')) { matchedIcon = "📋"; matchedColor = "#38bdf8"; }
+
+    // Difficulty Folders
+    else if(t === 'easy') { matchedIcon = "🟢"; matchedColor = "#10b981"; }
+    else if(t === 'medium') { matchedIcon = "🟡"; matchedColor = "#eab308"; }
+    else if(t === 'hard') { matchedIcon = "🔴"; matchedColor = "#f43f5e"; }
+    else if(t === 'mixed') { matchedIcon = "⚡"; matchedColor = "#a855f7"; }
+
+    if (customIcon && String(customIcon).trim() !== "") {
+        return makeTopicTheme(String(customIcon).trim(), matchedColor || getPaletteColorForText(text));
+    }
+
+    if (matchedIcon && matchedColor) {
+        return makeTopicTheme(matchedIcon, matchedColor);
+    }
 
     return null;
 }
@@ -104,18 +154,21 @@ async function _renderPdfResources(checkPath, niceTitle) {
 
         items.sort((a, b) => ((b.timestamp?.toMillis() || 0) - (a.timestamp?.toMillis() || 0)));
 
-        let listHtml = items.map(item => `
-            <div style="background:#090e1a; border:1px solid var(--border-color); border-radius:10px; padding:16px 20px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+        let listHtml = items.map((item, idx) => {
+            let colorHex = TOPIC_COLOR_PALETTE[idx % TOPIC_COLOR_PALETTE.length];
+            let theme = makeTopicTheme("📄", colorHex);
+            return `
+            <div style="background:linear-gradient(135deg, ${theme.bg} 0%, #090e1a 85%); border:1.5px solid ${theme.border}; box-shadow:0 4px 15px ${theme.glow}; border-radius:12px; padding:16px 20px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
                 <div style="display:flex; align-items:center; gap:12px;">
-                    <div class="cat-icon" style="background:rgba(156, 39, 176, 0.15); color:#9C27B0;">📄</div>
+                    <div class="cat-icon" style="background:${theme.bg}; color:${theme.c}; border:1px solid ${theme.border};">📄</div>
                     <div>
                         <div style="font-weight:700; font-size:15px; color:#fff;">${item.title || 'Study Material'}</div>
                         <div style="font-size:12px; color:var(--text-muted);">${niceTitle}</div>
                     </div>
                 </div>
-                <a href="${item.fileUrl}" target="_blank" rel="noopener noreferrer" class="btn-exam" style="background:var(--primary-yellow); color:#000; border:none; text-decoration:none;">Open / Download ↗</a>
-            </div>
-        `).join('');
+                <a href="${item.fileUrl}" target="_blank" rel="noopener noreferrer" class="btn-exam" style="background:${theme.c}; color:#000; border:none; text-decoration:none; font-weight:800;">Open / Download ↗</a>
+            </div>`;
+        }).join('');
 
         mc.innerHTML = `
         <div class="card page-transition">
@@ -241,6 +294,7 @@ function _renderView() {
             return a.localeCompare(b);
         });
 
+        let colorIdx = 0;
         for (let key of keysArr) { 
             if (currentPath.length === 0 && key === "Daily Quiz Challenge") continue; 
             let fullCheckPath = currentPath.join(" > ") + (currentPath.length > 0 ? " > " : "") + key;
@@ -256,12 +310,15 @@ function _renderView() {
 
             let safeKey = key.replace(/'/g, "\\'");
             let displayKey = key.replace(/^\d+\.\s*/, '');
-            let fallbackIcon = typeLabel === '📄' ? "📄" : (typeLabel === '📝' ? "📝" : "📁");
+            let fallbackIcon = typeLabel === '📄' ? "📄" : (typeLabel === '📝' ? "📝" : "📘");
 
-            let iconData = getSmartIcon(displayKey, customIcon) || { i: fallbackIcon, c: "#9e9ea7", bg: "rgba(255,255,255,0.08)" };
+            let fallbackHex = TOPIC_COLOR_PALETTE[colorIdx % TOPIC_COLOR_PALETTE.length];
+            colorIdx++;
 
-            h += `<button class="category-tile" onclick="navigateTo('${safeKey}')">
-                    <div class="cat-icon" style="background: ${iconData.bg}; color: ${iconData.c};">${iconData.i}</div>
+            let iconData = getSmartIcon(displayKey, customIcon) || makeTopicTheme(fallbackIcon, fallbackHex);
+
+            h += `<button class="category-tile colored-tile" style="--topic-color:${iconData.c}; --topic-bg:${iconData.bg}; --topic-border:${iconData.border}; --topic-glow:${iconData.glow};" onclick="navigateTo('${safeKey}')">
+                    <div class="cat-icon">${iconData.i}</div>
                     <div class="cat-text">${displayKey}</div>
                   </button>`; 
         }
@@ -332,19 +389,23 @@ function _renderProgressSelection() {
     let rootKeys = Object.keys(appData).filter(k => k !== "Daily Quiz Challenge");
     let optionsHtml = '';
     
-    rootKeys.forEach(k => {
+    rootKeys.forEach((k, idx) => {
         let cleanKey = k.replace(/^\d+\.\s*/, '');
         const topicType = customTopicTypes[k];
         const customIcon = topicType ? (typeof topicType === 'object' ? topicType.icon : null) : null;
-        let icon = getSmartIcon(cleanKey, customIcon) || { i: "📊" };
-        optionsHtml += `<button class="btn-exam" onclick="window.location.hash='#/progress/${encodeURIComponent(k)}'" style="width:100%; max-width:250px; padding:15px; font-size:14px;">${icon.i} ${cleanKey} Analytics</button>`;
+        let iconData = getSmartIcon(cleanKey, customIcon) || makeTopicTheme("📊", TOPIC_COLOR_PALETTE[idx % TOPIC_COLOR_PALETTE.length]);
+        optionsHtml += `
+        <button class="category-tile colored-tile" style="--topic-color:${iconData.c}; --topic-bg:${iconData.bg}; --topic-border:${iconData.border}; --topic-glow:${iconData.glow};" onclick="window.location.hash='#/progress/${encodeURIComponent(k)}'">
+            <div class="cat-icon">${iconData.i}</div>
+            <div class="cat-text">${cleanKey} Analytics</div>
+        </button>`;
     });
 
     document.getElementById('dynamic-content').innerHTML = `
-        <div class="card page-transition" style="text-align:center; padding: 40px 20px;">
+        <div class="card page-transition" style="padding: 30px 20px;">
             <h2 class="section-title" style="justify-content:center;">📊 Select Analytics Dashboard</h2>
-            <p style="color:var(--text-muted); margin-bottom:30px; font-size:14px;">Choose an exam category to view your detailed performance metrics and weak spots.</p>
-            <div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
+            <p style="color:var(--text-muted); margin-bottom:25px; font-size:14px; text-align:center;">Choose an exam category to view your detailed performance metrics and weak spots.</p>
+            <div class="category-grid">
                 ${optionsHtml}
             </div>
         </div>
@@ -570,15 +631,15 @@ function _renderLeaderboardOptions() {
     let rootKeys = Object.keys(appData).filter(k => k !== "Daily Quiz Challenge");
     let optionsHtml = '';
     
-    rootKeys.forEach(k => {
+    rootKeys.forEach((k, idx) => {
         let cleanKey = k.replace(/^\d+\.\s*/, '');
         const topicType = customTopicTypes[k];
         const customIcon = topicType ? (typeof topicType === 'object' ? topicType.icon : null) : null;
-        let smartData = getSmartIcon(cleanKey, customIcon) || { i: "🥇" };
+        let smartData = getSmartIcon(cleanKey, customIcon) || makeTopicTheme("🥇", TOPIC_COLOR_PALETTE[idx % TOPIC_COLOR_PALETTE.length]);
 
-        optionsHtml += `<button class="btn-exam category-tile" onclick="window.location.hash='#/board/${encodeURIComponent(k)}'" style="flex-direction:row; padding:15px; flex:1; min-width:200px;">
-            <div class="cat-icon" style="background: rgba(255,255,255,0.05); color: #fff; width:30px; height:30px; font-size:14px;">${smartData.i}</div>
-            <div class="cat-text" style="font-size:13px; letter-spacing:0.5px; text-transform:uppercase;">${cleanKey} Leaderboard</div>
+        optionsHtml += `<button class="category-tile colored-tile" style="--topic-color:${smartData.c}; --topic-bg:${smartData.bg}; --topic-border:${smartData.border}; --topic-glow:${smartData.glow};" onclick="window.location.hash='#/board/${encodeURIComponent(k)}'">
+            <div class="cat-icon">${smartData.i}</div>
+            <div class="cat-text">${cleanKey} Leaderboard</div>
         </button>`;
     });
     
@@ -590,7 +651,7 @@ function _renderLeaderboardOptions() {
                 <span style="color: var(--primary-yellow); font-weight: bold;">🎯 ELIGIBILITY RULE:</span>
                 <span style="color: #d1d5db; font-size: 13px;"> You must be signed in and complete a minimum of <b>100 MCQs</b> in a category to unlock your rank on that Leaderboard.</span>
             </div>
-            <div class="category-grid" style="grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px;">
+            <div class="category-grid">
                 ${optionsHtml}
             </div>
         </div>`; 
@@ -741,7 +802,6 @@ function isCwDifficultyFolder(name) {
     return CW_DIFFICULTY_FOLDERS.has(clean);
 }
 
-// Strictly excludes "Practice Paper", "NCERT Book", "PYQs", "Mock Test", etc. from Subjects
 function isExcludedSubjectOrPdfFolder(fullKey, name) {
     let tObj = customTopicTypes[fullKey];
     let tVal = tObj ? (typeof tObj === 'object' ? tObj.type : tObj) : null;
@@ -770,16 +830,16 @@ function cwStep1() {
         
         <div class="cw-exam-grid">`;
         
-        rootKeys.forEach(k => {
+        rootKeys.forEach((k, idx) => {
             let cleanKey = k.replace(/^\d+\.\s*/, '');
             let safeKey = k.replace(/'/g, "\\'");
             const topicType = customTopicTypes[k];
             const customIcon = topicType ? (typeof topicType === 'object' ? topicType.icon : null) : null;
-            let smartData = getSmartIcon(cleanKey, customIcon) || { i: "📁", c: "#fdb813", bg: "rgba(253,184,19,0.15)" };
+            let smartData = getSmartIcon(cleanKey, customIcon) || makeTopicTheme("📁", TOPIC_COLOR_PALETTE[idx % TOPIC_COLOR_PALETTE.length]);
 
             html += `
-            <button class="category-tile" onclick="cwSetPath('${safeKey}')" style="width:100%;">
-                <div class="cat-icon" style="background:${smartData.bg}; color:${smartData.c};">${smartData.i}</div>
+            <button class="category-tile colored-tile" style="width:100%; --topic-color:${smartData.c}; --topic-bg:${smartData.bg}; --topic-border:${smartData.border}; --topic-glow:${smartData.glow};" onclick="cwSetPath('${safeKey}')">
+                <div class="cat-icon">${smartData.i}</div>
                 <div class="cat-text">${cleanKey}</div>
             </button>`;
         });
@@ -815,7 +875,6 @@ function buildCwCatalogForExam(examKey) {
     let hasMcqsPracticeContainer = !!examObj["MCQs Practice"] && typeof examObj["MCQs Practice"] === 'object';
 
     if (hasMcqsPracticeContainer) {
-        // When an exam has "MCQs Practice" (like NEET), load subjects strictly from "MCQs Practice"
         Object.keys(examObj["MCQs Practice"]).forEach(subjKey => {
             let subjFull = `${examKey} > MCQs Practice > ${subjKey}`;
             registerSubject(subjFull, subjKey, examObj["MCQs Practice"][subjKey]);
@@ -848,12 +907,10 @@ function buildCwCatalogForExam(examKey) {
         }
     });
 
-    // Collect chapters under each subject, skipping Easy/Medium/Hard/Mixed difficulty sub-folders
     subjectsMap.forEach((subj) => {
         function collectChapters(obj, currentFullPath, prefixLabel = "") {
             if (!obj || typeof obj !== 'object') return;
             Object.keys(obj).forEach(k => {
-                // Skip Easy, Medium, Hard, Mixed folders so they never show up as chapters
                 if (isCwDifficultyFolder(k)) return;
                 let childFull = `${currentFullPath} > ${k}`;
                 if (isExcludedSubjectOrPdfFolder(childFull, k)) return;
@@ -873,7 +930,6 @@ function buildCwCatalogForExam(examKey) {
         Object.keys(customTopicTypes).forEach(dbKey => {
             if (!dbKey.startsWith(sPref)) return;
             let relParts = dbKey.slice(sPref.length).split(' > ').filter(Boolean);
-            // Stop before any segment that is a difficulty folder (Easy, Medium, Hard, Mixed)
             let validSegments = [];
             for (let seg of relParts) {
                 if (isCwDifficultyFolder(seg)) break;
@@ -915,9 +971,9 @@ function cwStep2() {
 
     let subjectsGridHtml = cwSubjectCatalog.map((s, idx) => {
         let isChecked = cwSelectedSubjects.includes(s.fullPath);
-        let iconObj = getSmartIcon(s.label) || { i: "📘" };
+        let iconObj = getSmartIcon(s.label) || makeTopicTheme("📘", TOPIC_COLOR_PALETTE[idx % TOPIC_COLOR_PALETTE.length]);
         return `
-        <label class="cw-check-card ${isChecked ? 'selected' : ''}" id="cwSubjCard_${idx}">
+        <label class="cw-check-card ${isChecked ? 'selected' : ''}" id="cwSubjCard_${idx}" style="border-left: 3px solid ${iconObj.c};">
             <input type="checkbox" value="${s.fullPath.replace(/"/g, '&quot;')}" ${isChecked ? 'checked' : ''} onchange="cwToggleSubject(this, ${idx})">
             <span>${iconObj.i} ${s.label}</span>
         </label>`;
@@ -1033,7 +1089,6 @@ function cwToggleSubject(cbEl, idx) {
     if (cbEl.checked) {
         if (!cwSelectedSubjects.includes(val)) cwSelectedSubjects.push(val);
         if (card) card.classList.add('selected');
-        // Auto-select chapters of newly checked subject
         let subjObj = cwSubjectCatalog.find(s => s.fullPath === val);
         if (subjObj) {
             if (subjObj.chapters && subjObj.chapters.length > 0) {
@@ -1126,11 +1181,12 @@ function cwRenderChaptersList(searchQuery = "") {
 
     chContainer.innerHTML = listToRender.map((ch, idx) => {
         let isChecked = cwSelectedChapters.includes(ch.fullPath);
+        let subjTheme = getSmartIcon(ch.subjLabel) || makeTopicTheme("📘", getPaletteColorForText(ch.subjLabel));
         return `
-        <label class="cw-check-card ${isChecked ? 'selected' : ''}" id="cwChapCard_${idx}">
+        <label class="cw-check-card ${isChecked ? 'selected' : ''}" id="cwChapCard_${idx}" style="border-left: 3px solid ${subjTheme.c};">
             <input type="checkbox" value="${ch.fullPath.replace(/"/g, '&quot;')}" ${isChecked ? 'checked' : ''} onchange="cwToggleChapter(this, ${idx})">
             <div style="overflow:hidden; text-overflow:ellipsis;">
-                <div style="font-size:10px; color:var(--primary-yellow); text-transform:uppercase; letter-spacing:0.4px;">${ch.subjLabel}</div>
+                <div style="font-size:10px; color:${subjTheme.c}; font-weight:800; text-transform:uppercase; letter-spacing:0.4px;">${ch.subjLabel}</div>
                 <div style="font-size:12.5px;">${ch.label}</div>
             </div>
         </label>`;
@@ -1184,7 +1240,6 @@ function cwSelectChapterFromSuggestion(fullPath) {
     if (cwSelectedChapters.includes(fullPath)) {
         cwSelectedChapters = cwSelectedChapters.filter(p => p !== fullPath);
     } else {
-        // If all chapters were auto-selected by default, let the user's first search pick focus on their searched chapters, or add to existing selection
         if (cwSelectedChapters.length === cwAvailableChaptersCache.length && cwAvailableChaptersCache.length > 1) {
             cwSelectedChapters = [fullPath];
         } else {
@@ -1223,7 +1278,6 @@ function cwSelectAllChapters(selectAll) {
 }
 
 async function cwLaunch() {
-    // Enforce 20-250 limit check and show inline caution if invalid
     if (!cwValidateLimit()) {
         return;
     }
@@ -1266,7 +1320,6 @@ async function cwLaunch() {
                 let d = doc.data();
                 if (d.type && d.type !== "mcq") return;
 
-                // Match difficulty whether stored in d.level OR as a trailing folder in d.path (e.g., "... > Easy")
                 let docLevelLower = (d.level || "").trim().toLowerCase();
                 let pathLeafLower = (d.path || "").split(' > ').pop().trim().toLowerCase();
                 let matchesDiff = (cwDiff === "Mixed") || (docLevelLower === targetDiffLower) || (pathLeafLower === targetDiffLower);
@@ -1400,7 +1453,7 @@ async function _initiateBookmarkQuiz() {
         html += `</div>`;
         mc.innerHTML = html;
 
-        const mathDelims = [ {left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}, {left: '\\(', right: '\\)', display: false}, {left: '\\[', right: '\\]', display: true} ];
+        const mathDelims = [ {left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}, {left: '\\(', right: '\\)', display: false}, {left: '[', right: ']', display: true} ];
         allDocs.forEach(q => {
             let elQ = document.getElementById('bmQ_'+q.id); if(elQ && typeof renderMathInElement === 'function') renderMathInElement(elQ, { delimiters: mathDelims, throwOnError: false });
             ['A','B','C','D'].forEach(opt => {
