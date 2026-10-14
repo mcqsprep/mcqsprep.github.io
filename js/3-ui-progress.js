@@ -67,6 +67,7 @@ function getSmartIcon(text, customIcon = null) {
     return null;
 }
 
+// Single-field query so PDF folders never trigger a composite index error
 async function _renderPdfResources(checkPath, niceTitle) {
     const mc = document.getElementById('dynamic-content');
     if (!mc) return;
@@ -79,21 +80,25 @@ async function _renderPdfResources(checkPath, niceTitle) {
     try {
         const snap = await db.collection("content")
             .where("path", "==", checkPath)
-            .where("type", "==", "material")
             .get();
 
-        if (snap.empty) {
+        let items = [];
+        snap.forEach(doc => {
+            let d = doc.data();
+            if (d.type === "material" || d.fileUrl) {
+                items.push({ id: doc.id, ...d });
+            }
+        });
+
+        if (items.length === 0) {
             mc.innerHTML = `
             <div class="card page-transition">
                 <h2 class="section-title">📄 ${niceTitle} Resources</h2>
                 <p style="color:var(--text-muted);">No study materials uploaded to this folder yet. Materials will appear here once uploaded via the Admin Panel.</p>
-                <button class="btn-exam" onclick="goBack()" style="margin-top:15px; background:#0d1527;">&larr; Go Back</button>
             </div>`;
             return;
         }
 
-        let items = [];
-        snap.forEach(doc => items.push({ id: doc.id, ...doc.data() }));
         items.sort((a, b) => ((b.timestamp?.toMillis() || 0) - (a.timestamp?.toMillis() || 0)));
 
         let listHtml = items.map(item => `
@@ -202,7 +207,7 @@ function _renderView() {
             <div class="card setup-hero-card" onclick="forceCwStep1(event)">
                 <div class="hero-badge">CUSTOM PRACTICE</div>
                 <h2 class="hero-title">Practice smart with tailored mock tests.</h2>
-                <p class="hero-desc">Mix subjects, filter by difficulty, and build your ultimate personalized mock test.</p>
+                <p class="hero-desc">Mix multiple subjects & chapters, filter by difficulty, and build your ultimate personalized mock test (20–250 MCQs).</p>
                 <button class="btn-exam hero-btn" onclick="forceCwStep1(event)">Launch Setup 🚀</button>
             </div>`;
         }
@@ -265,7 +270,7 @@ function _renderView() {
 }
 
 // ==========================================
-// 6. SCALED TRACK PROGRESS, LEADERBOARDS, REPORTS & FEEDBACK
+// 6. SCALED TRACK PROGRESS & LEADERBOARDS
 // ==========================================
 async function getAttemptedIdsForPath(safePath) {
     let docKey = encodeURIComponent(safePath);
@@ -316,7 +321,7 @@ async function resetProgress(safePath) {
 
 function _renderProgressSelection() {
     if (!currentUser) {
-        document.getElementById('dynamic-content').innerHTML = `<div class="card page-transition" style="text-align:center;"><h2>⚠ Sign In Required</h2><p style="color:var(--text-muted); margin-bottom:20px;">Please sign in to view your personalized exam analytics.</p><button class="btn-exam" onclick="showAuthModal()" style="background:var(--primary-yellow); color:#000; border:none; margin-right:10px;">Sign In</button><button class="btn-exam" onclick="goBack()" style="background:#333; border:none;">Back</button></div>`;
+        document.getElementById('dynamic-content').innerHTML = `<div class="card page-transition" style="text-align:center;"><h2>⚠ Sign In Required</h2><p style="color:var(--text-muted); margin-bottom:20px;">Please sign in to view your personalized exam analytics.</p><button class="btn-exam" onclick="showAuthModal()" style="background:var(--primary-yellow); color:#000; border:none;">Sign In</button></div>`;
         return;
     }
     document.getElementById('breadcrumb-text').innerText = "Home / Profile / Track Progress";
@@ -371,7 +376,7 @@ async function _renderProgressDashboard(category) {
         });
 
         if (validDocs.length === 0) {
-            mc.innerHTML = `<div class="card page-transition" style="text-align:center;"><h2>No Data Available</h2><p style="color:var(--text-muted); font-size:14px;">You haven't completed any quizzes in the ${displayCategory} category yet.</p><button class="btn-exam" onclick="goBack()" style="background:#0d1527; margin-top:20px;">&larr; Back</button></div>`;
+            mc.innerHTML = `<div class="card page-transition" style="text-align:center;"><h2>No Data Available</h2><p style="color:var(--text-muted); font-size:14px;">You haven't completed any quizzes in the ${displayCategory} category yet.</p></div>`;
             return;
         }
 
@@ -382,10 +387,11 @@ async function _renderProgressDashboard(category) {
 
         validDocs.forEach(d => {
             totalScore += (d.score || 0); 
-            totalQuestions += (d.attemptedQuestions || 0);
+            let qAttempted = d.attemptedQuestions !== undefined ? d.attemptedQuestions : ((d.correctCount || 0) + (d.wrongCount || 0));
+            totalQuestions += qAttempted;
             
-            let c = d.correctCount !== undefined ? d.correctCount : Math.round(((d.accuracy||0)/100) * (d.attemptedQuestions||0));
-            let w = d.wrongCount !== undefined ? d.wrongCount : ((d.attemptedQuestions||0) - c);
+            let c = d.correctCount !== undefined ? d.correctCount : Math.round(((d.accuracy||0)/100) * qAttempted);
+            let w = d.wrongCount !== undefined ? d.wrongCount : (qAttempted - c);
             
             correctCount += c;
             wrongCount += w;
@@ -540,8 +546,23 @@ function drawAccuracyChart(dataPoints) {
     });
 }
 
+// FIXED (Image 5): Only signed-in users can access Leaderboard, and requires >= 100 MCQs attempted in category
 function _renderLeaderboardOptions() { 
     document.getElementById('breadcrumb-text').innerText = "Home / Leaderboard"; 
+    const mc = document.getElementById('dynamic-content');
+
+    if (!currentUser) {
+        mc.innerHTML = `
+        <div class="card page-transition" style="text-align:center; padding: 45px 20px; max-width: 520px; margin: 0 auto;">
+            <div style="font-size: 42px; margin-bottom: 12px;">🔒</div>
+            <h2 class="section-title" style="justify-content:center;">Sign In Required</h2>
+            <p style="color:var(--text-muted); font-size:14px; line-height:1.6; margin-bottom: 25px;">
+                Only signed-in students with at least <b>100 MCQs attempted</b> in their respective exam category can view official Leaderboard rankings.
+            </p>
+            <button class="btn-exam" onclick="showAuthModal()" style="background:var(--primary-yellow); color:#000; border:none; padding:12px 24px; font-size:14px;">Sign In with Google</button>
+        </div>`;
+        return;
+    }
     
     let rootKeys = Object.keys(appData).filter(k => k !== "Daily Quiz Challenge");
     let optionsHtml = '';
@@ -558,12 +579,13 @@ function _renderLeaderboardOptions() {
         </button>`;
     });
     
-    document.getElementById('dynamic-content').innerHTML = `
+    mc.innerHTML = `
         <div class="card page-transition">
             <h2 class="section-title">🏆 Global Leaderboards</h2>
-            <p style="color:var(--text-muted); margin-bottom: 20px;">Select a category to view the top performers.</p>
-            <div style="background: rgba(239, 68, 68, 0.05); border-left: 4px solid var(--wrong-red); padding: 12px; margin-bottom: 25px; border-radius: 4px;">
-                <span style="color: var(--wrong-red); font-weight: bold;">⚠️ NOTE:</span> <span style="color: #d1d5db; font-size: 14px;">Only signed-in users will have their scores recorded and displayed on the leaderboard.</span>
+            <p style="color:var(--text-muted); margin-bottom: 20px;">Select a category to view top performers.</p>
+            <div style="background: rgba(253, 184, 19, 0.08); border-left: 4px solid var(--primary-yellow); padding: 12px 15px; margin-bottom: 25px; border-radius: 4px;">
+                <span style="color: var(--primary-yellow); font-weight: bold;">🎯 ELIGIBILITY RULE:</span>
+                <span style="color: #d1d5db; font-size: 13px;"> You must be signed in and complete a minimum of <b>100 MCQs</b> in a category to unlock your rank on that Leaderboard.</span>
             </div>
             <div class="category-grid" style="grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px;">
                 ${optionsHtml}
@@ -571,16 +593,21 @@ function _renderLeaderboardOptions() {
         </div>`; 
 }
 
-// RESTORED: Live Leaderboard Renderer for #/board/:category
 async function fetchLiveLeaderboard(category) {
     const mc = document.getElementById('dynamic-content');
     let cleanCategory = category.replace(/^\d+\.\s*/, '');
     document.getElementById('breadcrumb-text').innerText = `Home / Leaderboard / ${cleanCategory}`;
-    mc.innerHTML = `<div class="card page-transition" style="text-align:center; padding:40px;"><h2 class="section-title" style="justify-content:center;">🏆 Loading ${cleanCategory} Leaderboard...</h2></div>`;
+
+    if (!currentUser) {
+        _renderLeaderboardOptions();
+        return;
+    }
+
+    mc.innerHTML = `<div class="card page-transition" style="text-align:center; padding:40px;"><h2 class="section-title" style="justify-content:center;">🏆 Verifying Eligibility & Loading ${cleanCategory} Ranks...</h2></div>`;
 
     try {
-        const snap = await db.collection("leaderboards").limit(300).get();
-        let bestByUser = {};
+        const snap = await db.collection("leaderboards").limit(500).get();
+        let statsByUser = {};
 
         snap.forEach(doc => {
             let d = doc.data();
@@ -588,40 +615,81 @@ async function fetchLiveLeaderboard(category) {
                 (d.quizPath && (d.quizPath.startsWith(category) || d.quizPath.startsWith("Daily Quiz Challenge > " + category)));
             if (!matchesCategory) return;
 
-            let uid = d.userId || d.userName || doc.id;
-            if (!bestByUser[uid]) {
-                bestByUser[uid] = {
-                    userId: d.userId,
+            let uid = d.userId;
+            if (!uid) return; // Only signed-in users with a valid UID
+
+            let attemptedInQuiz = d.attemptedQuestions !== undefined
+                ? Number(d.attemptedQuestions)
+                : ((Number(d.correctCount) || 0) + (Number(d.wrongCount) || 0));
+
+            if (!statsByUser[uid]) {
+                statsByUser[uid] = {
+                    userId: uid,
                     userName: d.userName || "Student",
                     totalScore: 0,
                     bestScore: d.score || 0,
-                    accuracy: d.accuracy || 0,
+                    totalAttempted: 0,
+                    totalCorrect: 0,
                     quizzesPlayed: 0
                 };
             }
-            bestByUser[uid].totalScore += (d.score || 0);
-            bestByUser[uid].quizzesPlayed += 1;
-            if ((d.score || 0) >= bestByUser[uid].bestScore) {
-                bestByUser[uid].bestScore = d.score || 0;
-                bestByUser[uid].accuracy = d.accuracy || 0;
+            statsByUser[uid].totalScore += (Number(d.score) || 0);
+            statsByUser[uid].totalAttempted += attemptedInQuiz;
+            statsByUser[uid].totalCorrect += (Number(d.correctCount) || 0);
+            statsByUser[uid].quizzesPlayed += 1;
+            if ((Number(d.score) || 0) > statsByUser[uid].bestScore) {
+                statsByUser[uid].bestScore = Number(d.score) || 0;
             }
         });
 
-        let rankings = Object.values(bestByUser).sort((a, b) => b.totalScore - a.totalScore || b.accuracy - a.accuracy).slice(0, 20);
+        let myStats = statsByUser[currentUser.uid] || { totalAttempted: 0, totalScore: 0 };
+        let myAttempted = myStats.totalAttempted || 0;
 
-        if (rankings.length === 0) {
+        // Enforce minimum 100 MCQs attempted for the signed-in user to see their rank
+        if (myAttempted < 100) {
+            let remaining = Math.max(0, 100 - myAttempted);
+            let pct = Math.min(100, Math.round((myAttempted / 100) * 100));
+            let safeCat = category.replace(/'/g, "\\'");
+
             mc.innerHTML = `
-            <div class="card page-transition" style="text-align:center; padding:40px 20px;">
-                <h2 class="section-title" style="justify-content:center;">🏆 ${cleanCategory} Leaderboard</h2>
-                <p style="color:var(--text-muted); margin-bottom:25px;">No scores recorded for ${cleanCategory} yet. Be the first to claim #1!</p>
-                <button class="btn-exam" onclick="goBack()" style="background:#0d1527;">&larr; Back</button>
+            <div class="card page-transition" style="text-align:center; padding: 40px 24px; max-width: 560px; margin: 0 auto;">
+                <div style="font-size: 44px; margin-bottom: 10px;">🔒</div>
+                <h2 class="section-title" style="justify-content:center;">${cleanCategory} Leaderboard Locked</h2>
+                <p style="color:var(--text-muted); font-size:14px; line-height:1.6; margin-bottom: 22px;">
+                    To view your rank on the <b>${cleanCategory}</b> Leaderboard, you must attempt at least <b>100 MCQs</b> in this category.
+                </p>
+                <div style="background:#090e1a; border:1px solid var(--border-color); border-radius:12px; padding:18px; margin-bottom:24px; text-align:left;">
+                    <div style="display:flex; justify-content:space-between; font-size:13px; font-weight:700; margin-bottom:8px;">
+                        <span style="color:#fff;">Your Progress (${cleanCategory})</span>
+                        <span style="color:var(--primary-yellow);">${myAttempted} / 100 MCQs</span>
+                    </div>
+                    <div style="width:100%; background:#1c1c24; height:10px; border-radius:5px; overflow:hidden;">
+                        <div style="width:${pct}%; background:linear-gradient(90deg, var(--primary-yellow), var(--correct-green)); height:100%; transition:width 0.3s;"></div>
+                    </div>
+                    <div style="font-size:12px; color:var(--text-muted); margin-top:8px;">
+                        Attempt <b>${remaining} more MCQ${remaining === 1 ? '' : 's'}</b> in ${cleanCategory} to unlock your official rank!
+                    </div>
+                </div>
+                <button class="btn-exam" onclick="jumpToSection(['${safeCat}'])" style="background:var(--primary-yellow); color:#000; border:none; padding:12px 24px; font-size:14px;">Practice ${cleanCategory} Now 🚀</button>
             </div>`;
             return;
         }
 
-        let rowsHtml = rankings.map((r, idx) => {
+        // Only rank users who have completed >= 100 MCQs in this category
+        let qualifiedRankings = Object.values(statsByUser)
+            .filter(u => u.totalAttempted >= 100)
+            .map(u => ({
+                ...u,
+                overallAccuracy: u.totalAttempted > 0 ? Math.round((u.totalCorrect / u.totalAttempted) * 100) : 0
+            }))
+            .sort((a, b) => b.totalScore - a.totalScore || b.overallAccuracy - a.overallAccuracy);
+
+        let myRankIndex = qualifiedRankings.findIndex(u => u.userId === currentUser.uid);
+        let topRankings = qualifiedRankings.slice(0, 20);
+
+        let rowsHtml = topRankings.map((r, idx) => {
             let rankBadge = idx === 0 ? "🥇" : (idx === 1 ? "🥈" : (idx === 2 ? "🥉" : `#${idx + 1}`));
-            let isMe = currentUser && r.userId === currentUser.uid;
+            let isMe = r.userId === currentUser.uid;
             let rowBg = isMe ? "rgba(253, 184, 19, 0.12)" : "#090e1a";
             let rowBorder = isMe ? "var(--primary-yellow)" : "var(--border-color)";
 
@@ -631,7 +699,7 @@ async function fetchLiveLeaderboard(category) {
                     <span style="font-size:18px; font-weight:800; min-width:32px; text-align:center; color:var(--primary-yellow);">${rankBadge}</span>
                     <div>
                         <div style="font-weight:700; color:#fff; font-size:15px;">${r.userName} ${isMe ? '<span style="font-size:11px; color:var(--primary-yellow);">(You)</span>' : ''}</div>
-                        <div style="font-size:11px; color:var(--text-muted);">${r.quizzesPlayed} Quiz${r.quizzesPlayed > 1 ? 'zes' : ''} • Best Accuracy: ${r.accuracy}%</div>
+                        <div style="font-size:11px; color:var(--text-muted);">${r.totalAttempted} MCQs • ${r.quizzesPlayed} Quiz${r.quizzesPlayed > 1 ? 'zes' : ''} • Accuracy: ${r.overallAccuracy}%</div>
                     </div>
                 </div>
                 <div style="text-align:right;">
@@ -643,8 +711,11 @@ async function fetchLiveLeaderboard(category) {
 
         mc.innerHTML = `
         <div class="card page-transition">
-            <h2 class="section-title">🏆 ${cleanCategory} Top Performers</h2>
-            <p style="color:var(--text-muted); font-size:13px; margin-bottom:20px;">Ranked by cumulative score across ${cleanCategory} practice sessions.</p>
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:15px;">
+                <h2 class="section-title" style="margin:0;">🏆 ${cleanCategory} Top Performers</h2>
+                <span class="badge-path">Your Rank: #${myRankIndex + 1} (${myAttempted} MCQs Attempted)</span>
+            </div>
+            <p style="color:var(--text-muted); font-size:13px; margin-bottom:20px;">Ranked by cumulative score among students with 100+ attempted MCQs in ${cleanCategory}.</p>
             <div>${rowsHtml}</div>
         </div>`;
     } catch (e) {
@@ -652,10 +723,15 @@ async function fetchLiveLeaderboard(category) {
     }
 }
 
-// -----------------------------------------
-// CUSTOM PRACTICE FEATURE (FIXED PATH RESOLUTION & QUERY)
-// -----------------------------------------
-let cwPath = ""; let cwSubject = "Mixed"; let cwDiff = "Mixed"; let cwLimit = 25;
+// ==========================================
+// CUSTOM PRACTICE: MULTI-SUBJECT & MULTI-CHAPTER (20–250 MCQs)
+// ==========================================
+let cwPath = "";
+let cwSelectedSubjects = [];
+let cwSelectedChapters = [];
+let cwSubjectCatalog = []; // [{ id, label, fullPath, chapters: [{ label, fullPath }] }]
+let cwDiff = "Mixed";
+let cwLimit = 25;
 
 function cwStep1() {
     const mc = document.getElementById('dynamic-content');
@@ -663,11 +739,11 @@ function cwStep1() {
     let rootKeys = Object.keys(appData).filter(k => k !== "Daily Quiz Challenge");
     
     let html = `
-    <div class="card page-transition" style="max-width: 600px; margin: 0 auto; padding: 30px;">
-        <h2 class="section-title" style="margin-bottom: 25px; color:var(--primary-yellow); justify-content:center;">⚙️ Custom Practice Setup</h2>
+    <div class="card page-transition" style="max-width: 650px; margin: 0 auto; padding: 30px;">
+        <h2 class="section-title" style="margin-bottom: 20px; color:var(--primary-yellow); justify-content:center;">⚙️ Custom Practice Setup</h2>
         <p style="color:var(--text-muted); margin-bottom: 25px; text-align:center;">Step 1: Which exam are you preparing for?</p>
         
-        <div style="display:grid; grid-template-columns: 1fr; gap: 12px; margin-bottom: 25px;">`;
+        <div style="display:grid; grid-template-columns: 1fr; gap: 12px;">`;
         
         rootKeys.forEach(k => {
             let cleanKey = k.replace(/^\d+\.\s*/, '');
@@ -679,137 +755,367 @@ function cwStep1() {
             html += `<button class="btn-exam" onclick="cwSetPath('${safeKey}')" style="background:#0d1527; border-color:var(--border-color); padding:16px; font-size:15px; letter-spacing:0.5px;">${smartData.i} ${cleanKey}</button>`;
         });
         
-    html += `
-        </div>
-        <button class="btn-exam" onclick="goBack()" style="width:100%; background:transparent; border-color:#333; color:var(--text-muted);">&larr; Cancel</button>
-    </div>`;
+    html += `</div></div>`;
     mc.innerHTML = html;
 }
 
-function cwSetPath(path) { cwPath = path; cwStep2(); }
+function cwSetPath(path) {
+    cwPath = path;
+    cwSelectedSubjects = [];
+    cwSelectedChapters = [];
+    cwStep2();
+}
+
+// Builds the hierarchy of Subjects and their nested Chapters for the chosen Exam Category
+function buildCwCatalogForExam(examKey) {
+    let pdfKeywords = ["ncert", "book", "pyq", "previous", "paper", "pdf", "notes", "material", "syllabus"];
+    function isPdfNode(fullKey, name) {
+        let tObj = customTopicTypes[fullKey];
+        let tVal = tObj ? (typeof tObj === 'object' ? tObj.type : tObj) : null;
+        if (tVal === 'pdf') return true;
+        if (tVal === 'mcq' || tVal === 'both') return false;
+        let lower = (name || "").toLowerCase();
+        return pdfKeywords.some(k => lower.includes(k)) && !lower.includes('mcq') && !lower.includes('practice') && !lower.includes('mock');
+    }
+
+    let subjectsMap = new Map(); // subjectFullPath -> { label, fullPath, nodeObj, chaptersMap }
+
+    function registerSubject(fullPath, label, nodeObj) {
+        if (!subjectsMap.has(fullPath)) {
+            subjectsMap.set(fullPath, {
+                label: label.replace(/^\d+\.\s*/, ''),
+                fullPath: fullPath,
+                nodeObj: nodeObj || {},
+                chaptersMap: new Map()
+            });
+        }
+    }
+
+    let examObj = appData[examKey] || {};
+    Object.keys(examObj).forEach(topKey => {
+        let fullTop = `${examKey} > ${topKey}`;
+        if (isPdfNode(fullTop, topKey) || topKey === "Mock Test") return;
+
+        if (topKey === "MCQs Practice" && typeof examObj[topKey] === 'object') {
+            Object.keys(examObj[topKey]).forEach(subjKey => {
+                let subjFull = `${examKey} > MCQs Practice > ${subjKey}`;
+                if (!isPdfNode(subjFull, subjKey)) {
+                    registerSubject(subjFull, subjKey, examObj[topKey][subjKey]);
+                }
+            });
+        } else {
+            registerSubject(fullTop, topKey, examObj[topKey]);
+        }
+    });
+
+    // Also scan customTopicTypes for any dynamically created subjects or chapters
+    let examPrefix = examKey + " > ";
+    Object.keys(customTopicTypes).forEach(dbKey => {
+        if (!dbKey.startsWith(examPrefix)) return;
+        let rel = dbKey.slice(examPrefix.length);
+        let parts = rel.split(' > ').filter(Boolean);
+        if (parts.length === 0) return;
+
+        if (parts[0] === "MCQs Practice") {
+            if (parts.length >= 2) {
+                let sFull = `${examKey} > MCQs Practice > ${parts[1]}`;
+                if (!isPdfNode(sFull, parts[1])) {
+                    let nodeRef = (examObj["MCQs Practice"] && examObj["MCQs Practice"][parts[1]]) || {};
+                    registerSubject(sFull, parts[1], nodeRef);
+                }
+            }
+        } else if (parts[0] !== "Mock Test") {
+            let sFull = `${examKey} > ${parts[0]}`;
+            if (!isPdfNode(sFull, parts[0])) {
+                registerSubject(sFull, parts[0], examObj[parts[0]] || {});
+            }
+        }
+    });
+
+    // For each subject, collect its chapters (direct child folders or deeper sub-chapters)
+    subjectsMap.forEach((subj) => {
+        function collectChapters(obj, currentFullPath, prefixLabel = "") {
+            if (!obj || typeof obj !== 'object') return;
+            Object.keys(obj).forEach(k => {
+                let childFull = `${currentFullPath} > ${k}`;
+                if (isPdfNode(childFull, k)) return;
+                let cleanK = k.replace(/^\d+\.\s*/, '');
+                let disp = prefixLabel ? `${prefixLabel} / ${cleanK}` : cleanK;
+                subj.chaptersMap.set(childFull, { label: disp, fullPath: childFull });
+                if (obj[k] && typeof obj[k] === 'object' && Object.keys(obj[k]).length > 0) {
+                    collectChapters(obj[k], childFull, disp);
+                }
+            });
+        }
+        collectChapters(subj.nodeObj, subj.fullPath);
+
+        // Also check customTopicTypes for chapters under this subject
+        let sPref = subj.fullPath + " > ";
+        Object.keys(customTopicTypes).forEach(dbKey => {
+            if (dbKey.startsWith(sPref)) {
+                let leafName = dbKey.split(' > ').pop();
+                if (!isPdfNode(dbKey, leafName) && !subj.chaptersMap.has(dbKey)) {
+                    let rel Label = dbKey.slice(sPref.length).split(' > ').map(s => s.replace(/^\d+\.\s*/, '')).join(' / ');
+                    subj.chaptersMap.set(dbKey, { label: relLabel, fullPath: dbKey });
+                }
+            }
+        });
+    });
+
+    return Array.from(subjectsMap.values()).map(s => ({
+        label: s.label,
+        fullPath: s.fullPath,
+        chapters: Array.from(s.chaptersMap.values())
+    }));
+}
 
 function cwStep2() {
     const mc = document.getElementById('dynamic-content');
 
     if (!appData[cwPath]) {
-        mc.innerHTML = `<div class="card page-transition" style="text-align:center; padding: 40px 20px;"><h2 class="section-title" style="color:var(--wrong-red);">Error</h2><p style="color:var(--text-muted);">Selected topic not found. Please go back and try again.</p><button class="btn-exam" onclick="cwStep1()" style="margin-top:20px;">&larr; Back</button></div>`;
+        mc.innerHTML = `<div class="card page-transition" style="text-align:center; padding: 40px 20px;"><h2 class="section-title" style="color:var(--wrong-red);">Error</h2><p style="color:var(--text-muted);">Selected exam category not found.</p><button class="btn-exam" onclick="cwStep1()" style="margin-top:20px;">&larr; Back</button></div>`;
         return;
     }
 
-    let subjectsHtml = `<option value="Mixed">All Chapters / Subjects (Full Mock)</option>`;
-    let topicMap = new Map(); // relativePath -> displayLabel
-
-    let pdfKeywords = ["ncert", "book", "pyq", "previous", "paper", "pdf", "notes", "material", "syllabus"];
-    function isPdfFolder(fullKey, name) {
-        let tObj = customTopicTypes[fullKey];
-        let tVal = tObj ? (typeof tObj === 'object' ? tObj.type : tObj) : null;
-        if (tVal === 'pdf') return true;
-        if (tVal === 'mcq' || tVal === 'both') return false;
-        let lower = name.toLowerCase();
-        return pdfKeywords.some(k => lower.includes(k)) && !lower.includes('mcq') && !lower.includes('practice') && !lower.includes('mock');
+    cwSubjectCatalog = buildCwCatalogForExam(cwPath);
+    if (cwSelectedSubjects.length === 0 && cwSubjectCatalog.length > 0) {
+        // Default: select the first subject so chapters are immediately visible
+        cwSelectedSubjects = [cwSubjectCatalog[0].fullPath];
     }
 
-    Object.keys(appData[cwPath]).forEach(topKey => {
-        let fullTopKey = cwPath + " > " + topKey;
-        if (isPdfFolder(fullTopKey, topKey)) return;
-
-        if (topKey === "MCQs Practice" && typeof appData[cwPath][topKey] === 'object') {
-            Object.keys(appData[cwPath][topKey]).forEach(subKey => {
-                let relPath = `MCQs Practice > ${subKey}`;
-                topicMap.set(relPath, subKey.replace(/^\d+\.\s*/, ''));
-            });
-        } else if (topKey !== "Mock Test") {
-            topicMap.set(topKey, topKey.replace(/^\d+\.\s*/, ''));
-        }
-    });
-
-    let prefix = cwPath + " > ";
-    Object.keys(customTopicTypes).forEach(key => {
-        if (key.startsWith(prefix)) {
-            if (isPdfFolder(key, key.split(' > ').pop())) return;
-            let rel = key.slice(prefix.length);
-            let parts = rel.split(' > ');
-            if (parts[0] === "MCQs Practice" && parts.length >= 2) {
-                let subRel = `MCQs Practice > ${parts[1]}`;
-                if (!topicMap.has(subRel)) topicMap.set(subRel, parts[1].replace(/^\d+\.\s*/, ''));
-            } else if (parts[0] !== "Mock Test" && parts[0] !== "MCQs Practice") {
-                if (!topicMap.has(parts[0])) topicMap.set(parts[0], parts[0].replace(/^\d+\.\s*/, ''));
-            }
-        }
-    });
-
-    Array.from(topicMap.entries()).forEach(([relPath, label]) => {
-        subjectsHtml += `<option value="${relPath.replace(/"/g, '&quot;')}">${label}</option>`;
-    });
+    let subjectsGridHtml = cwSubjectCatalog.map((s, idx) => {
+        let isChecked = cwSelectedSubjects.includes(s.fullPath);
+        let iconObj = getSmartIcon(s.label) || { i: "📘" };
+        return `
+        <label class="cw-check-card ${isChecked ? 'selected' : ''}" id="cwSubjCard_${idx}">
+            <input type="checkbox" value="${s.fullPath.replace(/"/g, '&quot;')}" ${isChecked ? 'checked' : ''} onchange="cwToggleSubject(this, ${idx})">
+            <span>${iconObj.i} ${s.label}</span>
+        </label>`;
+    }).join('');
 
     mc.innerHTML = `
-    <div class="card page-transition" style="max-width: 600px; margin: 0 auto; padding: 30px;">
-        <h2 class="section-title" style="margin-bottom: 25px; color:var(--primary-yellow); justify-content:center;">🎯 Customize Your Test</h2>
+    <div class="card page-transition" style="max-width: 720px; margin: 0 auto; padding: 28px;">
+        <h2 class="section-title" style="margin-bottom: 22px; color:var(--primary-yellow); justify-content:center;">🎯 Customize Your ${cwPath.replace(/^\d+\.\s*/, '')} Test</h2>
         
-        <div style="margin-bottom: 20px;">
-            <label style="display:block; color:var(--text-muted); margin-bottom:8px; font-size:12px; font-weight:bold; text-transform:uppercase;">Select Subject/Topic</label>
-            <select id="cwSubj" class="input-field" style="font-size:14px; padding:14px;">${subjectsHtml}</select>
+        <!-- 1. MULTI-SUBJECT SELECTOR -->
+        <div style="margin-bottom: 22px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                <label style="color:var(--text-muted); font-size:12px; font-weight:bold; text-transform:uppercase;">1. Select Subject(s) (Multiple Allowed)</label>
+                <div style="display:flex; gap:8px;">
+                    <button type="button" onclick="cwSelectAllSubjects(true)" style="background:rgba(253,184,19,0.12); color:var(--primary-yellow); border:1px solid rgba(253,184,19,0.3); border-radius:6px; padding:3px 10px; font-size:11px; font-weight:700; cursor:pointer;">Select All</button>
+                    <button type="button" onclick="cwSelectAllSubjects(false)" style="background:rgba(255,255,255,0.05); color:var(--text-muted); border:1px solid var(--border-color); border-radius:6px; padding:3px 10px; font-size:11px; font-weight:700; cursor:pointer;">Clear</button>
+                </div>
+            </div>
+            <div class="cw-multi-grid" id="cwSubjectsContainer">
+                ${subjectsGridHtml || '<p style="color:var(--text-muted); font-size:13px; margin:4px;">No subjects available.</p>'}
+            </div>
+        </div>
+
+        <!-- 2. MULTI-CHAPTER SELECTOR (DYNAMIC UNDER SELECTED SUBJECTS) -->
+        <div style="margin-bottom: 22px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                <label style="color:var(--text-muted); font-size:12px; font-weight:bold; text-transform:uppercase;">2. Select Chapters Under Selected Subject(s)</label>
+                <div style="display:flex; gap:8px;">
+                    <button type="button" onclick="cwSelectAllChapters(true)" style="background:rgba(253,184,19,0.12); color:var(--primary-yellow); border:1px solid rgba(253,184,19,0.3); border-radius:6px; padding:3px 10px; font-size:11px; font-weight:700; cursor:pointer;">Select All Chapters</button>
+                    <button type="button" onclick="cwSelectAllChapters(false)" style="background:rgba(255,255,255,0.05); color:var(--text-muted); border:1px solid var(--border-color); border-radius:6px; padding:3px 10px; font-size:11px; font-weight:700; cursor:pointer;">Clear</button>
+                </div>
+            </div>
+            <div class="cw-multi-grid" id="cwChaptersContainer"></div>
         </div>
         
-        <div style="margin-bottom: 20px;">
-            <label style="display:block; color:var(--text-muted); margin-bottom:8px; font-size:12px; font-weight:bold; text-transform:uppercase;">Difficulty Level</label>
-            <select id="cwDiffSelect" class="input-field" style="font-size:14px; padding:14px;">
-                <option value="Mixed">Mixed (Real Exam Balance)</option>
-                <option value="Easy">Easy (Warmup)</option>
-                <option value="Medium">Medium (Standard)</option>
-                <option value="Hard">Hard (Challenge)</option>
-            </select>
-        </div>
-        
-        <div style="margin-bottom: 30px;">
-            <label style="display:block; color:var(--text-muted); margin-bottom:8px; font-size:12px; font-weight:bold; text-transform:uppercase;">Number of Questions</label>
-            <input type="number" id="cwNum" class="input-field" style="font-size:14px; padding:14px;" value="25" min="1" max="500">
+        <!-- 3. DIFFICULTY & 4. QUESTION COUNT (20 - 250) -->
+        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 26px;">
+            <div>
+                <label style="display:block; color:var(--text-muted); margin-bottom:8px; font-size:12px; font-weight:bold; text-transform:uppercase;">3. Difficulty Level</label>
+                <select id="cwDiffSelect" class="input-field" style="font-size:14px; padding:13px; margin-bottom:0;">
+                    <option value="Mixed">Mixed (Real Exam Balance)</option>
+                    <option value="Easy">Easy (Warmup)</option>
+                    <option value="Medium">Medium (Standard)</option>
+                    <option value="Hard">Hard (Challenge)</option>
+                </select>
+            </div>
+            <div>
+                <label style="display:block; color:var(--text-muted); margin-bottom:8px; font-size:12px; font-weight:bold; text-transform:uppercase;">4. Number of Questions (Min 20 • Max 250)</label>
+                <input type="number" id="cwNum" class="input-field" style="font-size:14px; padding:13px; margin-bottom:0;" value="25" min="20" max="250" onchange="cwValidateLimit(this)">
+            </div>
         </div>
 
         <div style="display:flex; gap:15px;">
-            <button class="btn-exam" onclick="cwStep1()" style="flex:1; background:#0d1527;">&larr; Back</button>
+            <button class="btn-exam" onclick="cwStep1()" style="flex:1; background:#0d1527;">&larr; Change Exam</button>
             <button class="btn-exam" onclick="cwLaunch()" style="flex:2; background:var(--primary-yellow); color:black; border:none; box-shadow: 0 4px 15px rgba(253,184,19,0.3);">Launch Practice 🚀</button>
         </div>
     </div>`;
+
+    cwRenderChaptersList();
+}
+
+function cwValidateLimit(inputEl) {
+    let val = parseInt(inputEl.value, 10);
+    if (isNaN(val) || val < 20) {
+        inputEl.value = 20;
+        showNotification("⚠️ Minimum 20 questions required for Custom Practice.");
+    } else if (val > 250) {
+        inputEl.value = 250;
+        showNotification("⚠️ Maximum 250 questions allowed per test.");
+    }
+}
+
+function cwToggleSubject(cbEl, idx) {
+    let val = cbEl.value;
+    let card = document.getElementById('cwSubjCard_' + idx);
+    if (cbEl.checked) {
+        if (!cwSelectedSubjects.includes(val)) cwSelectedSubjects.push(val);
+        if (card) card.classList.add('selected');
+    } else {
+        cwSelectedSubjects = cwSelectedSubjects.filter(p => p !== val);
+        if (card) card.classList.remove('selected');
+        // Remove chapters belonging to unselected subject
+        cwSelectedChapters = cwSelectedChapters.filter(ch => !ch.startsWith(val + " > ") && ch !== val);
+    }
+    cwRenderChaptersList();
+}
+
+function cwSelectAllSubjects(selectAll) {
+    if (selectAll) {
+        cwSelectedSubjects = cwSubjectCatalog.map(s => s.fullPath);
+    } else {
+        cwSelectedSubjects = [];
+        cwSelectedChapters = [];
+    }
+    const container = document.getElementById('cwSubjectsContainer');
+    if (container) {
+        container.querySelectorAll('input[type="checkbox"]').forEach((cb, idx) => {
+            cb.checked = selectAll;
+            const card = document.getElementById('cwSubjCard_' + idx);
+            if (card) card.classList.toggle('selected', selectAll);
+        });
+    }
+    cwRenderChaptersList();
+}
+
+function cwRenderChaptersList() {
+    const chContainer = document.getElementById('cwChaptersContainer');
+    if (!chContainer) return;
+
+    if (cwSelectedSubjects.length === 0) {
+        chContainer.innerHTML = `<div style="grid-column: 1 / -1; color:var(--text-muted); font-size:13px; padding:10px; text-align:center;">Please select at least one subject above to view its chapters.</div>`;
+        return;
+    }
+
+    let availableChapters = [];
+    cwSubjectCatalog.forEach(subj => {
+        if (!cwSelectedSubjects.includes(subj.fullPath)) return;
+        if (subj.chapters && subj.chapters.length > 0) {
+            subj.chapters.forEach(ch => {
+                availableChapters.push({
+                    subjLabel: subj.label,
+                    label: ch.label,
+                    fullPath: ch.fullPath
+                });
+            });
+        } else {
+            // If the subject has no nested sub-chapter folders, offer the subject's direct question bank
+            availableChapters.push({
+                subjLabel: subj.label,
+                label: `All ${subj.label} Questions`,
+                fullPath: subj.fullPath
+            });
+        }
+    });
+
+    // Auto-select all available chapters for newly selected subjects if none selected yet
+    let validPaths = new Set(availableChapters.map(c => c.fullPath));
+    cwSelectedChapters = cwSelectedChapters.filter(p => validPaths.has(p));
+    if (cwSelectedChapters.length === 0 && availableChapters.length > 0) {
+        cwSelectedChapters = availableChapters.map(c => c.fullPath);
+    }
+
+    chContainer.innerHTML = availableChapters.map((ch, idx) => {
+        let isChecked = cwSelectedChapters.includes(ch.fullPath);
+        return `
+        <label class="cw-check-card ${isChecked ? 'selected' : ''}" id="cwChapCard_${idx}">
+            <input type="checkbox" value="${ch.fullPath.replace(/"/g, '&quot;')}" ${isChecked ? 'checked' : ''} onchange="cwToggleChapter(this, ${idx})">
+            <div style="overflow:hidden; text-overflow:ellipsis;">
+                <div style="font-size:10px; color:var(--primary-yellow); text-transform:uppercase; letter-spacing:0.4px;">${ch.subjLabel}</div>
+                <div style="font-size:12px;">${ch.label}</div>
+            </div>
+        </label>`;
+    }).join('');
+}
+
+function cwToggleChapter(cbEl, idx) {
+    let val = cbEl.value;
+    let card = document.getElementById('cwChapCard_' + idx);
+    if (cbEl.checked) {
+        if (!cwSelectedChapters.includes(val)) cwSelectedChapters.push(val);
+        if (card) card.classList.add('selected');
+    } else {
+        cwSelectedChapters = cwSelectedChapters.filter(p => p !== val);
+        if (card) card.classList.remove('selected');
+    }
+}
+
+function cwSelectAllChapters(selectAll) {
+    const chContainer = document.getElementById('cwChaptersContainer');
+    if (!chContainer) return;
+    cwSelectedChapters = [];
+    chContainer.querySelectorAll('input[type="checkbox"]').forEach((cb, idx) => {
+        cb.checked = selectAll;
+        if (selectAll) cwSelectedChapters.push(cb.value);
+        const card = document.getElementById('cwChapCard_' + idx);
+        if (card) card.classList.toggle('selected', selectAll);
+    });
 }
 
 async function cwLaunch() {
-    const cwSubjEl = document.getElementById('cwSubj');
+    if (cwSelectedSubjects.length === 0) {
+        showNotification("⚠️ Please select at least one Subject.");
+        return;
+    }
+
+    let targetPaths = cwSelectedChapters.length > 0 ? [...cwSelectedChapters] : [...cwSelectedSubjects];
+    if (targetPaths.length === 0) {
+        showNotification("⚠️ Please select at least one Chapter or Subject.");
+        return;
+    }
+
     const cwDiffEl = document.getElementById('cwDiffSelect');
     const cwNumEl = document.getElementById('cwNum');
+    cwDiff = cwDiffEl ? cwDiffEl.value : "Mixed";
+    cwLimit = cwNumEl ? parseInt(cwNumEl.value, 10) : 25;
 
-    if (!cwSubjEl || !cwDiffEl || !cwNumEl) return;
-
-    cwSubject = cwSubjEl.value;
-    cwDiff = cwDiffEl.value;
-    cwLimit = parseInt(cwNumEl.value, 10);
-    if(isNaN(cwLimit) || cwLimit < 1) cwLimit = 25;
+    if (isNaN(cwLimit) || cwLimit < 20) {
+        cwLimit = 20;
+    } else if (cwLimit > 250) {
+        cwLimit = 250;
+    }
 
     const mc = document.getElementById('dynamic-content');
-    mc.innerHTML = `<div class="card page-transition" style="text-align:center; padding: 50px 20px;"><h2 class="section-title" style="justify-content:center;">🔍 Compiling Custom Practice...</h2><p style="color:var(--text-muted);">Fetching ${cwLimit} questions from database...</p></div>`;
-
-    let targetPath = cwPath;
-    if (cwSubject !== "Mixed") targetPath += " > " + cwSubject;
+    mc.innerHTML = `<div class="card page-transition" style="text-align:center; padding: 50px 20px;"><h2 class="section-title" style="justify-content:center;">🔍 Compiling Custom Practice...</h2><p style="color:var(--text-muted);">Fetching ${cwLimit} questions across ${targetPaths.length} selected section(s)...</p></div>`;
 
     try {
-        // Safe query that avoids Firestore multi-field inequality composite index errors
-        let snapshot = await db.collection("content")
-            .where("path", ">=", targetPath)
-            .where("path", "<=", targetPath + "\uf8ff")
-            .where("type", "==", "mcq")
-            .limit(300)
-            .get();
+        let docsMap = new Map();
 
-        let allDocs = [];
-        snapshot.forEach(doc => {
-            let d = doc.data();
-            if (cwDiff === "Mixed" || d.level === cwDiff) {
-                allDocs.push({ id: doc.id, ...d });
-            }
-        });
+        // Single-field range query on "path" per selected target — never triggers a composite index error!
+        await Promise.all(targetPaths.map(async (p) => {
+            const snap = await db.collection("content")
+                .where("path", ">=", p)
+                .where("path", "<=", p + "\uf8ff")
+                .limit(250)
+                .get();
+
+            snap.forEach(doc => {
+                let d = doc.data();
+                if ((!d.type || d.type === "mcq") && (cwDiff === "Mixed" || d.level === cwDiff)) {
+                    docsMap.set(doc.id, { id: doc.id, ...d });
+                }
+            });
+        }));
+
+        let allDocs = Array.from(docsMap.values());
 
         if (allDocs.length === 0) {
-            mc.innerHTML = `<div class="card page-transition" style="text-align:center; padding: 40px 20px;"><h2 class="section-title" style="justify-content:center;">No Questions Found</h2><p style="color:var(--text-muted);">We couldn't find any questions matching "${targetPath}" (${cwDiff}).</p><button class="btn-exam" onclick="cwStep2()" style="margin-top:20px; background:#0d1527; border-color:var(--border-color);">&larr; Adjust Filters</button></div>`;
+            mc.innerHTML = `<div class="card page-transition" style="text-align:center; padding: 40px 20px;"><h2 class="section-title" style="justify-content:center;">No Questions Found</h2><p style="color:var(--text-muted);">No MCQs found matching your selected subjects/chapters and difficulty (${cwDiff}).</p><button class="btn-exam" onclick="cwStep2()" style="margin-top:20px; background:#0d1527; border-color:var(--border-color);">&larr; Adjust Filters</button></div>`;
             return;
         }
 
@@ -821,7 +1127,7 @@ async function cwLaunch() {
         allDocs = allDocs.slice(0, cwLimit);
         
         currentQuestions = allDocs; 
-        currentQuizPath = targetPath;
+        currentQuizPath = `${cwPath} > Custom Practice`;
         currentIndex = 0;
         userAnswers = {};
         timeSpent = {};
@@ -834,9 +1140,9 @@ async function cwLaunch() {
     }
 }
 
-// -----------------------------------------
+// ==========================================
 // BOOKMARK MANAGER
-// -----------------------------------------
+// ==========================================
 async function loadUserBookmarks() {
     if(!currentUser) return;
     try {
@@ -878,9 +1184,9 @@ async function _initiateBookmarkQuiz() {
     const mc = document.getElementById('dynamic-content');
     document.getElementById('breadcrumb-text').innerText = "Home / Profile / My Bookmarks";
     
-    if(!currentUser) { mc.innerHTML = `<div class="card page-transition" style="text-align:center;"><h2>⚠ Sign In Required</h2><button class="btn-exam" onclick="goBack()" style="background:#333; border:none;">Back</button></div>`; return; }
+    if(!currentUser) { mc.innerHTML = `<div class="card page-transition" style="text-align:center;"><h2>⚠ Sign In Required</h2></div>`; return; }
     let savedBookmarks = userBookmarks || [];
-    if(savedBookmarks.length === 0) { mc.innerHTML = `<div class="card page-transition" style="text-align:center;"><h2>🔖 No Bookmarks Yet</h2><p style="color:var(--text-muted);">Questions you bookmark during practice will appear here.</p><button class="btn-exam" onclick="goBack()" style="background:#333; border:none; margin-top:20px;">Back to Home</button></div>`; return; }
+    if(savedBookmarks.length === 0) { mc.innerHTML = `<div class="card page-transition" style="text-align:center;"><h2>🔖 No Bookmarks Yet</h2><p style="color:var(--text-muted);">Questions you bookmark during practice will appear here.</p></div>`; return; }
 
     mc.innerHTML = `<div class="card page-transition" style="text-align:center; padding:50px;"><h2 class="section-title" style="justify-content:center;">🔖 Loading Bookmarks...</h2></div>`;
 
@@ -931,7 +1237,7 @@ async function _initiateBookmarkQuiz() {
         html += `</div>`;
         mc.innerHTML = html;
 
-        const mathDelims = [ {left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}, {left: '\\(', right: '\\)', display: false}, {left: '[', right: ']', display: true} ];
+        const mathDelims = [ {left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}, {left: '\\(', right: '\\)', display: false}, {left: '\\[', right: '\\]', display: true} ];
         allDocs.forEach(q => {
             let elQ = document.getElementById('bmQ_'+q.id); if(elQ && typeof renderMathInElement === 'function') renderMathInElement(elQ, { delimiters: mathDelims, throwOnError: false });
             ['A','B','C','D'].forEach(opt => {
@@ -946,32 +1252,84 @@ async function _initiateBookmarkQuiz() {
 // ==========================================
 // MODAL, REPORTS, RATING & SEARCH FUNCTIONS
 // ==========================================
+let currentRating = 0;
+let savedUserRating = 0;
+let savedUserFeedback = "";
 
-// Global Rating Loader
+// Syncs the user's previous rating to the UI and navbar button
+function syncUserRatingUI(rating, feedbackText = "") {
+    let r = Number(rating);
+    if (!r || r < 1 || r > 5) return;
+    savedUserRating = r;
+    savedUserFeedback = feedbackText || "";
+    localStorage.setItem('mcqs_user_rating', String(r));
+    if (feedbackText) localStorage.setItem('mcqs_user_feedback', feedbackText);
+
+    updateStarUI(r);
+
+    // Update the navbar Rate button to show the user has already rated
+    const rateBtn = document.querySelector('.nav-rating-badge button');
+    if (rateBtn) {
+        rateBtn.innerText = `Rated ${r}★`;
+    }
+}
+
+// Loads both the user's saved rating and the global average rating
 async function loadGlobalRating() {
+    // 1. Restore cached user rating immediately
+    const localR = Number(localStorage.getItem('mcqs_user_rating') || 0);
+    const localFb = localStorage.getItem('mcqs_user_feedback') || '';
+    if (localR >= 1 && localR <= 5) {
+        syncUserRatingUI(localR, localFb);
+    }
+
+    // 2. Calculate global average from users collection (and platform_feedback if accessible)
     try {
-        const snap = await db.collection("platform_feedback").limit(100).get();
-        if (snap.empty) return;
         let sum = 0; let count = 0;
-        snap.forEach(doc => {
-            let r = Number(doc.data().rating);
+        const usersSnap = await db.collection("users").limit(200).get();
+        usersSnap.forEach(doc => {
+            let d = doc.data();
+            let r = Number(d.rating);
             if (r >= 1 && r <= 5) { sum += r; count++; }
+            if (currentUser && doc.id === currentUser.uid && r >= 1 && r <= 5) {
+                syncUserRatingUI(r, d.feedback || '');
+            }
         });
+
+        if (count === 0 && savedUserRating > 0) {
+            sum = savedUserRating;
+            count = 1;
+        }
+
         if (count > 0) {
             const el = document.getElementById('global-rating-display');
             if (el) el.innerText = (sum / count).toFixed(1);
         }
-    } catch (e) {}
+    } catch (e) {
+        if (savedUserRating > 0) {
+            const el = document.getElementById('global-rating-display');
+            if (el) el.innerText = savedUserRating.toFixed(1);
+        }
+    }
 }
 
-// Feedback Modal
 function openFeedbackModal() {
+    if (savedUserRating > 0) {
+        updateStarUI(savedUserRating);
+        const fbInput = document.getElementById('platformFeedbackText');
+        if (fbInput && !fbInput.value && savedUserFeedback) {
+            fbInput.value = savedUserFeedback;
+        }
+        const submitBtn = document.getElementById('submitFeedbackBtn');
+        if (submitBtn) submitBtn.innerText = "Update Rating & Feedback";
+    }
     document.getElementById('feedbackModal').style.display = 'flex';
 }
+
 function closeFeedbackModal() {
     document.getElementById('feedbackModal').style.display = 'none';
 }
-let currentRating = 0;
+
 function updateStarUI(rating) {
     currentRating = rating;
     for(let i=1; i<=5; i++) {
@@ -979,40 +1337,66 @@ function updateStarUI(rating) {
         if(btn) {
             btn.classList.toggle('active', i <= rating);
             btn.style.color = i <= rating ? '#fdb813' : '#3b4961';
+            btn.style.fontSize = i <= rating ? '34px' : '30px';
         }
     }
 }
+
+// FIXED (Image 1): Saves to users/{uid} (allowed by Firestore rules) + localStorage fallback so it never fails!
 async function submitPlatformFeedback() {
     const text = document.getElementById('platformFeedbackText').value.trim();
-    if(!text) { showNotification("⚠️ Please enter your feedback"); return; }
-    if(currentRating === 0) { showNotification("⚠️ Please select a star rating"); return; }
+    if(currentRating === 0) { showNotification("⚠️ Please select a star rating (1 to 5)"); return; }
+    if(!text) { showNotification("⚠️ Please enter a short feedback message"); return; }
 
     const btn = document.getElementById('submitFeedbackBtn');
-    if (btn) { btn.innerText = "Submitting..."; btn.disabled = true; }
+    if (btn) { btn.innerText = "Saving..."; btn.disabled = true; }
 
     try {
-        let uid = currentUser ? currentUser.uid : 'anonymous_' + Date.now();
-        await db.collection("platform_feedback").add({
-            rating: currentRating,
-            feedback: text,
-            text: text,
-            studentId: uid,
-            userId: uid,
-            studentName: currentUser ? currentUser.displayName : 'Anonymous',
-            timestamp: firebase.firestore.FieldValue.serverTimestamp()
-        });
-        showNotification("✅ Thank you for your feedback!");
+        let activeUser = currentUser || window.currentUser;
+        let savedToCloud = false;
+
+        // 1. Primary save: write directly to the authenticated user's document in "users"
+        if (activeUser && activeUser.uid) {
+            try {
+                await db.collection("users").doc(activeUser.uid).set({
+                    rating: currentRating,
+                    feedback: text,
+                    feedbackUpdatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                }, { merge: true });
+                savedToCloud = true;
+            } catch (userErr) {
+                console.warn("User doc rating write warning:", userErr.message);
+            }
+        }
+
+        // 2. Secondary sync: attempt writing to platform_feedback (ignored if restricted by rules)
+        let uid = activeUser ? activeUser.uid : ('guest_' + Date.now());
+        try {
+            await db.collection("platform_feedback").doc(uid).set({
+                rating: currentRating,
+                feedback: text,
+                text: text,
+                studentId: uid,
+                userId: uid,
+                studentName: activeUser ? (activeUser.displayName || activeUser.email) : 'Guest Student',
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            }, { merge: true });
+            savedToCloud = true;
+        } catch (pfErr) {}
+
+        // 3. Always persist locally and update UI immediately
+        syncUserRatingUI(currentRating, text);
+        await loadGlobalRating();
+
+        showNotification("✅ Thank you! Your rating & feedback have been saved.");
         closeFeedbackModal();
-        document.getElementById('platformFeedbackText').value = '';
-        updateStarUI(0);
-        loadGlobalRating();
     } catch(e) {
-        showNotification("❌ Failed to submit feedback");
+        showNotification("❌ Error saving feedback: " + e.message);
     }
-    if (btn) { btn.innerText = "Submit"; btn.disabled = false; }
+    if (btn) { btn.innerText = savedUserRating > 0 ? "Update Rating & Feedback" : "Submit"; btn.disabled = false; }
 }
 
-// Report Mistake Modal (RESTORED)
+// Report Mistake Modal
 let activeReportPayload = { questionId: '', questionText: '', path: '' };
 
 function openReportModal(questionId, questionText = '', path = '') {
@@ -1060,7 +1444,7 @@ async function submitReport() {
     }
 }
 
-// User Reports Status Modal (RESTORED)
+// User Reports Status Modal
 async function openUserReportsModal() {
     const modal = document.getElementById('userReportsModal');
     const listEl = document.getElementById('user-reports-list');
@@ -1142,7 +1526,7 @@ function closeStreakModal() {
     document.getElementById('streakModal').style.display = 'none';
 }
 
-// Search Engine (Searches both Dynamic Topic Tree AND Firestore Questions)
+// Search Engine
 function openSearch() {
     const wrapper = document.getElementById('searchWrapper');
     if(wrapper) {
@@ -1180,7 +1564,6 @@ async function handleLiveSearch() {
     const qLower = rawQuery.toLowerCase();
     let html = '';
 
-    // 1. Search Topics/Folders in appData (case-insensitive)
     let topicMatches = [];
     function scanTopics(obj, pathArr = []) {
         for (let k in obj) {
@@ -1205,7 +1588,6 @@ async function handleLiveSearch() {
         </div>`;
     });
 
-    // 2. Search Questions in Firestore
     try {
         const snap = await db.collection("content")
             .where("question", ">=", rawQuery)
