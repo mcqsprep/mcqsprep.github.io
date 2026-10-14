@@ -1,5 +1,5 @@
 // ==========================================
-// 4. MAIN VIEW RENDERER, GLOBAL HUBS & AUTO-COLOR ENGINE
+// 4. MAIN VIEW RENDERER & AUTO-COLOR ENGINE
 // ==========================================
 
 function forceStartQuiz() {
@@ -16,7 +16,6 @@ function forceCwStep1(e) {
     window.location.hash = '#/custom-setup';
 }
 
-// Converts any hex color (#rrggbb) into a complete glowing theme object
 function makeTopicTheme(icon, hexColor) {
     let hex = (hexColor || "#fdb813").replace('#', '');
     let r = parseInt(hex.substring(0, 2), 16) || 253;
@@ -31,24 +30,11 @@ function makeTopicTheme(icon, hexColor) {
     };
 }
 
-// 16-Color High-Contrast Neon Palette for Current & Future Topics/Subtopics
 const TOPIC_COLOR_PALETTE = [
-    "#f43f5e", // Medical Rose-Crimson
-    "#38bdf8", // Electric Sky Blue
-    "#10b981", // Neon Emerald
-    "#a855f7", // Royal Violet
-    "#f97316", // Fiery Orange
-    "#06b6d4", // Cyber Cyan
-    "#ec4899", // Hot Pink
-    "#eab308", // Golden Amber
-    "#6366f1", // Indigo Glow
-    "#14b8a6", // Teal Mint
-    "#84cc16", // Electric Lime
-    "#ef4444", // Crimson Red
-    "#3b82f6", // Cobalt Blue
-    "#d946ef", // Neon Fuchsia
-    "#f59e0b", // Warm Solar
-    "#2dd4bf"  // Aqua Glow
+    "#f43f5e", "#38bdf8", "#10b981", "#a855f7",
+    "#f97316", "#06b6d4", "#ec4899", "#eab308",
+    "#6366f1", "#14b8a6", "#84cc16", "#ef4444",
+    "#3b82f6", "#d946ef", "#f59e0b", "#2dd4bf"
 ];
 
 const FALLBACK_TOPIC_ICONS = ["📘", "🧬", "⚛️", "🧪", "🌿", "📐", "🧠", "⚡", "🌍", "🏛️", "📊", "🚀"];
@@ -68,7 +54,6 @@ function getSmartIcon(text, customIcon = null) {
     let matchedIcon = null;
     let matchedColor = null;
 
-    // Exam Categories
     if(t.includes('neet')) { matchedIcon = "🩺"; matchedColor = "#f43f5e"; }
     else if(t.includes('jee')) { matchedIcon = "🚀"; matchedColor = "#38bdf8"; }
     else if(t.includes('gk') || t.includes('general knowledge')) { matchedIcon = "🌍"; matchedColor = "#10b981"; }
@@ -83,7 +68,6 @@ function getSmartIcon(text, customIcon = null) {
     else if(t.includes('gate')) { matchedIcon = "🎓"; matchedColor = "#8b5cf6"; }
     else if(t.includes('cat') || t.includes('mba') || t.includes('cuet')) { matchedIcon = "📊"; matchedColor = "#14b8a6"; }
 
-    // Science & Competitive Subjects
     else if(t.includes('organic')) { matchedIcon = "⌬"; matchedColor = "#10b981"; }
     else if(t.includes('inorganic')) { matchedIcon = "💎"; matchedColor = "#ec4899"; }
     else if(t.includes('physical')) { matchedIcon = "⚡"; matchedColor = "#38bdf8"; }
@@ -98,14 +82,12 @@ function getSmartIcon(text, customIcon = null) {
     else if(t.includes('english') || t.includes('grammar') || t.includes('vocab')) { matchedIcon = "📖"; matchedColor = "#ec4899"; }
     else if(t.includes('hindi')) { matchedIcon = "🔤"; matchedColor = "#f97316"; }
 
-    // General Knowledge & Humanities
     else if(t.includes('history') || t.includes('ancient') || t.includes('modern')) { matchedIcon = "🏛️"; matchedColor = "#f97316"; }
     else if(t.includes('geography') || t.includes('earth')) { matchedIcon = "🗺️"; matchedColor = "#10b981"; }
     else if(t.includes('affairs') || t.includes('current') || t.includes('news')) { matchedIcon = "📰"; matchedColor = "#38bdf8"; }
     else if(t.includes('politics') || t.includes('polity') || t.includes('constitution')) { matchedIcon = "🏛️"; matchedColor = "#a855f7"; }
     else if(t.includes('economy') || t.includes('economics')) { matchedIcon = "💰"; matchedColor = "#22c55e"; }
 
-    // Quick Links & Essential Practice Sections
     else if(t.includes('ncert') || t.includes('book')) { matchedIcon = "📚"; matchedColor = "#a855f7"; }
     else if(t.includes('pyq') || t.includes('previous')) { matchedIcon = "📄"; matchedColor = "#ec4899"; }
     else if(t.includes('practice paper') || t.includes('sample paper') || t.includes('paper')) { matchedIcon = "📋"; matchedColor = "#eab308"; }
@@ -115,7 +97,6 @@ function getSmartIcon(text, customIcon = null) {
     else if(t.includes('note') || t.includes('formula') || t.includes('short')) { matchedIcon = "📒"; matchedColor = "#14b8a6"; }
     else if(t.includes('syllabus')) { matchedIcon = "📋"; matchedColor = "#38bdf8"; }
 
-    // Difficulty Folders
     else if(t === 'easy') { matchedIcon = "🟢"; matchedColor = "#10b981"; }
     else if(t === 'medium') { matchedIcon = "🟡"; matchedColor = "#eab308"; }
     else if(t === 'hard') { matchedIcon = "🔴"; matchedColor = "#f43f5e"; }
@@ -130,13 +111,11 @@ function getSmartIcon(text, customIcon = null) {
     return null;
 }
 
-// Guarantees every current & future topic/subtopic gets a unique color in its grid
 function getAutoTopicTheme(displayKey, customIcon = null, index = 0, usedColorsSet = null, fallbackIcon = null) {
     let baseTheme = getSmartIcon(displayKey, customIcon);
     let chosenIcon = baseTheme ? baseTheme.i : (customIcon || fallbackIcon || FALLBACK_TOPIC_ICONS[index % FALLBACK_TOPIC_ICONS.length]);
     let chosenColor = baseTheme ? baseTheme.c : getPaletteColorForText(displayKey, index);
 
-    // Prevent two sibling boxes on the same screen from sharing the exact same border color
     if (usedColorsSet && usedColorsSet.has(chosenColor) && usedColorsSet.size < TOPIC_COLOR_PALETTE.length) {
         for (let step = 0; step < TOPIC_COLOR_PALETTE.length; step++) {
             let candidate = TOPIC_COLOR_PALETTE[(index + step) % TOPIC_COLOR_PALETTE.length];
@@ -149,78 +128,6 @@ function getAutoTopicTheme(displayKey, customIcon = null, index = 0, usedColorsS
     if (usedColorsSet) usedColorsSet.add(chosenColor);
 
     return makeTopicTheme(chosenIcon, chosenColor);
-}
-
-// ==========================================
-// GLOBAL HUB RENDERER FOR QUICK LINKS & ESSENTIAL PRACTICE
-// ==========================================
-function _renderHubView(sectionName) {
-    const mc = document.getElementById('dynamic-content');
-    if (!mc) return;
-
-    let cleanSec = (sectionName || "").replace(/^\d+\.\s*/, '');
-    const bc = document.getElementById('breadcrumb-text');
-    if (bc) bc.innerText = `Home / ${cleanSec}`;
-
-    let rootExams = Object.keys(appData).filter(k => k !== "Daily Quiz Challenge");
-    rootExams.sort((a, b) => a.localeCompare(b));
-
-    let hubTheme = getSmartIcon(cleanSec) || makeTopicTheme("📂", "#fdb813");
-    let usedColors = new Set();
-
-    let cardsHtml = rootExams.map((examKey, idx) => {
-        let cleanExam = examKey.replace(/^\d+\.\s*/, '');
-        let safeExam = examKey.replace(/'/g, "\\'");
-        let safeSec = sectionName.replace(/'/g, "\\'");
-
-        const topicMeta = customTopicTypes[examKey];
-        const customIcon = topicMeta ? (typeof topicMeta === 'object' ? topicMeta.icon : null) : null;
-        let examTheme = getAutoTopicTheme(cleanExam, customIcon, idx, usedColors, "🎓");
-
-        // Count subtopics already inside this exam's section
-        let subCount = 0;
-        if (sectionName === "Daily Quiz Challenge") {
-            subCount = 25; // 25 Daily MCQs
-        } else {
-            let secObj = (appData[examKey] && appData[examKey][sectionName]) ? appData[examKey][sectionName] : {};
-            let directKeys = new Set(Object.keys(secObj));
-            let targetPrefix = `${examKey} > ${sectionName} > `;
-            Object.keys(customTopicTypes).forEach(k => {
-                if (k.startsWith(targetPrefix)) {
-                    let nextSeg = k.slice(targetPrefix.length).split(' > ')[0];
-                    if (nextSeg) directKeys.add(nextSeg);
-                }
-            });
-            subCount = directKeys.size;
-        }
-
-        let subtitleText = sectionName === "Daily Quiz Challenge"
-            ? `25 Fresh Daily MCQs`
-            : (subCount > 0 ? `${subCount} Subtopic${subCount > 1 ? 's' : ''} Available` : `Open ${cleanExam} ${cleanSec}`);
-
-        return `
-        <button class="category-tile colored-tile" style="--topic-color:${examTheme.c}; --topic-bg:${examTheme.bg}; --topic-border:${examTheme.border}; --topic-glow:${examTheme.glow};" onclick="openExamFromHub('${safeExam}', '${safeSec}')">
-            <div class="cat-icon">${examTheme.i}</div>
-            <div style="display:flex; flex-direction:column; align-items:flex-start; text-align:left;">
-                <div class="cat-text">${cleanExam} — ${cleanSec}</div>
-                <div style="font-size:11px; color:var(--text-muted); margin-top:3px; font-weight:600;">${subtitleText} &rarr;</div>
-            </div>
-        </button>`;
-    }).join('');
-
-    mc.innerHTML = `
-    <div class="page-transition">
-        <div class="card category-section">
-            <h3 class="section-title">${hubTheme.i} ${cleanSec} — Select Exam Category</h3>
-            <p style="color:var(--text-muted); font-size:13.5px; margin-top:-8px; margin-bottom:20px;">
-                Choose your exam category below. Any subtopics, chapters, or study materials added under <b>${cleanSec}</b> for NEET, JEE, General Knowledge, or future exams automatically appear inside.
-            </p>
-            <div class="category-grid">
-                ${cardsHtml}
-            </div>
-        </div>
-    </div>`;
-    window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 async function _renderPdfResources(checkPath, niceTitle) {
@@ -299,7 +206,8 @@ function _renderView() {
         }
 
         let checkPath = currentPath.join(" > ");
-        let hasDbChildren = Object.keys(customTopicTypes).some(k => k.startsWith(checkPath + " > "));
+        let deletedSet = new Set((topicOverrides && topicOverrides.deletedPaths) || []);
+        let hasDbChildren = Object.keys(customTopicTypes).some(k => k.startsWith(checkPath + " > ") && !deletedSet.has(k));
         
         let isEndpoint = false;
         if (typeof currentLevel === 'string' || Array.isArray(currentLevel) || (typeof currentLevel === 'object' && Object.keys(currentLevel).length === 0 && !hasDbChildren)) {
@@ -321,7 +229,10 @@ function _renderView() {
             const topicType = customTopicTypes[checkPath];
             const typeValue = topicType ? (typeof topicType === 'object' ? topicType.type : topicType) : null;
 
-            if (typeValue === 'pdf') {
+            // Root categories with no subtopics (like General Knowledge) act as empty parent containers until subtopics are added
+            if (currentPath.length === 1 && (!typeValue || typeValue === 'both')) {
+                isContainer = true;
+            } else if (typeValue === 'pdf') {
                 isPdfOnly = true;
             } else if (typeValue === 'both') {
                 isContainer = true;
@@ -340,7 +251,7 @@ function _renderView() {
                 mc.innerHTML = `
                 <div class="card page-transition">
                     <h2 class="section-title">📂 ${niceTitle}</h2>
-                    <p style="color:var(--text-muted);">This category is currently empty. Subtopics will appear here automatically once added via the Admin Panel.</p>
+                    <p style="color:var(--text-muted);">This category has no subtopics yet. Subtopics will appear here once added via the Admin Panel.</p>
                 </div>`;
             } else if (isPdfOnly) {
                 _renderPdfResources(checkPath, niceTitle);
@@ -374,12 +285,14 @@ function _renderView() {
         
         let keys = new Set(Object.keys(currentLevel));
         Object.keys(customTopicTypes).forEach(dbKey => {
+            if (deletedSet.has(dbKey)) return;
             let parts = dbKey.split(' > ');
             if (currentPath.length === 0) {
-                keys.add(parts[0]);
+                if (!deletedSet.has(parts[0])) keys.add(parts[0]);
             } else if (dbKey.startsWith(checkPath + " > ")) {
                 let nextLevel = dbKey.replace(checkPath + " > ", "").split(' > ')[0];
-                keys.add(nextLevel);
+                let nextFull = checkPath + " > " + nextLevel;
+                if (!deletedSet.has(nextFull)) keys.add(nextLevel);
             }
         });
         
@@ -402,6 +315,7 @@ function _renderView() {
         for (let key of keysArr) { 
             if (currentPath.length === 0 && key === "Daily Quiz Challenge") continue; 
             let fullCheckPath = currentPath.join(" > ") + (currentPath.length > 0 ? " > " : "") + key;
+            if (deletedSet.has(fullCheckPath)) continue;
             
             let typeLabel = "";
             const topicType = customTopicTypes[fullCheckPath];
@@ -413,7 +327,7 @@ function _renderView() {
             else if (typeValue === 'both') typeLabel = "📂";
 
             let safeKey = key.replace(/'/g, "\\'");
-            let displayKey = key.replace(/^\d+\.\s*/, '');
+            let displayKey = (topicType && topicType.displayName) ? topicType.displayName : key.replace(/^\d+\.\s*/, '');
             let fallbackIcon = typeLabel === '📄' ? "📄" : (typeLabel === '📝' ? "📝" : null);
 
             let iconData = getAutoTopicTheme(displayKey, customIcon, colorIdx, usedColors, fallbackIcon);
@@ -890,7 +804,7 @@ async function fetchLiveLeaderboard(category) {
 }
 
 // ==========================================
-// CUSTOM PRACTICE: WIDE UI, CLEAN SUBJECTS/CHAPTERS, LIVE CHAPTER SEARCH & 20-250 CAUTION
+// CUSTOM PRACTICE: USES ADMIN MANUAL SUBJECTS & CHAPTERS CONFIG
 // ==========================================
 let cwPath = "";
 let cwSelectedSubjects = [];
@@ -960,10 +874,28 @@ function cwSetPath(path) {
     cwStep2();
 }
 
+// FIXED (Requirement 3): Uses Admin Panel's manual Custom Practice Subjects & Chapters config if set for this exam
 function buildCwCatalogForExam(examKey) {
+    if (window.customPracticeConfig && window.customPracticeConfig.exams && window.customPracticeConfig.exams[examKey]) {
+        let manualSubjects = window.customPracticeConfig.exams[examKey].subjects || [];
+        return manualSubjects.map(s => ({
+            label: (s.label || s.path.split(' > ').pop() || '').replace(/^\d+\.\s*/, ''),
+            fullPath: s.path,
+            chapters: Array.isArray(s.chapters)
+                ? s.chapters.map(c => ({
+                    label: (c.label || c.path.split(' > ').pop() || '').replace(/^\d+\.\s*/, ''),
+                    fullPath: c.path
+                }))
+                : []
+        }));
+    }
+
+    // Fallback scan if Admin hasn't customized this exam in the Custom Practice tab yet
     let subjectsMap = new Map();
+    let deletedSet = new Set((topicOverrides && topicOverrides.deletedPaths) || []);
 
     function registerSubject(fullPath, label, nodeObj) {
+        if (deletedSet.has(fullPath)) return;
         if (isExcludedSubjectOrPdfFolder(fullPath, label)) return;
         if (isCwDifficultyFolder(label)) return;
         if (!subjectsMap.has(fullPath)) {
@@ -979,7 +911,6 @@ function buildCwCatalogForExam(examKey) {
     let examObj = appData[examKey] || {};
     let mcqPracticeObj = examObj["MCQs Practice"] || {};
 
-    // Register subjects under "MCQs Practice" if populated
     if (typeof mcqPracticeObj === 'object' && Object.keys(mcqPracticeObj).length > 0) {
         Object.keys(mcqPracticeObj).forEach(subjKey => {
             let subjFull = `${examKey} > MCQs Practice > ${subjKey}`;
@@ -987,7 +918,6 @@ function buildCwCatalogForExam(examKey) {
         });
     }
 
-    // Also register any direct subject folders under the exam (excluding standard Quick Links / Essential Practice hubs)
     Object.keys(examObj).forEach(topKey => {
         if (topKey === "MCQs Practice" || topKey === "Mock Test") return;
         let fullTop = `${examKey} > ${topKey}`;
@@ -996,7 +926,7 @@ function buildCwCatalogForExam(examKey) {
 
     let examPrefix = examKey + " > ";
     Object.keys(customTopicTypes).forEach(dbKey => {
-        if (!dbKey.startsWith(examPrefix)) return;
+        if (deletedSet.has(dbKey) || !dbKey.startsWith(examPrefix)) return;
         let rel = dbKey.slice(examPrefix.length);
         let parts = rel.split(' > ').filter(Boolean);
         if (parts.length === 0) return;
@@ -1019,7 +949,7 @@ function buildCwCatalogForExam(examKey) {
             Object.keys(obj).forEach(k => {
                 if (isCwDifficultyFolder(k)) return;
                 let childFull = `${currentFullPath} > ${k}`;
-                if (isExcludedSubjectOrPdfFolder(childFull, k)) return;
+                if (deletedSet.has(childFull) || isExcludedSubjectOrPdfFolder(childFull, k)) return;
 
                 let cleanK = k.replace(/^\d+\.\s*/, '');
                 let disp = prefixLabel ? `${prefixLabel} / ${cleanK}` : cleanK;
@@ -1034,7 +964,7 @@ function buildCwCatalogForExam(examKey) {
 
         let sPref = subj.fullPath + " > ";
         Object.keys(customTopicTypes).forEach(dbKey => {
-            if (!dbKey.startsWith(sPref)) return;
+            if (deletedSet.has(dbKey) || !dbKey.startsWith(sPref)) return;
             let relParts = dbKey.slice(sPref.length).split(' > ').filter(Boolean);
             let validSegments = [];
             for (let seg of relParts) {
@@ -1045,7 +975,7 @@ function buildCwCatalogForExam(examKey) {
 
             let chapFullPath = subj.fullPath + " > " + validSegments.join(" > ");
             let leafName = validSegments[validSegments.length - 1];
-            if (!isExcludedSubjectOrPdfFolder(chapFullPath, leafName) && !subj.chaptersMap.has(chapFullPath)) {
+            if (!deletedSet.has(chapFullPath) && !isExcludedSubjectOrPdfFolder(chapFullPath, leafName) && !subj.chaptersMap.has(chapFullPath)) {
                 let relLabel = validSegments.map(s => s.replace(/^\d+\.\s*/, '')).join(' / ');
                 subj.chaptersMap.set(chapFullPath, { label: relLabel, fullPath: chapFullPath });
             }
@@ -1090,7 +1020,6 @@ function cwStep2() {
     <div class="card page-transition cw-wide-card">
         <h2 class="section-title" style="margin-bottom: 24px; color:var(--primary-yellow); justify-content:center; font-size:20px;">🎯 Customize Your ${cwPath.replace(/^\d+\.\s*/, '')} Test</h2>
         
-        <!-- 1. MULTI-SUBJECT SELECTOR -->
         <div style="margin-bottom: 24px;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:8px;">
                 <label style="color:var(--text-muted); font-size:12px; font-weight:bold; text-transform:uppercase;">1. Select Subject(s) (Multiple Allowed)</label>
@@ -1100,11 +1029,10 @@ function cwStep2() {
                 </div>
             </div>
             <div class="cw-multi-grid" id="cwSubjectsContainer">
-                ${subjectsGridHtml || '<p style="color:var(--text-muted); font-size:13px; margin:4px;">No subjects available yet. Add subjects under MCQs Practice in Admin Panel.</p>'}
+                ${subjectsGridHtml || '<p style="color:var(--text-muted); font-size:13px; margin:4px;">No subjects configured for this exam yet. Add subjects in Admin Panel &rarr; Custom Practice.</p>'}
             </div>
         </div>
 
-        <!-- 2. MULTI-CHAPTER SELECTOR WITH LIVE SUGGESTION SEARCH BAR -->
         <div style="margin-bottom: 24px;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:8px;">
                 <label style="color:var(--text-muted); font-size:12px; font-weight:bold; text-transform:uppercase;">
@@ -1124,7 +1052,6 @@ function cwStep2() {
             <div class="cw-multi-grid" id="cwChaptersContainer"></div>
         </div>
         
-        <!-- 3. DIFFICULTY & 4. NUMBER OF QUESTIONS (20 - 250 WITH INLINE CAUTION) -->
         <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 20px; margin-bottom: 28px; align-items: start;">
             <div>
                 <label style="display:block; color:var(--text-muted); margin-bottom:8px; font-size:12px; font-weight:bold; text-transform:uppercase;">3. Difficulty Level</label>
