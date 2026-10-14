@@ -66,7 +66,6 @@ window.addEventListener('click', function(e) {
     } 
 });
 
-// Single-field query so Firestore never requires a composite index
 async function checkUserNotifications() {
     if (!currentUser) return;
     try {
@@ -199,7 +198,7 @@ function updateBottomNav(hash) {
     }
 }
 
-// FIXED: Sidebar ONLY displays on the main Root Home screen (#/home) and hides inside all topics
+// Sidebar ONLY displays on the main Root Home screen (#/home) and hides inside all topics
 function updateSidebarLinks() {
     const sidebar = document.getElementById('main-sidebar');
     if (!sidebar) return;
@@ -293,7 +292,7 @@ function handleRouting() {
         
         let isRootHome = (!hash || hash === 'home');
         
-        // Keep duplicate bottom back button hidden at all times
+        // Permanently hide the duplicate bottom back button container
         const bottomBackBtn = document.getElementById('dynamic-back-container');
         if (bottomBackBtn) bottomBackBtn.style.display = 'none';
         
@@ -333,7 +332,6 @@ function navigateTo(key) { window.location.hash = '#/path/' + [...currentPath, k
 function jumpToSection(pathArray) { window.location.hash = '#/path/' + pathArray.map(encodeURIComponent).join('/'); }
 function showLeaderboardOptions() { window.location.hash = '#/leaderboard'; }
 
-// Smart hierarchical goBack() for the upper navbar back button
 function goBack() { 
     if (typeof currentTimer !== 'undefined' && currentTimer) clearInterval(currentTimer);
     let rawHash = window.location.hash.replace(/^#\/?/, '');
@@ -343,7 +341,6 @@ function goBack() {
         let parts = hash.replace('path/', '').split('/').filter(Boolean);
         if (parts.length > 1) {
             parts.pop();
-            // If stepping back lands on the hidden "Daily Quiz Challenge" root node, go straight Home
             if (parts.length === 1 && parts[0] === 'Daily Quiz Challenge') {
                 goHome();
             } else {
