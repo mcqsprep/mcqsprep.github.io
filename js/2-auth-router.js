@@ -2,17 +2,16 @@
 // 2. DATA LOADING & AUTHENTICATION
 // ==========================================
 
-function isResourceSectionName(name, typeVal = null) {
-    if (typeVal === 'pdf') return true;
-    let lower = (name || "").replace(/^\d+\.\s*/, '').trim().toLowerCase();
-    const resKeywords = ["ncert", "book", "pyq", "previous", "pdf", "note", "material", "syllabus", "formula"];
-    return resKeywords.some(k => lower.includes(k));
-}
-
-function isPracticeSectionName(name, typeVal = null) {
-    let lower = (name || "").replace(/^\d+\.\s*/, '').trim().toLowerCase();
-    const pracKeywords = ["practice paper", "sample paper", "model paper", "paper", "mock", "test", "mcqs practice", "quiz"];
-    return pracKeywords.some(k => lower.includes(k));
+function removePathFromAppData(fullPathStr) {
+    let parts = (fullPathStr || "").split(' > ').filter(Boolean);
+    if (parts.length === 0) return;
+    let curr = appData;
+    for (let i = 0; i < parts.length - 1; i++) {
+        if (!curr[parts[i]] || typeof curr[parts[i]] !== 'object') return;
+        curr = curr[parts[i]];
+    }
+    delete curr[parts[parts.length - 1]];
+    delete customTopicTypes[fullPathStr];
 }
 
 async function loadCustomTopics() {
@@ -20,10 +19,44 @@ async function loadCustomTopics() {
         appData = JSON.parse(JSON.stringify(DEFAULT_APP_DATA));
         customTopicTypes = {};
 
+        // 1. Load Topic Overrides (allows editing/deleting built-in folders too)
+        try {
+            const ovDoc = await db.collection("settings").doc("topic_overrides").get();
+            if (ovDoc.exists) {
+                let ovData = ovDoc.data();
+                topicOverrides.deletedPaths = Array.isArray(ovData.deletedPaths) ? ovData.deletedPaths : [];
+                topicOverrides.editedPaths = ovData.editedPaths || {};
+            } else {
+                topicOverrides = { deletedPaths: [], editedPaths: {} };
+            }
+        } catch (e) {}
+
+        // Apply edited built-in metadata
+        Object.keys(topicOverrides.editedPaths || {}).forEach(fullKey => {
+            customTopicTypes[fullKey] = topicOverrides.editedPaths[fullKey];
+        });
+
+        // Remove any built-in paths the Admin deleted
+        (topicOverrides.deletedPaths || []).forEach(delPath => {
+            removePathFromAppData(delPath);
+        });
+
+        // 2. Load Custom Topics from Firestore
         const snapshot = await db.collection("custom_topics").get();
+        let gkCleanupPromises = [];
+        let shouldCleanGK = !localStorage.getItem('gk_subtopics_purged_v39');
+
         snapshot.forEach(doc => {
             let data = doc.data();
-            let pathArr = (data.parentPath || "").split(' > ').filter(Boolean);
+            let parentPath = (data.parentPath || "").trim();
+
+            // One-time cleanup: delete any old subtopics under General Knowledge in Firestore
+            if (shouldCleanGK && (parentPath === "General Knowledge" || parentPath.startsWith("General Knowledge > "))) {
+                gkCleanupPromises.push(db.collection("custom_topics").doc(doc.id).delete());
+                return;
+            }
+
+            let pathArr = parentPath.split(' > ').filter(Boolean);
             let current = appData;
             for (let p of pathArr) {
                 if (!current[p]) current[p] = {};
@@ -32,72 +65,36 @@ async function loadCustomTopics() {
             if (typeof current === 'object' && !Array.isArray(current) && data.name) {
                 if (!current[data.name]) current[data.name] = {};
                 let fullKey = pathArr.length > 0 ? (pathArr.join(" > ") + " > " + data.name) : data.name;
-                customTopicTypes[fullKey] = { type: data.type || 'both', icon: data.icon || null };
+                customTopicTypes[fullKey] = { type: data.type || 'both', icon: data.icon || null, docId: doc.id };
             }
         });
 
-        if (!appData["Daily Quiz Challenge"]) appData["Daily Quiz Challenge"] = {};
-        let rootKeys = Object.keys(appData).filter(k => k !== "Daily Quiz Challenge");
+        if (shouldCleanGK) {
+            if (gkCleanupPromises.length > 0) await Promise.all(gkCleanupPromises);
+            localStorage.setItem('gk_subtopics_purged_v39', 'true');
+        }
 
-        Object.keys(customTopicTypes).forEach(key => {
-            let root = key.split(' > ')[0];
-            if (root && !rootKeys.includes(root) && root !== "Daily Quiz Challenge") {
-                rootKeys.push(root);
-                appData[root] = appData[root] || {};
+        // 3. Load Manual Sidebar Config (Quick Links & Essential Practice)
+        try {
+            const sbDoc = await db.collection("settings").doc("sidebar_config").get();
+            if (sbDoc.exists) {
+                let sbData = sbDoc.data();
+                window.sidebarConfig.quickLinks = Array.isArray(sbData.quickLinks) ? sbData.quickLinks : [];
+                window.sidebarConfig.essentialPractice = Array.isArray(sbData.essentialPractice) ? sbData.essentialPractice : [];
+            } else {
+                window.sidebarConfig = { quickLinks: [], essentialPractice: [] };
             }
-        });
+        } catch (e) {}
 
-        let quickLinksSet = new Set(STANDARD_QUICK_LINKS);
-        let essentialPracticeSet = new Set(["Practice Paper", "Mock Test"]);
-
-        // Auto-sync standard Quick Links & Essential Practice sections into EVERY Root Exam (NEET, JEE, GK & future topics)
-        rootKeys.forEach(examKey => {
-            let rootMeta = customTopicTypes[examKey];
-            let rootType = rootMeta ? (typeof rootMeta === 'object' ? rootMeta.type : rootMeta) : 'both';
-
-            // Ensure Daily Quiz Challenge includes every root exam
-            if (!appData["Daily Quiz Challenge"][examKey]) {
-                appData["Daily Quiz Challenge"][examKey] = {};
-                customTopicTypes["Daily Quiz Challenge > " + examKey] = { type: "mcq", icon: null };
+        // 4. Load Manual Custom Practice Config (Subjects & Chapters)
+        try {
+            const cpDoc = await db.collection("settings").doc("custom_practice_config").get();
+            if (cpDoc.exists && cpDoc.data().exams) {
+                window.customPracticeConfig.exams = cpDoc.data().exams;
+            } else {
+                window.customPracticeConfig = { exams: {} };
             }
-
-            if (rootType !== 'pdf' && rootType !== 'mcq' && typeof appData[examKey] === 'object') {
-                STANDARD_QUICK_LINKS.forEach(sec => {
-                    if (!appData[examKey][sec]) appData[examKey][sec] = {};
-                });
-                STANDARD_ESSENTIAL_PRACTICE.forEach(sec => {
-                    if (!appData[examKey][sec]) appData[examKey][sec] = {};
-                });
-            }
-
-            // Scan 2nd-level sections under each exam to auto-discover new Quick Links or Essential Practice sections
-            Object.keys(appData[examKey] || {}).forEach(subKey => {
-                let fullSubKey = `${examKey} > ${subKey}`;
-                let subMeta = customTopicTypes[fullSubKey];
-                let subType = subMeta ? (typeof subMeta === 'object' ? subMeta.type : subMeta) : null;
-
-                if (isResourceSectionName(subKey, subType) && !isPracticeSectionName(subKey, subType)) {
-                    quickLinksSet.add(subKey);
-                } else if (isPracticeSectionName(subKey, subType) && subKey !== "MCQs Practice") {
-                    essentialPracticeSet.add(subKey);
-                }
-            });
-        });
-
-        window.dynamicQuickLinks = Array.from(quickLinksSet);
-        window.dynamicEssentialPractice = Array.from(essentialPracticeSet);
-
-        // Ensure all discovered Quick Links & Essential Practice sections exist across all root exams
-        rootKeys.forEach(examKey => {
-            if (typeof appData[examKey] === 'object') {
-                window.dynamicQuickLinks.forEach(sec => {
-                    if (!appData[examKey][sec]) appData[examKey][sec] = {};
-                });
-                window.dynamicEssentialPractice.forEach(sec => {
-                    if (!appData[examKey][sec]) appData[examKey][sec] = {};
-                });
-            }
-        });
+        } catch (e) {}
 
     } catch(e) { console.error("Custom topics loading error:", e); }
 }
@@ -222,21 +219,15 @@ function signInWithGoogle() { auth.signInWithPopup(provider).catch(err => showNo
 function signOut() { if(confirm("Are you sure you want to sign out?")) auth.signOut(); }
 
 // ==========================================
-// 3. ROUTING ENGINE & GLOBAL HUB SIDEBAR
+// 3. ROUTING ENGINE & MANUAL SIDEBAR RENDERER
 // ==========================================
 window.addEventListener('hashchange', handleRouting);
 
-function openGlobalHub(sectionName) {
-    window.activeHubSection = sectionName;
-    window.location.hash = '#/hub/' + encodeURIComponent(sectionName);
-}
-
-function openExamFromHub(examKey, sectionName) {
-    window.activeHubSection = sectionName;
-    if (sectionName === "Daily Quiz Challenge") {
-        jumpToSection(["Daily Quiz Challenge", examKey]);
-    } else {
-        jumpToSection([examKey, sectionName]);
+function openSidebarItem(encodedPath) {
+    let fullPath = decodeURIComponent(encodedPath);
+    let pathArr = fullPath.split(' > ').filter(Boolean);
+    if (pathArr.length > 0) {
+        jumpToSection(pathArr);
     }
 }
 
@@ -272,7 +263,7 @@ function updateBottomNav(hash) {
     }
 }
 
-// Global Quick Links & Essential Practice Sidebar (Works for NEET, JEE, GK & all future root topics)
+// FIXED (Requirement 2): Renders ONLY the items manually added by Admin in Quick Links & Essential Practice
 function updateSidebarLinks() {
     const sidebar = document.getElementById('main-sidebar');
     if (!sidebar) return;
@@ -287,63 +278,56 @@ function updateSidebarLinks() {
 
     sidebar.style.display = 'block';
 
-    let quickLinksList = window.dynamicQuickLinks && window.dynamicQuickLinks.length > 0
-        ? window.dynamicQuickLinks
-        : STANDARD_QUICK_LINKS;
+    let quickLinksList = (window.sidebarConfig && Array.isArray(window.sidebarConfig.quickLinks))
+        ? window.sidebarConfig.quickLinks
+        : [];
 
-    let essentialList = window.dynamicEssentialPractice && window.dynamicEssentialPractice.length > 0
-        ? window.dynamicEssentialPractice
-        : ["Practice Paper", "Mock Test"];
+    let essentialList = (window.sidebarConfig && Array.isArray(window.sidebarConfig.essentialPractice))
+        ? window.sidebarConfig.essentialPractice
+        : [];
 
     let quickLinksHtml = '';
     let usedColorsQ = new Set();
 
-    quickLinksList.forEach((secName, idx) => {
-        let safeSec = secName.replace(/'/g, "\\'");
-        let cleanSec = secName.replace(/^\d+\.\s*/, '');
+    quickLinksList.forEach((item, idx) => {
+        let displayTitle = (item.title || item.path.split(' > ').pop() || '').replace(/^\d+\.\s*/, '');
+        let encodedPath = encodeURIComponent(item.path);
         let theme = typeof getAutoTopicTheme === 'function'
-            ? getAutoTopicTheme(cleanSec, null, idx, usedColorsQ)
+            ? getAutoTopicTheme(displayTitle, item.icon || null, idx, usedColorsQ)
             : { i: "📚", c: "#a855f7", bg: "rgba(168,85,247,0.16)", border: "rgba(168,85,247,0.6)", glow: "rgba(168,85,247,0.24)" };
 
         quickLinksHtml += `
-            <a class="action-link colored-link" style="--topic-color:${theme.c}; --topic-border:${theme.border}; --topic-glow:${theme.glow}; --topic-bg:${theme.bg};" onclick="openGlobalHub('${safeSec}')">
+            <a class="action-link colored-link" style="--topic-color:${theme.c}; --topic-border:${theme.border}; --topic-glow:${theme.glow}; --topic-bg:${theme.bg};" onclick="openSidebarItem('${encodedPath}')">
                 <span class="link-icon" style="color: ${theme.c};">${theme.i}</span>
-                <span class="link-text">${cleanSec}</span>
+                <span class="link-text">${displayTitle}</span>
             </a>`;
     });
 
     let essentialPracticeHtml = '';
     let usedColorsE = new Set();
 
-    essentialList.forEach((secName, idx) => {
-        let safeSec = secName.replace(/'/g, "\\'");
-        let cleanSec = secName.replace(/^\d+\.\s*/, '');
+    essentialList.forEach((item, idx) => {
+        let displayTitle = (item.title || item.path.split(' > ').pop() || '').replace(/^\d+\.\s*/, '');
+        let encodedPath = encodeURIComponent(item.path);
         let theme = typeof getAutoTopicTheme === 'function'
-            ? getAutoTopicTheme(cleanSec, null, idx + 3, usedColorsE)
+            ? getAutoTopicTheme(displayTitle, item.icon || null, idx + 4, usedColorsE)
             : { i: "📝", c: "#06b6d4", bg: "rgba(6,182,212,0.16)", border: "rgba(6,182,212,0.6)", glow: "rgba(6,182,212,0.24)" };
 
         essentialPracticeHtml += `
-            <a class="action-link colored-link" style="--topic-color:${theme.c}; --topic-border:${theme.border}; --topic-glow:${theme.glow}; --topic-bg:${theme.bg};" onclick="openGlobalHub('${safeSec}')">
+            <a class="action-link colored-link" style="--topic-color:${theme.c}; --topic-border:${theme.border}; --topic-glow:${theme.glow}; --topic-bg:${theme.bg};" onclick="openSidebarItem('${encodedPath}')">
                 <span class="link-icon" style="color: ${theme.c};">${theme.i}</span>
-                <span class="link-text">${cleanSec}</span>
+                <span class="link-text">${displayTitle}</span>
             </a>`;
     });
-
-    // Global Daily Challenge Hub across all exams (NEET, JEE, GK & future topics)
-    essentialPracticeHtml += `
-        <a class="action-link colored-link" style="--topic-color:#fdb813; --topic-border:rgba(253,184,19,0.65); --topic-glow:rgba(253,184,19,0.26); --topic-bg:rgba(253,184,19,0.16);" onclick="openGlobalHub('Daily Quiz Challenge')">
-            <span class="link-icon" style="color: #fdb813;">📅</span>
-            <span class="link-text">Daily Challenge</span>
-        </a>`;
 
     sidebar.innerHTML = `
     <div class="card sidebar-card">
         <h3 class="section-title">Quick Links</h3>
-        ${quickLinksHtml}
+        ${quickLinksHtml || '<p style="color:var(--text-muted); font-size:12.5px; margin:0;">No quick links added yet.</p>'}
     </div>
     <div class="card sidebar-card">
         <h3 class="section-title">Essential Practice</h3>
-        ${essentialPracticeHtml}
+        ${essentialPracticeHtml || '<p style="color:var(--text-muted); font-size:12.5px; margin:0;">No practice links added yet.</p>'}
     </div>`;
 }
 
@@ -357,7 +341,6 @@ function handleRouting() {
         else document.body.classList.remove('admin-mode');
         
         let isRootHome = (!hash || hash === 'home');
-        if (isRootHome) window.activeHubSection = null;
         
         const bottomBackBtn = document.getElementById('dynamic-back-container');
         if (bottomBackBtn) bottomBackBtn.style.display = 'none';
@@ -367,11 +350,6 @@ function handleRouting() {
         
         if (isRootHome) { currentPath = []; if (typeof _renderView === 'function') _renderView(); } 
         else if (hash === 'custom-setup') { if (typeof cwStep1 === 'function') cwStep1(); } 
-        else if (hash.startsWith('hub/')) {
-            let hubSection = decodeURIComponent(rawHash.replace('hub/', ''));
-            currentPath = [];
-            if (typeof _renderHubView === 'function') _renderHubView(hubSection);
-        }
         else if (hash.startsWith('path/')) { currentPath = hash.replace('path/', '').split('/').filter(Boolean); if (typeof _renderView === 'function') _renderView(); } 
         else if (hash === 'leaderboard') { if (typeof _renderLeaderboardOptions === 'function') _renderLeaderboardOptions(); } 
         else if (hash.startsWith('board/')) { if (typeof fetchLiveLeaderboard === 'function') fetchLiveLeaderboard(decodeURIComponent(hash.replace('board/', ''))); } 
@@ -389,7 +367,6 @@ function handleRouting() {
 
 function goHome() { 
     if (typeof currentTimer !== 'undefined' && currentTimer) clearInterval(currentTimer);
-    window.activeHubSection = null;
     document.body.classList.remove('hide-ai-btn');
     document.body.classList.remove('hide-bottom-bar');
     if (window.location.hash === '#/home' || window.location.hash === '') {
@@ -411,32 +388,17 @@ function goBack() {
     let rawHash = window.location.hash.replace(/^#\/?/, '');
     let hash = decodeURIComponent(rawHash);
 
-    if (hash.startsWith('hub/')) {
-        goHome();
-    } else if (hash.startsWith('path/')) {
+    if (hash.startsWith('path/')) {
         let parts = hash.replace('path/', '').split('/').filter(Boolean);
-        // If user entered this exam section from a Global Quick Link / Essential Practice Hub, step back to that Hub
-        if (parts.length === 2 && window.activeHubSection && (parts[1] === window.activeHubSection || parts[0] === window.activeHubSection)) {
-            openGlobalHub(window.activeHubSection);
-            return;
-        }
         if (parts.length > 1) {
             parts.pop();
-            if (parts.length === 1 && parts[0] === 'Daily Quiz Challenge') {
-                openGlobalHub('Daily Quiz Challenge');
-            } else {
-                jumpToSection(parts);
-            }
+            jumpToSection(parts);
         } else {
             goHome();
         }
     } else if (hash === 'quiz') {
         if (currentPath && currentPath.length > 0) {
-            if (currentPath.length === 2 && currentPath[0] === 'Daily Quiz Challenge') {
-                openGlobalHub('Daily Quiz Challenge');
-            } else {
-                jumpToSection(currentPath);
-            }
+            jumpToSection(currentPath);
         } else {
             goHome();
         }
