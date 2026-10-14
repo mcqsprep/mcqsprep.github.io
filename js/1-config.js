@@ -58,7 +58,6 @@ function handlePCBackButton() {
         }
     }
 
-    // Upgrade mobile & desktop install buttons with clean text
     const mobInstall = document.getElementById('installAppBtnMobile');
     if (mobInstall && !mobInstall.dataset.upgraded) {
         mobInstall.dataset.upgraded = 'true';
@@ -96,7 +95,7 @@ styleSheet.innerHTML = `
     .install-btn, #installAppBtn, #installAppBtnMobile {
         background: linear-gradient(135deg, #10b981 0%, #06b6d4 100%) !important;
         color: #04131a !important;
-        border: 1px solid rgba(167, 243, 208, 0.7) !important;
+        border: 1px solid rgba(167, 243, 208, 0.75) !important;
         border-radius: 999px !important;
         padding: 6px 15px !important;
         font-size: 11.5px !important;
@@ -120,50 +119,60 @@ styleSheet.innerHTML = `
 
     /* 🟡 GLOWING CUSTOM PRACTICE HERO CARD */
     .card.setup-hero-card {
-        border: 1.5px solid rgba(253, 184, 19, 0.65) !important;
+        border: 1.5px solid rgba(253, 184, 19, 0.7) !important;
         border-left: 5px solid #fdb813 !important;
-        background: linear-gradient(145deg, rgba(253, 184, 19, 0.14) 0%, rgba(13, 21, 39, 0.96) 75%) !important;
-        box-shadow: 0 0 22px rgba(253, 184, 19, 0.22), inset 0 0 24px rgba(253, 184, 19, 0.06) !important;
+        background: linear-gradient(145deg, rgba(253, 184, 19, 0.16) 0%, rgba(13, 21, 39, 0.96) 75%) !important;
+        box-shadow: 0 0 24px rgba(253, 184, 19, 0.24), inset 0 0 24px rgba(253, 184, 19, 0.07) !important;
     }
 
-    /* 🌈 COLORED & GLOWING TOPIC BOXES (.category-tile.colored-tile) */
+    /* 🌈 AUTOMATIC COLORED & GLOWING TOPIC BOXES FOR ALL CURRENT & FUTURE TOPICS */
+    .category-tile,
     .category-tile.colored-tile {
-        background: linear-gradient(155deg, var(--topic-bg, rgba(253,184,19,0.12)) 0%, rgba(14, 21, 38, 0.96) 80%) !important;
-        border: 1.5px solid var(--topic-border, rgba(253,184,19,0.55)) !important;
-        box-shadow: 0 4px 18px var(--topic-glow, rgba(253,184,19,0.22)), inset 0 0 15px var(--topic-bg, rgba(253,184,19,0.08)) !important;
+        background: linear-gradient(155deg, var(--topic-bg, rgba(253,184,19,0.15)) 0%, rgba(12, 19, 34, 0.95) 82%) !important;
+        border: 1.5px solid var(--topic-border, rgba(253,184,19,0.65)) !important;
+        box-shadow: 0 4px 20px var(--topic-glow, rgba(253,184,19,0.25)), inset 0 0 16px var(--topic-bg, rgba(253,184,19,0.1)) !important;
         transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease !important;
+        position: relative;
+        overflow: hidden;
     }
+    .category-tile:hover,
+    .category-tile:active,
     .category-tile.colored-tile:hover,
     .category-tile.colored-tile:active {
         border-color: var(--topic-color, #fdb813) !important;
-        box-shadow: 0 6px 26px var(--topic-glow, rgba(253,184,19,0.4)), 0 0 10px var(--topic-border, rgba(253,184,19,0.5)), inset 0 0 20px var(--topic-bg, rgba(253,184,19,0.14)) !important;
+        box-shadow: 0 6px 28px var(--topic-glow, rgba(253,184,19,0.45)), 0 0 12px var(--topic-border, rgba(253,184,19,0.6)), inset 0 0 22px var(--topic-bg, rgba(253,184,19,0.16)) !important;
         transform: translateY(-2px) !important;
     }
+    .category-tile .cat-icon,
     .category-tile.colored-tile .cat-icon {
-        background: var(--topic-bg, rgba(253,184,19,0.18)) !important;
+        background: var(--topic-bg, rgba(253,184,19,0.2)) !important;
         color: var(--topic-color, #fdb813) !important;
-        border: 1px solid var(--topic-border, rgba(253,184,19,0.45)) !important;
-        box-shadow: 0 0 12px var(--topic-glow, rgba(253,184,19,0.3)) !important;
+        border: 1px solid var(--topic-border, rgba(253,184,19,0.5)) !important;
+        box-shadow: 0 0 14px var(--topic-glow, rgba(253,184,19,0.32)) !important;
     }
+    .category-tile .cat-text,
     .category-tile.colored-tile .cat-text {
         color: #ffffff !important;
-        text-shadow: 0 1px 8px rgba(0, 0, 0, 0.6) !important;
+        text-shadow: 0 1px 8px rgba(0, 0, 0, 0.65) !important;
     }
 
-    /* 🌟 COLORED & GLOWING QUICK LINKS / ESSENTIAL PRACTICE (.action-link.colored-link) */
+    /* 🌟 COLORED & GLOWING QUICK LINKS / ESSENTIAL PRACTICE CARDS */
+    .action-link,
     .action-link.colored-link {
-        background: linear-gradient(135deg, var(--topic-bg, rgba(168,85,247,0.14)) 0%, rgba(14, 21, 38, 0.96) 85%) !important;
-        border: 1.5px solid var(--topic-border, rgba(168,85,247,0.5)) !important;
+        background: linear-gradient(135deg, var(--topic-bg, rgba(168,85,247,0.16)) 0%, rgba(12, 19, 34, 0.96) 85%) !important;
+        border: 1.5px solid var(--topic-border, rgba(168,85,247,0.6)) !important;
         border-left: 4px solid var(--topic-color, #a855f7) !important;
         border-radius: 14px !important;
         margin-bottom: 12px !important;
-        box-shadow: 0 4px 15px var(--topic-glow, rgba(168,85,247,0.2)) !important;
-        transition: transform 0.2s ease, box-shadow 0.2s ease !important;
+        box-shadow: 0 4px 16px var(--topic-glow, rgba(168,85,247,0.24)), inset 0 0 12px var(--topic-bg, rgba(168,85,247,0.08)) !important;
+        transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease !important;
     }
+    .action-link:hover,
+    .action-link:active,
     .action-link.colored-link:hover,
     .action-link.colored-link:active {
         border-color: var(--topic-color, #a855f7) !important;
-        box-shadow: 0 6px 22px var(--topic-glow, rgba(168,85,247,0.38)) !important;
+        box-shadow: 0 6px 24px var(--topic-glow, rgba(168,85,247,0.42)), 0 0 10px var(--topic-border, rgba(168,85,247,0.5)) !important;
         transform: translateX(3px) !important;
     }
     
@@ -187,9 +196,9 @@ styleSheet.innerHTML = `
     .cw-wide-card { max-width: 1180px; width: 100%; margin: 0 auto; padding: 32px 36px; box-sizing: border-box; }
     .cw-exam-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; }
     .cw-multi-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; max-height: 280px; overflow-y: auto; padding: 14px; background: #080d17; border: 1px solid var(--border-color); border-radius: 12px; }
-    .cw-check-card { display: flex; align-items: center; gap: 10px; padding: 12px 14px; background: #0d1527; border: 1px solid var(--border-color); border-radius: 10px; cursor: pointer; font-size: 13.5px; font-weight: 600; color: #d1d5db; transition: 0.2s; user-select: none; box-sizing: border-box; }
-    .cw-check-card:hover { border-color: rgba(253, 184, 19, 0.5); color: #fff; background: #111d35; }
-    .cw-check-card.selected { background: rgba(253, 184, 19, 0.14); border-color: var(--primary-yellow); color: #fff; box-shadow: 0 0 12px rgba(253, 184, 19, 0.2); }
+    .cw-check-card { display: flex; align-items: center; gap: 10px; padding: 12px 14px; background: linear-gradient(145deg, var(--topic-bg, rgba(255,255,255,0.03)) 0%, #0d1527 85%); border: 1px solid var(--topic-border, var(--border-color)); box-shadow: 0 2px 10px var(--topic-glow, transparent); border-radius: 10px; cursor: pointer; font-size: 13.5px; font-weight: 600; color: #d1d5db; transition: 0.2s; user-select: none; box-sizing: border-box; }
+    .cw-check-card:hover { border-color: var(--topic-color, rgba(253, 184, 19, 0.6)); color: #fff; background: #111d35; }
+    .cw-check-card.selected { background: linear-gradient(145deg, var(--topic-bg, rgba(253,184,19,0.18)) 0%, rgba(17, 29, 53, 0.95) 85%); border-color: var(--topic-color, var(--primary-yellow)); color: #fff; box-shadow: 0 0 14px var(--topic-glow, rgba(253, 184, 19, 0.25)); }
     .cw-check-card input[type="checkbox"] { accent-color: var(--primary-yellow); width: 17px; height: 17px; margin: 0; cursor: pointer; flex-shrink: 0; }
 
     /* Live Chapter Search Bar & Suggestions Dropdown */
@@ -280,8 +289,12 @@ const CLOUDINARY_URL = "https://api.cloudinary.com/v1_1/h5gdez7a/auto/upload";
 const CLOUDINARY_PRESET = "mcq_uploads"; 
 const AI_WORKER_URL = "https://shy-waterfall-08a4.md-habibullah9957.workers.dev/";
 
+// Standard sections automatically synced across NEET, JEE, General Knowledge, and all future root exams
+const STANDARD_QUICK_LINKS = ["NCERT Book", "PYQs"];
+const STANDARD_ESSENTIAL_PRACTICE = ["Practice Paper", "MCQs Practice", "Mock Test"];
+
 const DEFAULT_APP_DATA = { 
-    "Daily Quiz Challenge": { "NEET": {}, "General Knowledge": {} }, 
+    "Daily Quiz Challenge": { "NEET": {}, "JEE": {}, "General Knowledge": {} }, 
     "NEET": { 
         "NCERT Book": {}, 
         "PYQs": {}, 
@@ -291,8 +304,28 @@ const DEFAULT_APP_DATA = {
             "Organic Chemistry": {}, "Physical Chemistry": {}, "Inorganic Chemistry": {} 
         }, 
         "Mock Test": {} 
-    }, 
-    "General Knowledge": { "Current Affairs": {}, "History": {}, "Geography": {} } 
+    },
+    "JEE": {
+        "NCERT Book": {},
+        "PYQs": {},
+        "Practice Paper": {},
+        "MCQs Practice": {
+            "Physics": {}, "Organic Chemistry": {}, "Physical Chemistry": {}, "Inorganic Chemistry": {}, "Mathematics": {}
+        },
+        "Mock Test": {}
+    },
+    "General Knowledge": { 
+        "NCERT Book": {},
+        "PYQs": {},
+        "Practice Paper": {},
+        "MCQs Practice": {
+            "Current Affairs": {}, "History": {}, "Geography": {}
+        },
+        "Mock Test": {},
+        "Current Affairs": {}, 
+        "History": {}, 
+        "Geography": {} 
+    } 
 };
 
 let appData = JSON.parse(JSON.stringify(DEFAULT_APP_DATA));
@@ -302,6 +335,9 @@ window.currentUser = null;
 let currentPath = []; 
 let dataLoaded = false; 
 let userBookmarks = [];
+window.activeHubSection = null;
+window.dynamicQuickLinks = [...STANDARD_QUICK_LINKS];
+window.dynamicEssentialPractice = ["Practice Paper", "Mock Test"];
 
 let notifTimer = null;
 function showNotification(message) { 
