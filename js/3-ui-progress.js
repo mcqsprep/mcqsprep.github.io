@@ -3,12 +3,16 @@
 // ==========================================
 
 function forceStartQuiz() {
+    document.body.classList.add('hide-ai-btn');
+    document.body.classList.add('hide-bottom-bar');
     window.location.hash = '#/quiz';
     setTimeout(() => { if (typeof _initiateQuizEngine === 'function') _initiateQuizEngine(); }, 50);
 }
 
 function forceCwStep1(e) {
     if (e) e.stopPropagation();
+    document.body.classList.add('hide-ai-btn');
+    document.body.classList.add('hide-bottom-bar');
     window.location.hash = '#/custom-setup';
 }
 
@@ -721,35 +725,63 @@ async function fetchLiveLeaderboard(category) {
 }
 
 // ==========================================
-// CUSTOM PRACTICE: MULTI-SUBJECT & MULTI-CHAPTER (20–250 MCQs)
+// CUSTOM PRACTICE: WIDE UI, CLEAN SUBJECTS/CHAPTERS, LIVE CHAPTER SEARCH & 20-250 CAUTION
 // ==========================================
 let cwPath = "";
 let cwSelectedSubjects = [];
 let cwSelectedChapters = [];
 let cwSubjectCatalog = [];
+let cwAvailableChaptersCache = [];
 let cwDiff = "Mixed";
 let cwLimit = 25;
 
+const CW_DIFFICULTY_FOLDERS = new Set(["easy", "medium", "hard", "mixed"]);
+function isCwDifficultyFolder(name) {
+    let clean = (name || "").replace(/^\d+\.\s*/, '').trim().toLowerCase();
+    return CW_DIFFICULTY_FOLDERS.has(clean);
+}
+
+// Strictly excludes "Practice Paper", "NCERT Book", "PYQs", "Mock Test", etc. from Subjects
+function isExcludedSubjectOrPdfFolder(fullKey, name) {
+    let tObj = customTopicTypes[fullKey];
+    let tVal = tObj ? (typeof tObj === 'object' ? tObj.type : tObj) : null;
+    if (tVal === 'pdf') return true;
+
+    let lower = (name || "").replace(/^\d+\.\s*/, '').trim().toLowerCase();
+    const nonSubjectKeywords = [
+        "practice paper", "sample paper", "model paper", "question paper", "paper",
+        "ncert", "book", "pyq", "previous", "mock", "pdf", "note", "material", "syllabus"
+    ];
+    return nonSubjectKeywords.some(k => lower.includes(k));
+}
+
 function cwStep1() {
+    document.body.classList.add('hide-ai-btn');
+    document.body.classList.add('hide-bottom-bar');
+
     const mc = document.getElementById('dynamic-content');
     document.getElementById('breadcrumb-text').innerText = "Home / Custom Practice";
     let rootKeys = Object.keys(appData).filter(k => k !== "Daily Quiz Challenge");
     
     let html = `
-    <div class="card page-transition" style="max-width: 650px; margin: 0 auto; padding: 30px;">
-        <h2 class="section-title" style="margin-bottom: 20px; color:var(--primary-yellow); justify-content:center;">⚙️ Custom Practice Setup</h2>
-        <p style="color:var(--text-muted); margin-bottom: 25px; text-align:center;">Step 1: Which exam are you preparing for?</p>
+    <div class="card page-transition cw-wide-card">
+        <h2 class="section-title" style="margin-bottom: 12px; color:var(--primary-yellow); justify-content:center; font-size:20px;">⚙️ Custom Practice Setup</h2>
+        <p style="color:var(--text-muted); margin-bottom: 28px; text-align:center; font-size:14px;">Step 1: Select your target examination category</p>
         
-        <div style="display:grid; grid-template-columns: 1fr; gap: 12px;">`;
+        <div class="cw-exam-grid">`;
         
         rootKeys.forEach(k => {
             let cleanKey = k.replace(/^\d+\.\s*/, '');
             let safeKey = k.replace(/'/g, "\\'");
             const topicType = customTopicTypes[k];
             const customIcon = topicType ? (typeof topicType === 'object' ? topicType.icon : null) : null;
-            let smartData = getSmartIcon(cleanKey, customIcon) || { i: "📁" };
+            let smartData = getSmartIcon(cleanKey, customIcon) || { i: "📁", c: "#fdb813", bg: "rgba(253,184,19,0.15)" };
 
-            html += `<button class="btn-exam" onclick="cwSetPath('${safeKey}')" style="background:#0d1527; border-color:var(--border-color); padding:16px; font-size:15px; letter-spacing:0.5px;">${smartData.i} ${cleanKey}</button>`;
+            html += `
+            <button class="category-tile" onclick="cwSetPath('${safeKey}')" style="width:100%;">
+                <div class="cat-icon" style="background:${smartData.bg}; color:${smartData.c};">${smartData.i}</div>
+                <div class="cat-text">${cleanKey}</div>
+            </button>`;
         });
         
     html += `</div></div>`;
@@ -764,19 +796,11 @@ function cwSetPath(path) {
 }
 
 function buildCwCatalogForExam(examKey) {
-    let pdfKeywords = ["ncert", "book", "pyq", "previous", "paper", "pdf", "notes", "material", "syllabus"];
-    function isPdfNode(fullKey, name) {
-        let tObj = customTopicTypes[fullKey];
-        let tVal = tObj ? (typeof tObj === 'object' ? tObj.type : tObj) : null;
-        if (tVal === 'pdf') return true;
-        if (tVal === 'mcq' || tVal === 'both') return false;
-        let lower = (name || "").toLowerCase();
-        return pdfKeywords.some(k => lower.includes(k)) && !lower.includes('mcq') && !lower.includes('practice') && !lower.includes('mock');
-    }
-
     let subjectsMap = new Map();
 
     function registerSubject(fullPath, label, nodeObj) {
+        if (isExcludedSubjectOrPdfFolder(fullPath, label)) return;
+        if (isCwDifficultyFolder(label)) return;
         if (!subjectsMap.has(fullPath)) {
             subjectsMap.set(fullPath, {
                 label: label.replace(/^\d+\.\s*/, ''),
@@ -788,21 +812,22 @@ function buildCwCatalogForExam(examKey) {
     }
 
     let examObj = appData[examKey] || {};
-    Object.keys(examObj).forEach(topKey => {
-        let fullTop = `${examKey} > ${topKey}`;
-        if (isPdfNode(fullTop, topKey) || topKey === "Mock Test") return;
+    let hasMcqsPracticeContainer = !!examObj["MCQs Practice"] && typeof examObj["MCQs Practice"] === 'object';
 
-        if (topKey === "MCQs Practice" && typeof examObj[topKey] === 'object') {
-            Object.keys(examObj[topKey]).forEach(subjKey => {
-                let subjFull = `${examKey} > MCQs Practice > ${subjKey}`;
-                if (!isPdfNode(subjFull, subjKey)) {
-                    registerSubject(subjFull, subjKey, examObj[topKey][subjKey]);
-                }
-            });
-        } else {
-            registerSubject(fullTop, topKey, examObj[topKey]);
-        }
-    });
+    if (hasMcqsPracticeContainer) {
+        // When an exam has "MCQs Practice" (like NEET), load subjects strictly from "MCQs Practice"
+        Object.keys(examObj["MCQs Practice"]).forEach(subjKey => {
+            let subjFull = `${examKey} > MCQs Practice > ${subjKey}`;
+            registerSubject(subjFull, subjKey, examObj["MCQs Practice"][subjKey]);
+        });
+    } else {
+        Object.keys(examObj).forEach(topKey => {
+            let fullTop = `${examKey} > ${topKey}`;
+            if (topKey !== "MCQs Practice" && topKey !== "Mock Test") {
+                registerSubject(fullTop, topKey, examObj[topKey]);
+            }
+        });
+    }
 
     let examPrefix = examKey + " > ";
     Object.keys(customTopicTypes).forEach(dbKey => {
@@ -814,28 +839,29 @@ function buildCwCatalogForExam(examKey) {
         if (parts[0] === "MCQs Practice") {
             if (parts.length >= 2) {
                 let sFull = `${examKey} > MCQs Practice > ${parts[1]}`;
-                if (!isPdfNode(sFull, parts[1])) {
-                    let nodeRef = (examObj["MCQs Practice"] && examObj["MCQs Practice"][parts[1]]) || {};
-                    registerSubject(sFull, parts[1], nodeRef);
-                }
+                let nodeRef = (examObj["MCQs Practice"] && examObj["MCQs Practice"][parts[1]]) || {};
+                registerSubject(sFull, parts[1], nodeRef);
             }
-        } else if (parts[0] !== "Mock Test") {
+        } else if (!hasMcqsPracticeContainer && parts[0] !== "Mock Test") {
             let sFull = `${examKey} > ${parts[0]}`;
-            if (!isPdfNode(sFull, parts[0])) {
-                registerSubject(sFull, parts[0], examObj[parts[0]] || {});
-            }
+            registerSubject(sFull, parts[0], examObj[parts[0]] || {});
         }
     });
 
+    // Collect chapters under each subject, skipping Easy/Medium/Hard/Mixed difficulty sub-folders
     subjectsMap.forEach((subj) => {
         function collectChapters(obj, currentFullPath, prefixLabel = "") {
             if (!obj || typeof obj !== 'object') return;
             Object.keys(obj).forEach(k => {
+                // Skip Easy, Medium, Hard, Mixed folders so they never show up as chapters
+                if (isCwDifficultyFolder(k)) return;
                 let childFull = `${currentFullPath} > ${k}`;
-                if (isPdfNode(childFull, k)) return;
+                if (isExcludedSubjectOrPdfFolder(childFull, k)) return;
+
                 let cleanK = k.replace(/^\d+\.\s*/, '');
                 let disp = prefixLabel ? `${prefixLabel} / ${cleanK}` : cleanK;
                 subj.chaptersMap.set(childFull, { label: disp, fullPath: childFull });
+
                 if (obj[k] && typeof obj[k] === 'object' && Object.keys(obj[k]).length > 0) {
                     collectChapters(obj[k], childFull, disp);
                 }
@@ -845,12 +871,21 @@ function buildCwCatalogForExam(examKey) {
 
         let sPref = subj.fullPath + " > ";
         Object.keys(customTopicTypes).forEach(dbKey => {
-            if (dbKey.startsWith(sPref)) {
-                let leafName = dbKey.split(' > ').pop();
-                if (!isPdfNode(dbKey, leafName) && !subj.chaptersMap.has(dbKey)) {
-                    let relLabel = dbKey.slice(sPref.length).split(' > ').map(s => s.replace(/^\d+\.\s*/, '')).join(' / ');
-                    subj.chaptersMap.set(dbKey, { label: relLabel, fullPath: dbKey });
-                }
+            if (!dbKey.startsWith(sPref)) return;
+            let relParts = dbKey.slice(sPref.length).split(' > ').filter(Boolean);
+            // Stop before any segment that is a difficulty folder (Easy, Medium, Hard, Mixed)
+            let validSegments = [];
+            for (let seg of relParts) {
+                if (isCwDifficultyFolder(seg)) break;
+                validSegments.push(seg);
+            }
+            if (validSegments.length === 0) return;
+
+            let chapFullPath = subj.fullPath + " > " + validSegments.join(" > ");
+            let leafName = validSegments[validSegments.length - 1];
+            if (!isExcludedSubjectOrPdfFolder(chapFullPath, leafName) && !subj.chaptersMap.has(chapFullPath)) {
+                let relLabel = validSegments.map(s => s.replace(/^\d+\.\s*/, '')).join(' / ');
+                subj.chaptersMap.set(chapFullPath, { label: relLabel, fullPath: chapFullPath });
             }
         });
     });
@@ -863,10 +898,13 @@ function buildCwCatalogForExam(examKey) {
 }
 
 function cwStep2() {
+    document.body.classList.add('hide-ai-btn');
+    document.body.classList.add('hide-bottom-bar');
+
     const mc = document.getElementById('dynamic-content');
 
     if (!appData[cwPath]) {
-        mc.innerHTML = `<div class="card page-transition" style="text-align:center; padding: 40px 20px;"><h2 class="section-title" style="color:var(--wrong-red);">Error</h2><p style="color:var(--text-muted);">Selected exam category not found.</p><button class="btn-exam" onclick="cwStep1()" style="margin-top:20px;">&larr; Back</button></div>`;
+        mc.innerHTML = `<div class="card page-transition cw-wide-card" style="text-align:center; padding: 40px 20px;"><h2 class="section-title" style="color:var(--wrong-red);">Error</h2><p style="color:var(--text-muted);">Selected exam category not found.</p><button class="btn-exam" onclick="cwStep1()" style="margin-top:20px;">&larr; Back</button></div>`;
         return;
     }
 
@@ -886,15 +924,16 @@ function cwStep2() {
     }).join('');
 
     mc.innerHTML = `
-    <div class="card page-transition" style="max-width: 720px; margin: 0 auto; padding: 28px;">
-        <h2 class="section-title" style="margin-bottom: 22px; color:var(--primary-yellow); justify-content:center;">🎯 Customize Your ${cwPath.replace(/^\d+\.\s*/, '')} Test</h2>
+    <div class="card page-transition cw-wide-card">
+        <h2 class="section-title" style="margin-bottom: 24px; color:var(--primary-yellow); justify-content:center; font-size:20px;">🎯 Customize Your ${cwPath.replace(/^\d+\.\s*/, '')} Test</h2>
         
-        <div style="margin-bottom: 22px;">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+        <!-- 1. MULTI-SUBJECT SELECTOR -->
+        <div style="margin-bottom: 24px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:8px;">
                 <label style="color:var(--text-muted); font-size:12px; font-weight:bold; text-transform:uppercase;">1. Select Subject(s) (Multiple Allowed)</label>
                 <div style="display:flex; gap:8px;">
-                    <button type="button" onclick="cwSelectAllSubjects(true)" style="background:rgba(253,184,19,0.12); color:var(--primary-yellow); border:1px solid rgba(253,184,19,0.3); border-radius:6px; padding:3px 10px; font-size:11px; font-weight:700; cursor:pointer;">Select All</button>
-                    <button type="button" onclick="cwSelectAllSubjects(false)" style="background:rgba(255,255,255,0.05); color:var(--text-muted); border:1px solid var(--border-color); border-radius:6px; padding:3px 10px; font-size:11px; font-weight:700; cursor:pointer;">Clear</button>
+                    <button type="button" onclick="cwSelectAllSubjects(true)" style="background:rgba(253,184,19,0.12); color:var(--primary-yellow); border:1px solid rgba(253,184,19,0.3); border-radius:6px; padding:4px 12px; font-size:11px; font-weight:700; cursor:pointer;">Select All</button>
+                    <button type="button" onclick="cwSelectAllSubjects(false)" style="background:rgba(255,255,255,0.05); color:var(--text-muted); border:1px solid var(--border-color); border-radius:6px; padding:4px 12px; font-size:11px; font-weight:700; cursor:pointer;">Clear</button>
                 </div>
             </div>
             <div class="cw-multi-grid" id="cwSubjectsContainer">
@@ -902,18 +941,28 @@ function cwStep2() {
             </div>
         </div>
 
-        <div style="margin-bottom: 22px;">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-                <label style="color:var(--text-muted); font-size:12px; font-weight:bold; text-transform:uppercase;">2. Select Chapters Under Selected Subject(s)</label>
+        <!-- 2. MULTI-CHAPTER SELECTOR WITH LIVE SUGGESTION SEARCH BAR -->
+        <div style="margin-bottom: 24px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:8px;">
+                <label style="color:var(--text-muted); font-size:12px; font-weight:bold; text-transform:uppercase;">
+                    2. Select Chapters Under Selected Subject(s) <span id="cwSelectedChapCount" style="color:var(--primary-yellow); margin-left:6px;"></span>
+                </label>
                 <div style="display:flex; gap:8px;">
-                    <button type="button" onclick="cwSelectAllChapters(true)" style="background:rgba(253,184,19,0.12); color:var(--primary-yellow); border:1px solid rgba(253,184,19,0.3); border-radius:6px; padding:3px 10px; font-size:11px; font-weight:700; cursor:pointer;">Select All Chapters</button>
-                    <button type="button" onclick="cwSelectAllChapters(false)" style="background:rgba(255,255,255,0.05); color:var(--text-muted); border:1px solid var(--border-color); border-radius:6px; padding:3px 10px; font-size:11px; font-weight:700; cursor:pointer;">Clear</button>
+                    <button type="button" onclick="cwSelectAllChapters(true)" style="background:rgba(253,184,19,0.12); color:var(--primary-yellow); border:1px solid rgba(253,184,19,0.3); border-radius:6px; padding:4px 12px; font-size:11px; font-weight:700; cursor:pointer;">Select All Chapters</button>
+                    <button type="button" onclick="cwSelectAllChapters(false)" style="background:rgba(255,255,255,0.05); color:var(--text-muted); border:1px solid var(--border-color); border-radius:6px; padding:4px 12px; font-size:11px; font-weight:700; cursor:pointer;">Clear</button>
                 </div>
             </div>
+
+            <div class="cw-chapter-search-wrap">
+                <input type="text" id="cwChapterSearchInput" class="cw-chapter-search-input" placeholder="🔍 Search & select specific chapters (e.g. Biological Classification, Laws of Motion)..." oninput="cwFilterChaptersLive()" onfocus="cwFilterChaptersLive()" onblur="setTimeout(() => { const s = document.getElementById('cwChapterSuggestions'); if(s) s.style.display='none'; }, 200)">
+                <div id="cwChapterSuggestions" class="cw-chapter-suggestions"></div>
+            </div>
+
             <div class="cw-multi-grid" id="cwChaptersContainer"></div>
         </div>
         
-        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 26px;">
+        <!-- 3. DIFFICULTY & 4. NUMBER OF QUESTIONS (20 - 250 WITH INLINE CAUTION) -->
+        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 20px; margin-bottom: 28px; align-items: start;">
             <div>
                 <label style="display:block; color:var(--text-muted); margin-bottom:8px; font-size:12px; font-weight:bold; text-transform:uppercase;">3. Difficulty Level</label>
                 <select id="cwDiffSelect" class="input-field" style="font-size:14px; padding:13px; margin-bottom:0;">
@@ -925,27 +974,56 @@ function cwStep2() {
             </div>
             <div>
                 <label style="display:block; color:var(--text-muted); margin-bottom:8px; font-size:12px; font-weight:bold; text-transform:uppercase;">4. Number of Questions (Min 20 • Max 250)</label>
-                <input type="number" id="cwNum" class="input-field" style="font-size:14px; padding:13px; margin-bottom:0;" value="25" min="20" max="250" onchange="cwValidateLimit(this)">
+                <input type="number" id="cwNum" class="input-field" style="font-size:14px; padding:13px; margin-bottom:0;" value="25" min="20" max="250" oninput="cwValidateLimit()">
+                <div id="cwNumCaution" style="display:none; color:var(--wrong-red); background:rgba(239,68,68,0.1); border-left:3px solid var(--wrong-red); padding:8px 10px; border-radius:4px; font-size:12px; font-weight:600; margin-top:8px;">
+                    ⚠️ Caution: Number of questions must be between 20 and 250.
+                </div>
             </div>
         </div>
 
-        <div style="display:flex; gap:15px;">
-            <button class="btn-exam" onclick="cwStep1()" style="flex:1; background:#0d1527;">&larr; Change Exam</button>
-            <button class="btn-exam" onclick="cwLaunch()" style="flex:2; background:var(--primary-yellow); color:black; border:none; box-shadow: 0 4px 15px rgba(253,184,19,0.3);">Launch Practice 🚀</button>
+        <div style="display:flex; gap:15px; flex-wrap:wrap;">
+            <button class="btn-exam" onclick="cwStep1()" style="flex:1; min-width:140px; background:#0d1527;">&larr; Change Exam</button>
+            <button id="cwLaunchBtn" class="btn-exam" onclick="cwLaunch()" style="flex:2; min-width:200px; background:var(--primary-yellow); color:black; border:none; box-shadow: 0 4px 15px rgba(253,184,19,0.3); font-size:15px;">Launch Practice 🚀</button>
         </div>
     </div>`;
 
+    cwBuildAvailableChapters();
     cwRenderChaptersList();
+    cwValidateLimit();
 }
 
-function cwValidateLimit(inputEl) {
-    let val = parseInt(inputEl.value, 10);
-    if (isNaN(val) || val < 20) {
-        inputEl.value = 20;
-        showNotification("⚠️ Minimum 20 questions required for Custom Practice.");
-    } else if (val > 250) {
-        inputEl.value = 250;
-        showNotification("⚠️ Maximum 250 questions allowed per test.");
+function cwValidateLimit() {
+    const inputEl = document.getElementById('cwNum');
+    const cautionEl = document.getElementById('cwNumCaution');
+    const launchBtn = document.getElementById('cwLaunchBtn');
+    if (!inputEl || !cautionEl || !launchBtn) return true;
+
+    let raw = inputEl.value.trim();
+    let val = Number(raw);
+
+    if (raw === "" || isNaN(val) || !Number.isInteger(val) || val < 20 || val > 250) {
+        let msg = "⚠️ Caution: Please enter a valid number between 20 and 250.";
+        if (raw !== "" && !isNaN(val)) {
+            if (val < 20) msg = `⚠️ Caution: Minimum 20 questions required (you entered ${val}).`;
+            else if (val > 250) msg = `⚠️ Caution: Maximum 250 questions allowed (you entered ${val}).`;
+        }
+        cautionEl.innerText = msg;
+        cautionEl.style.display = 'block';
+        inputEl.style.setProperty('border-color', 'var(--wrong-red)', 'important');
+        launchBtn.disabled = true;
+        return false;
+    } else {
+        cautionEl.style.display = 'none';
+        inputEl.style.removeProperty('border-color');
+        launchBtn.disabled = false;
+        return true;
+    }
+}
+
+function cwUpdateSelectedChapCounter() {
+    const countEl = document.getElementById('cwSelectedChapCount');
+    if (countEl) {
+        countEl.innerText = `(${cwSelectedChapters.length} Selected)`;
     }
 }
 
@@ -955,11 +1033,23 @@ function cwToggleSubject(cbEl, idx) {
     if (cbEl.checked) {
         if (!cwSelectedSubjects.includes(val)) cwSelectedSubjects.push(val);
         if (card) card.classList.add('selected');
+        // Auto-select chapters of newly checked subject
+        let subjObj = cwSubjectCatalog.find(s => s.fullPath === val);
+        if (subjObj) {
+            if (subjObj.chapters && subjObj.chapters.length > 0) {
+                subjObj.chapters.forEach(c => {
+                    if (!cwSelectedChapters.includes(c.fullPath)) cwSelectedChapters.push(c.fullPath);
+                });
+            } else if (!cwSelectedChapters.includes(subjObj.fullPath)) {
+                cwSelectedChapters.push(subjObj.fullPath);
+            }
+        }
     } else {
         cwSelectedSubjects = cwSelectedSubjects.filter(p => p !== val);
         if (card) card.classList.remove('selected');
         cwSelectedChapters = cwSelectedChapters.filter(ch => !ch.startsWith(val + " > ") && ch !== val);
     }
+    cwBuildAvailableChapters();
     cwRenderChaptersList();
 }
 
@@ -978,31 +1068,27 @@ function cwSelectAllSubjects(selectAll) {
             if (card) card.classList.toggle('selected', selectAll);
         });
     }
+    cwBuildAvailableChapters();
+    if (selectAll) {
+        cwSelectedChapters = cwAvailableChaptersCache.map(c => c.fullPath);
+    }
     cwRenderChaptersList();
 }
 
-function cwRenderChaptersList() {
-    const chContainer = document.getElementById('cwChaptersContainer');
-    if (!chContainer) return;
-
-    if (cwSelectedSubjects.length === 0) {
-        chContainer.innerHTML = `<div style="grid-column: 1 / -1; color:var(--text-muted); font-size:13px; padding:10px; text-align:center;">Please select at least one subject above to view its chapters.</div>`;
-        return;
-    }
-
-    let availableChapters = [];
+function cwBuildAvailableChapters() {
+    cwAvailableChaptersCache = [];
     cwSubjectCatalog.forEach(subj => {
         if (!cwSelectedSubjects.includes(subj.fullPath)) return;
         if (subj.chapters && subj.chapters.length > 0) {
             subj.chapters.forEach(ch => {
-                availableChapters.push({
+                cwAvailableChaptersCache.push({
                     subjLabel: subj.label,
                     label: ch.label,
                     fullPath: ch.fullPath
                 });
             });
         } else {
-            availableChapters.push({
+            cwAvailableChaptersCache.push({
                 subjLabel: subj.label,
                 label: `All ${subj.label} Questions`,
                 fullPath: subj.fullPath
@@ -1010,23 +1096,106 @@ function cwRenderChaptersList() {
         }
     });
 
-    let validPaths = new Set(availableChapters.map(c => c.fullPath));
+    let validPaths = new Set(cwAvailableChaptersCache.map(c => c.fullPath));
     cwSelectedChapters = cwSelectedChapters.filter(p => validPaths.has(p));
-    if (cwSelectedChapters.length === 0 && availableChapters.length > 0) {
-        cwSelectedChapters = availableChapters.map(c => c.fullPath);
+    if (cwSelectedChapters.length === 0 && cwAvailableChaptersCache.length > 0) {
+        cwSelectedChapters = cwAvailableChaptersCache.map(c => c.fullPath);
+    }
+}
+
+function cwRenderChaptersList(searchQuery = "") {
+    const chContainer = document.getElementById('cwChaptersContainer');
+    if (!chContainer) return;
+
+    if (cwSelectedSubjects.length === 0) {
+        chContainer.innerHTML = `<div style="grid-column: 1 / -1; color:var(--text-muted); font-size:13px; padding:12px; text-align:center;">Please select at least one subject above to load its chapters.</div>`;
+        cwUpdateSelectedChapCounter();
+        return;
     }
 
-    chContainer.innerHTML = availableChapters.map((ch, idx) => {
+    let q = (searchQuery || "").trim().toLowerCase();
+    let listToRender = q
+        ? cwAvailableChaptersCache.filter(ch => ch.label.toLowerCase().includes(q) || ch.subjLabel.toLowerCase().includes(q))
+        : cwAvailableChaptersCache;
+
+    if (listToRender.length === 0) {
+        chContainer.innerHTML = `<div style="grid-column: 1 / -1; color:var(--text-muted); font-size:13px; padding:12px; text-align:center;">No chapters matching "${searchQuery}".</div>`;
+        cwUpdateSelectedChapCounter();
+        return;
+    }
+
+    chContainer.innerHTML = listToRender.map((ch, idx) => {
         let isChecked = cwSelectedChapters.includes(ch.fullPath);
         return `
         <label class="cw-check-card ${isChecked ? 'selected' : ''}" id="cwChapCard_${idx}">
             <input type="checkbox" value="${ch.fullPath.replace(/"/g, '&quot;')}" ${isChecked ? 'checked' : ''} onchange="cwToggleChapter(this, ${idx})">
             <div style="overflow:hidden; text-overflow:ellipsis;">
                 <div style="font-size:10px; color:var(--primary-yellow); text-transform:uppercase; letter-spacing:0.4px;">${ch.subjLabel}</div>
-                <div style="font-size:12px;">${ch.label}</div>
+                <div style="font-size:12.5px;">${ch.label}</div>
             </div>
         </label>`;
     }).join('');
+
+    cwUpdateSelectedChapCounter();
+}
+
+function cwFilterChaptersLive() {
+    const input = document.getElementById('cwChapterSearchInput');
+    const sugBox = document.getElementById('cwChapterSuggestions');
+    if (!input) return;
+
+    let raw = input.value.trim();
+    let q = raw.toLowerCase();
+
+    cwRenderChaptersList(raw);
+
+    if (!sugBox) return;
+    if (q.length < 1 || cwAvailableChaptersCache.length === 0) {
+        sugBox.style.display = 'none';
+        return;
+    }
+
+    let matches = cwAvailableChaptersCache.filter(ch =>
+        ch.label.toLowerCase().includes(q) || ch.subjLabel.toLowerCase().includes(q)
+    ).slice(0, 8);
+
+    if (matches.length === 0) {
+        sugBox.innerHTML = `<div style="padding:10px 14px; color:var(--text-muted); font-size:12px;">No matching chapter found in selected subject(s).</div>`;
+    } else {
+        sugBox.innerHTML = matches.map(m => {
+            let isSel = cwSelectedChapters.includes(m.fullPath);
+            let safePath = m.fullPath.replace(/'/g, "\\'");
+            return `
+            <div class="cw-chapter-sug-item" onmousedown="cwSelectChapterFromSuggestion('${safePath}')">
+                <div>
+                    <span style="font-size:10px; color:var(--primary-yellow); font-weight:700; text-transform:uppercase; margin-right:6px;">[${m.subjLabel}]</span>
+                    <span>${m.label}</span>
+                </div>
+                <span style="font-size:11px; font-weight:700; color:${isSel ? 'var(--correct-green)' : 'var(--primary-yellow)'};">
+                    ${isSel ? '✓ Selected (Tap to remove)' : '+ Select Only / Add'}
+                </span>
+            </div>`;
+        }).join('');
+    }
+    sugBox.style.display = 'block';
+}
+
+function cwSelectChapterFromSuggestion(fullPath) {
+    if (cwSelectedChapters.includes(fullPath)) {
+        cwSelectedChapters = cwSelectedChapters.filter(p => p !== fullPath);
+    } else {
+        // If all chapters were auto-selected by default, let the user's first search pick focus on their searched chapters, or add to existing selection
+        if (cwSelectedChapters.length === cwAvailableChaptersCache.length && cwAvailableChaptersCache.length > 1) {
+            cwSelectedChapters = [fullPath];
+        } else {
+            cwSelectedChapters.push(fullPath);
+        }
+    }
+    const input = document.getElementById('cwChapterSearchInput');
+    if (input) input.value = '';
+    const sugBox = document.getElementById('cwChapterSuggestions');
+    if (sugBox) sugBox.style.display = 'none';
+    cwRenderChaptersList('');
 }
 
 function cwToggleChapter(cbEl, idx) {
@@ -1039,48 +1208,52 @@ function cwToggleChapter(cbEl, idx) {
         cwSelectedChapters = cwSelectedChapters.filter(p => p !== val);
         if (card) card.classList.remove('selected');
     }
+    cwUpdateSelectedChapCounter();
 }
 
 function cwSelectAllChapters(selectAll) {
-    const chContainer = document.getElementById('cwChaptersContainer');
-    if (!chContainer) return;
-    cwSelectedChapters = [];
-    chContainer.querySelectorAll('input[type="checkbox"]').forEach((cb, idx) => {
-        cb.checked = selectAll;
-        if (selectAll) cwSelectedChapters.push(cb.value);
-        const card = document.getElementById('cwChapCard_' + idx);
-        if (card) card.classList.toggle('selected', selectAll);
-    });
+    const input = document.getElementById('cwChapterSearchInput');
+    if (input) input.value = '';
+    if (selectAll) {
+        cwSelectedChapters = cwAvailableChaptersCache.map(c => c.fullPath);
+    } else {
+        cwSelectedChapters = [];
+    }
+    cwRenderChaptersList('');
 }
 
 async function cwLaunch() {
+    // Enforce 20-250 limit check and show inline caution if invalid
+    if (!cwValidateLimit()) {
+        return;
+    }
+
     if (cwSelectedSubjects.length === 0) {
         showNotification("⚠️ Please select at least one Subject.");
         return;
     }
 
-    let targetPaths = cwSelectedChapters.length > 0 ? [...cwSelectedChapters] : [...cwSelectedSubjects];
-    if (targetPaths.length === 0) {
-        showNotification("⚠️ Please select at least one Chapter or Subject.");
+    if (cwSelectedChapters.length === 0) {
+        showNotification("⚠️ Please select at least one Chapter.");
         return;
     }
+
+    let targetPaths = [...cwSelectedChapters];
 
     const cwDiffEl = document.getElementById('cwDiffSelect');
     const cwNumEl = document.getElementById('cwNum');
     cwDiff = cwDiffEl ? cwDiffEl.value : "Mixed";
-    cwLimit = cwNumEl ? parseInt(cwNumEl.value, 10) : 25;
+    cwLimit = parseInt(cwNumEl.value, 10);
 
-    if (isNaN(cwLimit) || cwLimit < 20) {
-        cwLimit = 20;
-    } else if (cwLimit > 250) {
-        cwLimit = 250;
-    }
+    document.body.classList.add('hide-ai-btn');
+    document.body.classList.add('hide-bottom-bar');
 
     const mc = document.getElementById('dynamic-content');
-    mc.innerHTML = `<div class="card page-transition" style="text-align:center; padding: 50px 20px;"><h2 class="section-title" style="justify-content:center;">🔍 Compiling Custom Practice...</h2><p style="color:var(--text-muted);">Fetching ${cwLimit} questions across ${targetPaths.length} selected section(s)...</p></div>`;
+    mc.innerHTML = `<div class="card page-transition cw-wide-card" style="text-align:center; padding: 50px 20px;"><h2 class="section-title" style="justify-content:center;">🔍 Compiling Custom Practice...</h2><p style="color:var(--text-muted);">Fetching ${cwLimit} questions across ${targetPaths.length} selected chapter(s)...</p></div>`;
 
     try {
         let docsMap = new Map();
+        let targetDiffLower = cwDiff.toLowerCase();
 
         await Promise.all(targetPaths.map(async (p) => {
             const snap = await db.collection("content")
@@ -1091,7 +1264,14 @@ async function cwLaunch() {
 
             snap.forEach(doc => {
                 let d = doc.data();
-                if ((!d.type || d.type === "mcq") && (cwDiff === "Mixed" || d.level === cwDiff)) {
+                if (d.type && d.type !== "mcq") return;
+
+                // Match difficulty whether stored in d.level OR as a trailing folder in d.path (e.g., "... > Easy")
+                let docLevelLower = (d.level || "").trim().toLowerCase();
+                let pathLeafLower = (d.path || "").split(' > ').pop().trim().toLowerCase();
+                let matchesDiff = (cwDiff === "Mixed") || (docLevelLower === targetDiffLower) || (pathLeafLower === targetDiffLower);
+
+                if (matchesDiff) {
                     docsMap.set(doc.id, { id: doc.id, ...d });
                 }
             });
@@ -1100,7 +1280,7 @@ async function cwLaunch() {
         let allDocs = Array.from(docsMap.values());
 
         if (allDocs.length === 0) {
-            mc.innerHTML = `<div class="card page-transition" style="text-align:center; padding: 40px 20px;"><h2 class="section-title" style="justify-content:center;">No Questions Found</h2><p style="color:var(--text-muted);">No MCQs found matching your selected subjects/chapters and difficulty (${cwDiff}).</p><button class="btn-exam" onclick="cwStep2()" style="margin-top:20px; background:#0d1527; border-color:var(--border-color);">&larr; Adjust Filters</button></div>`;
+            mc.innerHTML = `<div class="card page-transition cw-wide-card" style="text-align:center; padding: 40px 20px;"><h2 class="section-title" style="justify-content:center;">No Questions Found</h2><p style="color:var(--text-muted);">No MCQs found matching your selected chapters and difficulty (${cwDiff}).</p><button class="btn-exam" onclick="cwStep2()" style="margin-top:20px; background:#0d1527; border-color:var(--border-color);">&larr; Adjust Filters</button></div>`;
             return;
         }
 
@@ -1116,11 +1296,10 @@ async function cwLaunch() {
         userAnswers = {};
         timeSpent = {};
 
-        document.body.classList.add('hide-bottom-bar');
         if(typeof renderQuizInterface === 'function') renderQuizInterface();
         if(typeof startQuestionTimer === 'function') startQuestionTimer();
     } catch(err) {
-        mc.innerHTML = `<div class="card"><h2 class="section-title" style="color:var(--wrong-red);">Error</h2><p>${err.message}</p><button class="btn-exam" onclick="cwStep2()">&larr; Back</button></div>`;
+        mc.innerHTML = `<div class="card cw-wide-card"><h2 class="section-title" style="color:var(--wrong-red);">Error</h2><p>${err.message}</p><button class="btn-exam" onclick="cwStep2()">&larr; Back</button></div>`;
     }
 }
 
@@ -1221,7 +1400,7 @@ async function _initiateBookmarkQuiz() {
         html += `</div>`;
         mc.innerHTML = html;
 
-        const mathDelims = [ {left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}, {left: '\\(', right: '\\)', display: false}, {left: '[', right: ']', display: true} ];
+        const mathDelims = [ {left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}, {left: '\\(', right: '\\)', display: false}, {left: '\\[', right: '\\]', display: true} ];
         allDocs.forEach(q => {
             let elQ = document.getElementById('bmQ_'+q.id); if(elQ && typeof renderMathInElement === 'function') renderMathInElement(elQ, { delimiters: mathDelims, throwOnError: false });
             ['A','B','C','D'].forEach(opt => {
@@ -1266,7 +1445,6 @@ async function loadGlobalRating() {
     try {
         let ratingsMap = new Map();
 
-        // Check platform_feedback
         try {
             const pfSnap = await db.collection("platform_feedback").limit(200).get();
             pfSnap.forEach(doc => {
@@ -1282,7 +1460,6 @@ async function loadGlobalRating() {
             });
         } catch (e) {}
 
-        // Also check users collection
         try {
             const usersSnap = await db.collection("users").limit(200).get();
             usersSnap.forEach(doc => {
