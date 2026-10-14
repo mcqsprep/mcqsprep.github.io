@@ -11,14 +11,14 @@ window.addEventListener('beforeinstallprompt', (e) => {
     const btn2 = document.getElementById('installAppBtnMobile');
     
     if (!window.matchMedia('(display-mode: standalone)').matches && window.navigator.standalone !== true) {
-        if (btn1) btn1.style.display = 'flex';
-        if (btn2) btn2.style.display = 'flex';
+        if (btn1) btn1.style.display = 'inline-flex';
+        if (btn2) btn2.style.display = 'inline-flex';
     }
 });
 
 function installPWA() {
     if (!deferredPrompt) {
-        showNotification("To install: Tap your browser menu (or Share icon on iOS) and select 'Add to Home Screen'.");
+        showNotification("📲 To install: Tap your browser menu (⋮ or Share) and select 'Install App' or 'Add to Home Screen'.");
         return;
     }
     deferredPrompt.prompt();
@@ -39,23 +39,35 @@ if ('serviceWorker' in navigator) {
     });
 }
 
-// Upper Back Button Visibility & Smart Action Logic
+// Upper Back Button Visibility & Smart Action Logic + Clean Install Button Upgrade
 function handlePCBackButton() {
     const backBtn = document.querySelector('.pc-back-btn');
-    if (!backBtn) return;
+    if (backBtn) {
+        backBtn.onclick = function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            if (typeof goBack === 'function') goBack();
+            else window.history.back();
+        };
 
-    backBtn.onclick = function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        if (typeof goBack === 'function') goBack();
-        else window.history.back();
-    };
+        const hash = window.location.hash || '';
+        if (hash === '' || hash === '#/' || hash === '#/home') {
+            backBtn.style.display = 'none';
+        } else {
+            backBtn.style.display = 'flex';
+        }
+    }
 
-    const hash = window.location.hash || '';
-    if (hash === '' || hash === '#/' || hash === '#/home') {
-        backBtn.style.display = 'none';
-    } else {
-        backBtn.style.display = 'flex';
+    // Upgrade mobile & desktop install buttons with clean text
+    const mobInstall = document.getElementById('installAppBtnMobile');
+    if (mobInstall && !mobInstall.dataset.upgraded) {
+        mobInstall.dataset.upgraded = 'true';
+        mobInstall.innerHTML = `<span style="font-size:13px;">⬇</span> <span>Install App</span>`;
+    }
+    const pcInstall = document.getElementById('installAppBtn');
+    if (pcInstall && !pcInstall.dataset.upgraded) {
+        pcInstall.dataset.upgraded = 'true';
+        pcInstall.innerHTML = `<span style="font-size:13px;">⬇</span> <span>Install App</span>`;
     }
 }
 window.addEventListener('hashchange', handlePCBackButton);
@@ -74,6 +86,86 @@ styleSheet.innerHTML = `
 
     /* Keep upper back button accessible on both desktop and mobile when inside pages */
     .pc-back-btn.hide-on-mobile { display: flex; }
+
+    /* 🟢 CLEAN, COLORED & GLOWING INSTALL BUTTON (Mobile Web & PC) */
+    @keyframes installPulseGlow {
+        0% { box-shadow: 0 0 10px rgba(16, 185, 129, 0.45), 0 0 20px rgba(6, 182, 212, 0.25); }
+        50% { box-shadow: 0 0 18px rgba(16, 185, 129, 0.85), 0 0 30px rgba(6, 182, 212, 0.5); }
+        100% { box-shadow: 0 0 10px rgba(16, 185, 129, 0.45), 0 0 20px rgba(6, 182, 212, 0.25); }
+    }
+    .install-btn, #installAppBtn, #installAppBtnMobile {
+        background: linear-gradient(135deg, #10b981 0%, #06b6d4 100%) !important;
+        color: #04131a !important;
+        border: 1px solid rgba(167, 243, 208, 0.7) !important;
+        border-radius: 999px !important;
+        padding: 6px 15px !important;
+        font-size: 11.5px !important;
+        font-weight: 800 !important;
+        letter-spacing: 0.4px !important;
+        text-transform: uppercase !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 6px !important;
+        cursor: pointer !important;
+        animation: installPulseGlow 2.4s infinite ease-in-out !important;
+        transition: transform 0.2s ease !important;
+        white-space: nowrap !important;
+    }
+    .install-btn:hover, #installAppBtn:hover, #installAppBtnMobile:hover {
+        transform: translateY(-1px) scale(1.03) !important;
+    }
+    .install-btn:active, #installAppBtn:active, #installAppBtnMobile:active {
+        transform: scale(0.96) !important;
+    }
+
+    /* 🟡 GLOWING CUSTOM PRACTICE HERO CARD */
+    .card.setup-hero-card {
+        border: 1.5px solid rgba(253, 184, 19, 0.65) !important;
+        border-left: 5px solid #fdb813 !important;
+        background: linear-gradient(145deg, rgba(253, 184, 19, 0.14) 0%, rgba(13, 21, 39, 0.96) 75%) !important;
+        box-shadow: 0 0 22px rgba(253, 184, 19, 0.22), inset 0 0 24px rgba(253, 184, 19, 0.06) !important;
+    }
+
+    /* 🌈 COLORED & GLOWING TOPIC BOXES (.category-tile.colored-tile) */
+    .category-tile.colored-tile {
+        background: linear-gradient(155deg, var(--topic-bg, rgba(253,184,19,0.12)) 0%, rgba(14, 21, 38, 0.96) 80%) !important;
+        border: 1.5px solid var(--topic-border, rgba(253,184,19,0.55)) !important;
+        box-shadow: 0 4px 18px var(--topic-glow, rgba(253,184,19,0.22)), inset 0 0 15px var(--topic-bg, rgba(253,184,19,0.08)) !important;
+        transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease !important;
+    }
+    .category-tile.colored-tile:hover,
+    .category-tile.colored-tile:active {
+        border-color: var(--topic-color, #fdb813) !important;
+        box-shadow: 0 6px 26px var(--topic-glow, rgba(253,184,19,0.4)), 0 0 10px var(--topic-border, rgba(253,184,19,0.5)), inset 0 0 20px var(--topic-bg, rgba(253,184,19,0.14)) !important;
+        transform: translateY(-2px) !important;
+    }
+    .category-tile.colored-tile .cat-icon {
+        background: var(--topic-bg, rgba(253,184,19,0.18)) !important;
+        color: var(--topic-color, #fdb813) !important;
+        border: 1px solid var(--topic-border, rgba(253,184,19,0.45)) !important;
+        box-shadow: 0 0 12px var(--topic-glow, rgba(253,184,19,0.3)) !important;
+    }
+    .category-tile.colored-tile .cat-text {
+        color: #ffffff !important;
+        text-shadow: 0 1px 8px rgba(0, 0, 0, 0.6) !important;
+    }
+
+    /* 🌟 COLORED & GLOWING QUICK LINKS / ESSENTIAL PRACTICE (.action-link.colored-link) */
+    .action-link.colored-link {
+        background: linear-gradient(135deg, var(--topic-bg, rgba(168,85,247,0.14)) 0%, rgba(14, 21, 38, 0.96) 85%) !important;
+        border: 1.5px solid var(--topic-border, rgba(168,85,247,0.5)) !important;
+        border-left: 4px solid var(--topic-color, #a855f7) !important;
+        border-radius: 14px !important;
+        margin-bottom: 12px !important;
+        box-shadow: 0 4px 15px var(--topic-glow, rgba(168,85,247,0.2)) !important;
+        transition: transform 0.2s ease, box-shadow 0.2s ease !important;
+    }
+    .action-link.colored-link:hover,
+    .action-link.colored-link:active {
+        border-color: var(--topic-color, #a855f7) !important;
+        box-shadow: 0 6px 22px var(--topic-glow, rgba(168,85,247,0.38)) !important;
+        transform: translateX(3px) !important;
+    }
     
     #gemini-chat-history::-webkit-scrollbar { width: 6px; }
     #gemini-chat-history::-webkit-scrollbar-track { background: transparent; }
@@ -97,7 +189,7 @@ styleSheet.innerHTML = `
     .cw-multi-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; max-height: 280px; overflow-y: auto; padding: 14px; background: #080d17; border: 1px solid var(--border-color); border-radius: 12px; }
     .cw-check-card { display: flex; align-items: center; gap: 10px; padding: 12px 14px; background: #0d1527; border: 1px solid var(--border-color); border-radius: 10px; cursor: pointer; font-size: 13.5px; font-weight: 600; color: #d1d5db; transition: 0.2s; user-select: none; box-sizing: border-box; }
     .cw-check-card:hover { border-color: rgba(253, 184, 19, 0.5); color: #fff; background: #111d35; }
-    .cw-check-card.selected { background: rgba(253, 184, 19, 0.14); border-color: var(--primary-yellow); color: #fff; }
+    .cw-check-card.selected { background: rgba(253, 184, 19, 0.14); border-color: var(--primary-yellow); color: #fff; box-shadow: 0 0 12px rgba(253, 184, 19, 0.2); }
     .cw-check-card input[type="checkbox"] { accent-color: var(--primary-yellow); width: 17px; height: 17px; margin: 0; cursor: pointer; flex-shrink: 0; }
 
     /* Live Chapter Search Bar & Suggestions Dropdown */
@@ -110,7 +202,7 @@ styleSheet.innerHTML = `
 
     @media (max-width: 768px) {
         .cw-wide-card { padding: 18px 14px !important; }
-        .cw-exam-grid { grid-template-columns: 1fr; gap: 10px; }
+        .cw-exam-grid { grid-template-columns: 1fr; gap: 12px; }
         .cw-multi-grid { grid-template-columns: 1fr; max-height: 230px; padding: 10px; gap: 8px; }
         .cw-check-card { padding: 11px 12px; font-size: 13px; }
     }
