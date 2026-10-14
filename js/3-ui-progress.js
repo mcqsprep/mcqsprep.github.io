@@ -67,7 +67,6 @@ function getSmartIcon(text, customIcon = null) {
     return null;
 }
 
-// Single-field query so PDF folders never trigger a composite index error
 async function _renderPdfResources(checkPath, niceTitle) {
     const mc = document.getElementById('dynamic-content');
     if (!mc) return;
@@ -546,7 +545,7 @@ function drawAccuracyChart(dataPoints) {
     });
 }
 
-// FIXED (Image 5): Only signed-in users can access Leaderboard, and requires >= 100 MCQs attempted in category
+// Leaderboard restricted to signed-in users with >= 100 MCQs attempted in category
 function _renderLeaderboardOptions() { 
     document.getElementById('breadcrumb-text').innerText = "Home / Leaderboard"; 
     const mc = document.getElementById('dynamic-content');
@@ -616,7 +615,7 @@ async function fetchLiveLeaderboard(category) {
             if (!matchesCategory) return;
 
             let uid = d.userId;
-            if (!uid) return; // Only signed-in users with a valid UID
+            if (!uid) return;
 
             let attemptedInQuiz = d.attemptedQuestions !== undefined
                 ? Number(d.attemptedQuestions)
@@ -645,7 +644,6 @@ async function fetchLiveLeaderboard(category) {
         let myStats = statsByUser[currentUser.uid] || { totalAttempted: 0, totalScore: 0 };
         let myAttempted = myStats.totalAttempted || 0;
 
-        // Enforce minimum 100 MCQs attempted for the signed-in user to see their rank
         if (myAttempted < 100) {
             let remaining = Math.max(0, 100 - myAttempted);
             let pct = Math.min(100, Math.round((myAttempted / 100) * 100));
@@ -675,7 +673,6 @@ async function fetchLiveLeaderboard(category) {
             return;
         }
 
-        // Only rank users who have completed >= 100 MCQs in this category
         let qualifiedRankings = Object.values(statsByUser)
             .filter(u => u.totalAttempted >= 100)
             .map(u => ({
@@ -729,7 +726,7 @@ async function fetchLiveLeaderboard(category) {
 let cwPath = "";
 let cwSelectedSubjects = [];
 let cwSelectedChapters = [];
-let cwSubjectCatalog = []; // [{ id, label, fullPath, chapters: [{ label, fullPath }] }]
+let cwSubjectCatalog = [];
 let cwDiff = "Mixed";
 let cwLimit = 25;
 
@@ -766,7 +763,6 @@ function cwSetPath(path) {
     cwStep2();
 }
 
-// Builds the hierarchy of Subjects and their nested Chapters for the chosen Exam Category
 function buildCwCatalogForExam(examKey) {
     let pdfKeywords = ["ncert", "book", "pyq", "previous", "paper", "pdf", "notes", "material", "syllabus"];
     function isPdfNode(fullKey, name) {
@@ -778,7 +774,7 @@ function buildCwCatalogForExam(examKey) {
         return pdfKeywords.some(k => lower.includes(k)) && !lower.includes('mcq') && !lower.includes('practice') && !lower.includes('mock');
     }
 
-    let subjectsMap = new Map(); // subjectFullPath -> { label, fullPath, nodeObj, chaptersMap }
+    let subjectsMap = new Map();
 
     function registerSubject(fullPath, label, nodeObj) {
         if (!subjectsMap.has(fullPath)) {
@@ -808,7 +804,6 @@ function buildCwCatalogForExam(examKey) {
         }
     });
 
-    // Also scan customTopicTypes for any dynamically created subjects or chapters
     let examPrefix = examKey + " > ";
     Object.keys(customTopicTypes).forEach(dbKey => {
         if (!dbKey.startsWith(examPrefix)) return;
@@ -832,7 +827,6 @@ function buildCwCatalogForExam(examKey) {
         }
     });
 
-    // For each subject, collect its chapters (direct child folders or deeper sub-chapters)
     subjectsMap.forEach((subj) => {
         function collectChapters(obj, currentFullPath, prefixLabel = "") {
             if (!obj || typeof obj !== 'object') return;
@@ -849,13 +843,12 @@ function buildCwCatalogForExam(examKey) {
         }
         collectChapters(subj.nodeObj, subj.fullPath);
 
-        // Also check customTopicTypes for chapters under this subject
         let sPref = subj.fullPath + " > ";
         Object.keys(customTopicTypes).forEach(dbKey => {
             if (dbKey.startsWith(sPref)) {
                 let leafName = dbKey.split(' > ').pop();
                 if (!isPdfNode(dbKey, leafName) && !subj.chaptersMap.has(dbKey)) {
-                    let rel Label = dbKey.slice(sPref.length).split(' > ').map(s => s.replace(/^\d+\.\s*/, '')).join(' / ');
+                    let relLabel = dbKey.slice(sPref.length).split(' > ').map(s => s.replace(/^\d+\.\s*/, '')).join(' / ');
                     subj.chaptersMap.set(dbKey, { label: relLabel, fullPath: dbKey });
                 }
             }
@@ -879,7 +872,6 @@ function cwStep2() {
 
     cwSubjectCatalog = buildCwCatalogForExam(cwPath);
     if (cwSelectedSubjects.length === 0 && cwSubjectCatalog.length > 0) {
-        // Default: select the first subject so chapters are immediately visible
         cwSelectedSubjects = [cwSubjectCatalog[0].fullPath];
     }
 
@@ -897,7 +889,6 @@ function cwStep2() {
     <div class="card page-transition" style="max-width: 720px; margin: 0 auto; padding: 28px;">
         <h2 class="section-title" style="margin-bottom: 22px; color:var(--primary-yellow); justify-content:center;">🎯 Customize Your ${cwPath.replace(/^\d+\.\s*/, '')} Test</h2>
         
-        <!-- 1. MULTI-SUBJECT SELECTOR -->
         <div style="margin-bottom: 22px;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
                 <label style="color:var(--text-muted); font-size:12px; font-weight:bold; text-transform:uppercase;">1. Select Subject(s) (Multiple Allowed)</label>
@@ -911,7 +902,6 @@ function cwStep2() {
             </div>
         </div>
 
-        <!-- 2. MULTI-CHAPTER SELECTOR (DYNAMIC UNDER SELECTED SUBJECTS) -->
         <div style="margin-bottom: 22px;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
                 <label style="color:var(--text-muted); font-size:12px; font-weight:bold; text-transform:uppercase;">2. Select Chapters Under Selected Subject(s)</label>
@@ -923,7 +913,6 @@ function cwStep2() {
             <div class="cw-multi-grid" id="cwChaptersContainer"></div>
         </div>
         
-        <!-- 3. DIFFICULTY & 4. QUESTION COUNT (20 - 250) -->
         <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 26px;">
             <div>
                 <label style="display:block; color:var(--text-muted); margin-bottom:8px; font-size:12px; font-weight:bold; text-transform:uppercase;">3. Difficulty Level</label>
@@ -969,7 +958,6 @@ function cwToggleSubject(cbEl, idx) {
     } else {
         cwSelectedSubjects = cwSelectedSubjects.filter(p => p !== val);
         if (card) card.classList.remove('selected');
-        // Remove chapters belonging to unselected subject
         cwSelectedChapters = cwSelectedChapters.filter(ch => !ch.startsWith(val + " > ") && ch !== val);
     }
     cwRenderChaptersList();
@@ -1014,7 +1002,6 @@ function cwRenderChaptersList() {
                 });
             });
         } else {
-            // If the subject has no nested sub-chapter folders, offer the subject's direct question bank
             availableChapters.push({
                 subjLabel: subj.label,
                 label: `All ${subj.label} Questions`,
@@ -1023,7 +1010,6 @@ function cwRenderChaptersList() {
         }
     });
 
-    // Auto-select all available chapters for newly selected subjects if none selected yet
     let validPaths = new Set(availableChapters.map(c => c.fullPath));
     cwSelectedChapters = cwSelectedChapters.filter(p => validPaths.has(p));
     if (cwSelectedChapters.length === 0 && availableChapters.length > 0) {
@@ -1096,7 +1082,6 @@ async function cwLaunch() {
     try {
         let docsMap = new Map();
 
-        // Single-field range query on "path" per selected target — never triggers a composite index error!
         await Promise.all(targetPaths.map(async (p) => {
             const snap = await db.collection("content")
                 .where("path", ">=", p)
@@ -1119,7 +1104,6 @@ async function cwLaunch() {
             return;
         }
 
-        // Fisher-Yates shuffle
         for (let i = allDocs.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
             [allDocs[i], allDocs[j]] = [allDocs[j], allDocs[i]];
@@ -1237,7 +1221,7 @@ async function _initiateBookmarkQuiz() {
         html += `</div>`;
         mc.innerHTML = html;
 
-        const mathDelims = [ {left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}, {left: '\\(', right: '\\)', display: false}, {left: '\\[', right: '\\]', display: true} ];
+        const mathDelims = [ {left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}, {left: '\\(', right: '\\)', display: false}, {left: '[', right: ']', display: true} ];
         allDocs.forEach(q => {
             let elQ = document.getElementById('bmQ_'+q.id); if(elQ && typeof renderMathInElement === 'function') renderMathInElement(elQ, { delimiters: mathDelims, throwOnError: false });
             ['A','B','C','D'].forEach(opt => {
@@ -1256,7 +1240,6 @@ let currentRating = 0;
 let savedUserRating = 0;
 let savedUserFeedback = "";
 
-// Syncs the user's previous rating to the UI and navbar button
 function syncUserRatingUI(rating, feedbackText = "") {
     let r = Number(rating);
     if (!r || r < 1 || r > 5) return;
@@ -1267,50 +1250,62 @@ function syncUserRatingUI(rating, feedbackText = "") {
 
     updateStarUI(r);
 
-    // Update the navbar Rate button to show the user has already rated
     const rateBtn = document.querySelector('.nav-rating-badge button');
     if (rateBtn) {
         rateBtn.innerText = `Rated ${r}★`;
     }
 }
 
-// Loads both the user's saved rating and the global average rating
 async function loadGlobalRating() {
-    // 1. Restore cached user rating immediately
     const localR = Number(localStorage.getItem('mcqs_user_rating') || 0);
     const localFb = localStorage.getItem('mcqs_user_feedback') || '';
     if (localR >= 1 && localR <= 5) {
         syncUserRatingUI(localR, localFb);
     }
 
-    // 2. Calculate global average from users collection (and platform_feedback if accessible)
     try {
-        let sum = 0; let count = 0;
-        const usersSnap = await db.collection("users").limit(200).get();
-        usersSnap.forEach(doc => {
-            let d = doc.data();
-            let r = Number(d.rating);
-            if (r >= 1 && r <= 5) { sum += r; count++; }
-            if (currentUser && doc.id === currentUser.uid && r >= 1 && r <= 5) {
-                syncUserRatingUI(r, d.feedback || '');
-            }
-        });
+        let ratingsMap = new Map();
 
-        if (count === 0 && savedUserRating > 0) {
-            sum = savedUserRating;
-            count = 1;
-        }
+        // Check platform_feedback
+        try {
+            const pfSnap = await db.collection("platform_feedback").limit(200).get();
+            pfSnap.forEach(doc => {
+                let d = doc.data();
+                let uid = d.studentId || d.userId || doc.id;
+                let r = Number(d.rating);
+                if (r >= 1 && r <= 5) {
+                    ratingsMap.set(uid, r);
+                    if (currentUser && uid === currentUser.uid) {
+                        syncUserRatingUI(r, d.feedback || d.text || '');
+                    }
+                }
+            });
+        } catch (e) {}
+
+        // Also check users collection
+        try {
+            const usersSnap = await db.collection("users").limit(200).get();
+            usersSnap.forEach(doc => {
+                let d = doc.data();
+                let r = Number(d.rating);
+                if (r >= 1 && r <= 5) {
+                    ratingsMap.set(doc.id, r);
+                    if (currentUser && doc.id === currentUser.uid) {
+                        syncUserRatingUI(r, d.feedback || '');
+                    }
+                }
+            });
+        } catch (e) {}
+
+        let sum = 0;
+        ratingsMap.forEach(val => { sum += val; });
+        let count = ratingsMap.size;
 
         if (count > 0) {
             const el = document.getElementById('global-rating-display');
             if (el) el.innerText = (sum / count).toFixed(1);
         }
-    } catch (e) {
-        if (savedUserRating > 0) {
-            const el = document.getElementById('global-rating-display');
-            if (el) el.innerText = savedUserRating.toFixed(1);
-        }
-    }
+    } catch (e) {}
 }
 
 function openFeedbackModal() {
@@ -1342,7 +1337,6 @@ function updateStarUI(rating) {
     }
 }
 
-// FIXED (Image 1): Saves to users/{uid} (allowed by Firestore rules) + localStorage fallback so it never fails!
 async function submitPlatformFeedback() {
     const text = document.getElementById('platformFeedbackText').value.trim();
     if(currentRating === 0) { showNotification("⚠️ Please select a star rating (1 to 5)"); return; }
@@ -1353,45 +1347,33 @@ async function submitPlatformFeedback() {
 
     try {
         let activeUser = currentUser || window.currentUser;
-        let savedToCloud = false;
-
-        // 1. Primary save: write directly to the authenticated user's document in "users"
-        if (activeUser && activeUser.uid) {
-            try {
-                await db.collection("users").doc(activeUser.uid).set({
-                    rating: currentRating,
-                    feedback: text,
-                    feedbackUpdatedAt: firebase.firestore.FieldValue.serverTimestamp()
-                }, { merge: true });
-                savedToCloud = true;
-            } catch (userErr) {
-                console.warn("User doc rating write warning:", userErr.message);
-            }
-        }
-
-        // 2. Secondary sync: attempt writing to platform_feedback (ignored if restricted by rules)
         let uid = activeUser ? activeUser.uid : ('guest_' + Date.now());
-        try {
-            await db.collection("platform_feedback").doc(uid).set({
+
+        await db.collection("platform_feedback").doc(uid).set({
+            rating: currentRating,
+            feedback: text,
+            text: text,
+            studentId: uid,
+            userId: uid,
+            studentName: activeUser ? (activeUser.displayName || activeUser.email) : 'Guest Student',
+            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        }, { merge: true });
+
+        if (activeUser && activeUser.uid) {
+            await db.collection("users").doc(activeUser.uid).set({
                 rating: currentRating,
                 feedback: text,
-                text: text,
-                studentId: uid,
-                userId: uid,
-                studentName: activeUser ? (activeUser.displayName || activeUser.email) : 'Guest Student',
-                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                feedbackUpdatedAt: firebase.firestore.FieldValue.serverTimestamp()
             }, { merge: true });
-            savedToCloud = true;
-        } catch (pfErr) {}
+        }
 
-        // 3. Always persist locally and update UI immediately
         syncUserRatingUI(currentRating, text);
         await loadGlobalRating();
 
         showNotification("✅ Thank you! Your rating & feedback have been saved.");
         closeFeedbackModal();
     } catch(e) {
-        showNotification("❌ Error saving feedback: " + e.message);
+        showNotification("❌ Failed to submit feedback: " + e.message);
     }
     if (btn) { btn.innerText = savedUserRating > 0 ? "Update Rating & Feedback" : "Submit"; btn.disabled = false; }
 }
@@ -1444,7 +1426,6 @@ async function submitReport() {
     }
 }
 
-// User Reports Status Modal
 async function openUserReportsModal() {
     const modal = document.getElementById('userReportsModal');
     const listEl = document.getElementById('user-reports-list');
@@ -1515,7 +1496,6 @@ function closeUserReportsModal() {
     if (modal) modal.style.display = 'none';
 }
 
-// Streak Modal
 function openStreakModal() {
     const streakDisplay = document.getElementById('nav-streak-display');
     const modalCount = document.getElementById('modalStreakCount');
@@ -1526,7 +1506,6 @@ function closeStreakModal() {
     document.getElementById('streakModal').style.display = 'none';
 }
 
-// Search Engine
 function openSearch() {
     const wrapper = document.getElementById('searchWrapper');
     if(wrapper) {
