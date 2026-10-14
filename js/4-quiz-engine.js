@@ -16,6 +16,9 @@ const QUIZ_MATH_DELIMS = [
 ];
 
 async function _initiateQuizEngine() {
+    document.body.classList.add('hide-ai-btn');
+    document.body.classList.add('hide-bottom-bar');
+
     const mc = document.getElementById('dynamic-content');
     let targetPath = currentPath.join(" > ");
     if (!targetPath) {
@@ -118,6 +121,9 @@ async function flagQuestionDoubt(qId) {
 }
 
 function renderQuizInterface() {
+    document.body.classList.add('hide-ai-btn');
+    document.body.classList.add('hide-bottom-bar');
+
     const mc = document.getElementById('dynamic-content');
     let q = currentQuestions[currentIndex];
     if(!q) return;
