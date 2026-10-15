@@ -49,7 +49,7 @@ const adminStyles = `
         background: linear-gradient(90deg, #fdb813, #f97316);
         border-radius: 10px;
         box-shadow: 0 0 10px rgba(253, 184, 19, 0.45);
-        cursor: grab;
+        cursor: pointer;
     }
     .admin-nav-pills::-webkit-scrollbar-thumb:hover {
         background: #fdb813;
@@ -100,7 +100,7 @@ function _renderAdminLogin() {
         <h2 style="margin-top: 0;">Restricted Access</h2>
         <p style="color: var(--text-muted); margin-bottom: 25px; font-size: 14px;">Please enter the master password to access the MCQsPrep Control Center.</p>
         <input type="password" id="adminPassInput" class="input-field" style="margin: 0 auto 20px auto; text-align: center; font-size: 18px; letter-spacing: 2px;" placeholder="••••••••" onkeydown="if(event.key==='Enter') verifyAdmin()">
-        <button id="loginBtn" class="btn-exam" onclick="verifyAdmin()" style="width: 100%; max-width: 300px; background-color: var(--primary-yellow); color: black; border: none; font-size: 16px;">Authenticate</button>
+        <button id="loginBtn" class="btn-exam btn-yellow-glow" onclick="verifyAdmin()" style="width: 100%; max-width: 300px; font-size: 16px;">Authenticate</button>
     </div>`; 
 }
 
@@ -190,7 +190,6 @@ async function _renderAdminPanel() {
                 <div class="admin-pill ${adminCurrentTab === 'settings' ? 'active' : ''}" onclick="switchAdminTab('settings')">🛠️ Settings</div>
             </div>
             
-            <!-- 1. UPLOAD TAB -->
             <div id="admin-upload-view" style="display:${adminCurrentTab === 'upload' ? 'block' : 'none'};">
                 <div class="admin-panel-card">
                     <h3 class="admin-section-header"><span>🎯</span> 1. Select Target Destination</h3>
@@ -258,14 +257,13 @@ async function _renderAdminPanel() {
                         </div>
                         
                         <div style="display: flex; gap: 15px; margin-top: 30px; border-top: 1px solid #2b2b36; padding-top: 20px;">
-                            <button id="uploadBtn" class="btn-exam" onclick="processAdminUpload()" style="background-color: var(--correct-green); color: white; border: none; flex: 2; font-size: 16px;">☁️ Upload & Save</button>
+                            <button id="uploadBtn" class="btn-exam btn-green-glow" onclick="processAdminUpload()" style="flex: 2; font-size: 16px;">☁️ Upload & Save</button>
                             <button class="btn-exam" onclick="clearAdminUploadForm(false)" style="background-color: transparent; color: var(--wrong-red); border: 1px solid var(--wrong-red); flex: 1;">Clear Fields</button>
                         </div>
                     </div>
                 </div>
             </div>
             
-            <!-- 2. CREATE TOPIC TAB (100% AUTOMATIC STUDY ICON ENGINE) -->
             <div id="admin-topics-view" style="display:${adminCurrentTab === 'topics' ? 'block' : 'none'};">
                 <div class="admin-panel-card" style="border-color: rgba(253, 184, 19, 0.4); background: rgba(253, 184, 19, 0.02);">
                     <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; border-bottom: 1px solid rgba(253, 184, 19, 0.2); padding-bottom: 15px; margin-bottom: 20px;">
@@ -304,11 +302,10 @@ async function _renderAdminPanel() {
                             <option value="pdf">📄 PDF / Image Material (End Topic)</option>
                         </select>
                     </div>
-                    <button class="btn-exam" onclick="createCustomTopic()" style="background-color:var(--primary-yellow); color:black; border:none; width:100%; max-width:250px; margin-top: 15px;">+ Create Folder</button>
+                    <button class="btn-exam btn-yellow-glow" onclick="createCustomTopic()" style="width:100%; max-width:250px; margin-top: 15px;">+ Create Folder</button>
                 </div>
             </div>
 
-            <!-- 3. CLEAN EDIT & DELETE TOPICS / SUBTOPICS TAB -->
             <div id="admin-edit-topics-view" style="display:${adminCurrentTab === 'edit-topics' ? 'block' : 'none'};">
                 <div class="admin-panel-card">
                     <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; border-bottom:1px solid #2b2b36; padding-bottom:15px; margin-bottom:20px;">
@@ -354,7 +351,6 @@ async function _renderAdminPanel() {
                 <div id="admin-topic-list-container"></div>
             </div>
 
-            <!-- 4. MANUAL QUICK LINKS & ESSENTIAL PRACTICE MANAGER TAB -->
             <div id="admin-sidebar-links-view" style="display:${adminCurrentTab === 'sidebar-links' ? 'block' : 'none'};">
                 <div class="admin-panel-card" style="border-color:rgba(168,85,247,0.4);">
                     <h3 class="admin-section-header" style="color:#c084fc;">🔗 Add Existing Topic / Subtopic to Home Sidebar</h3>
@@ -382,7 +378,7 @@ async function _renderAdminPanel() {
                         </div>
                     </div>
 
-                    <button class="btn-exam" onclick="addTopicToSidebarSection()" style="background:var(--primary-yellow); color:#000; border:none; padding:12px 24px; font-size:14px;">+ Add to Sidebar Section</button>
+                    <button class="btn-exam btn-yellow-glow" onclick="addTopicToSidebarSection()" style="padding:12px 24px; font-size:14px;">+ Add to Sidebar Section</button>
                 </div>
 
                 <div class="admin-grid-2">
@@ -411,7 +407,6 @@ async function _renderAdminPanel() {
                 </div>
             </div>
 
-            <!-- 5. MANUAL CUSTOM PRACTICE (SUBJECTS & CHAPTERS) MANAGER TAB -->
             <div id="admin-custom-practice-view" style="display:${adminCurrentTab === 'custom-practice' ? 'block' : 'none'};">
                 <div class="admin-panel-card" style="border-color:rgba(253,184,19,0.4);">
                     <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; border-bottom:1px solid #2b2b36; padding-bottom:15px; margin-bottom:20px;">
@@ -420,7 +415,7 @@ async function _renderAdminPanel() {
                             <span style="font-size:12px; color:var(--text-muted);">Manually add or delete existing Subjects and Chapters for each Exam Category in Custom Practice.</span>
                         </div>
                         <div style="display:flex; gap:10px; flex-wrap:wrap;">
-                            <button class="btn-exam" onclick="autoImportExamToCustomPractice()" style="background:rgba(16,185,129,0.15); color:var(--correct-green); border:1px solid rgba(16,185,129,0.4); padding:7px 14px; font-size:12px;">⚡ Auto-Import All Subjects & Chapters</button>
+                            <button class="btn-exam" onclick="autoImportExamToCustomPractice()" style="background:rgba(16,185,129,0.15); color:var(--correct-green); border:1px solid rgba(16,185,129,0.4); padding:7px 14px; font-size:12px;">⚡ Auto-Import Existing Subjects & Chapters</button>
                             <button class="btn-exam" onclick="clearExamCustomPracticeConfig()" style="background:rgba(239,68,68,0.15); color:var(--wrong-red); border:1px solid rgba(239,68,68,0.4); padding:7px 14px; font-size:12px;">🗑️ Delete All for Exam</button>
                         </div>
                     </div>
@@ -431,19 +426,17 @@ async function _renderAdminPanel() {
                     </div>
 
                     <div class="admin-grid-2">
-                        <!-- 2A: Add Existing Subject Box -->
                         <div style="background:#121218; border:1px solid #2b2b36; border-radius:12px; padding:18px;">
                             <label class="admin-label" style="color:var(--primary-yellow);">2A. Add Existing Subject Folder</label>
                             <p style="font-size:12px; color:var(--text-muted); margin-top:0; margin-bottom:12px;">Pick an existing subject folder under the selected exam to add as a Subject.</p>
                             <div id="admin-cp-subj-selectors" style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:12px;"></div>
                             <div style="font-size:12px; color:#ccc; margin-bottom:12px;"><b>Selected Subject Path:</b> <span id="admin-cp-subj-path-text" style="color:var(--primary-yellow);">None</span></div>
                             <div style="display:flex; gap:10px; flex-wrap:wrap;">
-                                <button class="btn-exam" onclick="addSubjectToCustomPractice(false)" style="background:var(--primary-yellow); color:#000; border:none; padding:9px 16px; font-size:12.5px;">+ Add Subject Only</button>
+                                <button class="btn-exam btn-yellow-glow" onclick="addSubjectToCustomPractice(false)" style="padding:9px 16px; font-size:12.5px;">+ Add Subject Only</button>
                                 <button class="btn-exam" onclick="addSubjectToCustomPractice(true)" style="background:rgba(253,184,19,0.15); color:var(--primary-yellow); border:1px solid var(--primary-yellow); padding:9px 16px; font-size:12.5px;">+ Add Subject & Its Chapters</button>
                             </div>
                         </div>
 
-                        <!-- 2B: Add Existing Chapter Under Subject Box (FIXED: Automatically lists all subjects for the exam!) -->
                         <div style="background:#121218; border:1px solid #2b2b36; border-radius:12px; padding:18px;">
                             <label class="admin-label" style="color:#38bdf8;">2B. Add Existing Chapter Under a Subject</label>
                             <label class="admin-label" style="margin-top:8px;">Target Subject in Custom Practice</label>
@@ -452,7 +445,7 @@ async function _renderAdminPanel() {
                             <label class="admin-label">Select Existing Chapter Folder</label>
                             <div id="admin-cp-chap-selectors" style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:12px;"></div>
                             <div style="font-size:12px; color:#ccc; margin-bottom:12px;"><b>Selected Chapter Path:</b> <span id="admin-cp-chap-path-text" style="color:#38bdf8;">None</span></div>
-                            <button class="btn-exam" onclick="addChapterToCustomPractice()" style="background:#38bdf8; color:#000; border:none; padding:9px 18px; font-size:12.5px;">+ Add Chapter to Subject</button>
+                            <button class="btn-exam" onclick="addChapterToCustomPractice()" style="background:#38bdf8; color:#000; border:none; padding:9px 18px; font-size:12.5px; font-weight:800; box-shadow:0 2px 10px rgba(56,189,248,0.3);">+ Add Chapter to Subject</button>
                         </div>
                     </div>
                 </div>
@@ -460,37 +453,32 @@ async function _renderAdminPanel() {
                 <div id="admin-cp-configured-list"></div>
             </div>
 
-            <!-- 6. MANAGE CONTENT TAB -->
             <div id="admin-manage-view" style="display:${adminCurrentTab === 'manage' ? 'block' : 'none'};">
                 <div class="admin-panel-card">
                     <h3 class="admin-section-header">🔍 Filter & Fetch MCQs / PDFs</h3>
                     <div id="manage-path-selectors" style="display:flex; gap:15px; flex-wrap:wrap; margin-bottom:20px;"></div>
-                    <button class="btn-exam" onclick="loadContentForManagement(false)" style="background:var(--primary-yellow); color:black; border:none; padding:12px 20px; width:100%; max-width:250px; font-size:15px;">Fetch Content</button>
+                    <button class="btn-exam btn-yellow-glow" onclick="loadContentForManagement(false)" style="padding:12px 20px; width:100%; max-width:250px; font-size:15px;">Fetch Content</button>
                 </div>
                 <div id="manage-content-list">
                     <p style="color:var(--text-muted); text-align: center; padding: 40px; border: 1px dashed #333; border-radius: 12px;">Select a folder above and click Fetch to load items.</p>
                 </div>
             </div>
 
-            <!-- 7. REPORTS TAB -->
             <div id="admin-reports-view" style="display:${adminCurrentTab === 'reports' ? 'block' : 'none'};">
-                <button class="btn-exam" onclick="loadAdminReports()" style="margin-bottom:20px; background:var(--primary-yellow); color:black; border:none;">🔄 Refresh Reports</button>
+                <button class="btn-exam btn-yellow-glow" onclick="loadAdminReports()" style="margin-bottom:20px;">🔄 Refresh Reports</button>
                 <div id="reports-list-container"></div>
             </div>
 
-            <!-- 8. USERS TAB -->
             <div id="admin-users-view" style="display:${adminCurrentTab === 'users' ? 'block' : 'none'};">
-                <button class="btn-exam" onclick="loadAdminUsers()" style="margin-bottom:20px; background:var(--primary-yellow); color:black; border:none;">🔄 Refresh Students List</button>
+                <button class="btn-exam btn-yellow-glow" onclick="loadAdminUsers()" style="margin-bottom:20px;">🔄 Refresh Students List</button>
                 <div id="users-table-container" class="admin-panel-card" style="overflow-x:auto; padding: 0;"></div>
             </div>
 
-            <!-- 9. DOUBTS TAB -->
             <div id="admin-doubts-view" style="display:${adminCurrentTab === 'doubts' ? 'block' : 'none'};">
-                <button class="btn-exam" onclick="loadAdminDoubts()" style="margin-bottom:20px; background:var(--primary-yellow); color:black; border:none;">🔄 Refresh Flagged Doubts</button>
+                <button class="btn-exam btn-yellow-glow" onclick="loadAdminDoubts()" style="margin-bottom:20px;">🔄 Refresh Flagged Doubts</button>
                 <div id="doubts-list-container"></div>
             </div>
 
-            <!-- 10. SETTINGS TAB -->
             <div id="admin-settings-view" style="display:${adminCurrentTab === 'settings' ? 'block' : 'none'};">
                 <div class="admin-grid-2">
                     <div class="admin-panel-card" style="margin-bottom: 0;">
@@ -499,7 +487,7 @@ async function _renderAdminPanel() {
                         <input type="password" id="newAdminPass" class="input-field">
                         <label class="admin-label">Confirm Password</label>
                         <input type="password" id="confirmAdminPass" class="input-field">
-                        <button class="btn-exam" onclick="changeAdminPassword()" style="background:var(--primary-yellow); color:black; border:none; width:100%; margin-top: 10px;">Update Password</button>
+                        <button class="btn-exam btn-yellow-glow" onclick="changeAdminPassword()" style="width:100%; margin-top: 10px;">Update Password</button>
                     </div>
 
                     <div class="admin-panel-card" style="margin-bottom: 0; border-color: rgba(76, 175, 80, 0.4);">
@@ -507,7 +495,7 @@ async function _renderAdminPanel() {
                         <p style="color:var(--text-muted); font-size:13px; line-height:1.6; margin-bottom:25px;">
                             Batch indexes existing MCQs with <code>randomKey</code> attributes so the custom quiz engine can perform sub-second random selections at massive scale.
                         </p>
-                        <button id="btnMigrateKeys" class="btn-exam" onclick="runRandomKeyMigration()" style="background:#4CAF50; color:white; border:none; width:100%;">Run Index Migration</button>
+                        <button id="btnMigrateKeys" class="btn-exam btn-green-glow" onclick="runRandomKeyMigration()" style="width:100%;">Run Index Migration</button>
                     </div>
                 </div>
             </div>
@@ -843,7 +831,6 @@ async function saveEditedTopic() {
     let icon = document.getElementById('editTopicIcon').value.trim();
     if(!name) return alert("Folder name is required.");
 
-    // Automatically assign study icon if left blank
     if (!icon && typeof getAutomaticIconForName === 'function') {
         icon = getAutomaticIconForName(name, type);
     }
@@ -1043,15 +1030,12 @@ function renderAdminSidebarConfigLists() {
 
 // ==========================================
 // MANUAL CUSTOM PRACTICE (SUBJECTS & CHAPTERS) MANAGER
-// (FIXED: Target Subject dropdown in 2B automatically lists all subjects for the exam!)
 // ==========================================
 
-// Returns both manually configured subjects AND all existing subjects discovered in the exam tree
 function getAllCandidateSubjectsForExam(examKey) {
     if (!examKey) return [];
     let map = new Map();
 
-    // 1. Include any manually saved subjects in customPracticeConfig first
     let manualList = window.customPracticeConfig?.exams?.[examKey]?.subjects || [];
     manualList.forEach(s => {
         map.set(s.path, {
@@ -1061,7 +1045,6 @@ function getAllCandidateSubjectsForExam(examKey) {
         });
     });
 
-    // 2. Also include all existing subject folders discovered in appData & customTopicTypes for this exam
     if (typeof buildCwCatalogForExam === 'function') {
         let scanned = buildCwCatalogForExam(examKey, true);
         scanned.forEach(s => {
@@ -1075,8 +1058,7 @@ function getAllCandidateSubjectsForExam(examKey) {
         });
     }
 
-    // 3. Also check direct child folders under the exam (in case a custom exam like JEE has custom subfolders)
-    let directChildren = getMergedChildKeysAtPath([examKey]);
+    let directChildren = typeof getMergedChildKeysAtPath === 'function' ? getMergedChildKeysAtPath([examKey]) : [];
     directChildren.forEach(childKey => {
         if (childKey === "MCQs Practice" || childKey === "Mock Test") {
             let subChildren = getMergedChildKeysAtPath([examKey, childKey]);
@@ -1167,7 +1149,6 @@ function handleAdminCpSubjPickChange(event, depth) {
     _buildAdminCpSubjectPickSelectors();
 }
 
-// FIXED (Image 2 Pink Box): Populates Target Subject dropdown with ALL subjects available under the exam
 function _syncAdminCpTargetSubjectDropdown() {
     const selectEl = document.getElementById('adminCpTargetSubjSelect');
     if (!selectEl) return;
@@ -1319,7 +1300,6 @@ async function addChapterToCustomPractice() {
     let subjects = window.customPracticeConfig.exams[adminCpSelectedExam].subjects;
     let subjObj = subjects.find(s => s.path === adminCpTargetSubjectPath);
 
-    // If the selected subject in 2B wasn't registered in customPracticeConfig yet, auto-register it!
     if (!subjObj) {
         let subjLabel = adminCpTargetSubjectPath.split(' > ').pop().replace(/^\d+\.\s*/, '');
         subjObj = {
@@ -1389,6 +1369,8 @@ async function removeChapterFromCustomPractice(subjPath, chapPath) {
 
 async function autoImportExamToCustomPractice() {
     if (!adminCpSelectedExam) return;
+    let savedEntry = window.customPracticeConfig.exams?.[adminCpSelectedExam];
+    if (window.customPracticeConfig.exams) delete window.customPracticeConfig.exams[adminCpSelectedExam];
     let scanned = typeof buildCwCatalogForExam === 'function' ? buildCwCatalogForExam(adminCpSelectedExam, true) : [];
     window.customPracticeConfig.exams = window.customPracticeConfig.exams || {};
     window.customPracticeConfig.exams[adminCpSelectedExam] = {
@@ -1425,8 +1407,8 @@ function renderAdminCpConfiguredList() {
     if (!examCfg || !Array.isArray(examCfg.subjects) || examCfg.subjects.length === 0) {
         container.innerHTML = `
         <div class="admin-panel-card" style="text-align:center; color:#888; padding:30px;">
-            No manual Subjects saved for <b>${adminCpSelectedExam}</b> yet.<br>
-            <span style="font-size:12px;">Use <b>2A</b> or <b>2B</b> above to add existing subjects/chapters manually, or click <b>⚡ Auto-Import All Subjects & Chapters</b>.</span>
+            No manual Subjects configured for <b>${adminCpSelectedExam}</b> yet.<br>
+            <span style="font-size:12px;">Use <b>2A</b> or <b>2B</b> above to add existing subjects/chapters manually, or click <b>⚡ Auto-Import Existing Subjects & Chapters</b>.</span>
         </div>`;
         return;
     }
@@ -1468,120 +1450,8 @@ function renderAdminCpConfiguredList() {
 }
 
 // ==========================================
-// CREATE TOPIC & CONTENT MANAGEMENT
+// MANAGE CONTENT TAB
 // ==========================================
-function _buildAdminNewTopicSelectors() {
-    const container = document.getElementById('dynamic-new-path-selectors'); 
-    if (!container) return;
-    
-    let html = ''; 
-    for (let i = 0; i <= adminNewTopicPath.length; i++) {
-        let parentSlice = adminNewTopicPath.slice(0, i);
-        let keys = getMergedChildKeysAtPath(parentSlice);
-        if (keys.length === 0) break;
-        
-        html += `<select class="input-field" style="flex:1; min-width:160px; margin-bottom:0;" onchange="handleAdminNewTopicPathChange(event, ${i})">`;
-        html += `<option value="">-- Stop Here / Select Child --</option>`;
-        
-        keys.forEach(key => { 
-            let selected = (adminNewTopicPath[i] === key) ? 'selected' : '';
-            html += `<option value="${key.replace(/"/g, '&quot;')}" ${selected}>${key}</option>`; 
-        });
-        html += `</select>`;
-        
-        if (!adminNewTopicPath[i]) break;
-    }
-    container.innerHTML = html;
-    
-    let pathTextSpan = document.getElementById('new-topic-path-text');
-    if (pathTextSpan) {
-        pathTextSpan.innerText = adminNewTopicPath.length > 0 ? adminNewTopicPath.join(' > ') : 'Root (Main Menu)';
-    }
-}
-
-function handleAdminNewTopicPathChange(event, depth) {
-    const val = event.target.value;
-    if (val === "") {
-        adminNewTopicPath = adminNewTopicPath.slice(0, depth);
-    } else {
-        adminNewTopicPath = adminNewTopicPath.slice(0, depth);
-        adminNewTopicPath.push(val);
-    }
-    _buildAdminNewTopicSelectors(); 
-}
-        
-async function createCustomTopic() {
-    const folderNameInput = document.getElementById('newFolderName');
-    const folderName = folderNameInput.value.trim();
-    if (!folderName) {
-        showNotification("⚠️ Folder name is required.");
-        return;
-    }
-    const folderType = document.getElementById('newFolderType').value;
-    const manualIcon = document.getElementById('newFolderIcon') ? document.getElementById('newFolderIcon').value.trim() : "";
-
-    // 100% Automatic Study Icon assignment if user didn't type a manual override
-    const autoAssignedIcon = manualIcon || (typeof getAutomaticIconForName === 'function' ? getAutomaticIconForName(folderName, folderType) : "📘");
-
-    try {
-        const fullPath = adminNewTopicPath.length > 0 ? adminNewTopicPath.join(' > ') : "";
-        const createdFullKey = fullPath ? `${fullPath} > ${folderName}` : folderName;
-
-        if (topicOverrides && Array.isArray(topicOverrides.deletedPaths) && topicOverrides.deletedPaths.includes(createdFullKey)) {
-            topicOverrides.deletedPaths = topicOverrides.deletedPaths.filter(p => p !== createdFullKey);
-            await db.collection("settings").doc("topic_overrides").set(topicOverrides, { merge: true });
-        }
-
-        const topicData = {
-            parentPath: fullPath,
-            name: folderName,
-            type: folderType,
-            icon: autoAssignedIcon,
-            timestamp: firebase.firestore.FieldValue.serverTimestamp()
-        };
-
-        await db.collection("custom_topics").add(topicData);
-        showNotification(`✅ Folder "${folderName}" Created with ${autoAssignedIcon} Icon!`);
-        folderNameInput.value = "";
-        if (document.getElementById('newFolderIcon')) document.getElementById('newFolderIcon').value = "";
-        await loadCustomTopics();
-        _buildAdminNewTopicSelectors();
-        updateLiveAutoIconPreview();
-    } catch(error) {
-        alert("⚠️ ERROR: " + error.message);
-    }
-}
-
-function _buildAdminSelectors() {
-    const container = document.getElementById('dynamic-path-selectors'); if(!container) return;
-    let html = '';
-    for (let i = 0; i <= adminSelectedPath.length; i++) {
-        let parentSlice = adminSelectedPath.slice(0, i);
-        let keys = getMergedChildKeysAtPath(parentSlice);
-        if (keys.length === 0) break;
-
-        html += `<select class="input-field" style="flex:1; min-width:160px; margin-bottom:0;" onchange="handleAdminPathChange(event, ${i})"><option value="" ${!adminSelectedPath[i] ? 'selected' : ''}>-- Upload Here / Select Child --</option>`;
-        keys.forEach(key => {
-            html += `<option value="${key.replace(/"/g, '&quot;')}" ${adminSelectedPath[i] === key ? 'selected' : ''}>${key}</option>`;
-        });
-        html += `</select>`;
-        if (!adminSelectedPath[i]) break;
-    }
-    container.innerHTML = html;
-    const formArea = document.getElementById('upload-form-area'); if(formArea) formArea.style.display = (adminSelectedPath.length > 0) ? 'block' : 'none';
-    
-    let uploadTextSpan = document.getElementById('upload-path-text');
-    if (uploadTextSpan) {
-        uploadTextSpan.innerText = adminSelectedPath.length > 0 ? adminSelectedPath.join(' > ') : 'Please select a destination above';
-    }
-}
-
-function handleAdminPathChange(event, depth) { 
-    if (event.target.value === "") adminSelectedPath = adminSelectedPath.slice(0, depth);
-    else { adminSelectedPath = adminSelectedPath.slice(0, depth); adminSelectedPath.push(event.target.value); }
-    _buildAdminSelectors(); 
-}
-
 function _buildManageSelectors() {
     const container = document.getElementById('manage-path-selectors'); if(!container) return;
     let html = '';
