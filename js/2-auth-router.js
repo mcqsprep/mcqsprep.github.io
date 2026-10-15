@@ -1,5 +1,5 @@
 // ==========================================
-// 2. DATA LOADING & AUTHENTICATION
+// 2. DATA LOADING, PARALLEL PRE-LOADER & AUTHENTICATION
 // ==========================================
 
 function removePathFromAppData(fullPathStr) {
@@ -16,65 +16,73 @@ function removePathFromAppData(fullPathStr) {
 
 async function loadCustomTopics() {
     try {
-        appData = JSON.parse(JSON.stringify(DEFAULT_APP_DATA));
-        customTopicTypes = {};
+        let freshAppData = JSON.parse(JSON.stringify(DEFAULT_APP_DATA));
+        let freshTopicTypes = {};
+        let freshOverrides = { deletedPaths: [], editedPaths: {} };
 
-        // 1. Load Topic Overrides (for edited/deleted built-in folders)
-        try {
-            const ovDoc = await db.collection("settings").doc("topic_overrides").get();
-            if (ovDoc.exists) {
-                let ovData = ovDoc.data();
-                topicOverrides.deletedPaths = Array.isArray(ovData.deletedPaths) ? ovData.deletedPaths : [];
-                topicOverrides.editedPaths = ovData.editedPaths || {};
-            } else {
-                topicOverrides = { deletedPaths: [], editedPaths: {} };
-            }
-        } catch (e) {}
+        // Fetch all 4 Firestore configuration collections in parallel for maximum speed during splash animation
+        const [ovResult, topicsResult, sbResult, cpResult] = await Promise.allSettled([
+            db.collection("settings").doc("topic_overrides").get(),
+            db.collection("custom_topics").get(),
+            db.collection("settings").doc("sidebar_config").get(),
+            db.collection("settings").doc("custom_practice_config").get()
+        ]);
+
+        // 1. Process Topic Overrides
+        if (ovResult.status === 'fulfilled' && ovResult.value.exists) {
+            let ovData = ovResult.value.data();
+            freshOverrides.deletedPaths = Array.isArray(ovData.deletedPaths) ? ovData.deletedPaths : [];
+            freshOverrides.editedPaths = ovData.editedPaths || {};
+        }
+        topicOverrides = freshOverrides;
 
         Object.keys(topicOverrides.editedPaths || {}).forEach(fullKey => {
-            customTopicTypes[fullKey] = topicOverrides.editedPaths[fullKey];
+            freshTopicTypes[fullKey] = topicOverrides.editedPaths[fullKey];
         });
 
+        // 2. Process Custom Topics
+        if (topicsResult.status === 'fulfilled') {
+            const snapshot = topicsResult.value;
+            let gkCleanupPromises = [];
+            let shouldCleanGK = !localStorage.getItem('gk_subtopics_purged_v39');
+
+            snapshot.forEach(doc => {
+                let data = doc.data();
+                let parentPath = (data.parentPath || "").trim();
+
+                if (shouldCleanGK && (parentPath === "General Knowledge" || parentPath.startsWith("General Knowledge > "))) {
+                    gkCleanupPromises.push(db.collection("custom_topics").doc(doc.id).delete());
+                    return;
+                }
+
+                let pathArr = parentPath.split(' > ').filter(Boolean);
+                let current = freshAppData;
+                for (let p of pathArr) {
+                    if (!current[p]) current[p] = {};
+                    current = current[p];
+                }
+                if (typeof current === 'object' && !Array.isArray(current) && data.name) {
+                    if (!current[data.name]) current[data.name] = {};
+                    let fullKey = pathArr.length > 0 ? (pathArr.join(" > ") + " > " + data.name) : data.name;
+                    let autoIcon = data.icon || (typeof getAutomaticIconForName === 'function' ? getAutomaticIconForName(data.name, data.type) : null);
+                    freshTopicTypes[fullKey] = { type: data.type || 'both', icon: autoIcon, docId: doc.id };
+                }
+            });
+
+            if (shouldCleanGK) {
+                if (gkCleanupPromises.length > 0) Promise.allSettled(gkCleanupPromises);
+                localStorage.setItem('gk_subtopics_purged_v39', 'true');
+            }
+        }
+
+        // Apply swaps & remove deleted paths
+        appData = freshAppData;
+        customTopicTypes = freshTopicTypes;
         (topicOverrides.deletedPaths || []).forEach(delPath => {
             removePathFromAppData(delPath);
         });
 
-        // 2. Load Custom Topics from Firestore
-        const snapshot = await db.collection("custom_topics").get();
-        let gkCleanupPromises = [];
-        let shouldCleanGK = !localStorage.getItem('gk_subtopics_purged_v39');
-
-        snapshot.forEach(doc => {
-            let data = doc.data();
-            let parentPath = (data.parentPath || "").trim();
-
-            if (shouldCleanGK && (parentPath === "General Knowledge" || parentPath.startsWith("General Knowledge > "))) {
-                gkCleanupPromises.push(db.collection("custom_topics").doc(doc.id).delete());
-                return;
-            }
-
-            let pathArr = parentPath.split(' > ').filter(Boolean);
-            let current = appData;
-            for (let p of pathArr) {
-                if (!current[p]) current[p] = {};
-                current = current[p];
-            }
-            if (typeof current === 'object' && !Array.isArray(current) && data.name) {
-                if (!current[data.name]) current[data.name] = {};
-                let fullKey = pathArr.length > 0 ? (pathArr.join(" > ") + " > " + data.name) : data.name;
-                // Automatically assign a smart icon if none was saved
-                let autoIcon = data.icon || (typeof getAutomaticIconForName === 'function' ? getAutomaticIconForName(data.name, data.type) : null);
-                customTopicTypes[fullKey] = { type: data.type || 'both', icon: autoIcon, docId: doc.id };
-            }
-        });
-
-        if (shouldCleanGK) {
-            if (gkCleanupPromises.length > 0) await Promise.all(gkCleanupPromises);
-            localStorage.setItem('gk_subtopics_purged_v39', 'true');
-        }
-
-        // 3. AUTOMATIC DAILY QUIZ CHALLENGE ENGINE:
-        // Automatically adds NEET, JEE, General Knowledge, and all future Root Exam Categories under Daily Quiz Challenge
+        // 3. Automatic Daily Quiz Challenge Engine (NEET, JEE, GK & all future root exams)
         appData["Daily Quiz Challenge"] = {};
         let deletedSet = new Set((topicOverrides && topicOverrides.deletedPaths) || []);
         let rootExams = Object.keys(appData).filter(k => k !== "Daily Quiz Challenge" && !deletedSet.has(k));
@@ -94,26 +102,31 @@ async function loadCustomTopics() {
             customTopicTypes["Daily Quiz Challenge > " + examKey] = { type: "mcq", icon: rootIcon };
         });
 
-        // 4. Load Manual Sidebar Config (Quick Links & Additional Essential Practice items)
-        try {
-            const sbDoc = await db.collection("settings").doc("sidebar_config").get();
-            if (sbDoc.exists) {
-                let sbData = sbDoc.data();
-                window.sidebarConfig.quickLinks = Array.isArray(sbData.quickLinks) ? sbData.quickLinks : [];
-                window.sidebarConfig.essentialPractice = Array.isArray(sbData.essentialPractice) ? sbData.essentialPractice : [];
-            } else {
-                window.sidebarConfig = { quickLinks: [], essentialPractice: [] };
-            }
-        } catch (e) {}
+        // 4. Process Manual Sidebar Config
+        if (sbResult.status === 'fulfilled' && sbResult.value.exists) {
+            let sbData = sbResult.value.data();
+            window.sidebarConfig.quickLinks = Array.isArray(sbData.quickLinks) ? sbData.quickLinks : [];
+            window.sidebarConfig.essentialPractice = Array.isArray(sbData.essentialPractice) ? sbData.essentialPractice : [];
+        } else {
+            window.sidebarConfig = { quickLinks: [], essentialPractice: [] };
+        }
 
-        // 5. Load Manual Custom Practice Config (Subjects & Chapters)
+        // 5. Process Manual Custom Practice Config
+        if (cpResult.status === 'fulfilled' && cpResult.value.exists && cpResult.value.data().exams) {
+            window.customPracticeConfig.exams = cpResult.value.data().exams;
+        } else {
+            window.customPracticeConfig = { exams: {} };
+        }
+
+        // Save complete state to localStorage for 0ms instant hydration on next launch
         try {
-            const cpDoc = await db.collection("settings").doc("custom_practice_config").get();
-            if (cpDoc.exists && cpDoc.data().exams) {
-                window.customPracticeConfig.exams = cpDoc.data().exams;
-            } else {
-                window.customPracticeConfig = { exams: {} };
-            }
+            localStorage.setItem('mcqs_boot_cache_v1', JSON.stringify({
+                appData: appData,
+                customTopicTypes: customTopicTypes,
+                topicOverrides: topicOverrides,
+                sidebarConfig: window.sidebarConfig,
+                customPracticeConfig: window.customPracticeConfig
+            }));
         } catch (e) {}
 
     } catch(e) { console.error("Custom topics loading error:", e); }
@@ -162,18 +175,13 @@ async function checkUserNotifications() {
     }
 }
 
-async function initApp() { 
-    dataLoaded = true; 
-    if (!window.location.hash) window.location.hash = '#/home'; 
-    
-    handleRouting(); 
-    
-    await loadCustomTopics();
-    if (typeof loadGlobalRating === 'function') loadGlobalRating();
-    handleRouting();
-}
+// Track initial Auth + User Profile readiness so everything finishes while the 3D splash is playing
+let _resolveInitialAuth;
+const initialAuthReadyPromise = new Promise((resolve) => {
+    _resolveInitialAuth = resolve;
+});
 
-auth.onAuthStateChanged((user) => {
+auth.onAuthStateChanged(async (user) => {
     currentUser = user; 
     window.currentUser = user;
     const badge = document.getElementById('userBadge'); 
@@ -192,13 +200,22 @@ auth.onAuthStateChanged((user) => {
         if (loginNavBtn) loginNavBtn.style.display = 'none'; 
         const authModal = document.getElementById('authModal');
         if (authModal) authModal.style.display = 'none';
+
+        // Restore cached streak immediately
+        const cachedStreak = localStorage.getItem('mcqs_user_streak_' + user.uid);
+        if (cachedStreak !== null) {
+            const streakEl = document.getElementById('nav-streak-display');
+            if (streakEl) streakEl.innerText = cachedStreak;
+        }
         
-        db.collection("users").doc(user.uid).get().then(doc => {
+        try {
+            const doc = await db.collection("users").doc(user.uid).get();
             if (doc.exists) {
                 let d = doc.data();
                 if (d.currentStreak !== undefined) {
                     const streakEl = document.getElementById('nav-streak-display');
                     if (streakEl) streakEl.innerText = d.currentStreak;
+                    localStorage.setItem('mcqs_user_streak_' + user.uid, String(d.currentStreak));
                 }
                 if (d.rating && typeof syncUserRatingUI === 'function') {
                     syncUserRatingUI(d.rating, d.feedback || '');
@@ -207,12 +224,11 @@ auth.onAuthStateChanged((user) => {
             db.collection("users").doc(user.uid).set({ 
                 displayName: user.displayName, email: user.email, photoURL: user.photoURL, 
                 lastLogin: firebase.firestore.FieldValue.serverTimestamp() 
-            }, { merge: true });
-        }).catch(() => {});
+            }, { merge: true }).catch(() => {});
+        } catch (e) {}
         
         checkUserNotifications();
         if (typeof loadUserBookmarks === 'function') loadUserBookmarks();
-        if (typeof loadGlobalRating === 'function') loadGlobalRating();
     } else {
         if (badge) badge.style.display = 'none'; 
         if (loginNavBtn) loginNavBtn.style.display = 'flex'; 
@@ -226,8 +242,36 @@ auth.onAuthStateChanged((user) => {
             if (authModal) authModal.style.display = 'flex';
         }
     }
-    if (dataLoaded) handleRouting(); 
+    if (dataLoaded) handleRouting();
+    if (_resolveInitialAuth) {
+        _resolveInitialAuth();
+        _resolveInitialAuth = null;
+    }
 });
+
+// Synchronized Bootloader: Loads all content and renders the final DOM *during* the 3D opening animation
+async function initApp() { 
+    dataLoaded = true; 
+    if (!window.location.hash) window.location.hash = '#/home'; 
+    
+    // 1. Immediate render from cached localStorage state (0ms)
+    handleRouting(); 
+    
+    // 2. Load fresh Firestore topics, sidebar config, global rating & auth state in parallel while 3D splash is playing
+    await Promise.allSettled([
+        loadCustomTopics(),
+        typeof loadGlobalRating === 'function' ? loadGlobalRating() : Promise.resolve(),
+        Promise.race([initialAuthReadyPromise, new Promise(r => setTimeout(r, 1500))])
+    ]);
+
+    // 3. Render final up-to-date dashboard DOM underneath the 3D splash screen
+    handleRouting();
+
+    // 4. Signal the 3D splash screen that 100% of content is ready and painted
+    if (typeof window.markAppContentReady === 'function') {
+        window.markAppContentReady();
+    }
+}
 
 if (document.readyState === 'loading') {
     window.addEventListener('DOMContentLoaded', initApp);
@@ -283,9 +327,6 @@ function updateBottomNav(hash) {
     }
 }
 
-// FIXED (Requirement 1):
-// - Quick Links: 100% manually controlled from Admin Panel
-// - Essential Practice: ALWAYS includes automatic "Daily Quiz Challenge" (which auto-lists NEET, JEE, GK & future topics) + any manual items added by Admin
 function updateSidebarLinks() {
     const sidebar = document.getElementById('main-sidebar');
     if (!sidebar) return;
@@ -328,14 +369,14 @@ function updateSidebarLinks() {
     let essentialPracticeHtml = '';
     let usedColorsE = new Set(["#fdb813"]);
 
-    // 1. Automatic Daily Quiz Challenge (Always present in Essential Practice without Admin setup)
+    // 1. Automatic Daily Quiz Challenge (Always present in Essential Practice)
     essentialPracticeHtml += `
         <a class="action-link colored-link" style="--topic-color:#fdb813; --topic-border:rgba(253,184,19,0.65); --topic-glow:rgba(253,184,19,0.28); --topic-bg:rgba(253,184,19,0.16);" onclick="jumpToSection(['Daily Quiz Challenge'])">
             <span class="link-icon" style="color: #fdb813;">📅</span>
             <span class="link-text">Daily Quiz Challenge</span>
         </a>`;
 
-    // 2. Any additional items manually added to Essential Practice via Admin Panel
+    // 2. Manual items added via Admin Panel
     essentialList.forEach((item, idx) => {
         if (item.path === 'Daily Quiz Challenge') return;
         let displayTitle = (item.title || item.path.split(' > ').pop() || '').replace(/^\d+\.\s*/, '');
