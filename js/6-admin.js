@@ -1,16 +1,18 @@
 // ==========================================
-// 10. SCALED ADMIN PANEL, TOPIC FILTERS, SIDEBAR & CUSTOM PRACTICE MANAGERS
+// 10. SMART ADMIN PANEL, BULK CREATOR, FILTERS, SIDEBAR & CUSTOM PRACTICE MANAGERS
 // ==========================================
 let adminCurrentTab = 'upload';
 let adminNewTopicPath = [];
+let adminMultiTargetChildren = []; // Selected sibling/child folders for batch subtopic creation
 let adminSelectedPath = [];
 let adminManageSelectedPath = [];
 
-// State for Edit / Delete Topics Filter System
+// State for Edit / Delete Topics Filter & Bulk Actions
 let adminTopicFilterPath = [];
 let adminTopicScopeFilter = 'ALL'; // 'ALL' | 'MAIN' | 'SUB'
 let adminTopicTypeFilter = 'ALL';  // 'ALL' | 'both' | 'mcq' | 'pdf'
 let unifiedAdminTopics = [];
+let adminBulkSelectedPaths = new Set();
 
 // State for Manual Quick Links & Essential Practice Manager
 let adminSidebarPickPath = [];
@@ -36,24 +38,10 @@ const adminStyles = `
         scrollbar-width: thin;
         scrollbar-color: #fdb813 #12121a;
     }
-    .admin-nav-pills::-webkit-scrollbar {
-        height: 8px;
-        display: block;
-    }
-    .admin-nav-pills::-webkit-scrollbar-track {
-        background: #12121a;
-        border-radius: 10px;
-        border: 1px solid #2b2b36;
-    }
-    .admin-nav-pills::-webkit-scrollbar-thumb {
-        background: linear-gradient(90deg, #fdb813, #f97316);
-        border-radius: 10px;
-        box-shadow: 0 0 10px rgba(253, 184, 19, 0.45);
-        cursor: pointer;
-    }
-    .admin-nav-pills::-webkit-scrollbar-thumb:hover {
-        background: #fdb813;
-    }
+    .admin-nav-pills::-webkit-scrollbar { height: 8px; display: block; }
+    .admin-nav-pills::-webkit-scrollbar-track { background: #12121a; border-radius: 10px; border: 1px solid #2b2b36; }
+    .admin-nav-pills::-webkit-scrollbar-thumb { background: linear-gradient(90deg, #fdb813, #f97316); border-radius: 10px; box-shadow: 0 0 10px rgba(253, 184, 19, 0.45); cursor: pointer; }
+    .admin-nav-pills::-webkit-scrollbar-thumb:hover { background: #fdb813; }
 
     .admin-pill { background: #1c1c24; border: 1px solid #2b2b36; color: #9e9ea7; padding: 10px 18px; border-radius: 30px; cursor: pointer; white-space: nowrap; font-size: 13.5px; font-weight: 600; transition: all 0.2s ease; display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
     .admin-pill:hover { background: #252530; color: #fff; border-color: #444; }
@@ -71,6 +59,18 @@ const adminStyles = `
     .admin-cb-label:has(input:checked) { background: rgba(76, 175, 80, 0.15); border-color: #4CAF50; color: #4CAF50; }
     .admin-cb-label input { display: none; }
 
+    /* Smart Preset Chips & Multi-Target Grid */
+    .admin-preset-bar { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+    .admin-preset-chip { background: rgba(253, 184, 19, 0.1); border: 1px solid rgba(253, 184, 19, 0.35); color: #fdb813; padding: 6px 12px; border-radius: 20px; font-size: 11.5px; font-weight: 700; cursor: pointer; transition: 0.2s; display: inline-flex; align-items: center; gap: 5px; }
+    .admin-preset-chip:hover { background: rgba(253, 184, 19, 0.22); transform: translateY(-1px); box-shadow: 0 2px 10px rgba(253,184,19,0.2); }
+
+    .admin-multi-target-box { background: #111420; border: 1px solid #2b354f; border-radius: 12px; padding: 14px 16px; margin-top: 14px; margin-bottom: 18px; }
+    .admin-multi-target-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px; max-height: 210px; overflow-y: auto; padding-top: 8px; }
+    .admin-target-item { display: flex; align-items: center; gap: 8px; background: #181d2f; border: 1px solid #2b354f; padding: 8px 11px; border-radius: 8px; cursor: pointer; font-size: 12.5px; color: #d1d5db; font-weight: 600; user-select: none; transition: 0.15s; }
+    .admin-target-item:hover { border-color: #fdb813; color: #fff; }
+    .admin-target-item.checked { background: rgba(253, 184, 19, 0.15); border-color: #fdb813; color: #fff; box-shadow: 0 0 10px rgba(253,184,19,0.18); }
+    .admin-target-item input { accent-color: #fdb813; width: 15px; height: 15px; margin: 0; cursor: pointer; flex-shrink: 0; }
+
     /* Clean Filter Bar & Topic Group Headers */
     .admin-scope-bar { display: flex; gap: 8px; flex-wrap: wrap; background: #111117; padding: 6px; border-radius: 12px; border: 1px solid #2b2b36; }
     .admin-scope-btn { flex: 1; min-width: 130px; padding: 10px 14px; border-radius: 8px; border: none; background: transparent; color: #9e9ea7; font-size: 13px; font-weight: 700; cursor: pointer; transition: 0.2s; text-align: center; }
@@ -79,6 +79,8 @@ const adminStyles = `
 
     .admin-topic-group-header { display: flex; justify-content: space-between; align-items: center; padding: 12px 18px; background: rgba(253, 184, 19, 0.08); border: 1px solid rgba(253,184,19,0.25); border-left: 4px solid var(--primary-yellow); border-radius: 10px; margin: 22px 0 14px 0; font-size: 15px; font-weight: 700; color: #fff; }
     .admin-topic-group-count { font-size: 12px; background: rgba(255,255,255,0.08); color: var(--primary-yellow); padding: 4px 12px; border-radius: 20px; font-weight: 700; }
+
+    .admin-bulk-toolbar { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; background: linear-gradient(135deg, rgba(253,184,19,0.12), rgba(56,189,248,0.1)); border: 1px solid rgba(253,184,19,0.4); padding: 12px 18px; border-radius: 12px; margin-bottom: 16px; }
 
     .admin-chip-list { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
     .admin-chap-chip { display: inline-flex; align-items: center; gap: 8px; background: #121829; border: 1px solid #2b3954; color: #e2e8f0; padding: 6px 12px; border-radius: 8px; font-size: 12.5px; font-weight: 600; }
@@ -129,7 +131,15 @@ function logoutAdmin() {
     goHome();
 }
 
-// Live Auto-Icon Preview Updater for Create Topic Tab
+function parseFolderNamesList(rawInput) {
+    if (!rawInput) return [];
+    return rawInput
+        .split(/[\n,]+/)
+        .map(s => s.trim())
+        .filter(Boolean);
+}
+
+// Live Auto-Icon Preview Updater (Supports Single or Multi-Folder Batch Preview)
 function updateLiveAutoIconPreview() {
     const nameInput = document.getElementById('newFolderName');
     const typeSelect = document.getElementById('newFolderType');
@@ -139,13 +149,15 @@ function updateLiveAutoIconPreview() {
     if (!previewBox) return;
 
     let rawName = nameInput ? nameInput.value.trim() : "";
+    let namesArr = parseFolderNamesList(rawName);
     let folderType = typeSelect ? typeSelect.value : "both";
     let manualEmoji = customOverride ? customOverride.value.trim() : "";
 
-    let sampleName = rawName || "New Study Topic";
+    let sampleName = namesArr[0] || "New Study Topic";
+    let fallbackIcon = folderType === 'pdf' ? '📄' : (folderType === 'mcq' ? '📝' : '📘');
     let theme = typeof getAutoTopicTheme === 'function'
-        ? getAutoTopicTheme(sampleName, manualEmoji || null, 0, null, folderType === 'pdf' ? '📄' : (folderType === 'mcq' ? '📝' : '📘'))
-        : { i: manualEmoji || '📘', c: '#fdb813', bg: 'rgba(253,184,19,0.16)', border: 'rgba(253,184,19,0.6)', glow: 'rgba(253,184,19,0.28)' };
+        ? getAutoTopicTheme(sampleName, manualEmoji || null, 0, null, fallbackIcon)
+        : { i: manualEmoji || fallbackIcon, c: '#fdb813', bg: 'rgba(253,184,19,0.16)', border: 'rgba(253,184,19,0.6)', glow: 'rgba(253,184,19,0.28)' };
 
     previewBox.style.background = theme.bg;
     previewBox.style.color = theme.c;
@@ -154,9 +166,100 @@ function updateLiveAutoIconPreview() {
     previewBox.innerText = theme.i;
 
     if (previewText) {
-        previewText.innerHTML = rawName
-            ? `<b style="color:${theme.c};">${theme.i} ${rawName.replace(/^\d+\.\s*/, '')}</b> <span style="color:#888; font-size:11px;">(Auto-assigned)</span>`
-            : `<span style="color:#aaa;">Type a folder name in Step 2 — icon & glow color assign automatically!</span>`;
+        if (namesArr.length === 0) {
+            previewText.innerHTML = `<span style="color:#aaa;">Type folder name(s) or click a preset chip — icons & colors assign automatically!</span>`;
+        } else if (namesArr.length === 1) {
+            previewText.innerHTML = `<b style="color:${theme.c};">${theme.i} ${namesArr[0].replace(/^\d+\.\s*/, '')}</b> <span style="color:#888; font-size:11px;">(Auto-assigned)</span>`;
+        } else {
+            let previewChips = namesArr.slice(0, 6).map((n, idx) => {
+                let t = typeof getAutoTopicTheme === 'function' ? getAutoTopicTheme(n, manualEmoji || null, idx, null, fallbackIcon) : theme;
+                return `<span style="display:inline-flex; align-items:center; gap:4px; background:${t.bg}; color:${t.c}; border:1px solid ${t.border}; padding:2px 8px; border-radius:6px; font-size:11.5px; font-weight:700; margin:2px;">${t.i} ${n.replace(/^\d+\.\s*/, '')}</span>`;
+            }).join('');
+            let extra = namesArr.length > 6 ? `<span style="font-size:11px; color:#aaa; margin-left:4px;">+${namesArr.length - 6} more</span>` : '';
+            previewText.innerHTML = `<div style="font-size:11px; color:var(--primary-yellow); font-weight:700; margin-bottom:4px;">⚡ Batch Mode: Creating ${namesArr.length} Folders</div><div>${previewChips}${extra}</div>`;
+        }
+    }
+}
+
+// 1-Click Preset Filler for Create Topic Tab
+function applyFolderPreset(presetType) {
+    const nameInput = document.getElementById('newFolderName');
+    const typeSelect = document.getElementById('newFolderType');
+    if (!nameInput) return;
+
+    if (presetType === 'DIFF_4') {
+        nameInput.value = "Easy, Medium, Hard, Mixed";
+        if (typeSelect) typeSelect.value = "mcq";
+    } else if (presetType === 'DIFF_3') {
+        nameInput.value = "Easy, Medium, Hard";
+        if (typeSelect) typeSelect.value = "mcq";
+    } else if (presetType === 'NEET_SUBJ') {
+        nameInput.value = "Botany, Zoology, Physics, Organic Chemistry, Physical Chemistry, Inorganic Chemistry";
+        if (typeSelect) typeSelect.value = "both";
+    } else if (presetType === 'JEE_SUBJ') {
+        nameInput.value = "Physics, Mathematics, Organic Chemistry, Physical Chemistry, Inorganic Chemistry";
+        if (typeSelect) typeSelect.value = "both";
+    } else if (presetType === 'EXAM_SECTIONS') {
+        nameInput.value = "NCERT Book, PYQs, Practice Paper, MCQs Practice, Mock Test";
+        if (typeSelect) typeSelect.value = "both";
+    } else if (presetType === 'AUTO_NUM') {
+        let list = parseFolderNamesList(nameInput.value);
+        if (list.length === 0) {
+            showNotification("⚠️ Type or paste folder names separated by commas first.");
+            return;
+        }
+        nameInput.value = list.map((name, i) => {
+            let clean = name.replace(/^\d+\.\s*/, '');
+            return `${String(i + 1).padStart(2, '0')}. ${clean}`;
+        }).join(', ');
+    }
+    updateLiveAutoIconPreview();
+}
+
+// Smart Quick-Paste MCQ Parser for Rapid Upload Tab
+function parseQuickPasteMCQ() {
+    const rawEl = document.getElementById('admSmartPasteInput');
+    if (!rawEl || !rawEl.value.trim()) {
+        showNotification("⚠️ Paste a question with options first.");
+        return;
+    }
+    let text = rawEl.value.trim();
+
+    // Extract Explanation if present
+    let expMatch = text.match(/(?:Explanation|Exp|Solution|Sol)\s*[:\-]\s*([\s\S]+)$/i);
+    if (expMatch) {
+        document.getElementById('admExplanation').value = expMatch[1].trim();
+        text = text.slice(0, expMatch.index).trim();
+    }
+
+    // Extract Answer if present
+    let ansMatch = text.match(/(?:Answer|Ans|Correct(?:\s*Answer)?)\s*[:\-]\s*([A-Da-d](?:\s*,\s*[A-Da-d])*)/i);
+    if (ansMatch) {
+        let ansLetters = ansMatch[1].toUpperCase().split(',').map(s => s.trim());
+        document.querySelectorAll('.admCorrectCb').forEach(cb => {
+            cb.checked = ansLetters.includes(cb.value);
+        });
+        text = text.slice(0, ansMatch.index).trim();
+    }
+
+    // Extract Options A, B, C, D
+    let optRegex = /(?:^|\n|\s)\(?([A-D])[\)\.\:]\s*([\s\S]*?)(?=(?:\n|\s+)\(?[B-D][\)\.\:]|\s*$)/gi;
+    let matches = [...text.matchAll(optRegex)];
+    if (matches.length >= 2) {
+        let firstOptIndex = matches[0].index;
+        let qRaw = text.slice(0, firstOptIndex).replace(/^(?:Q(?:uestion)?\s*\d*[\.\:\)]\s*)/i, '').trim();
+        if (qRaw) document.getElementById('admQuestion').value = qRaw;
+
+        matches.forEach(m => {
+            let letter = m[1].toUpperCase();
+            let val = m[2].trim();
+            let inputEl = document.getElementById('admOpt' + letter);
+            if (inputEl) inputEl.value = val;
+        });
+        showNotification("✨ Question, Options & Answer auto-filled!");
+    } else {
+        document.getElementById('admQuestion').value = text;
+        showNotification("📝 Question text filled (format options as A) ... B) ... for full auto-fill).");
     }
 }
 
@@ -211,6 +314,15 @@ async function _renderAdminPanel() {
                         </h3>
                         
                         <div id="admin-mcq-form">
+                            <!-- Smart Quick-Paste MCQ Auto-Filler -->
+                            <div style="background:#111522; border:1px dashed rgba(253,184,19,0.4); border-radius:12px; padding:14px; margin-bottom:18px;">
+                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; flex-wrap:wrap; gap:8px;">
+                                    <span style="font-size:12px; font-weight:700; color:var(--primary-yellow);">⚡ SMART QUICK-PASTE AUTO-FILLER (OPTIONAL)</span>
+                                    <button type="button" class="btn-exam btn-yellow-glow" onclick="parseQuickPasteMCQ()" style="padding:5px 14px; font-size:11.5px;">✨ Auto-Fill Form</button>
+                                </div>
+                                <textarea id="admSmartPasteInput" class="input-field" style="min-height:58px; margin-bottom:0; font-size:12.5px;" placeholder="Paste full MCQ block here (e.g. Q. Question text... A) Opt1 B) Opt2 C) Opt3 D) Opt4 Ans: B Exp: Explanation...) and click Auto-Fill!"></textarea>
+                            </div>
+
                             <label class="admin-label">Question Text</label>
                             <textarea id="admQuestion" class="input-field" style="min-height: 100px; font-size: 15px;" placeholder="Type or paste the question here..."></textarea>
                             
@@ -265,56 +377,81 @@ async function _renderAdminPanel() {
                 </div>
             </div>
             
-            <!-- 2. CREATE TOPIC TAB (100% AUTOMATIC STUDY ICON ENGINE) -->
+            <!-- 2. SMART CREATE TOPIC TAB (MULTI-TARGET PARENTS + MULTI-FOLDER BATCHES + 1-CLICK PRESETS) -->
             <div id="admin-topics-view" style="display:${adminCurrentTab === 'topics' ? 'block' : 'none'};">
                 <div class="admin-panel-card" style="border-color: rgba(253, 184, 19, 0.4); background: rgba(253, 184, 19, 0.02);">
                     <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; border-bottom: 1px solid rgba(253, 184, 19, 0.2); padding-bottom: 15px; margin-bottom: 20px;">
-                        <h3 style="color:var(--primary-yellow); margin:0; font-size:18px; display:flex; align-items:center; gap:10px;">📁 Create New Topic or Subtopic Folder</h3>
+                        <div>
+                            <h3 style="color:var(--primary-yellow); margin:0; font-size:18px; display:flex; align-items:center; gap:10px;">📁 Smart Batch Topic & Subtopic Creator</h3>
+                            <span style="font-size:12px; color:var(--text-muted);">Create single or multiple folders across one or many chapters/topics in a single click.</span>
+                        </div>
                         <button class="btn-exam" onclick="switchAdminTab('edit-topics')" style="background:#1c1c24; border:1px solid var(--primary-yellow); color:var(--primary-yellow); padding:7px 14px; font-size:12px;">🗂️ Manage Existing Topics &rarr;</button>
                     </div>
-                    <label class="admin-label">1. Select Parent Path (Leave at Root to create a Main Exam Category)</label>
+
+                    <label class="admin-label">1. Select Base Parent Path (Leave at Root to create a Main Exam Category)</label>
                     <div id="dynamic-new-path-selectors" style="display:flex; gap:15px; flex-wrap:wrap;"></div>
-                    <div id="new-topic-path-display" style="margin-top:10px; font-size:13px; color:var(--primary-yellow); margin-bottom: 20px;">
-                        <b>Destination Path:</b> <span id="new-topic-path-text" style="color:white;">Root (Main Menu)</span>
+                    <div id="new-topic-path-display" style="margin-top:10px; font-size:13px; color:var(--primary-yellow); margin-bottom: 14px;">
+                        <b>Active Base Path:</b> <span id="new-topic-path-text" style="color:white;">Root (Main Menu)</span>
                     </div>
+
+                    <!-- 1B: MULTI-TARGET SIBLING / CHAPTER SELECTOR -->
+                    <div id="admin-multi-target-container"></div>
                     
                     <div class="admin-grid-2">
                         <div>
-                            <label class="admin-label">2. Folder Name</label>
-                            <input type="text" id="newFolderName" class="input-field" placeholder="e.g. 01. Molecular Genetics, Thermodynamics, Polity..." oninput="updateLiveAutoIconPreview()">
-                            <span style="font-size: 11px; color: #777;">*Tip: Start with a number (01., 02.) to lock the sorting order!</span>
+                            <label class="admin-label">2. Folder Name(s) — Comma or Line Separated for Batch Creation</label>
+                            <div class="admin-preset-bar">
+                                <button type="button" class="admin-preset-chip" onclick="applyFolderPreset('DIFF_4')" title="Fill Easy, Medium, Hard, Mixed">🟢🟡🔴⚡ + Difficulty Set (4)</button>
+                                <button type="button" class="admin-preset-chip" onclick="applyFolderPreset('DIFF_3')" title="Fill Easy, Medium, Hard">🟢🟡🔴 + Easy/Med/Hard</button>
+                                <button type="button" class="admin-preset-chip" onclick="applyFolderPreset('NEET_SUBJ')" title="Fill all 6 NEET Subjects">🩺 + NEET Subjects</button>
+                                <button type="button" class="admin-preset-chip" onclick="applyFolderPreset('JEE_SUBJ')" title="Fill all 5 JEE Subjects">🚀 + JEE Subjects</button>
+                                <button type="button" class="admin-preset-chip" onclick="applyFolderPreset('EXAM_SECTIONS')" title="Fill NCERT Book, PYQs, Practice Paper, MCQs Practice, Mock Test">📂 + Exam Sections</button>
+                                <button type="button" class="admin-preset-chip" style="color:#38bdf8; border-color:rgba(56,189,248,0.4); background:rgba(56,189,248,0.1);" onclick="applyFolderPreset('AUTO_NUM')" title="Add 01., 02., 03. numbering to list">🔢 Auto-Number List</button>
+                            </div>
+                            <textarea id="newFolderName" class="input-field" style="min-height:76px; font-size:14px; margin-bottom:4px;" placeholder="Type 1 folder name (e.g. Thermodynamics) OR multiple separated by commas (e.g. Easy, Medium, Hard, Mixed)..." oninput="updateLiveAutoIconPreview()"></textarea>
+                            <span style="font-size: 11px; color: #888;">*Tip: Separate multiple names with commas (,) or new lines to create them all at once!</span>
                         </div>
                         <div>
                             <label class="admin-label">3. Automatic Study Icon & Glow Preview (No Typing Needed!)</label>
-                            <div style="display:flex; align-items:center; gap:12px; background:#111522; border:1px solid #2b2b36; padding:10px 14px; border-radius:10px;">
-                                <div id="autoIconPreviewBadge" style="width:40px; height:40px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:20px; border:1px solid rgba(253,184,19,0.5); background:rgba(253,184,19,0.15); flex-shrink:0;">📘</div>
+                            <div style="display:flex; align-items:center; gap:12px; background:#111522; border:1px solid #2b2b36; padding:12px 14px; border-radius:10px; min-height:76px; box-sizing:border-box;">
+                                <div id="autoIconPreviewBadge" style="width:42px; height:42px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:20px; border:1px solid rgba(253,184,19,0.5); background:rgba(253,184,19,0.15); flex-shrink:0;">📘</div>
                                 <div style="flex:1; font-size:13px;" id="autoIconPreviewName">
-                                    <span style="color:#aaa;">Type a folder name in Step 2 — icon & glow color assign automatically!</span>
+                                    <span style="color:#aaa;">Type folder name(s) or click a preset chip — icons & colors assign automatically!</span>
                                 </div>
                                 <input type="text" id="newFolderIcon" class="input-field" placeholder="Auto" maxlength="2" title="Optional manual emoji override" oninput="updateLiveAutoIconPreview()" style="width:62px; margin:0; padding:8px; text-align:center; font-size:14px;">
                             </div>
-                            <span style="font-size: 11px; color: var(--correct-green);">✅ 100% Automatic — recognizes 200+ study subjects, chapters & exams automatically.</span>
+                            <span style="font-size: 11px; color: var(--correct-green); display:block; margin-top:6px;">✅ 100% Automatic — recognizes 200+ study subjects, chapters & exams automatically.</span>
                         </div>
                     </div>
-                    <div style="margin-top: 14px;">
-                        <label class="admin-label">4. Expected Content Type</label>
-                        <select id="newFolderType" class="input-field" onchange="updateLiveAutoIconPreview()">
-                            <option value="both">📂 Parent Category (To hold sub-folders inside)</option>
-                            <option value="mcq">📝 MCQs Practice (End Topic)</option>
-                            <option value="pdf">📄 PDF / Image Material (End Topic)</option>
-                        </select>
+
+                    <div class="admin-grid-2" style="margin-top: 16px; align-items: center;">
+                        <div>
+                            <label class="admin-label">4. Expected Content Type</label>
+                            <select id="newFolderType" class="input-field" style="margin-bottom:0;" onchange="updateLiveAutoIconPreview()">
+                                <option value="both">📂 Parent Category (To hold sub-folders inside)</option>
+                                <option value="mcq">📝 MCQs Practice (End Topic)</option>
+                                <option value="pdf">📄 PDF / Image Material (End Topic)</option>
+                            </select>
+                        </div>
+                        <div style="background:#111522; border:1px solid #2b354f; padding:12px 15px; border-radius:10px; margin-top:18px;">
+                            <label style="display:flex; align-items:center; gap:10px; cursor:pointer; font-size:13px; color:#fff; font-weight:600; user-select:none;">
+                                <input type="checkbox" id="autoAddDiffInsideToggle" style="accent-color:#fdb813; width:17px; height:17px; cursor:pointer;">
+                                <span>⚡ Also auto-create <b>Easy, Medium, Hard, Mixed</b> inside each new folder created above</span>
+                            </label>
+                        </div>
                     </div>
-                    <button id="createFolderBtn" class="btn-exam btn-yellow-glow" onclick="createCustomTopic()" style="width:100%; max-width:250px; margin-top: 15px;">+ Create Folder</button>
+
+                    <button id="createFolderBtn" class="btn-exam btn-yellow-glow" onclick="createCustomTopic()" style="width:100%; max-width:320px; margin-top: 20px; font-size:15px; padding:13px 20px;">+ Create Folder(s)</button>
                 </div>
             </div>
 
-            <!-- 3. CLEAN EDIT & DELETE TOPICS / SUBTOPICS TAB -->
+            <!-- 3. CLEAN EDIT & DELETE TOPICS / SUBTOPICS TAB (WITH BULK ACTIONS) -->
             <div id="admin-edit-topics-view" style="display:${adminCurrentTab === 'edit-topics' ? 'block' : 'none'};">
                 <div class="admin-panel-card">
                     <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; border-bottom:1px solid #2b2b36; padding-bottom:15px; margin-bottom:20px;">
                         <div>
-                            <h3 style="margin:0; font-size:18px; color:#fff;">🗂️ Filter & Manage Topics / Subtopics</h3>
-                            <span style="font-size:12px; color:var(--text-muted);">View, edit, or delete any Main Topic or Subtopic using the filter controls below.</span>
+                            <h3 style="margin:0; font-size:18px; color:#fff;">🗂️ Filter & Bulk Manage Topics / Subtopics</h3>
+                            <span style="font-size:12px; color:var(--text-muted);">Filter by hierarchy, edit individual folders, or select multiple folders to bulk-add difficulty levels or bulk-delete.</span>
                         </div>
                         <div style="display:flex; gap:10px;">
                             <button class="btn-exam" onclick="resetAdminTopicFilters()" style="background:#23232c; border:1px solid #444; color:#fff; padding:7px 14px; font-size:12px;">🔄 Reset Filters</button>
@@ -348,6 +485,19 @@ async function _renderAdminPanel() {
                         <div style="margin-top:10px; font-size:12.5px; color:var(--text-muted);">
                             <b>Showing Folders Under:</b> <span id="admin-topic-filter-path-text" style="color:var(--primary-yellow); font-weight:700;">All Exam Categories</span>
                         </div>
+                    </div>
+                </div>
+
+                <!-- Bulk Action Bar -->
+                <div class="admin-bulk-toolbar">
+                    <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+                        <button type="button" class="btn-exam" onclick="toggleSelectAllFilteredTopics(true)" style="background:#1c1c24; border:1px solid #444; padding:6px 12px; font-size:12px;">☑️ Select All Shown</button>
+                        <button type="button" class="btn-exam" onclick="toggleSelectAllFilteredTopics(false)" style="background:#1c1c24; border:1px solid #444; padding:6px 12px; font-size:12px;">Clear</button>
+                        <span id="adminBulkSelectedCount" style="font-size:13px; font-weight:700; color:var(--primary-yellow);">0 Folders Selected</span>
+                    </div>
+                    <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                        <button type="button" class="btn-exam btn-yellow-glow" onclick="bulkInjectDifficultyToSelectedTopics()" style="padding:7px 14px; font-size:12px;">⚡ Add Difficulty Set (Easy/Med/Hard/Mixed) to Selected</button>
+                        <button type="button" class="btn-exam" onclick="bulkDeleteSelectedTopics()" style="background:rgba(239,68,68,0.18); color:var(--wrong-red); border:1px solid rgba(239,68,68,0.45); padding:7px 14px; font-size:12px;">🗑️ Delete Selected</button>
                     </div>
                 </div>
 
@@ -542,6 +692,7 @@ function clearAdminUploadForm(isSmartClear = false) {
     document.getElementById('admOptB').value = ""; 
     document.getElementById('admOptC').value = ""; 
     document.getElementById('admOptD').value = "";
+    if (document.getElementById('admSmartPasteInput')) document.getElementById('admSmartPasteInput').value = "";
     document.querySelectorAll('.admCorrectCb').forEach(cb => cb.checked = false); 
     document.getElementById('admPdfTitle').value = ""; 
     document.getElementById('admPdfFile').value = ""; 
@@ -585,8 +736,21 @@ function getMergedChildKeysAtPath(pathArr) {
     return Array.from(keys).sort((a, b) => a.localeCompare(b));
 }
 
+function doesTopicPathExist(fullPathStr) {
+    let deletedSet = new Set((topicOverrides && topicOverrides.deletedPaths) || []);
+    if (deletedSet.has(fullPathStr)) return false;
+    if (customTopicTypes[fullPathStr]) return true;
+    let parts = fullPathStr.split(' > ').filter(Boolean);
+    let curr = appData;
+    for (let p of parts) {
+        if (!curr || typeof curr !== 'object' || curr[p] === undefined) return false;
+        curr = curr[p];
+    }
+    return true;
+}
+
 // ==========================================
-// UNIFIED TOPIC & SUBTOPIC FILTER, EDIT & DELETE SYSTEM
+// UNIFIED TOPIC & SUBTOPIC FILTER, EDIT, DELETE & BULK ACTIONS
 // ==========================================
 function inferTopicType(fullPath, name, hasChildren) {
     let meta = customTopicTypes[fullPath];
@@ -657,6 +821,7 @@ function resetAdminTopicFilters() {
     adminTopicFilterPath = [];
     adminTopicScopeFilter = 'ALL';
     adminTopicTypeFilter = 'ALL';
+    adminBulkSelectedPaths.clear();
     _renderAdminPanel();
 }
 
@@ -733,10 +898,11 @@ async function loadAdminTopicsList() {
     }
 }
 
+let currentFilteredAdminTopics = [];
 function filterAdminTopics() {
     let prefix = adminTopicFilterPath.join(' > ');
 
-    let filtered = unifiedAdminTopics.filter(t => {
+    currentFilteredAdminTopics = unifiedAdminTopics.filter(t => {
         let isMainTopic = !t.parentPath || t.parentPath === "";
 
         if (adminTopicScopeFilter === 'MAIN' && !isMainTopic) return false;
@@ -754,7 +920,114 @@ function filterAdminTopics() {
         return true;
     });
 
-    renderAdminTopicsList(filtered);
+    renderAdminTopicsList(currentFilteredAdminTopics);
+    updateAdminBulkSelectedCounter();
+}
+
+function updateAdminBulkSelectedCounter() {
+    const el = document.getElementById('adminBulkSelectedCount');
+    if (el) el.innerText = `${adminBulkSelectedPaths.size} Folder${adminBulkSelectedPaths.size === 1 ? '' : 's'} Selected`;
+}
+
+function toggleAdminBulkTopicSelect(fullPath, isChecked) {
+    if (isChecked) adminBulkSelectedPaths.add(fullPath);
+    else adminBulkSelectedPaths.delete(fullPath);
+    updateAdminBulkSelectedCounter();
+}
+
+function toggleSelectAllFilteredTopics(selectAll) {
+    if (selectAll) {
+        currentFilteredAdminTopics.forEach(t => adminBulkSelectedPaths.add(t.fullPath));
+    } else {
+        adminBulkSelectedPaths.clear();
+    }
+    renderAdminTopicsList(currentFilteredAdminTopics);
+    updateAdminBulkSelectedCounter();
+}
+
+async function bulkInjectDifficultyToSelectedTopics() {
+    if (adminBulkSelectedPaths.size === 0) {
+        showNotification("⚠️ Select at least one chapter/folder using the checkboxes first.");
+        return;
+    }
+    const diffNames = ["Easy", "Medium", "Hard", "Mixed"];
+    let targetPaths = Array.from(adminBulkSelectedPaths);
+    if (!confirm(`Add Difficulty Set (Easy, Medium, Hard, Mixed) inside ${targetPaths.length} selected folder(s)?`)) return;
+
+    try {
+        let createdCount = 0;
+        let ops = [];
+
+        targetPaths.forEach(parentFullPath => {
+            diffNames.forEach(dName => {
+                let childFull = `${parentFullPath} > ${dName}`;
+                if (!doesTopicPathExist(childFull)) {
+                    let autoIcon = typeof getAutomaticIconForName === 'function' ? getAutomaticIconForName(dName, 'mcq') : '📝';
+                    ops.push({
+                        parentPath: parentFullPath,
+                        name: dName,
+                        type: 'mcq',
+                        icon: autoIcon
+                    });
+                }
+            });
+        });
+
+        for (let i = 0; i < ops.length; i += 400) {
+            let chunk = ops.slice(i, i + 400);
+            let batch = db.batch();
+            chunk.forEach(item => {
+                let ref = db.collection("custom_topics").doc();
+                batch.set(ref, {
+                    ...item,
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                createdCount++;
+            });
+            await batch.commit();
+        }
+
+        showNotification(`✅ Created ${createdCount} difficulty folder(s) across ${targetPaths.length} selected topic(s)!`);
+        adminBulkSelectedPaths.clear();
+        await loadAdminTopicsList();
+    } catch (e) {
+        showNotification("❌ Bulk creation error: " + e.message);
+    }
+}
+
+async function bulkDeleteSelectedTopics() {
+    if (adminBulkSelectedPaths.size === 0) {
+        showNotification("⚠️ Select at least one folder using the checkboxes first.");
+        return;
+    }
+    let targets = Array.from(adminBulkSelectedPaths);
+    if (!confirm(`Are you sure you want to delete ${targets.length} selected folder(s)?`)) return;
+
+    try {
+        const snap = await db.collection("custom_topics").get();
+        let batch = db.batch();
+        let batchCount = 0;
+
+        snap.forEach(doc => {
+            let d = doc.data();
+            let p = (d.parentPath || "").trim();
+            let f = p ? `${p} > ${d.name}` : d.name;
+            if (targets.some(tPath => f === tPath || p === tPath || p.startsWith(tPath + " > "))) {
+                batch.delete(doc.ref);
+                batchCount++;
+            }
+        });
+        if (batchCount > 0) await batch.commit();
+
+        topicOverrides.deletedPaths = Array.from(new Set([...(topicOverrides.deletedPaths || []), ...targets]));
+        await db.collection("settings").doc("topic_overrides").set(topicOverrides, { merge: true });
+
+        adminBulkSelectedPaths.clear();
+        showNotification(`🗑️ Deleted ${targets.length} folder(s)!`);
+        await loadAdminTopicsList();
+    } catch (e) {
+        showNotification("❌ Bulk delete error: " + e.message);
+    }
 }
 
 function buildAdminTopicCardHtml(d, idx) {
@@ -765,22 +1038,26 @@ function buildAdminTopicCardHtml(d, idx) {
     let cleanIcon = d.icon ? d.icon.replace(/'/g, "\\'") : '';
     let typeBadgeStr = d.type === 'both' ? 'PARENT CATEGORY' : (d.type || 'mcq').toUpperCase();
     let parentStr = d.parentPath ? d.parentPath : 'Root (Main Menu)';
+    let isChecked = adminBulkSelectedPaths.has(d.fullPath);
     let smartTheme = typeof getAutoTopicTheme === 'function'
         ? getAutoTopicTheme(d.name || '', d.icon, idx)
         : { i: d.icon || '📁', c: '#fdb813' };
 
     return `
-    <div style="background:#1c1c24; border:1px solid #2b2b36; border-left: 4px solid ${smartTheme.c}; border-radius:12px; padding:16px 20px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center; flex-wrap: wrap; gap: 15px;">
-        <div>
-            <span style="color:var(--text-muted); font-size:12px; display:block; margin-bottom:5px;">Path: ${parentStr}</span>
-            <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-                <b style="font-size:16px; color:#fff;">${smartTheme.i} ${d.name}</b>
-                <span style="font-size:10.5px; background:#2b2b36; color:#ccc; padding:3px 9px; border-radius:6px; font-weight:700; letter-spacing:0.4px;">${typeBadgeStr}</span>
+    <div style="background:#1c1c24; border:1px solid ${isChecked ? '#fdb813' : '#2b2b36'}; border-left: 4px solid ${smartTheme.c}; border-radius:12px; padding:14px 18px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center; flex-wrap: wrap; gap: 15px;">
+        <div style="display:flex; align-items:center; gap:14px; flex:1; min-width:220px;">
+            <input type="checkbox" ${isChecked ? 'checked' : ''} onchange="toggleAdminBulkTopicSelect('${safeFullPath}', this.checked)" style="accent-color:#fdb813; width:18px; height:18px; cursor:pointer; flex-shrink:0;">
+            <div>
+                <span style="color:var(--text-muted); font-size:12px; display:block; margin-bottom:4px;">Path: ${parentStr}</span>
+                <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                    <b style="font-size:15.5px; color:#fff;">${smartTheme.i} ${d.name}</b>
+                    <span style="font-size:10.5px; background:#2b2b36; color:#ccc; padding:3px 9px; border-radius:6px; font-weight:700; letter-spacing:0.4px;">${typeBadgeStr}</span>
+                </div>
             </div>
         </div>
         <div style="display:flex; gap:10px;">
-            <button onclick="openEditTopicModal('${safeId}', '${cleanName}', '${d.type}', '${cleanIcon}', '${safeFullPath}')" style="background:rgba(33, 150, 243, 0.15); border:1px solid rgba(33,150,243,0.4); color:#38bdf8; padding:8px 18px; border-radius:8px; cursor:pointer; font-weight:bold; transition:0.2s;">Edit</button>
-            <button onclick="deleteUnifiedTopic('${safeId}', '${safeFullPath}')" style="background:rgba(244, 67, 54, 0.15); border:1px solid rgba(244,67,54,0.4); color:var(--wrong-red); padding:8px 18px; border-radius:8px; cursor:pointer; font-weight:bold; transition:0.2s;">Delete</button>
+            <button onclick="openEditTopicModal('${safeId}', '${cleanName}', '${d.type}', '${cleanIcon}', '${safeFullPath}')" style="background:rgba(33, 150, 243, 0.15); border:1px solid rgba(33,150,243,0.4); color:#38bdf8; padding:8px 16px; border-radius:8px; cursor:pointer; font-weight:bold; transition:0.2s;">Edit</button>
+            <button onclick="deleteUnifiedTopic('${safeId}', '${safeFullPath}')" style="background:rgba(244, 67, 54, 0.15); border:1px solid rgba(244,67,54,0.4); color:var(--wrong-red); padding:8px 16px; border-radius:8px; cursor:pointer; font-weight:bold; transition:0.2s;">Delete</button>
         </div>
     </div>`;
 }
@@ -897,6 +1174,7 @@ async function deleteUnifiedTopic(identifier, fullPath) {
         topicOverrides.deletedPaths = Array.from(new Set([...(topicOverrides.deletedPaths || []), fullPath]));
         await db.collection("settings").doc("topic_overrides").set(topicOverrides, { merge: true });
 
+        adminBulkSelectedPaths.delete(fullPath);
         showNotification("🗑️ Topic deleted!");
         await loadAdminTopicsList();
     } catch(e) {
@@ -1469,7 +1747,7 @@ function renderAdminCpConfiguredList() {
 }
 
 // ==========================================
-// CREATE TOPIC & RAPID UPLOAD PATH SELECTORS (RESTORED!)
+// SMART MULTI-TARGET & BATCH CREATE TOPIC ENGINE
 // ==========================================
 function _buildAdminNewTopicSelectors() {
     const container = document.getElementById('dynamic-new-path-selectors'); 
@@ -1494,9 +1772,79 @@ function _buildAdminNewTopicSelectors() {
     }
     container.innerHTML = html;
     
+    renderAdminMultiTargetSelector();
+    updateAdminDestinationSummaryText();
+}
+
+function renderAdminMultiTargetSelector() {
+    const multiContainer = document.getElementById('admin-multi-target-container');
+    if (!multiContainer) return;
+
+    let childrenAtLevel = getMergedChildKeysAtPath(adminNewTopicPath);
+    adminMultiTargetChildren = adminMultiTargetChildren.filter(c => childrenAtLevel.includes(c));
+
+    if (childrenAtLevel.length === 0) {
+        multiContainer.innerHTML = '';
+        return;
+    }
+
+    let parentLabel = adminNewTopicPath.length > 0
+        ? adminNewTopicPath[adminNewTopicPath.length - 1].replace(/^\d+\.\s*/, '')
+        : 'Root (Main Menu)';
+
+    let itemsHtml = childrenAtLevel.map((childKey, idx) => {
+        let isChecked = adminMultiTargetChildren.includes(childKey);
+        let safeKey = childKey.replace(/'/g, "\\'");
+        let iconChar = typeof getAutomaticIconForName === 'function' ? getAutomaticIconForName(childKey) : '📁';
+        return `
+        <label class="admin-target-item ${isChecked ? 'checked' : ''}" id="admTargetItem_${idx}">
+            <input type="checkbox" ${isChecked ? 'checked' : ''} onchange="toggleAdminMultiTargetChild('${safeKey}', this.checked, ${idx})">
+            <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${iconChar} ${childKey.replace(/^\d+\.\s*/, '')}</span>
+        </label>`;
+    }).join('');
+
+    multiContainer.innerHTML = `
+    <div class="admin-multi-target-box">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:6px;">
+            <div>
+                <span style="font-size:12px; font-weight:800; color:#38bdf8; text-transform:uppercase;">🎯 1B. Multi-Target Batch Selector — Inside "${parentLabel}" (Optional)</span>
+                <div style="font-size:11.5px; color:var(--text-muted);">Check multiple folders below to add the same subtopic(s) (like Easy, Medium, Hard) into all of them at once!</div>
+            </div>
+            <div style="display:flex; gap:8px;">
+                <button type="button" onclick="selectAllAdminMultiTargetChildren(true)" style="background:rgba(56,189,248,0.15); color:#38bdf8; border:1px solid rgba(56,189,248,0.4); border-radius:6px; padding:4px 10px; font-size:11px; font-weight:700; cursor:pointer;">☑️ Select All (${childrenAtLevel.length})</button>
+                <button type="button" onclick="selectAllAdminMultiTargetChildren(false)" style="background:rgba(255,255,255,0.06); color:#aaa; border:1px solid #333; border-radius:6px; padding:4px 10px; font-size:11px; font-weight:700; cursor:pointer;">Clear</button>
+            </div>
+        </div>
+        <div class="admin-multi-target-grid">${itemsHtml}</div>
+    </div>`;
+}
+
+function toggleAdminMultiTargetChild(childKey, isChecked, idx) {
+    if (isChecked) {
+        if (!adminMultiTargetChildren.includes(childKey)) adminMultiTargetChildren.push(childKey);
+    } else {
+        adminMultiTargetChildren = adminMultiTargetChildren.filter(c => c !== childKey);
+    }
+    const card = document.getElementById('admTargetItem_' + idx);
+    if (card) card.classList.toggle('checked', isChecked);
+    updateAdminDestinationSummaryText();
+}
+
+function selectAllAdminMultiTargetChildren(selectAll) {
+    let childrenAtLevel = getMergedChildKeysAtPath(adminNewTopicPath);
+    adminMultiTargetChildren = selectAll ? [...childrenAtLevel] : [];
+    renderAdminMultiTargetSelector();
+    updateAdminDestinationSummaryText();
+}
+
+function updateAdminDestinationSummaryText() {
     let pathTextSpan = document.getElementById('new-topic-path-text');
-    if (pathTextSpan) {
-        pathTextSpan.innerText = adminNewTopicPath.length > 0 ? adminNewTopicPath.join(' > ') : 'Root (Main Menu)';
+    if (!pathTextSpan) return;
+    let baseStr = adminNewTopicPath.length > 0 ? adminNewTopicPath.join(' > ') : 'Root (Main Menu)';
+    if (adminMultiTargetChildren.length === 0) {
+        pathTextSpan.innerHTML = `<span style="color:#fff;">${baseStr}</span>`;
+    } else {
+        pathTextSpan.innerHTML = `<span style="color:#38bdf8; font-weight:800;">${adminMultiTargetChildren.length} Selected Folders under ${baseStr}</span> <span style="color:#aaa; font-size:12px;">(${adminMultiTargetChildren.slice(0, 4).map(c => c.replace(/^\d+\.\s*/, '')).join(', ')}${adminMultiTargetChildren.length > 4 ? '...' : ''})</span>`;
     }
 }
 
@@ -1508,53 +1856,118 @@ function handleAdminNewTopicPathChange(event, depth) {
         adminNewTopicPath = adminNewTopicPath.slice(0, depth);
         adminNewTopicPath.push(val);
     }
+    adminMultiTargetChildren = [];
     _buildAdminNewTopicSelectors(); 
 }
         
 async function createCustomTopic() {
     const folderNameInput = document.getElementById('newFolderName');
-    const folderName = folderNameInput ? folderNameInput.value.trim() : "";
-    if (!folderName) {
-        showNotification("⚠️ Folder name is required.");
+    const rawFolderNames = folderNameInput ? folderNameInput.value.trim() : "";
+    const folderNamesList = parseFolderNamesList(rawFolderNames);
+
+    if (folderNamesList.length === 0) {
+        showNotification("⚠️ Please enter at least one folder name.");
         return;
     }
+
     const folderType = document.getElementById('newFolderType').value;
     const manualIcon = document.getElementById('newFolderIcon') ? document.getElementById('newFolderIcon').value.trim() : "";
-
-    const autoAssignedIcon = manualIcon || (typeof getAutomaticIconForName === 'function' ? getAutomaticIconForName(folderName, folderType) : "📘");
+    const autoAddDiffInside = document.getElementById('autoAddDiffInsideToggle') ? document.getElementById('autoAddDiffInsideToggle').checked : false;
 
     const btn = document.getElementById('createFolderBtn');
-    if (btn) { btn.innerText = "Creating..."; btn.disabled = true; }
+    if (btn) { btn.innerText = "Creating Folder(s)..."; btn.disabled = true; }
 
     try {
-        const fullPath = adminNewTopicPath.length > 0 ? adminNewTopicPath.join(' > ') : "";
-        const createdFullKey = fullPath ? `${fullPath} > ${folderName}` : folderName;
+        let basePath = adminNewTopicPath.length > 0 ? adminNewTopicPath.join(' > ') : "";
+        let targetParentPaths = [];
 
-        // If this path was previously deleted in topicOverrides, un-delete it automatically
-        if (topicOverrides && Array.isArray(topicOverrides.deletedPaths) && topicOverrides.deletedPaths.includes(createdFullKey)) {
-            topicOverrides.deletedPaths = topicOverrides.deletedPaths.filter(p => p !== createdFullKey);
-            await db.collection("settings").doc("topic_overrides").set(topicOverrides, { merge: true });
+        if (adminMultiTargetChildren.length > 0) {
+            targetParentPaths = adminMultiTargetChildren.map(child => basePath ? `${basePath} > ${child}` : child);
+        } else {
+            targetParentPaths = [basePath];
         }
 
-        const topicData = {
-            parentPath: fullPath,
-            name: folderName,
-            type: folderType,
-            icon: autoAssignedIcon,
-            timestamp: firebase.firestore.FieldValue.serverTimestamp()
-        };
+        let docsToCreate = [];
+        let unDeletePaths = [];
 
-        await db.collection("custom_topics").add(topicData);
-        showNotification(`✅ Folder "${folderName}" Created with ${autoAssignedIcon} Icon!`);
+        targetParentPaths.forEach(parentPathStr => {
+            folderNamesList.forEach(fName => {
+                let fullKey = parentPathStr ? `${parentPathStr} > ${fName}` : fName;
+                unDeletePaths.push(fullKey);
+
+                let effectiveType = autoAddDiffInside ? 'both' : folderType;
+                let assignedIcon = manualIcon || (typeof getAutomaticIconForName === 'function' ? getAutomaticIconForName(fName, effectiveType) : "📘");
+
+                if (!doesTopicPathExist(fullKey)) {
+                    docsToCreate.push({
+                        parentPath: parentPathStr,
+                        name: fName,
+                        type: effectiveType,
+                        icon: assignedIcon
+                    });
+                }
+
+                // If "Auto-create Easy, Medium, Hard, Mixed inside each new folder" is checked:
+                if (autoAddDiffInside) {
+                    ["Easy", "Medium", "Hard", "Mixed"].forEach(diffName => {
+                        let diffFullKey = `${fullKey} > ${diffName}`;
+                        unDeletePaths.push(diffFullKey);
+                        if (!doesTopicPathExist(diffFullKey)) {
+                            let diffIcon = typeof getAutomaticIconForName === 'function' ? getAutomaticIconForName(diffName, 'mcq') : "📝";
+                            docsToCreate.push({
+                                parentPath: fullKey,
+                                name: diffName,
+                                type: 'mcq',
+                                icon: diffIcon
+                            });
+                        }
+                    });
+                }
+            });
+        });
+
+        // Un-delete any paths that were previously in topicOverrides.deletedPaths
+        if (topicOverrides && Array.isArray(topicOverrides.deletedPaths)) {
+            let unDelSet = new Set(unDeletePaths);
+            let prevLen = topicOverrides.deletedPaths.length;
+            topicOverrides.deletedPaths = topicOverrides.deletedPaths.filter(p => !unDelSet.has(p));
+            if (topicOverrides.deletedPaths.length !== prevLen) {
+                await db.collection("settings").doc("topic_overrides").set(topicOverrides, { merge: true });
+            }
+        }
+
+        // Commit in Firestore batches of up to 400 docs
+        for (let i = 0; i < docsToCreate.length; i += 400) {
+            let chunk = docsToCreate.slice(i, i + 400);
+            let batch = db.batch();
+            chunk.forEach(item => {
+                let ref = db.collection("custom_topics").doc();
+                batch.set(ref, {
+                    ...item,
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                });
+            });
+            await batch.commit();
+        }
+
+        if (docsToCreate.length === 0) {
+            showNotification("ℹ️ All specified folder(s) already exist at the selected path(s)!");
+        } else {
+            showNotification(`✅ Created ${docsToCreate.length} folder(s) across ${targetParentPaths.length} target path(s)!`);
+        }
+
         if (folderNameInput) folderNameInput.value = "";
         if (document.getElementById('newFolderIcon')) document.getElementById('newFolderIcon').value = "";
+        if (document.getElementById('autoAddDiffInsideToggle')) document.getElementById('autoAddDiffInsideToggle').checked = false;
+        adminMultiTargetChildren = [];
+
         await loadCustomTopics();
         _buildAdminNewTopicSelectors();
         updateLiveAutoIconPreview();
     } catch(error) {
         showNotification("❌ Error creating folder: " + error.message);
     }
-    if (btn) { btn.innerText = "+ Create Folder"; btn.disabled = false; }
+    if (btn) { btn.innerText = "+ Create Folder(s)"; btn.disabled = false; }
 }
 
 function _buildAdminSelectors() {
@@ -1634,7 +2047,14 @@ async function processAdminUpload() {
             const options = { A: document.getElementById('admOptA').value.trim(), B: document.getElementById('admOptB').value.trim(), C: document.getElementById('admOptC').value.trim(), D: document.getElementById('admOptD').value.trim() };
             const correctCbs = document.querySelectorAll('.admCorrectCb:checked'); let correctAnswers = Array.from(correctCbs).map(cb => cb.value);
             const explanation = document.getElementById('admExplanation').value.trim(); const imageFile = document.getElementById('admQImage').files[0];
-            const level = document.getElementById('admDifficulty').value;
+            let level = document.getElementById('admDifficulty').value;
+
+            // Smart Auto-Difficulty Detection: If uploading into an Easy/Medium/Hard folder, auto-sync the difficulty level!
+            let leafFolder = (adminSelectedPath[adminSelectedPath.length - 1] || "").replace(/^\d+\.\s*/, '').trim();
+            if (["Easy", "Medium", "Hard", "Mixed"].includes(leafFolder) && level === "Mixed") {
+                level = leafFolder;
+            }
+
             if (!question || !options.A || !options.B || correctAnswers.length === 0) throw new Error("Question, Option A, Option B, and Correct Answer are required.");
             let imageUrl = null; if (imageFile) imageUrl = await uploadFileToCloudinary(imageFile); 
             
