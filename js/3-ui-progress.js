@@ -1,5 +1,5 @@
 // ==========================================
-// 4. MAIN VIEW RENDERER & AUTO-COLOR ENGINE
+// 4. MAIN VIEW RENDERER & AUTOMATIC STUDY ICON / COLOR ENGINE
 // ==========================================
 
 function forceStartQuiz() {
@@ -37,7 +37,7 @@ const TOPIC_COLOR_PALETTE = [
     "#3b82f6", "#d946ef", "#f59e0b", "#2dd4bf"
 ];
 
-const FALLBACK_TOPIC_ICONS = ["📘", "🧬", "⚛️", "🧪", "🌿", "📐", "🧠", "⚡", "🌍", "🏛️", "📊", "🚀"];
+const FALLBACK_TOPIC_ICONS = ["📘", "🧬", "⚛️", "🧪", "🌿", "📐", "🧠", "⚡", "🌍", "🏛️", "📊", "🚀", "🔬", "📖", "🎯", "💡"];
 
 function getPaletteColorForText(text, offset = 0) {
     let str = String(text || "topic");
@@ -49,61 +49,154 @@ function getPaletteColorForText(text, offset = 0) {
     return TOPIC_COLOR_PALETTE[index];
 }
 
+// Comprehensive Study, Subject, Chapter & Exam Icon Rules
+// Ordered from specific study materials/chapters/subjects FIRST -> generic exam categories LAST
+const STUDY_ICON_RULES = [
+    // 1. Difficulty Levels
+    { keys: ["easy"], i: "🟢", c: "#10b981" },
+    { keys: ["medium"], i: "🟡", c: "#eab308" },
+    { keys: ["hard"], i: "🔴", c: "#f43f5e" },
+    { keys: ["mixed"], i: "⚡", c: "#a855f7" },
+
+    // 2. Study Materials, Books, Papers & Tests (Checked before exam names so "NCERT Book (NEET)" gets 📚)
+    { keys: ["ncert", "textbook", "book"], i: "📚", c: "#a855f7" },
+    { keys: ["pyq", "previous year", "past paper", "solved paper"], i: "📄", c: "#ec4899" },
+    { keys: ["practice paper", "sample paper", "model paper", "question paper", "guess paper"], i: "📋", c: "#38bdf8" },
+    { keys: ["mock test", "mock", "grand test", "full test", "test series", "speed test"], i: "⏱️", c: "#f97316" },
+    { keys: ["daily quiz", "daily challenge", "challenge"], i: "📅", c: "#fdb813" },
+    { keys: ["formula", "cheat sheet", "handbook"], i: "🧮", c: "#14b8a6" },
+    { keys: ["mind map", "flowchart", "diagram"], i: "🗺️", c: "#ec4899" },
+    { keys: ["short note", "revision note", "handwritten", "notes", "summary", "flashcard"], i: "📒", c: "#eab308" },
+    { keys: ["syllabus", "blueprint", "curriculum"], i: "📌", c: "#38bdf8" },
+    { keys: ["mcq", "practice", "quiz", "objective", "question bank", "dpp", "worksheet"], i: "📝", c: "#06b6d4" },
+    { keys: ["assertion", "statement", "case study", "match the column"], i: "🔍", c: "#8b5cf6" },
+
+    // 3. Biology — Botany, Zoology & Medical Chapters
+    { keys: ["genetics", "inheritance", "variation", "dna", "rna", "molecular basis", "gene", "chromosome", "mutation"], i: "🧬", c: "#f43f5e" },
+    { keys: ["cell cycle", "cell division", "mitosis", "meiosis", "cell: the unit", "cell structure", "organelle"], i: "🔬", c: "#ec4899" },
+    { keys: ["biomolecule", "enzyme", "protein", "amino acid", "carbohydrate", "lipid", "nucleic acid"], i: "🧪", c: "#14b8a6" },
+    { keys: ["photosynthesis", "chloroplast", "pigment", "calvin"], i: "☀️", c: "#22c55e" },
+    { keys: ["respiration in plant", "glycolysis", "krebs", "plant growth", "phytohormone", "auxin"], i: "🌱", c: "#10b981" },
+    { keys: ["morphology of flowering", "flower", "inflorescence", "pollination", "sexual reproduction in flowering", "angiosperm"], i: "🌸", c: "#ec4899" },
+    { keys: ["anatomy of flowering", "xylem", "phloem", "meristem", "vascular", "plant kingdom", "algae", "bryophyte", "pteridophyte", "gymnosperm", "botany", "plant", "transport in plant", "mineral nutrition"], i: "🌿", c: "#22c55e" },
+    { keys: ["biological classification", "monera", "protista", "fungi", "virus", "viroid", "lichen", "bacteria", "microbe"], i: "🦠", c: "#84cc16" },
+    { keys: ["living world", "taxonomy", "nomenclature", "biodiversity", "conservation"], i: "🌍", c: "#10b981" },
+    { keys: ["ecosystem", "organisms and population", "ecology", "environment", "food chain", "biosphere", "pollution"], i: "🌲", c: "#10b981" },
+    { keys: ["biotechnology", "recombinant", "pcr", "plasmid", "cloning", "biopiracy"], i: "🧫", c: "#06b6d4" },
+    { keys: ["human health", "disease", "immunity", "vaccine", "cancer", "aids", "malaria", "pathology", "pharmacology"], i: "💊", c: "#f43f5e" },
+    { keys: ["neural", "brain", "nervous", "neuron", "synapse", "eye", "ear", "sensory"], i: "🧠", c: "#a855f7" },
+    { keys: ["body fluid", "circulation", "heart", "blood", "cardiac", "vascular", "ecg"], i: "🫀", c: "#ef4444" },
+    { keys: ["breathing", "exchange of gases", "lungs", "respiratory", "alveoli"], i: "🫁", c: "#38bdf8" },
+    { keys: ["locomotion", "movement", "skeletal", "muscle", "bone", "joint"], i: "🦴", c: "#eab308" },
+    { keys: ["digestion", "absorption", "alimentary", "liver", "stomach", "gut", "nutrition"], i: "🍎", c: "#f97316" },
+    { keys: ["excretory", "kidney", "nephron", "urine", "osmoregulation"], i: "💧", c: "#06b6d4" },
+    { keys: ["chemical coordination", "endocrine", "hormone", "pituitary", "thyroid", "adrenal", "insulin"], i: "⚗️", c: "#d946ef" },
+    { keys: ["human reproduction", "reproductive health", "gametogenesis", "embryo", "fertilisation"], i: "👶", c: "#ec4899" },
+    { keys: ["evolution", "darwin", "natural selection", "fossil", "hardy-weinberg", "origin of life"], i: "🦕", c: "#f59e0b" },
+    { keys: ["animal kingdom", "chordata", "non-chordata", "arthropoda", "mollusca", "zoology", "animal", "structural organisation", "cockroach", "frog", "earthworm", "epithelial"], i: "🦁", c: "#f59e0b" },
+    { keys: ["biology", "life science", "anatomy", "physiology"], i: "🧬", c: "#f43f5e" },
+
+    // 4. Physics & Subtopics
+    { keys: ["optics", "ray optics", "wave optics", "lens", "mirror", "prism", "refraction", "interference", "diffraction", "polarization"], i: "🌈", c: "#38bdf8" },
+    { keys: ["electrostatics", "electric charge", "electric field", "capacitance", "capacitor", "potentials", "gauss"], i: "⚡", c: "#eab308" },
+    { keys: ["current electricity", "ohm", "kirchhoff", "wheatstone", "circuit", "alternating current", "ac circuit", "transformer"], i: "🔌", c: "#f59e0b" },
+    { keys: ["magnetism", "magnetic", "moving charge", "biot-savart", "ampere", "solenoid", "electromagnetic induction", "faraday", "lenz", "em wave"], i: "🧲", c: "#ef4444" },
+    { keys: ["semiconductor", "diode", "transistor", "logic gate", "electronics", "pn junction", "rectifier", "communication"], i: "💻", c: "#06b6d4" },
+    { keys: ["atom", "nuclei", "nuclear", "radioactivity", "bohr", "dual nature", "photoelectric", "de broglie", "x-ray", "modern physics", "quantum"], i: "⚛️", c: "#a855f7" },
+    { keys: ["thermodynamics", "thermal", "heat", "calorimetry", "carnot", "kinetic theory", "gas"], i: "🔥", c: "#f97316" },
+    { keys: ["gravitation", "kepler", "satellite", "escape velocity", "orbit", "space", "astrophysics"], i: "🪐", c: "#6366f1" },
+    { keys: ["oscillation", "shm", "simple harmonic", "pendulum", "wave", "sound", "doppler", "acoustics"], i: "〰️", c: "#14b8a6" },
+    { keys: ["fluid", "bernoulli", "viscosity", "surface tension", "hydrostatics", "solid", "elasticity", "young's modulus"], i: "🌊", c: "#0ea5e9" },
+    { keys: ["rotational", "torque", "moment of inertia", "rolling", "center of mass", "work energy", "power", "collision", "laws of motion", "newton", "friction", "pulley", "kinematics", "straight line", "projectile", "motion in a plane", "vector", "units and measurement", "dimension", "error", "mechanics", "physics"], i: "⚙️", c: "#a855f7" },
+
+    // 5. Chemistry (Physical, Organic, Inorganic) & Chapters
+    { keys: ["organic", "hydrocarbon", "alkane", "alkene", "alkyne", "benzene", "aromatic", "haloalkane", "haloarene", "alcohol", "phenol", "ether", "aldehyde", "ketone", "carboxylic", "amine", "diazonium", "polymer", "isomerism", "iupac", "goc", "reaction mechanism"], i: "⌬", c: "#10b981" },
+    { keys: ["inorganic", "periodic table", "periodicity", "s-block", "p-block", "d-block", "f-block", "transition", "lanthanoid", "coordination compound", "ligand", "metallurgy", "isolation of element", "hydrogen", "salt analysis"], i: "💎", c: "#ec4899" },
+    { keys: ["electrochemistry", "nernst", "electrolysis", "conductance", "galvanic", "battery"], i: "🔋", c: "#eab308" },
+    { keys: ["chemical kinetics", "rate of reaction", "arrhenius", "half-life", "catalysis", "surface chemistry", "colloid", "adsorption"], i: "⏳", c: "#f97316" },
+    { keys: ["equilibrium", "ionic equilibrium", "ph", "buffer", "solubility", "le chatelier"], i: "⚖️", c: "#38bdf8" },
+    { keys: ["chemical bonding", "hybridisation", "vsepr", "molecular orbital", "dipole", "atomic structure", "structure of atom", "quantum number", "mole concept", "stoichiometry", "redox", "solid state", "crystal", "solution", "colligative", "raoult", "states of matter", "physical chemistry", "chemistry"], i: "🧪", c: "#06b6d4" },
+
+    // 6. Mathematics & Chapters
+    { keys: ["calculus", "limit", "derivative", "differentiation", "continuity", "differentiability", "integral", "integration", "differential equation", "area under curve"], i: "∫", c: "#6366f1" },
+    { keys: ["trigonometry", "trigonometric", "inverse trig", "triangle", "height and distance"], i: "📐", c: "#38bdf8" },
+    { keys: ["geometry", "straight line", "circle", "parabola", "ellipse", "hyperbola", "conic", "coordinate", "3d geometry", "mensuration"], i: "📏", c: "#10b981" },
+    { keys: ["matrix", "matrices", "determinant", "complex number", "quadratic", "polynomial", "binomial", "sequence", "series", "progression", "ap", "gp", "set", "relation", "function", "inequality", "algebra", "math"], i: "🔢", c: "#3b82f6" },
+    { keys: ["probability", "permutation", "combination", "statistics", "variance", "mean", "median", "data interpretation"], i: "🎲", c: "#ec4899" },
+
+    // 7. General Knowledge, Humanities, Aptitude & Languages
+    { keys: ["history", "ancient", "medieval", "modern india", "freedom", "dynasty", "empire", "mughal", "british", "harappa", "vedic"], i: "🏛️", c: "#f97316" },
+    { keys: ["geography", "river", "mountain", "climate", "monsoon", "soil", "mineral", "continent", "ocean", "atlas", "map", "solar system", "earth"], i: "🗺️", c: "#10b981" },
+    { keys: ["polity", "constitution", "parliament", "president", "fundamental right", "directive", "judiciary", "supreme court", "panchayat", "governance", "amendment", "civics", "politics"], i: "⚖️", c: "#a855f7" },
+    { keys: ["economy", "economics", "budget", "gdp", "inflation", "tax", "gst", "rbi", "monetary", "fiscal", "five year plan", "commerce", "finance", "accounting"], i: "💰", c: "#22c55e" },
+    { keys: ["current affairs", "news", "headline", "international", "summit", "scheme", "appointment"], i: "📰", c: "#38bdf8" },
+    { keys: ["award", "nobel", "ratna", "oscar", "trophy", "medal", "honour"], i: "🏆", c: "#fdb813" },
+    { keys: ["sport", "cricket", "olympic", "football", "hockey", "tennis", "chess", "athletics"], i: "🏅", c: "#10b981" },
+    { keys: ["art", "culture", "dance", "music", "festival", "temple", "heritage", "painting", "literature"], i: "🎭", c: "#ec4899" },
+    { keys: ["assam", "north east", "ahom", "brahmaputra"], i: "🦏", c: "#22c55e" },
+    { keys: ["computer", "software", "hardware", "internet", "networking", "cyber", "coding", "programming", "python", "java", "dbms", "operating system", "it", "artificial intelligence"], i: "💻", c: "#38bdf8" },
+    { keys: ["reasoning", "logical", "puzzle", "syllogism", "blood relation", "coding-decoding", "seating", "analogy", "series", "direction", "clock", "calendar", "venn", "non-verbal"], i: "🧩", c: "#f97316" },
+    { keys: ["aptitude", "quantitative", "percentage", "profit", "loss", "interest", "ratio", "proportion", "time and work", "time and distance", "train", "boat", "mixture", "alligation", "average", "number system", "simplification", "hcf", "lcm"], i: "📈", c: "#14b8a6" },
+    { keys: ["english", "grammar", "vocabulary", "synonym", "antonym", "idiom", "phrase", "comprehension", "tense", "voice", "narration", "preposition", "error spotting", "cloze", "para jumble"], i: "📖", c: "#ec4899" },
+    { keys: ["hindi", "vyakaran", "sanskrit", "assamese", "bengali", "language"], i: "🔤", c: "#f97316" },
+    { keys: ["agriculture", "crop", "farming", "soil science", "horticulture"], i: "🌾", c: "#84cc16" },
+    { keys: ["psychology", "pedagogy", "teaching", "child development", "cdp", "education", "sociology", "philosophy", "ethics"], i: "🎓", c: "#8b5cf6" },
+    { keys: ["nursing", "bams", "bhms", "ayurveda", "homeopathy", "pharmacy", "dental", "veterinary", "clinical", "surgical", "first aid"], i: "🏥", c: "#f43f5e" },
+
+    // 8. Root Exam Categories (Checked last so specific subtopic names take priority)
+    { keys: ["neet", "medical", "aiims", "paramedical", "jipmer", "ssuhs"], i: "🩺", c: "#f43f5e" },
+    { keys: ["jee", "iit", "nit", "bitsat", "cee", "wbjee", "mht", "kcet", "engineering"], i: "🚀", c: "#38bdf8" },
+    { keys: ["gk", "general knowledge", "static gk", "general awareness", "general studies"], i: "🌍", c: "#10b981" },
+    { keys: ["upsc", "ias", "ips", "civil service", "apsc", "psc", "state pcs"], i: "🏛️", c: "#eab308" },
+    { keys: ["ssc", "cgl", "chsl", "mts", "gd", "staff selection"], i: "📋", c: "#06b6d4" },
+    { keys: ["banking", "ibps", "sbi", "rbi", "po", "clerk"], i: "🏦", c: "#22c55e" },
+    { keys: ["railway", "rrb", "ntpc", "group d"], i: "🚂", c: "#f59e0b" },
+    { keys: ["defense", "nda", "cds", "afcat", "agniveer", "army", "navy", "air force"], i: "🛡️", c: "#f97316" },
+    { keys: ["law", "clat", "ailet", "judiciary", "llb"], i: "⚖️", c: "#a855f7" },
+    { keys: ["gate", "net", "csir", "ugc", "iit jam", "cuet", "cat", "mba", "mat", "ctet", "tet"], i: "🎓", c: "#6366f1" }
+];
+
+// Automatically returns the best study icon for any topic/subtopic name without requiring user input
+function getAutomaticIconForName(name, folderType = null) {
+    let t = (name || "").replace(/^\d+\.\s*/, '').trim().toLowerCase();
+    for (let rule of STUDY_ICON_RULES) {
+        if (rule.keys.some(k => t.includes(k))) {
+            return rule.i;
+        }
+    }
+    if (folderType === 'pdf') return "📄";
+    if (folderType === 'mcq') return "📝";
+    let hash = 0;
+    for (let i = 0; i < t.length; i++) hash = t.charCodeAt(i) + ((hash << 5) - hash);
+    return FALLBACK_TOPIC_ICONS[Math.abs(hash) % FALLBACK_TOPIC_ICONS.length];
+}
+
 function getSmartIcon(text, customIcon = null) {
-    let t = (text || "").toLowerCase();
-    let matchedIcon = null;
-    let matchedColor = null;
+    let cleanText = (text || "").replace(/^\d+\.\s*/, '').trim();
+    // If title has a parenthetical suffix like "NCERT Book (NEET)", prioritize the main title before '(' first
+    let primaryPart = cleanText.split('(')[0].trim().toLowerCase();
+    let fullLower = cleanText.toLowerCase();
 
-    if(t.includes('neet')) { matchedIcon = "🩺"; matchedColor = "#f43f5e"; }
-    else if(t.includes('jee')) { matchedIcon = "🚀"; matchedColor = "#38bdf8"; }
-    else if(t.includes('gk') || t.includes('general knowledge')) { matchedIcon = "🌍"; matchedColor = "#10b981"; }
-    else if(t.includes('engineering')) { matchedIcon = "⚙️"; matchedColor = "#0ea5e9"; }
-    else if(t.includes('medical') || t.includes('aiims') || t.includes('paramedical')) { matchedIcon = "🩺"; matchedColor = "#ec4899"; }
-    else if(t.includes('law') || t.includes('clat')) { matchedIcon = "⚖️"; matchedColor = "#a855f7"; }
-    else if(t.includes('defense') || t.includes('nda') || t.includes('cds')) { matchedIcon = "🛡️"; matchedColor = "#f97316"; }
-    else if(t.includes('banking') || t.includes('ibps') || t.includes('sbi')) { matchedIcon = "🏦"; matchedColor = "#22c55e"; }
-    else if(t.includes('railway') || t.includes('rrb')) { matchedIcon = "🚂"; matchedColor = "#f59e0b"; }
-    else if(t.includes('ssc') || t.includes('staff selection')) { matchedIcon = "📋"; matchedColor = "#06b6d4"; }
-    else if(t.includes('upsc') || t.includes('civil')) { matchedIcon = "🏛️"; matchedColor = "#eab308"; }
-    else if(t.includes('gate')) { matchedIcon = "🎓"; matchedColor = "#8b5cf6"; }
-    else if(t.includes('cat') || t.includes('mba') || t.includes('cuet')) { matchedIcon = "📊"; matchedColor = "#14b8a6"; }
+    let matchedRule = null;
+    for (let rule of STUDY_ICON_RULES) {
+        if (rule.keys.some(k => primaryPart.includes(k))) {
+            matchedRule = rule;
+            break;
+        }
+    }
+    if (!matchedRule) {
+        for (let rule of STUDY_ICON_RULES) {
+            if (rule.keys.some(k => fullLower.includes(k))) {
+                matchedRule = rule;
+                break;
+            }
+        }
+    }
 
-    else if(t.includes('organic')) { matchedIcon = "⌬"; matchedColor = "#10b981"; }
-    else if(t.includes('inorganic')) { matchedIcon = "💎"; matchedColor = "#ec4899"; }
-    else if(t.includes('physical')) { matchedIcon = "⚡"; matchedColor = "#38bdf8"; }
-    else if(t.includes('physics') || t.includes('mechanics') || t.includes('optics') || t.includes('electro')) { matchedIcon = "⚛️"; matchedColor = "#a855f7"; }
-    else if(t.includes('chemistry') || t.includes('chemical') || t.includes('thermodynamics')) { matchedIcon = "🧪"; matchedColor = "#06b6d4"; }
-    else if(t.includes('botany') || t.includes('plant') || t.includes('ecology') || t.includes('photosynthesis')) { matchedIcon = "🌿"; matchedColor = "#22c55e"; }
-    else if(t.includes('zoology') || t.includes('animal') || t.includes('human') || t.includes('physiology')) { matchedIcon = "🦁"; matchedColor = "#f59e0b"; }
-    else if(t.includes('biology') || t.includes('genetics') || t.includes('cell') || t.includes('biomolecule') || t.includes('biotech')) { matchedIcon = "🧬"; matchedColor = "#f43f5e"; }
-    else if(t.includes('math') || t.includes('calculus') || t.includes('algebra') || t.includes('geometry')) { matchedIcon = "📐"; matchedColor = "#6366f1"; }
-    else if(t.includes('reasoning') || t.includes('logic')) { matchedIcon = "🧠"; matchedColor = "#f97316"; }
-    else if(t.includes('aptitude') || t.includes('quant')) { matchedIcon = "📈"; matchedColor = "#14b8a6"; }
-    else if(t.includes('english') || t.includes('grammar') || t.includes('vocab')) { matchedIcon = "📖"; matchedColor = "#ec4899"; }
-    else if(t.includes('hindi')) { matchedIcon = "🔤"; matchedColor = "#f97316"; }
-
-    else if(t.includes('history') || t.includes('ancient') || t.includes('modern')) { matchedIcon = "🏛️"; matchedColor = "#f97316"; }
-    else if(t.includes('geography') || t.includes('earth')) { matchedIcon = "🗺️"; matchedColor = "#10b981"; }
-    else if(t.includes('affairs') || t.includes('current') || t.includes('news')) { matchedIcon = "📰"; matchedColor = "#38bdf8"; }
-    else if(t.includes('politics') || t.includes('polity') || t.includes('constitution')) { matchedIcon = "🏛️"; matchedColor = "#a855f7"; }
-    else if(t.includes('economy') || t.includes('economics')) { matchedIcon = "💰"; matchedColor = "#22c55e"; }
-
-    else if(t.includes('ncert') || t.includes('book')) { matchedIcon = "📚"; matchedColor = "#a855f7"; }
-    else if(t.includes('pyq') || t.includes('previous')) { matchedIcon = "📄"; matchedColor = "#ec4899"; }
-    else if(t.includes('practice paper') || t.includes('sample paper') || t.includes('paper')) { matchedIcon = "📋"; matchedColor = "#eab308"; }
-    else if(t.includes('mock') || t.includes('test')) { matchedIcon = "⏱️"; matchedColor = "#f97316"; }
-    else if(t.includes('daily') || t.includes('challenge')) { matchedIcon = "📅"; matchedColor = "#fdb813"; }
-    else if(t.includes('quiz') || t.includes('practice') || t.includes('mcq')) { matchedIcon = "📝"; matchedColor = "#06b6d4"; }
-    else if(t.includes('note') || t.includes('formula') || t.includes('short')) { matchedIcon = "📒"; matchedColor = "#14b8a6"; }
-    else if(t.includes('syllabus')) { matchedIcon = "📋"; matchedColor = "#38bdf8"; }
-
-    else if(t === 'easy') { matchedIcon = "🟢"; matchedColor = "#10b981"; }
-    else if(t === 'medium') { matchedIcon = "🟡"; matchedColor = "#eab308"; }
-    else if(t === 'hard') { matchedIcon = "🔴"; matchedColor = "#f43f5e"; }
-    else if(t === 'mixed') { matchedIcon = "⚡"; matchedColor = "#a855f7"; }
-
-    let finalIcon = (customIcon && String(customIcon).trim() !== "") ? String(customIcon).trim() : matchedIcon;
-    let finalColor = matchedColor || getPaletteColorForText(text);
+    let finalIcon = (customIcon && String(customIcon).trim() !== "")
+        ? String(customIcon).trim()
+        : (matchedRule ? matchedRule.i : null);
+    let finalColor = matchedRule ? matchedRule.c : getPaletteColorForText(cleanText);
 
     if (finalIcon) {
         return makeTopicTheme(finalIcon, finalColor);
@@ -113,7 +206,7 @@ function getSmartIcon(text, customIcon = null) {
 
 function getAutoTopicTheme(displayKey, customIcon = null, index = 0, usedColorsSet = null, fallbackIcon = null) {
     let baseTheme = getSmartIcon(displayKey, customIcon);
-    let chosenIcon = baseTheme ? baseTheme.i : (customIcon || fallbackIcon || FALLBACK_TOPIC_ICONS[index % FALLBACK_TOPIC_ICONS.length]);
+    let chosenIcon = baseTheme ? baseTheme.i : (customIcon || getAutomaticIconForName(displayKey) || fallbackIcon || FALLBACK_TOPIC_ICONS[index % FALLBACK_TOPIC_ICONS.length]);
     let chosenColor = baseTheme ? baseTheme.c : getPaletteColorForText(displayKey, index);
 
     if (usedColorsSet && usedColorsSet.has(chosenColor) && usedColorsSet.size < TOPIC_COLOR_PALETTE.length) {
@@ -229,7 +322,6 @@ function _renderView() {
             const topicType = customTopicTypes[checkPath];
             const typeValue = topicType ? (typeof topicType === 'object' ? topicType.type : topicType) : null;
 
-            // Root categories with no subtopics (like General Knowledge) act as empty parent containers until subtopics are added
             if (currentPath.length === 1 && (!typeValue || typeValue === 'both')) {
                 isContainer = true;
             } else if (typeValue === 'pdf') {
@@ -242,7 +334,7 @@ function _renderView() {
                 let mcqTriggers = ["mcq", "mock", "quiz", "test", "practice", "challenge", "paper"];
                 let isMcq = mcqTriggers.some(t => topicNameLower.includes(t));
 
-                if (isPdf && !isMcq) isPdfOnly = true;
+                if (isPdf && !isMcq && currentPath[0] !== "Daily Quiz Challenge") isPdfOnly = true;
             }
             
             let studentName = (currentUser && currentUser.displayName) ? currentUser.displayName.split(" ")[0] : "Student";
@@ -256,10 +348,12 @@ function _renderView() {
             } else if (isPdfOnly) {
                 _renderPdfResources(checkPath, niceTitle);
             } else {
+                let isDaily = currentPath[0] === "Daily Quiz Challenge";
+                let headerTitle = isDaily ? `📅 ${niceTitle} — Daily Quiz Challenge` : `📝 ${niceTitle} Practice`;
                 let signPrompt = !currentUser ? "Sign in to track your scores on the leaderboard!" : `Ready for practice, <span style="color:var(--primary-yellow);">${studentName}</span>?`;
                 mc.innerHTML = `
                 <div class="card page-transition">
-                    <h2 class="section-title">📝 ${niceTitle} Practice</h2>
+                    <h2 class="section-title">${headerTitle}</h2>
                     <p style="color:var(--text-muted); margin-bottom:25px;">${signPrompt}</p>
                     <button class="btn-exam" onclick="forceStartQuiz()" style="background:var(--primary-yellow) !important; color:black !important; width:100%; max-width:250px; font-size:16px; font-weight:bold; border:none !important; box-shadow:0 4px 15px rgba(253,184,19,0.3) !important;">Start Quiz &rarr;</button>
                 </div>`;
@@ -627,7 +721,6 @@ function drawAccuracyChart(dataPoints) {
     });
 }
 
-// Leaderboard restricted to signed-in users with >= 100 MCQs attempted in category
 function _renderLeaderboardOptions() { 
     document.getElementById('breadcrumb-text').innerText = "Home / Leaderboard"; 
     const mc = document.getElementById('dynamic-content');
@@ -804,7 +897,7 @@ async function fetchLiveLeaderboard(category) {
 }
 
 // ==========================================
-// CUSTOM PRACTICE: USES ADMIN MANUAL SUBJECTS & CHAPTERS CONFIG
+// CUSTOM PRACTICE ENGINE
 // ==========================================
 let cwPath = "";
 let cwSelectedSubjects = [];
@@ -874,10 +967,9 @@ function cwSetPath(path) {
     cwStep2();
 }
 
-// FIXED (Requirement 3): Uses Admin Panel's manual Custom Practice Subjects & Chapters config if set for this exam
-function buildCwCatalogForExam(examKey) {
-    if (window.customPracticeConfig && window.customPracticeConfig.exams && window.customPracticeConfig.exams[examKey]) {
-        let manualSubjects = window.customPracticeConfig.exams[examKey].subjects || [];
+function buildCwCatalogForExam(examKey, ignoreManualOverride = false) {
+    if (!ignoreManualOverride && window.customPracticeConfig && window.customPracticeConfig.exams && window.customPracticeConfig.exams[examKey] && Array.isArray(window.customPracticeConfig.exams[examKey].subjects) && window.customPracticeConfig.exams[examKey].subjects.length > 0) {
+        let manualSubjects = window.customPracticeConfig.exams[examKey].subjects;
         return manualSubjects.map(s => ({
             label: (s.label || s.path.split(' > ').pop() || '').replace(/^\d+\.\s*/, ''),
             fullPath: s.path,
@@ -890,7 +982,6 @@ function buildCwCatalogForExam(examKey) {
         }));
     }
 
-    // Fallback scan if Admin hasn't customized this exam in the Custom Practice tab yet
     let subjectsMap = new Map();
     let deletedSet = new Set((topicOverrides && topicOverrides.deletedPaths) || []);
 
@@ -1222,7 +1313,7 @@ function cwRenderChaptersList(searchQuery = "") {
             <input type="checkbox" value="${ch.fullPath.replace(/"/g, '&quot;')}" ${isChecked ? 'checked' : ''} onchange="cwToggleChapter(this, ${idx})">
             <div style="overflow:hidden; text-overflow:ellipsis;">
                 <div style="font-size:10px; color:${chapTheme.c}; font-weight:800; text-transform:uppercase; letter-spacing:0.4px;">${ch.subjLabel}</div>
-                <div style="font-size:12.5px;">${ch.label}</div>
+                <div style="font-size:12.5px;">${ch.label} ${chapTheme.i}</div>
             </div>
         </label>`;
     }).join('');
@@ -1643,7 +1734,6 @@ async function submitPlatformFeedback() {
     if (btn) { btn.innerText = savedUserRating > 0 ? "Update Rating & Feedback" : "Submit"; btn.disabled = false; }
 }
 
-// Report Mistake Modal
 let activeReportPayload = { questionId: '', questionText: '', path: '' };
 
 function openReportModal(questionId, questionText = '', path = '') {
