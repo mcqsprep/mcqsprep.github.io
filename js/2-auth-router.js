@@ -19,7 +19,7 @@ async function loadCustomTopics() {
         appData = JSON.parse(JSON.stringify(DEFAULT_APP_DATA));
         customTopicTypes = {};
 
-        // 1. Load Topic Overrides (allows editing/deleting built-in folders too)
+        // 1. Load Topic Overrides (for edited/deleted built-in folders)
         try {
             const ovDoc = await db.collection("settings").doc("topic_overrides").get();
             if (ovDoc.exists) {
@@ -31,12 +31,10 @@ async function loadCustomTopics() {
             }
         } catch (e) {}
 
-        // Apply edited built-in metadata
         Object.keys(topicOverrides.editedPaths || {}).forEach(fullKey => {
             customTopicTypes[fullKey] = topicOverrides.editedPaths[fullKey];
         });
 
-        // Remove any built-in paths the Admin deleted
         (topicOverrides.deletedPaths || []).forEach(delPath => {
             removePathFromAppData(delPath);
         });
@@ -50,7 +48,6 @@ async function loadCustomTopics() {
             let data = doc.data();
             let parentPath = (data.parentPath || "").trim();
 
-            // One-time cleanup: delete any old subtopics under General Knowledge in Firestore
             if (shouldCleanGK && (parentPath === "General Knowledge" || parentPath.startsWith("General Knowledge > "))) {
                 gkCleanupPromises.push(db.collection("custom_topics").doc(doc.id).delete());
                 return;
@@ -65,7 +62,9 @@ async function loadCustomTopics() {
             if (typeof current === 'object' && !Array.isArray(current) && data.name) {
                 if (!current[data.name]) current[data.name] = {};
                 let fullKey = pathArr.length > 0 ? (pathArr.join(" > ") + " > " + data.name) : data.name;
-                customTopicTypes[fullKey] = { type: data.type || 'both', icon: data.icon || null, docId: doc.id };
+                // Automatically assign a smart icon if none was saved
+                let autoIcon = data.icon || (typeof getAutomaticIconForName === 'function' ? getAutomaticIconForName(data.name, data.type) : null);
+                customTopicTypes[fullKey] = { type: data.type || 'both', icon: autoIcon, docId: doc.id };
             }
         });
 
@@ -74,7 +73,28 @@ async function loadCustomTopics() {
             localStorage.setItem('gk_subtopics_purged_v39', 'true');
         }
 
-        // 3. Load Manual Sidebar Config (Quick Links & Essential Practice)
+        // 3. AUTOMATIC DAILY QUIZ CHALLENGE ENGINE:
+        // Automatically adds NEET, JEE, General Knowledge, and all future Root Exam Categories under Daily Quiz Challenge
+        appData["Daily Quiz Challenge"] = {};
+        let deletedSet = new Set((topicOverrides && topicOverrides.deletedPaths) || []);
+        let rootExams = Object.keys(appData).filter(k => k !== "Daily Quiz Challenge" && !deletedSet.has(k));
+
+        Object.keys(customTopicTypes).forEach(key => {
+            let root = key.split(' > ')[0];
+            if (root && root !== "Daily Quiz Challenge" && !deletedSet.has(root) && !rootExams.includes(root)) {
+                rootExams.push(root);
+                appData[root] = appData[root] || {};
+            }
+        });
+
+        rootExams.forEach(examKey => {
+            appData["Daily Quiz Challenge"][examKey] = {};
+            let rootMeta = customTopicTypes[examKey];
+            let rootIcon = rootMeta ? rootMeta.icon : null;
+            customTopicTypes["Daily Quiz Challenge > " + examKey] = { type: "mcq", icon: rootIcon };
+        });
+
+        // 4. Load Manual Sidebar Config (Quick Links & Additional Essential Practice items)
         try {
             const sbDoc = await db.collection("settings").doc("sidebar_config").get();
             if (sbDoc.exists) {
@@ -86,7 +106,7 @@ async function loadCustomTopics() {
             }
         } catch (e) {}
 
-        // 4. Load Manual Custom Practice Config (Subjects & Chapters)
+        // 5. Load Manual Custom Practice Config (Subjects & Chapters)
         try {
             const cpDoc = await db.collection("settings").doc("custom_practice_config").get();
             if (cpDoc.exists && cpDoc.data().exams) {
@@ -219,7 +239,7 @@ function signInWithGoogle() { auth.signInWithPopup(provider).catch(err => showNo
 function signOut() { if(confirm("Are you sure you want to sign out?")) auth.signOut(); }
 
 // ==========================================
-// 3. ROUTING ENGINE & MANUAL SIDEBAR RENDERER
+// 3. ROUTING ENGINE & SIDEBAR RENDERER
 // ==========================================
 window.addEventListener('hashchange', handleRouting);
 
@@ -263,7 +283,9 @@ function updateBottomNav(hash) {
     }
 }
 
-// FIXED (Requirement 2): Renders ONLY the items manually added by Admin in Quick Links & Essential Practice
+// FIXED (Requirement 1):
+// - Quick Links: 100% manually controlled from Admin Panel
+// - Essential Practice: ALWAYS includes automatic "Daily Quiz Challenge" (which auto-lists NEET, JEE, GK & future topics) + any manual items added by Admin
 function updateSidebarLinks() {
     const sidebar = document.getElementById('main-sidebar');
     if (!sidebar) return;
@@ -304,9 +326,18 @@ function updateSidebarLinks() {
     });
 
     let essentialPracticeHtml = '';
-    let usedColorsE = new Set();
+    let usedColorsE = new Set(["#fdb813"]);
 
+    // 1. Automatic Daily Quiz Challenge (Always present in Essential Practice without Admin setup)
+    essentialPracticeHtml += `
+        <a class="action-link colored-link" style="--topic-color:#fdb813; --topic-border:rgba(253,184,19,0.65); --topic-glow:rgba(253,184,19,0.28); --topic-bg:rgba(253,184,19,0.16);" onclick="jumpToSection(['Daily Quiz Challenge'])">
+            <span class="link-icon" style="color: #fdb813;">📅</span>
+            <span class="link-text">Daily Quiz Challenge</span>
+        </a>`;
+
+    // 2. Any additional items manually added to Essential Practice via Admin Panel
     essentialList.forEach((item, idx) => {
+        if (item.path === 'Daily Quiz Challenge') return;
         let displayTitle = (item.title || item.path.split(' > ').pop() || '').replace(/^\d+\.\s*/, '');
         let encodedPath = encodeURIComponent(item.path);
         let theme = typeof getAutoTopicTheme === 'function'
@@ -327,7 +358,7 @@ function updateSidebarLinks() {
     </div>
     <div class="card sidebar-card">
         <h3 class="section-title">Essential Practice</h3>
-        ${essentialPracticeHtml || '<p style="color:var(--text-muted); font-size:12.5px; margin:0;">No practice links added yet.</p>'}
+        ${essentialPracticeHtml}
     </div>`;
 }
 
