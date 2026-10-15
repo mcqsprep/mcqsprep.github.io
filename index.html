@@ -6,30 +6,293 @@
     <title>MCQsPrep - Dashboard</title>
     
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#060b14">
+    <meta name="theme-color" content="#000000">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="apple-touch-icon" href="icon-192.png">
+    <link rel="preload" as="image" href="icon-192.png">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🩺</text></svg>">
-    
-    <link rel="stylesheet" href="style.css?v=31">
-    
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
 
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
+    <!-- ⚡ CRITICAL 0ms INLINE 3D SPLASH CSS (Renders on Frame 1 before any external JS/CSS loads) -->
+    <style>
+        #pwa-3d-splash-screen {
+            display: none;
+            position: fixed;
+            inset: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: #000000;
+            z-index: 999999;
+            overflow: hidden;
+            perspective: 1200px;
+            -webkit-user-select: none;
+            user-select: none;
+            transition: opacity 0.48s cubic-bezier(0.22, 1, 0.36, 1), transform 0.52s cubic-bezier(0.22, 1, 0.36, 1);
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        /* Automatically visible at 0ms ONLY in the Installed Mobile App */
+        @media all and (display-mode: standalone), all and (display-mode: fullscreen) {
+            body { background-color: #000000; }
+            #pwa-3d-splash-screen { display: block; }
+        }
+        html.is-standalone-pwa #pwa-3d-splash-screen { display: block; }
+        #pwa-3d-splash-screen.splash-force-hide { display: none !important; }
+        #pwa-3d-splash-screen.splash-exit-3d {
+            opacity: 0;
+            transform: scale(1.15);
+            pointer-events: none;
+        }
+        .splash-nebula-bg {
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle at 50% 50%, #0f1b38 0%, #050811 68%, #000000 100%);
+            animation: splashNebulaBloom 0.4s ease-out forwards;
+        }
+        .splash-ambient-glow {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 340px;
+            height: 340px;
+            margin-top: -170px;
+            margin-left: -170px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(253, 184, 19, 0.25) 0%, rgba(56, 189, 248, 0.16) 45%, transparent 72%);
+            filter: blur(26px);
+            animation: splashAmbientPulse 2s ease-in-out infinite alternate;
+        }
+        /* Locked at exact 50% X, 50% Y center to seamlessly take over from the OS launch icon */
+        .splash-3d-center-anchor {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            transform-style: preserve-3d;
+        }
+        .splash-3d-assembly {
+            position: relative;
+            width: 220px;
+            height: 220px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transform-style: preserve-3d;
+        }
+        .splash-gyro-ring {
+            position: absolute;
+            inset: 0;
+            border-radius: 50%;
+            transform-style: preserve-3d;
+            pointer-events: none;
+        }
+        .splash-gyro-ring.ring-gold {
+            border: 2.5px solid transparent;
+            border-top-color: #fdb813;
+            border-bottom-color: rgba(253, 184, 19, 0.6);
+            box-shadow: 0 0 24px rgba(253, 184, 19, 0.42), inset 0 0 15px rgba(253, 184, 19, 0.22);
+            animation: gyroIgniteGold 2.2s linear infinite;
+        }
+        .splash-gyro-ring.ring-cyan {
+            inset: 14px;
+            border: 2.5px solid transparent;
+            border-left-color: #38bdf8;
+            border-right-color: rgba(56, 189, 248, 0.6);
+            box-shadow: 0 0 24px rgba(56, 189, 248, 0.42), inset 0 0 15px rgba(56, 189, 248, 0.22);
+            animation: gyroIgniteCyan 1.85s linear infinite;
+        }
+        .splash-gyro-ring.ring-rose {
+            inset: 28px;
+            border: 1.5px dashed rgba(244, 63, 94, 0.7);
+            box-shadow: 0 0 18px rgba(244, 63, 94, 0.3);
+            animation: gyroIgniteRose 2.8s linear infinite;
+        }
+        .splash-3d-core-card {
+            position: relative;
+            width: 124px;
+            height: 124px;
+            border-radius: 26px;
+            background: #1c2229;
+            border: 2px solid rgba(253, 184, 19, 0.85);
+            box-shadow: 0 22px 48px rgba(0, 0, 0, 0.92), 0 0 34px rgba(253, 184, 19, 0.42), inset 0 0 18px rgba(56, 189, 248, 0.25);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            transform: translateZ(50px);
+            animation: splashCoreMorph3D 2.1s ease-in-out infinite;
+        }
+        .splash-core-sheen {
+            position: absolute;
+            top: -60%;
+            left: -120%;
+            width: 80%;
+            height: 220%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.38), transparent);
+            transform: rotate(30deg);
+            z-index: 2;
+            pointer-events: none;
+            animation: splashLightSweep 1.5s ease-in-out infinite;
+        }
+        .splash-3d-logo {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transform: scale(1.04);
+        }
+        .splash-brand-block {
+            position: absolute;
+            top: calc(50% + 132px);
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90vw;
+            max-width: 340px;
+            text-align: center;
+        }
+        .splash-brand-title {
+            margin: 0;
+            font-size: 31px;
+            font-weight: 900;
+            letter-spacing: 0.8px;
+            color: #ffffff;
+            text-shadow: 0 8px 25px rgba(0, 0, 0, 0.85), 0 0 18px rgba(255, 255, 255, 0.15);
+        }
+        .splash-brand-title span {
+            color: #fdb813;
+            text-shadow: 0 0 20px rgba(253, 184, 19, 0.55);
+        }
+        .splash-brand-title .splash-dot {
+            color: #38bdf8;
+        }
+        .splash-brand-subtitle {
+            margin-top: 7px;
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: 2.8px;
+            color: #94a3b8;
+            text-transform: uppercase;
+            transition: color 0.2s ease;
+        }
+        .splash-loader-track {
+            width: 185px;
+            height: 4.5px;
+            background: rgba(255, 255, 255, 0.09);
+            border-radius: 999px;
+            margin: 16px auto 0 auto;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .splash-loader-fill {
+            height: 100%;
+            width: 32%;
+            border-radius: 999px;
+            background: linear-gradient(90deg, #fdb813 0%, #38bdf8 55%, #10b981 100%);
+            box-shadow: 0 0 14px rgba(253, 184, 19, 0.85);
+            transition: width 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+        @keyframes splashNebulaBloom { 0% { opacity: 0; } 100% { opacity: 1; } }
+        @keyframes gyroIgniteGold { 0% { transform: rotateX(64deg) rotateY(18deg) rotateZ(0deg); } 100% { transform: rotateX(64deg) rotateY(18deg) rotateZ(360deg); } }
+        @keyframes gyroIgniteCyan { 0% { transform: rotateX(22deg) rotateY(66deg) rotateZ(360deg); } 100% { transform: rotateX(22deg) rotateY(66deg) rotateZ(0deg); } }
+        @keyframes gyroIgniteRose { 0% { transform: rotateX(-52deg) rotateY(-35deg) rotateZ(0deg); } 100% { transform: rotateX(-52deg) rotateY(-35deg) rotateZ(360deg); } }
+        @keyframes splashCoreMorph3D {
+            0%, 100% { transform: translateZ(15px) rotateY(-8deg) rotateX(6deg); }
+            50% { transform: translateZ(60px) rotateY(12deg) rotateX(-8deg); }
+        }
+        @keyframes splashLightSweep { 0% { left: -120%; } 55%, 100% { left: 160%; } }
+        @keyframes splashAmbientPulse { 0% { transform: scale(0.85); opacity: 0.55; } 100% { transform: scale(1.15); opacity: 1; } }
+    </style>
+
+    <link rel="stylesheet" href="style.css?v=31">
+
+    <!-- Non-blocking external stylesheets so they never delay the 0ms opening animation -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css" media="print" onload="this.media='all'">
+
+    <!-- All external scripts use defer so the 3D splash paints at 0ms without waiting on network -->
+    <script defer src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script defer src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script defer src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script defer src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
     <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"></script>
 </head>
 <body>
 
+    <!-- 🌌 0ms INSTANT 3D SPLASH SCREEN (First element in body so it paints on Frame 1) -->
+    <div id="pwa-3d-splash-screen">
+        <div class="splash-nebula-bg"></div>
+        <div class="splash-ambient-glow"></div>
+        <div class="splash-3d-center-anchor">
+            <div class="splash-3d-assembly">
+                <div class="splash-gyro-ring ring-gold"></div>
+                <div class="splash-gyro-ring ring-cyan"></div>
+                <div class="splash-gyro-ring ring-rose"></div>
+                <div class="splash-3d-core-card">
+                    <div class="splash-core-sheen"></div>
+                    <img src="icon-192.png" alt="MCQsPrep" class="splash-3d-logo">
+                </div>
+            </div>
+        </div>
+        <div class="splash-brand-block">
+            <h1 class="splash-brand-title">MCQs<span>Prep</span><b class="splash-dot">.</b></h1>
+            <div class="splash-brand-subtitle" id="splash-status-text">SYNCING EXAM ENGINE...</div>
+            <div class="splash-loader-track">
+                <div class="splash-loader-fill" id="splash-loader-bar"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Instant 0ms Controller for the 3D Splash Screen & Pre-Load Gate -->
+    <script>
+        (function() {
+            window.__mcqsSplashMounted = true;
+            var _resReady;
+            window.appContentReadyPromise = new Promise(function(r) { _resReady = r; });
+            window.markAppContentReady = function() { if (_resReady) { _resReady(); _resReady = null; } };
+            window.updateSplashProgress = function(pct, label) {
+                var bar = document.getElementById('splash-loader-bar');
+                var txt = document.getElementById('splash-status-text');
+                if (bar && typeof pct === 'number') bar.style.width = pct + '%';
+                if (txt && label) txt.innerText = label;
+            };
+
+            var isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
+                               window.matchMedia('(display-mode: fullscreen)').matches ||
+                               window.navigator.standalone === true ||
+                               document.referrer.indexOf('android-app://') !== -1;
+
+            var splash = document.getElementById('pwa-3d-splash-screen');
+            if (!isStandalone) {
+                if (splash) splash.classList.add('splash-force-hide');
+                return;
+            }
+            document.documentElement.classList.add('is-standalone-pwa');
+
+            var minAnim = new Promise(function(r) { setTimeout(r, 1300); });
+            var dataGate = Promise.race([
+                window.appContentReadyPromise,
+                new Promise(function(r) { setTimeout(r, 3000); })
+            ]);
+
+            Promise.all([minAnim, dataGate]).then(function() {
+                window.updateSplashProgress(100, 'WORKSPACE READY');
+                var txt = document.getElementById('splash-status-text');
+                if (txt) txt.style.color = '#10b981';
+                requestAnimationFrame(function() {
+                    setTimeout(function() {
+                        if (splash) splash.classList.add('splash-exit-3d');
+                        setTimeout(function() {
+                            if (splash && splash.parentNode) splash.parentNode.removeChild(splash);
+                        }, 520);
+                    }, 100);
+                });
+            });
+        })();
+    </script>
+
     <nav class="navbar">
         <div class="nav-left">
-            <button class="pc-back-btn hide-on-mobile" onclick="window.history.back()" title="Go Back">❮</button>
+            <button class="pc-back-btn hide-on-mobile" onclick="if(typeof goBack==='function') goBack(); else window.history.back();" title="Go Back">❮</button>
             
             <div class="logo-container" onclick="goHome()">🩺 MCQsPrep<span class="compact-hide">.</span></div>
             <div class="nav-badges-group">
@@ -136,7 +399,7 @@
                     </div>
                     <div style="display: flex; gap: 15px; width: 100%; max-width: 600px;">
                         <button class="btn-exam" onclick="cancelCropper()" style="flex: 1; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white; padding: 12px; border-radius: 8px;">Cancel</button>
-                        <button class="btn-exam" onclick="confirmCropAndSolve()" style="flex: 2; background: linear-gradient(135deg, var(--primary-yellow), #ff9800); color: black; border: none; padding: 12px; border-radius: 8px; font-weight: bold; font-size: 15px;">Crop & Continue 🚀</button>
+                        <button class="btn-exam btn-yellow-glow" onclick="confirmCropAndSolve()" style="flex: 2; background: linear-gradient(135deg, var(--primary-yellow), #ff9800); color: black; border: none; padding: 12px; border-radius: 8px; font-weight: bold; font-size: 15px;">Crop & Continue 🚀</button>
                     </div>
                 </div>
             </div>
@@ -172,14 +435,14 @@
     </div>
 
     <!-- Modals -->
-    <div id="authModal" class="modal-overlay"><div class="modal-content" style="text-align: center; max-width: 400px;"><button class="close-modal" onclick="skipSignIn()">✕</button><h2 style="color: var(--primary-yellow); margin-top:0;">Welcome to MCQsPrep</h2><p style="color: var(--text-muted); margin-bottom: 25px;">Sign in securely to track your progress.</p><button class="btn-exam" onclick="signInWithGoogle()" style="width:100%; background:#090e1a; display:flex; align-items:center; gap:10px;"><img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" style="width:20px;">Sign in with Google</button></div></div>
+    <div id="authModal" class="modal-overlay"><div class="modal-content" style="text-align: center; max-width: 400px;"><button class="close-modal" onclick="skipSignIn()">✕</button><h2 style="color: var(--primary-yellow); margin-top:0;">Welcome to MCQsPrep</h2><p style="color: var(--text-muted); margin-bottom: 25px;">Sign in securely to track your progress.</p><button class="btn-exam" onclick="signInWithGoogle()" style="width:100%; background:#090e1a; display:flex; align-items:center; justify-content:center; gap:10px;"><img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" style="width:20px;">Sign in with Google</button></div></div>
     <div id="streakModal" class="modal-overlay"><div class="modal-content" style="text-align: center; max-width: 380px;"><button class="close-modal" onclick="closeStreakModal()">✕</button><div style="font-size: 45px; margin-bottom: 8px;">🔥</div><h2 style="color: #FF5722; margin-top: 0; margin-bottom: 15px;">Current Streak: <span id="modalStreakCount">0</span> Days</h2><div style="background: rgba(255, 87, 34, 0.1); border-left: 4px solid #FF5722; padding: 14px; margin-bottom: 20px; border-radius: 4px; text-align: left; font-size: 13px;"><b style="color: #FF5722;">How to build your streak:</b><br><span style="color: var(--text-light); line-height: 1.5; display: inline-block; margin-top: 6px;">Complete at least <b>one practice quiz every day</b>. If you miss a single day, your streak resets to zero!</span></div><button class="btn-exam" onclick="closeStreakModal(); jumpToSection(['Daily Quiz Challenge'])" style="width: 100%; background: #FF5722; color: white; border: none; font-size: 15px;">Keep Streak Alive 🚀</button></div></div>
     <div id="userReportsModal" class="modal-overlay"><div class="modal-content" style="max-width: 600px;"><button class="close-modal" onclick="closeUserReportsModal()">✕</button><h2 style="color: var(--primary-yellow); margin-top:0;">🚨 My Reports</h2><div id="user-reports-list" style="max-height: 50vh; overflow-y: auto;"></div></div></div>
-    <div id="reportModal" class="modal-overlay"><div class="modal-content" style="max-width: 450px;"><button class="close-modal" onclick="closeReportModal()">✕</button><h2 style="color: var(--wrong-red); margin-top:0;">🚨 Report Mistake</h2><select id="reportReason" class="input-field"><option value="Wrong Option Provided">Wrong Option</option><option value="Typo">Typo</option><option value="Other">Other</option></select><textarea id="reportDescription" class="input-field" placeholder="Details..."></textarea><button class="btn-exam" onclick="submitReport()" style="width:100%; background:var(--wrong-red);">Submit</button></div></div>
-    <div id="feedbackModal" class="modal-overlay"><div class="modal-content" style="text-align: center;"><button class="close-modal" onclick="closeFeedbackModal()">✕</button><h2 style="color: var(--primary-yellow); margin-top:0;">⭐ Feedback</h2><div style="background: #090e1a; padding: 22px; border-radius: 8px; border:1px solid var(--border-color);"><div style="margin-bottom: 20px;"><button id="star-1" class="star-btn" onclick="updateStarUI(1)">★</button><button id="star-2" class="star-btn" onclick="updateStarUI(2)">★</button><button id="star-3" class="star-btn" onclick="updateStarUI(3)">★</button><button id="star-4" class="star-btn" onclick="updateStarUI(4)">★</button><button id="star-5" class="star-btn" onclick="updateStarUI(5)">★</button></div><textarea id="platformFeedbackText" class="input-field" placeholder="Tell us what you like..."></textarea><button id="submitFeedbackBtn" class="btn-exam" onclick="submitPlatformFeedback()" style="width: 100%; background: var(--primary-yellow); color: black;">Submit</button></div></div></div>
+    <div id="reportModal" class="modal-overlay"><div class="modal-content" style="max-width: 450px;"><button class="close-modal" onclick="closeReportModal()">✕</button><h2 style="color: var(--wrong-red); margin-top:0;">🚨 Report Mistake</h2><select id="reportReason" class="input-field"><option value="Wrong Option Provided">Wrong Option</option><option value="Typo">Typo</option><option value="Other">Other</option></select><textarea id="reportDescription" class="input-field" placeholder="Details..."></textarea><button class="btn-exam" onclick="submitReport()" style="width:100%; background:var(--wrong-red); color:white; border:none;">Submit</button></div></div>
+    <div id="feedbackModal" class="modal-overlay"><div class="modal-content" style="text-align: center;"><button class="close-modal" onclick="closeFeedbackModal()">✕</button><h2 style="color: var(--primary-yellow); margin-top:0;">⭐ Feedback</h2><div style="background: #090e1a; padding: 22px; border-radius: 8px; border:1px solid var(--border-color);"><div style="margin-bottom: 20px;"><button id="star-1" class="star-btn" onclick="updateStarUI(1)">★</button><button id="star-2" class="star-btn" onclick="updateStarUI(2)">★</button><button id="star-3" class="star-btn" onclick="updateStarUI(3)">★</button><button id="star-4" class="star-btn" onclick="updateStarUI(4)">★</button><button id="star-5" class="star-btn" onclick="updateStarUI(5)">★</button></div><textarea id="platformFeedbackText" class="input-field" placeholder="Tell us what you like..."></textarea><button id="submitFeedbackBtn" class="btn-exam btn-yellow-glow" onclick="submitPlatformFeedback()" style="width: 100%; background: var(--primary-yellow); color: black;">Submit</button></div></div></div>
     
-    <div id="editTopicModal" class="modal-overlay"><div class="modal-content" style="max-width: 450px;"><button class="close-modal" onclick="closeEditTopicModal()">✕</button><h2 style="color: var(--primary-yellow); margin-top:0;">✏️ Edit Folder</h2><input type="hidden" id="editTopicId"><input type="text" id="editTopicName" class="input-field"><input type="text" id="editTopicIcon" class="input-field" placeholder="Custom Icon (Optional, e.g. 🧬)" maxlength="2"><select id="editTopicType" class="input-field"><option value="both">📂 Parent Category</option><option value="mcq">📝 MCQs Practice</option><option value="pdf">📄 PDF Material</option></select><button class="btn-exam" onclick="saveEditedTopic()" style="width:100%; background:var(--correct-green);">Save Changes</button></div></div>
-    <div id="editModal" class="modal-overlay"><div class="modal-content" style="max-width: 600px;"><button class="close-modal" onclick="closeEditModal()">✕</button><h2 style="color: var(--primary-yellow); margin-top:0;">✏️ Edit MCQ</h2><input type="hidden" id="editDocId"><textarea id="editQuestion" class="input-field" style="min-height:80px;"></textarea><div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;"><input type="text" id="editOptA" class="input-field" placeholder="A"><input type="text" id="editOptB" class="input-field" placeholder="B"></div><div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;"><input type="text" id="editOptC" class="input-field" placeholder="C"><input type="text" id="editOptD" class="input-field" placeholder="D"></div><div style="display:flex; gap:10px; margin-bottom:15px; flex-wrap:wrap;"><label style="background:#090e1a; padding:8px 15px; border-radius:6px; cursor:pointer;"><input type="checkbox" value="A" class="editCorrectCb"> A</label><label style="background:#090e1a; padding:8px 15px; border-radius:6px; cursor:pointer;"><input type="checkbox" value="B" class="editCorrectCb"> B</label><label style="background:#090e1a; padding:8px 15px; border-radius:6px; cursor:pointer;"><input type="checkbox" value="C" class="editCorrectCb"> C</label><label style="background:#090e1a; padding:8px 15px; border-radius:6px; cursor:pointer;"><input type="checkbox" value="D" class="editCorrectCb"> D</label></div><select id="editDifficulty" class="input-field"><option value="Easy">Easy</option><option value="Medium">Medium</option><option value="Hard">Hard</option><option value="Mixed">Mixed</option></select><textarea id="editExplanation" class="input-field" placeholder="Explanation..."></textarea><button class="btn-exam" onclick="saveEditedMCQ()" style="width:100%; background:var(--correct-green);">Save Changes</button></div></div>
+    <div id="editTopicModal" class="modal-overlay"><div class="modal-content" style="max-width: 450px;"><button class="close-modal" onclick="closeEditTopicModal()">✕</button><h2 style="color: var(--primary-yellow); margin-top:0;">✏️ Edit Folder</h2><input type="hidden" id="editTopicId"><input type="text" id="editTopicName" class="input-field"><input type="text" id="editTopicIcon" class="input-field" placeholder="Custom Icon (Optional, e.g. 🧬)" maxlength="2"><select id="editTopicType" class="input-field"><option value="both">📂 Parent Category</option><option value="mcq">📝 MCQs Practice</option><option value="pdf">📄 PDF Material</option></select><button class="btn-exam btn-green-glow" onclick="saveEditedTopic()" style="width:100%; background:var(--correct-green);">Save Changes</button></div></div>
+    <div id="editModal" class="modal-overlay"><div class="modal-content" style="max-width: 600px;"><button class="close-modal" onclick="closeEditModal()">✕</button><h2 style="color: var(--primary-yellow); margin-top:0;">✏️ Edit MCQ</h2><input type="hidden" id="editDocId"><textarea id="editQuestion" class="input-field" style="min-height:80px;"></textarea><div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;"><input type="text" id="editOptA" class="input-field" placeholder="A"><input type="text" id="editOptB" class="input-field" placeholder="B"></div><div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;"><input type="text" id="editOptC" class="input-field" placeholder="C"><input type="text" id="editOptD" class="input-field" placeholder="D"></div><div style="display:flex; gap:10px; margin-bottom:15px; flex-wrap:wrap;"><label style="background:#090e1a; padding:8px 15px; border-radius:6px; cursor:pointer;"><input type="checkbox" value="A" class="editCorrectCb"> A</label><label style="background:#090e1a; padding:8px 15px; border-radius:6px; cursor:pointer;"><input type="checkbox" value="B" class="editCorrectCb"> B</label><label style="background:#090e1a; padding:8px 15px; border-radius:6px; cursor:pointer;"><input type="checkbox" value="C" class="editCorrectCb"> C</label><label style="background:#090e1a; padding:8px 15px; border-radius:6px; cursor:pointer;"><input type="checkbox" value="D" class="editCorrectCb"> D</label></div><select id="editDifficulty" class="input-field"><option value="Easy">Easy</option><option value="Medium">Medium</option><option value="Hard">Hard</option><option value="Mixed">Mixed</option></select><textarea id="editExplanation" class="input-field" placeholder="Explanation..."></textarea><button class="btn-exam btn-green-glow" onclick="saveEditedMCQ()" style="width:100%; background:var(--correct-green);">Save Changes</button></div></div>
 
     <!-- 📱 FLOATING LIGHT DOCK -->
     <div class="mobile-app-bottom-bar" id="mobileAppDock">
@@ -207,11 +470,12 @@
         </div>
     </div>
 
-    <script src="js/1-config.js"></script>
-    <script src="js/2-auth-router.js"></script>
-    <script src="js/3-ui-progress.js"></script>
-    <script src="js/4-quiz-engine.js"></script>
-    <script src="js/5-ai-tutor.js"></script>
-    <script src="js/6-admin.js"></script>
+    <!-- Deferred in exact order so they execute immediately after Firebase without blocking initial 0ms splash paint -->
+    <script defer src="js/1-config.js"></script>
+    <script defer src="js/2-auth-router.js"></script>
+    <script defer src="js/3-ui-progress.js"></script>
+    <script defer src="js/4-quiz-engine.js"></script>
+    <script defer src="js/5-ai-tutor.js"></script>
+    <script defer src="js/6-admin.js"></script>
 </body>
 </html>
