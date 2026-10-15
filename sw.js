@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mcqsprep-cache-v45';
+const CACHE_NAME = 'mcqsprep-cache-v46';
 const ASSETS = [
   '/',
   '/index.html',
@@ -35,12 +35,10 @@ self.addEventListener('fetch', (event) => {
     if (event.request.method !== 'GET') return;
     const url = event.request.url;
 
-    // Never cache live Firestore queries or Auth token endpoints
     if (url.includes('firestore.googleapis.com') || url.includes('identitytoolkit.googleapis.com') || url.includes('securetoken.googleapis.com')) {
         return;
     }
 
-    // 1. INSTANT 0ms HTML NAVIGATION (Serves index.html immediately from cache on app launch)
     if (event.request.mode === 'navigate') {
         event.respondWith(
             caches.open(CACHE_NAME).then(async (cache) => {
@@ -58,7 +56,6 @@ self.addEventListener('fetch', (event) => {
         return;
     }
 
-    // 2. CACHE-FIRST WITH BACKGROUND REFRESH FOR ALL SCRIPTS, CDN LIBRARIES, STYLES & ICONS
     event.respondWith(
         caches.open(CACHE_NAME).then(async (cache) => {
             const cachedResponse = await cache.match(event.request, { ignoreSearch: true });
