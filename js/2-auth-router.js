@@ -16,11 +16,15 @@ function removePathFromAppData(fullPathStr) {
 
 async function loadCustomTopics() {
     try {
+        if (typeof window.updateSplashProgress === 'function') {
+            window.updateSplashProgress(45, 'LOADING TOPICS & SYLLABUS...');
+        }
+
         let freshAppData = JSON.parse(JSON.stringify(DEFAULT_APP_DATA));
         let freshTopicTypes = {};
         let freshOverrides = { deletedPaths: [], editedPaths: {} };
 
-        // Fetch all 4 Firestore configuration collections in parallel for maximum speed during splash animation
+        // Fetch all 4 Firestore configuration collections in parallel during the 3D animation
         const [ovResult, topicsResult, sbResult, cpResult] = await Promise.allSettled([
             db.collection("settings").doc("topic_overrides").get(),
             db.collection("custom_topics").get(),
@@ -75,14 +79,13 @@ async function loadCustomTopics() {
             }
         }
 
-        // Apply swaps & remove deleted paths
         appData = freshAppData;
         customTopicTypes = freshTopicTypes;
         (topicOverrides.deletedPaths || []).forEach(delPath => {
             removePathFromAppData(delPath);
         });
 
-        // 3. Automatic Daily Quiz Challenge Engine (NEET, JEE, GK & all future root exams)
+        // 3. Automatic Daily Quiz Challenge Engine
         appData["Daily Quiz Challenge"] = {};
         let deletedSet = new Set((topicOverrides && topicOverrides.deletedPaths) || []);
         let rootExams = Object.keys(appData).filter(k => k !== "Daily Quiz Challenge" && !deletedSet.has(k));
@@ -118,7 +121,7 @@ async function loadCustomTopics() {
             window.customPracticeConfig = { exams: {} };
         }
 
-        // Save complete state to localStorage for 0ms instant hydration on next launch
+        // Save complete state to localStorage for instant 0ms hydration on next launch
         try {
             localStorage.setItem('mcqs_boot_cache_v1', JSON.stringify({
                 appData: appData,
@@ -128,6 +131,10 @@ async function loadCustomTopics() {
                 customPracticeConfig: window.customPracticeConfig
             }));
         } catch (e) {}
+
+        if (typeof window.updateSplashProgress === 'function') {
+            window.updateSplashProgress(82, 'BUILDING DASHBOARD...');
+        }
 
     } catch(e) { console.error("Custom topics loading error:", e); }
 }
@@ -175,13 +182,18 @@ async function checkUserNotifications() {
     }
 }
 
-// Track initial Auth + User Profile readiness so everything finishes while the 3D splash is playing
 let _resolveInitialAuth;
 const initialAuthReadyPromise = new Promise((resolve) => {
     _resolveInitialAuth = resolve;
 });
+let _bootSequenceComplete = false;
+let _lastAuthUid = undefined;
 
 auth.onAuthStateChanged(async (user) => {
+    let newUid = user ? user.uid : null;
+    let authChangedAfterBoot = _bootSequenceComplete && (newUid !== _lastAuthUid);
+    _lastAuthUid = newUid;
+
     currentUser = user; 
     window.currentUser = user;
     const badge = document.getElementById('userBadge'); 
@@ -201,7 +213,6 @@ auth.onAuthStateChanged(async (user) => {
         const authModal = document.getElementById('authModal');
         if (authModal) authModal.style.display = 'none';
 
-        // Restore cached streak immediately
         const cachedStreak = localStorage.getItem('mcqs_user_streak_' + user.uid);
         if (cachedStreak !== null) {
             const streakEl = document.getElementById('nav-streak-display');
@@ -228,7 +239,7 @@ auth.onAuthStateChanged(async (user) => {
         } catch (e) {}
         
         checkUserNotifications();
-        if (typeof loadUserBookmarks === 'function') loadUserBookmarks();
+        if (typeof loadUserBookmarks === 'function') await loadUserBookmarks();
     } else {
         if (badge) badge.style.display = 'none'; 
         if (loginNavBtn) loginNavBtn.style.display = 'flex'; 
@@ -242,32 +253,38 @@ auth.onAuthStateChanged(async (user) => {
             if (authModal) authModal.style.display = 'flex';
         }
     }
-    if (dataLoaded) handleRouting();
+
     if (_resolveInitialAuth) {
         _resolveInitialAuth();
         _resolveInitialAuth = null;
     }
+
+    // Only trigger a re-render if the user explicitly signs in or signs out after boot
+    if (authChangedAfterBoot && dataLoaded) {
+        handleRouting();
+    }
 });
 
-// Synchronized Bootloader: Loads all content and renders the final DOM *during* the 3D opening animation
+// Synchronized Bootloader: Loads all data & renders the complete dashboard BEFORE the 3D splash screen exits
 async function initApp() { 
     dataLoaded = true; 
     if (!window.location.hash) window.location.hash = '#/home'; 
     
-    // 1. Immediate render from cached localStorage state (0ms)
+    // 1. Paint immediately from localStorage boot cache (0ms)
     handleRouting(); 
     
-    // 2. Load fresh Firestore topics, sidebar config, global rating & auth state in parallel while 3D splash is playing
+    // 2. Fetch all live Firestore data, ratings & user profile while the 3D animation plays
     await Promise.allSettled([
         loadCustomTopics(),
         typeof loadGlobalRating === 'function' ? loadGlobalRating() : Promise.resolve(),
-        Promise.race([initialAuthReadyPromise, new Promise(r => setTimeout(r, 1500))])
+        Promise.race([initialAuthReadyPromise, new Promise(r => setTimeout(r, 1400))])
     ]);
 
-    // 3. Render final up-to-date dashboard DOM underneath the 3D splash screen
+    // 3. Render final dashboard DOM behind the splash screen
     handleRouting();
+    _bootSequenceComplete = true;
 
-    // 4. Signal the 3D splash screen that 100% of content is ready and painted
+    // 4. Signal the 3D splash screen that 100% of content is ready
     if (typeof window.markAppContentReady === 'function') {
         window.markAppContentReady();
     }
