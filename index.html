@@ -3,15 +3,56 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>MCQsPrep - Dashboard</title>
+    
+    <!-- 🔍 PRIMARY SEO TITLE & META TAGS (Helps mcqsprep.github.io outrank the GitHub repo) -->
+    <title>MCQsPrep — Free NEET, JEE & Competitive Exam MCQ Practice Platform</title>
+    <meta name="description" content="MCQsPrep is a smart, free MCQ practice platform for NEET, JEE, General Knowledge, and competitive exams. Practice chapter-wise MCQs, custom mock tests, PYQs, NCERT notes, and AI doubt solving.">
+    <meta name="keywords" content="MCQsPrep, mcqsprep, NEET MCQ practice, JEE mock test, NCERT MCQs, PYQs, daily quiz challenge, competitive exam preparation">
+    <meta name="author" content="MCQsPrep">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://mcqsprep.github.io/">
+
+    <!-- 🌐 OPEN GRAPH / SOCIAL & SEARCH ENGINE PREVIEW TAGS -->
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="MCQsPrep">
+    <meta property="og:title" content="MCQsPrep — Smart Competitive Exam MCQ Practice">
+    <meta property="og:description" content="Practice tailored mock tests, chapter-wise NEET & JEE MCQs, NCERT Books, PYQs, and instant AI Tutor doubt solving on MCQsPrep.">
+    <meta property="og:url" content="https://mcqsprep.github.io/">
+    <meta property="og:image" content="https://mcqsprep.github.io/icon-512.png">
+
+    <!-- 🩺 REAL PNG FAVICONS FOR GOOGLE & BRAVE SEARCH RESULTS (Replaces the grey globe icon) -->
+    <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="/icon-512.png">
+    <link rel="shortcut icon" type="image/png" href="/icon-192.png">
+    <link rel="apple-touch-icon" sizes="192x192" href="/icon-192.png">
     
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#000000">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <link rel="apple-touch-icon" href="icon-192.png">
     <link rel="preload" as="image" href="icon-192.png">
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🩺</text></svg>">
+
+    <!-- 🏆 STRUCTURED DATA (Tells Google & Brave Search your official Brand Name, URL & Logo) -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "MCQsPrep",
+      "alternateName": ["MCQsPrep.github.io", "MCQs Prep"],
+      "url": "https://mcqsprep.github.io/",
+      "description": "Free, smart MCQ practice platform and custom mock test engine for NEET, JEE, and competitive exams.",
+      "publisher": {
+        "@type": "Organization",
+        "name": "MCQsPrep",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://mcqsprep.github.io/icon-512.png",
+          "width": 512,
+          "height": 512
+        }
+      }
+    }
+    </script>
 
     <!-- ⚡ CRITICAL 0ms INLINE 3D SPLASH CSS (Renders on Frame 1 before any external JS/CSS loads) -->
     <style>
@@ -203,11 +244,11 @@
 
     <link rel="stylesheet" href="style.css?v=31">
 
-    <!-- Non-blocking external stylesheets so they never delay the 0ms opening animation -->
+    <!-- Non-blocking external stylesheets -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" media="print" onload="this.media='all'">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css" media="print" onload="this.media='all'">
 
-    <!-- All external scripts use defer so the 3D splash paints at 0ms without waiting on network -->
+    <!-- All external scripts use defer -->
     <script defer src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script defer src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
     <script defer src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
@@ -218,7 +259,7 @@
 </head>
 <body>
 
-    <!-- 🌌 0ms INSTANT 3D SPLASH SCREEN (First element in body so it paints on Frame 1) -->
+    <!-- 🌌 0ms INSTANT 3D SPLASH SCREEN -->
     <div id="pwa-3d-splash-screen">
         <div class="splash-nebula-bg"></div>
         <div class="splash-ambient-glow"></div>
@@ -470,7 +511,6 @@
         </div>
     </div>
 
-    <!-- Deferred in exact order so they execute immediately after Firebase without blocking initial 0ms splash paint -->
     <script defer src="js/1-config.js"></script>
     <script defer src="js/2-auth-router.js"></script>
     <script defer src="js/3-ui-progress.js"></script>
