@@ -1,5 +1,5 @@
 // ==========================================
-// 1. SYSTEM INITIALIZATION & CONFIGURATION
+// 1. SYSTEM INITIALIZATION, 3D PWA SPLASH & CONFIGURATION
 // ==========================================
 
 let deferredPrompt;
@@ -39,6 +39,71 @@ if ('serviceWorker' in navigator) {
     });
 }
 
+// ==========================================
+// PREMIUM 3D OPENING ANIMATION (INSTALLED MOBILE APP ONLY)
+// ==========================================
+function isInstalledMobileApp() {
+    return (
+        window.matchMedia('(display-mode: standalone)').matches ||
+        window.matchMedia('(display-mode: fullscreen)').matches ||
+        window.navigator.standalone === true ||
+        document.referrer.includes('android-app://')
+    );
+}
+
+function launch3DInstalledAppSplash() {
+    // Only run inside the installed mobile app (and once per app launch session)
+    if (!isInstalledMobileApp()) return;
+    if (sessionStorage.getItem('mcqs_3d_splash_played')) return;
+    sessionStorage.setItem('mcqs_3d_splash_played', 'true');
+
+    const mountSplash = () => {
+        if (document.getElementById('pwa-3d-splash-screen')) return;
+
+        const splash = document.createElement('div');
+        splash.id = 'pwa-3d-splash-screen';
+        splash.innerHTML = `
+            <div class="splash-ambient-glow"></div>
+            <div class="splash-3d-stage">
+                <div class="splash-3d-assembly">
+                    <div class="splash-gyro-ring ring-gold"></div>
+                    <div class="splash-gyro-ring ring-cyan"></div>
+                    <div class="splash-gyro-ring ring-rose"></div>
+                    <div class="splash-3d-core-card">
+                        <div class="splash-core-sheen"></div>
+                        <img src="/icon-192.png" alt="MCQsPrep" class="splash-3d-logo" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                        <div class="splash-3d-fallback-icon" style="display:none;">🩺</div>
+                    </div>
+                </div>
+
+                <div class="splash-brand-block">
+                    <h1 class="splash-brand-title">MCQs<span>Prep</span><b class="splash-dot">.</b></h1>
+                    <div class="splash-brand-subtitle">SMART COMPETITIVE EXAM ENGINE</div>
+                    <div class="splash-loader-track">
+                        <div class="splash-loader-fill"></div>
+                    </div>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(splash);
+
+        // Trigger smooth 3D camera zoom-out exit after animation completes
+        setTimeout(() => {
+            splash.classList.add('splash-exit-3d');
+            setTimeout(() => {
+                if (splash && splash.parentNode) splash.parentNode.removeChild(splash);
+            }, 650);
+        }, 2350);
+    };
+
+    if (document.body) {
+        mountSplash();
+    } else {
+        window.addEventListener('DOMContentLoaded', mountSplash);
+    }
+}
+launch3DInstalledAppSplash();
+
 // Upper Back Button Visibility & Smart Action Logic + Clean Install Button Upgrade
 function handlePCBackButton() {
     const backBtn = document.querySelector('.pc-back-btn');
@@ -76,6 +141,218 @@ const styleSheet = document.createElement('style');
 styleSheet.innerHTML = `
     @keyframes fadeSlideUp { 0% { transform: translateY(15px); opacity: 0; } 100% { transform: translateY(0); opacity: 1; } }
     .page-transition { animation: fadeSlideUp 0.3s cubic-bezier(0.25, 1, 0.5, 1) forwards; }
+
+    /* =====================================================
+       🌌 PREMIUM 3D INSTALLED APP SPLASH SCREEN ANIMATION
+       ===================================================== */
+    #pwa-3d-splash-screen {
+        position: fixed;
+        inset: 0;
+        width: 100vw;
+        height: 100vh;
+        background: radial-gradient(circle at 50% 42%, #0e1933 0%, #050811 72%, #020307 100%);
+        z-index: 999999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        perspective: 1200px;
+        -webkit-user-select: none;
+        user-select: none;
+        transition: opacity 0.6s cubic-bezier(0.22, 1, 0.36, 1), transform 0.65s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    #pwa-3d-splash-screen.splash-exit-3d {
+        opacity: 0;
+        transform: scale(1.18) translateZ(120px);
+        pointer-events: none;
+    }
+    .splash-ambient-glow {
+        position: absolute;
+        width: 340px;
+        height: 340px;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(253, 184, 19, 0.22) 0%, rgba(56, 189, 248, 0.14) 45%, transparent 72%);
+        filter: blur(28px);
+        animation: splashAmbientPulse 2.4s ease-in-out infinite alternate;
+    }
+    .splash-3d-stage {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        transform-style: preserve-3d;
+        animation: splashStageEntrance 0.85s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+    .splash-3d-assembly {
+        position: relative;
+        width: 210px;
+        height: 210px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transform-style: preserve-3d;
+        margin-bottom: 34px;
+    }
+    /* 3D Gyroscopic Orbital Rings */
+    .splash-gyro-ring {
+        position: absolute;
+        inset: 0;
+        border-radius: 50%;
+        transform-style: preserve-3d;
+        pointer-events: none;
+    }
+    .splash-gyro-ring.ring-gold {
+        border: 2px solid transparent;
+        border-top-color: #fdb813;
+        border-bottom-color: rgba(253, 184, 19, 0.55);
+        box-shadow: 0 0 22px rgba(253, 184, 19, 0.35), inset 0 0 15px rgba(253, 184, 19, 0.2);
+        animation: gyroSpinGold 2.6s linear infinite;
+    }
+    .splash-gyro-ring.ring-cyan {
+        inset: 14px;
+        border: 2px solid transparent;
+        border-left-color: #38bdf8;
+        border-right-color: rgba(56, 189, 248, 0.55);
+        box-shadow: 0 0 22px rgba(56, 189, 248, 0.35), inset 0 0 15px rgba(56, 189, 248, 0.2);
+        animation: gyroSpinCyan 2.2s linear infinite;
+    }
+    .splash-gyro-ring.ring-rose {
+        inset: 28px;
+        border: 1.5px dashed rgba(244, 63, 94, 0.65);
+        box-shadow: 0 0 16px rgba(244, 63, 94, 0.25);
+        animation: gyroSpinRose 3.2s linear infinite;
+    }
+    /* Central 3D Floating Glass Medallion */
+    .splash-3d-core-card {
+        position: relative;
+        width: 112px;
+        height: 112px;
+        border-radius: 28px;
+        background: linear-gradient(145deg, rgba(28, 39, 68, 0.92) 0%, rgba(9, 14, 28, 0.98) 100%);
+        border: 1.5px solid rgba(253, 184, 19, 0.75);
+        box-shadow:
+            0 20px 45px rgba(0, 0, 0, 0.85),
+            0 0 30px rgba(253, 184, 19, 0.35),
+            inset 0 2px 12px rgba(255, 255, 255, 0.22);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        transform: translateZ(45px);
+        animation: splashCoreFloat3D 2.4s ease-in-out infinite;
+    }
+    .splash-core-sheen {
+        position: absolute;
+        top: -60%;
+        left: -120%;
+        width: 80%;
+        height: 220%;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.32), transparent);
+        transform: rotate(30deg);
+        animation: splashLightSweep 1.8s ease-in-out infinite;
+    }
+    .splash-3d-logo {
+        width: 84px;
+        height: 84px;
+        border-radius: 20px;
+        object-fit: cover;
+        filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.7));
+    }
+    .splash-3d-fallback-icon {
+        font-size: 52px;
+        filter: drop-shadow(0 0 14px rgba(253, 184, 19, 0.6));
+    }
+    .splash-brand-block {
+        text-align: center;
+        transform: translateZ(30px);
+    }
+    .splash-brand-title {
+        margin: 0;
+        font-size: 32px;
+        font-weight: 900;
+        letter-spacing: 1px;
+        color: #ffffff;
+        text-shadow: 0 8px 25px rgba(0, 0, 0, 0.8), 0 0 18px rgba(255, 255, 255, 0.15);
+        animation: splashTitleReveal 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+    .splash-brand-title span {
+        color: #fdb813;
+        text-shadow: 0 0 20px rgba(253, 184, 19, 0.55);
+    }
+    .splash-brand-title .splash-dot {
+        color: #38bdf8;
+    }
+    .splash-brand-subtitle {
+        margin-top: 8px;
+        font-size: 10.5px;
+        font-weight: 800;
+        letter-spacing: 3.2px;
+        color: #94a3b8;
+        text-transform: uppercase;
+        opacity: 0;
+        animation: splashSubReveal 0.7s ease 0.25s forwards;
+    }
+    .splash-loader-track {
+        width: 190px;
+        height: 4px;
+        background: rgba(255, 255, 255, 0.08);
+        border-radius: 999px;
+        margin: 22px auto 0 auto;
+        overflow: hidden;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .splash-loader-fill {
+        height: 100%;
+        width: 0%;
+        border-radius: 999px;
+        background: linear-gradient(90deg, #fdb813 0%, #38bdf8 55%, #10b981 100%);
+        box-shadow: 0 0 14px rgba(253, 184, 19, 0.8);
+        animation: splashProgressFill 2.15s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+
+    @keyframes splashStageEntrance {
+        0% { opacity: 0; transform: scale(0.72) rotateX(22deg) translateY(25px); }
+        100% { opacity: 1; transform: scale(1) rotateX(0deg) translateY(0px); }
+    }
+    @keyframes gyroSpinGold {
+        0% { transform: rotateX(64deg) rotateY(18deg) rotateZ(0deg); }
+        100% { transform: rotateX(64deg) rotateY(18deg) rotateZ(360deg); }
+    }
+    @keyframes gyroSpinCyan {
+        0% { transform: rotateX(22deg) rotateY(66deg) rotateZ(360deg); }
+        100% { transform: rotateX(22deg) rotateY(66deg) rotateZ(0deg); }
+    }
+    @keyframes gyroSpinRose {
+        0% { transform: rotateX(-52deg) rotateY(-35deg) rotateZ(0deg); }
+        100% { transform: rotateX(-52deg) rotateY(-35deg) rotateZ(360deg); }
+    }
+    @keyframes splashCoreFloat3D {
+        0%, 100% { transform: translateZ(45px) rotateY(-10deg) rotateX(8deg) translateY(0px); }
+        50% { transform: translateZ(65px) rotateY(12deg) rotateX(-8deg) translateY(-6px); }
+    }
+    @keyframes splashLightSweep {
+        0% { left: -120%; }
+        55%, 100% { left: 160%; }
+    }
+    @keyframes splashAmbientPulse {
+        0% { transform: scale(0.9); opacity: 0.65; }
+        100% { transform: scale(1.15); opacity: 1; }
+    }
+    @keyframes splashTitleReveal {
+        0% { opacity: 0; transform: translateY(14px) scale(0.92); }
+        100% { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    @keyframes splashSubReveal {
+        0% { opacity: 0; transform: translateY(8px); }
+        100% { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes splashProgressFill {
+        0% { width: 0%; }
+        35% { width: 45%; }
+        75% { width: 84%; }
+        100% { width: 100%; }
+    }
     
     /* Permanently hide duplicate bottom back button container */
     #dynamic-back-container { display: none !important; }
