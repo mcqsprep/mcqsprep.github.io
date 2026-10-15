@@ -190,6 +190,7 @@ async function _renderAdminPanel() {
                 <div class="admin-pill ${adminCurrentTab === 'settings' ? 'active' : ''}" onclick="switchAdminTab('settings')">🛠️ Settings</div>
             </div>
             
+            <!-- 1. UPLOAD TAB -->
             <div id="admin-upload-view" style="display:${adminCurrentTab === 'upload' ? 'block' : 'none'};">
                 <div class="admin-panel-card">
                     <h3 class="admin-section-header"><span>🎯</span> 1. Select Target Destination</h3>
@@ -264,6 +265,7 @@ async function _renderAdminPanel() {
                 </div>
             </div>
             
+            <!-- 2. CREATE TOPIC TAB (100% AUTOMATIC STUDY ICON ENGINE) -->
             <div id="admin-topics-view" style="display:${adminCurrentTab === 'topics' ? 'block' : 'none'};">
                 <div class="admin-panel-card" style="border-color: rgba(253, 184, 19, 0.4); background: rgba(253, 184, 19, 0.02);">
                     <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; border-bottom: 1px solid rgba(253, 184, 19, 0.2); padding-bottom: 15px; margin-bottom: 20px;">
@@ -302,10 +304,11 @@ async function _renderAdminPanel() {
                             <option value="pdf">📄 PDF / Image Material (End Topic)</option>
                         </select>
                     </div>
-                    <button class="btn-exam btn-yellow-glow" onclick="createCustomTopic()" style="width:100%; max-width:250px; margin-top: 15px;">+ Create Folder</button>
+                    <button id="createFolderBtn" class="btn-exam btn-yellow-glow" onclick="createCustomTopic()" style="width:100%; max-width:250px; margin-top: 15px;">+ Create Folder</button>
                 </div>
             </div>
 
+            <!-- 3. CLEAN EDIT & DELETE TOPICS / SUBTOPICS TAB -->
             <div id="admin-edit-topics-view" style="display:${adminCurrentTab === 'edit-topics' ? 'block' : 'none'};">
                 <div class="admin-panel-card">
                     <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; border-bottom:1px solid #2b2b36; padding-bottom:15px; margin-bottom:20px;">
@@ -351,6 +354,7 @@ async function _renderAdminPanel() {
                 <div id="admin-topic-list-container"></div>
             </div>
 
+            <!-- 4. MANUAL QUICK LINKS & ESSENTIAL PRACTICE MANAGER TAB -->
             <div id="admin-sidebar-links-view" style="display:${adminCurrentTab === 'sidebar-links' ? 'block' : 'none'};">
                 <div class="admin-panel-card" style="border-color:rgba(168,85,247,0.4);">
                     <h3 class="admin-section-header" style="color:#c084fc;">🔗 Add Existing Topic / Subtopic to Home Sidebar</h3>
@@ -407,6 +411,7 @@ async function _renderAdminPanel() {
                 </div>
             </div>
 
+            <!-- 5. MANUAL CUSTOM PRACTICE (SUBJECTS & CHAPTERS) MANAGER TAB -->
             <div id="admin-custom-practice-view" style="display:${adminCurrentTab === 'custom-practice' ? 'block' : 'none'};">
                 <div class="admin-panel-card" style="border-color:rgba(253,184,19,0.4);">
                     <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; border-bottom:1px solid #2b2b36; padding-bottom:15px; margin-bottom:20px;">
@@ -426,6 +431,7 @@ async function _renderAdminPanel() {
                     </div>
 
                     <div class="admin-grid-2">
+                        <!-- 2A: Add Existing Subject Box -->
                         <div style="background:#121218; border:1px solid #2b2b36; border-radius:12px; padding:18px;">
                             <label class="admin-label" style="color:var(--primary-yellow);">2A. Add Existing Subject Folder</label>
                             <p style="font-size:12px; color:var(--text-muted); margin-top:0; margin-bottom:12px;">Pick an existing subject folder under the selected exam to add as a Subject.</p>
@@ -437,6 +443,7 @@ async function _renderAdminPanel() {
                             </div>
                         </div>
 
+                        <!-- 2B: Add Existing Chapter Under Subject Box -->
                         <div style="background:#121218; border:1px solid #2b2b36; border-radius:12px; padding:18px;">
                             <label class="admin-label" style="color:#38bdf8;">2B. Add Existing Chapter Under a Subject</label>
                             <label class="admin-label" style="margin-top:8px;">Target Subject in Custom Practice</label>
@@ -453,6 +460,7 @@ async function _renderAdminPanel() {
                 <div id="admin-cp-configured-list"></div>
             </div>
 
+            <!-- 6. MANAGE CONTENT TAB -->
             <div id="admin-manage-view" style="display:${adminCurrentTab === 'manage' ? 'block' : 'none'};">
                 <div class="admin-panel-card">
                     <h3 class="admin-section-header">🔍 Filter & Fetch MCQs / PDFs</h3>
@@ -464,21 +472,25 @@ async function _renderAdminPanel() {
                 </div>
             </div>
 
+            <!-- 7. REPORTS TAB -->
             <div id="admin-reports-view" style="display:${adminCurrentTab === 'reports' ? 'block' : 'none'};">
                 <button class="btn-exam btn-yellow-glow" onclick="loadAdminReports()" style="margin-bottom:20px;">🔄 Refresh Reports</button>
                 <div id="reports-list-container"></div>
             </div>
 
+            <!-- 8. USERS TAB -->
             <div id="admin-users-view" style="display:${adminCurrentTab === 'users' ? 'block' : 'none'};">
                 <button class="btn-exam btn-yellow-glow" onclick="loadAdminUsers()" style="margin-bottom:20px;">🔄 Refresh Students List</button>
                 <div id="users-table-container" class="admin-panel-card" style="overflow-x:auto; padding: 0;"></div>
             </div>
 
+            <!-- 9. DOUBTS TAB -->
             <div id="admin-doubts-view" style="display:${adminCurrentTab === 'doubts' ? 'block' : 'none'};">
                 <button class="btn-exam btn-yellow-glow" onclick="loadAdminDoubts()" style="margin-bottom:20px;">🔄 Refresh Flagged Doubts</button>
                 <div id="doubts-list-container"></div>
             </div>
 
+            <!-- 10. SETTINGS TAB -->
             <div id="admin-settings-view" style="display:${adminCurrentTab === 'settings' ? 'block' : 'none'};">
                 <div class="admin-grid-2">
                     <div class="admin-panel-card" style="margin-bottom: 0;">
@@ -892,6 +904,15 @@ async function deleteUnifiedTopic(identifier, fullPath) {
     }
 }
 
+async function deleteCustomTopic(docId) {
+    if(!confirm("Are you sure? This will remove the folder from the app menu.")) return;
+    try {
+        await db.collection("custom_topics").doc(docId).delete();
+        showNotification("✅ Folder deleted");
+        await loadAdminTopicsList();
+    } catch(e){}
+}
+
 // ==========================================
 // MANUAL QUICK LINKS & ESSENTIAL PRACTICE MANAGER
 // ==========================================
@@ -1031,7 +1052,6 @@ function renderAdminSidebarConfigLists() {
 // ==========================================
 // MANUAL CUSTOM PRACTICE (SUBJECTS & CHAPTERS) MANAGER
 // ==========================================
-
 function getAllCandidateSubjectsForExam(examKey) {
     if (!examKey) return [];
     let map = new Map();
@@ -1369,7 +1389,6 @@ async function removeChapterFromCustomPractice(subjPath, chapPath) {
 
 async function autoImportExamToCustomPractice() {
     if (!adminCpSelectedExam) return;
-    let savedEntry = window.customPracticeConfig.exams?.[adminCpSelectedExam];
     if (window.customPracticeConfig.exams) delete window.customPracticeConfig.exams[adminCpSelectedExam];
     let scanned = typeof buildCwCatalogForExam === 'function' ? buildCwCatalogForExam(adminCpSelectedExam, true) : [];
     window.customPracticeConfig.exams = window.customPracticeConfig.exams || {};
@@ -1447,6 +1466,125 @@ function renderAdminCpConfiguredList() {
             <div class="admin-chip-list">${chipsHtml}</div>
         </div>`;
     }).join('');
+}
+
+// ==========================================
+// CREATE TOPIC & RAPID UPLOAD PATH SELECTORS (RESTORED!)
+// ==========================================
+function _buildAdminNewTopicSelectors() {
+    const container = document.getElementById('dynamic-new-path-selectors'); 
+    if (!container) return;
+    
+    let html = ''; 
+    for (let i = 0; i <= adminNewTopicPath.length; i++) {
+        let parentSlice = adminNewTopicPath.slice(0, i);
+        let keys = getMergedChildKeysAtPath(parentSlice);
+        if (keys.length === 0) break;
+        
+        html += `<select class="input-field" style="flex:1; min-width:160px; margin-bottom:0;" onchange="handleAdminNewTopicPathChange(event, ${i})">`;
+        html += `<option value="">-- Stop Here / Select Child --</option>`;
+        
+        keys.forEach(key => { 
+            let selected = (adminNewTopicPath[i] === key) ? 'selected' : '';
+            html += `<option value="${key.replace(/"/g, '&quot;')}" ${selected}>${key}</option>`; 
+        });
+        html += `</select>`;
+        
+        if (!adminNewTopicPath[i]) break;
+    }
+    container.innerHTML = html;
+    
+    let pathTextSpan = document.getElementById('new-topic-path-text');
+    if (pathTextSpan) {
+        pathTextSpan.innerText = adminNewTopicPath.length > 0 ? adminNewTopicPath.join(' > ') : 'Root (Main Menu)';
+    }
+}
+
+function handleAdminNewTopicPathChange(event, depth) {
+    const val = event.target.value;
+    if (val === "") {
+        adminNewTopicPath = adminNewTopicPath.slice(0, depth);
+    } else {
+        adminNewTopicPath = adminNewTopicPath.slice(0, depth);
+        adminNewTopicPath.push(val);
+    }
+    _buildAdminNewTopicSelectors(); 
+}
+        
+async function createCustomTopic() {
+    const folderNameInput = document.getElementById('newFolderName');
+    const folderName = folderNameInput ? folderNameInput.value.trim() : "";
+    if (!folderName) {
+        showNotification("⚠️ Folder name is required.");
+        return;
+    }
+    const folderType = document.getElementById('newFolderType').value;
+    const manualIcon = document.getElementById('newFolderIcon') ? document.getElementById('newFolderIcon').value.trim() : "";
+
+    const autoAssignedIcon = manualIcon || (typeof getAutomaticIconForName === 'function' ? getAutomaticIconForName(folderName, folderType) : "📘");
+
+    const btn = document.getElementById('createFolderBtn');
+    if (btn) { btn.innerText = "Creating..."; btn.disabled = true; }
+
+    try {
+        const fullPath = adminNewTopicPath.length > 0 ? adminNewTopicPath.join(' > ') : "";
+        const createdFullKey = fullPath ? `${fullPath} > ${folderName}` : folderName;
+
+        // If this path was previously deleted in topicOverrides, un-delete it automatically
+        if (topicOverrides && Array.isArray(topicOverrides.deletedPaths) && topicOverrides.deletedPaths.includes(createdFullKey)) {
+            topicOverrides.deletedPaths = topicOverrides.deletedPaths.filter(p => p !== createdFullKey);
+            await db.collection("settings").doc("topic_overrides").set(topicOverrides, { merge: true });
+        }
+
+        const topicData = {
+            parentPath: fullPath,
+            name: folderName,
+            type: folderType,
+            icon: autoAssignedIcon,
+            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        };
+
+        await db.collection("custom_topics").add(topicData);
+        showNotification(`✅ Folder "${folderName}" Created with ${autoAssignedIcon} Icon!`);
+        if (folderNameInput) folderNameInput.value = "";
+        if (document.getElementById('newFolderIcon')) document.getElementById('newFolderIcon').value = "";
+        await loadCustomTopics();
+        _buildAdminNewTopicSelectors();
+        updateLiveAutoIconPreview();
+    } catch(error) {
+        showNotification("❌ Error creating folder: " + error.message);
+    }
+    if (btn) { btn.innerText = "+ Create Folder"; btn.disabled = false; }
+}
+
+function _buildAdminSelectors() {
+    const container = document.getElementById('dynamic-path-selectors'); if(!container) return;
+    let html = '';
+    for (let i = 0; i <= adminSelectedPath.length; i++) {
+        let parentSlice = adminSelectedPath.slice(0, i);
+        let keys = getMergedChildKeysAtPath(parentSlice);
+        if (keys.length === 0) break;
+
+        html += `<select class="input-field" style="flex:1; min-width:160px; margin-bottom:0;" onchange="handleAdminPathChange(event, ${i})"><option value="" ${!adminSelectedPath[i] ? 'selected' : ''}>-- Upload Here / Select Child --</option>`;
+        keys.forEach(key => {
+            html += `<option value="${key.replace(/"/g, '&quot;')}" ${adminSelectedPath[i] === key ? 'selected' : ''}>${key}</option>`;
+        });
+        html += `</select>`;
+        if (!adminSelectedPath[i]) break;
+    }
+    container.innerHTML = html;
+    const formArea = document.getElementById('upload-form-area'); if(formArea) formArea.style.display = (adminSelectedPath.length > 0) ? 'block' : 'none';
+    
+    let uploadTextSpan = document.getElementById('upload-path-text');
+    if (uploadTextSpan) {
+        uploadTextSpan.innerText = adminSelectedPath.length > 0 ? adminSelectedPath.join(' > ') : 'Please select a destination above';
+    }
+}
+
+function handleAdminPathChange(event, depth) { 
+    if (event.target.value === "") adminSelectedPath = adminSelectedPath.slice(0, depth);
+    else { adminSelectedPath = adminSelectedPath.slice(0, depth); adminSelectedPath.push(event.target.value); }
+    _buildAdminSelectors(); 
 }
 
 // ==========================================
