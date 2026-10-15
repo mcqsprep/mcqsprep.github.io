@@ -49,8 +49,7 @@ function getPaletteColorForText(text, offset = 0) {
     return TOPIC_COLOR_PALETTE[index];
 }
 
-// Comprehensive Study, Subject, Chapter & Exam Icon Rules
-// Ordered from specific study materials/chapters/subjects FIRST -> generic exam categories LAST
+// Complete NEET, JEE, NCERT Class 11 & 12 Chapters, Subjects & Exams Icon Dictionary
 const STUDY_ICON_RULES = [
     // 1. Difficulty Levels
     { keys: ["easy"], i: "🟢", c: "#10b981" },
@@ -58,114 +57,223 @@ const STUDY_ICON_RULES = [
     { keys: ["hard"], i: "🔴", c: "#f43f5e" },
     { keys: ["mixed"], i: "⚡", c: "#a855f7" },
 
-    // 2. Study Materials, Books, Papers & Tests (Checked before exam names so "NCERT Book (NEET)" gets 📚)
-    { keys: ["ncert", "textbook", "book"], i: "📚", c: "#a855f7" },
-    { keys: ["pyq", "previous year", "past paper", "solved paper"], i: "📄", c: "#ec4899" },
-    { keys: ["practice paper", "sample paper", "model paper", "question paper", "guess paper"], i: "📋", c: "#38bdf8" },
-    { keys: ["mock test", "mock", "grand test", "full test", "test series", "speed test"], i: "⏱️", c: "#f97316" },
-    { keys: ["daily quiz", "daily challenge", "challenge"], i: "📅", c: "#fdb813" },
-    { keys: ["formula", "cheat sheet", "handbook"], i: "🧮", c: "#14b8a6" },
-    { keys: ["mind map", "flowchart", "diagram"], i: "🗺️", c: "#ec4899" },
-    { keys: ["short note", "revision note", "handwritten", "notes", "summary", "flashcard"], i: "📒", c: "#eab308" },
-    { keys: ["syllabus", "blueprint", "curriculum"], i: "📌", c: "#38bdf8" },
-    { keys: ["mcq", "practice", "quiz", "objective", "question bank", "dpp", "worksheet"], i: "📝", c: "#06b6d4" },
-    { keys: ["assertion", "statement", "case study", "match the column"], i: "🔍", c: "#8b5cf6" },
+    // 2. Study Materials, Books, Papers & Tests
+    { keys: ["ncert book", "ncert", "textbook", "reference book", "book"], i: "📚", c: "#a855f7" },
+    { keys: ["pyqs", "pyq", "previous year", "past paper", "solved paper", "archive"], i: "📄", c: "#ec4899" },
+    { keys: ["practice paper", "sample paper", "model paper", "question paper", "guess paper", "test paper"], i: "📋", c: "#38bdf8" },
+    { keys: ["mock test", "mock", "grand test", "full test", "test series", "speed test", "part test"], i: "⏱️", c: "#f97316" },
+    { keys: ["daily quiz challenge", "daily quiz", "daily challenge", "challenge"], i: "📅", c: "#fdb813" },
+    { keys: ["formula sheet", "formulae", "formula", "cheat sheet", "handbook", "short trick"], i: "🧮", c: "#14b8a6" },
+    { keys: ["mind map", "flowchart", "diagram", "infographic"], i: "🗺️", c: "#ec4899" },
+    { keys: ["short notes", "revision notes", "handwritten notes", "lecture notes", "notes", "summary", "flashcard"], i: "📒", c: "#eab308" },
+    { keys: ["syllabus", "blueprint", "curriculum", "weightage"], i: "📌", c: "#38bdf8" },
+    { keys: ["mcqs practice", "mcq practice", "mcqs", "mcq", "practice", "quiz", "objective", "question bank", "dpp", "worksheet", "assignment"], i: "📝", c: "#06b6d4" },
+    { keys: ["assertion", "reason", "statement based", "case study", "match the column"], i: "🔍", c: "#8b5cf6" },
 
-    // 3. Biology — Botany, Zoology & Medical Chapters
-    { keys: ["genetics", "inheritance", "variation", "dna", "rna", "molecular basis", "gene", "chromosome", "mutation"], i: "🧬", c: "#f43f5e" },
-    { keys: ["cell cycle", "cell division", "mitosis", "meiosis", "cell: the unit", "cell structure", "organelle"], i: "🔬", c: "#ec4899" },
-    { keys: ["biomolecule", "enzyme", "protein", "amino acid", "carbohydrate", "lipid", "nucleic acid"], i: "🧪", c: "#14b8a6" },
-    { keys: ["photosynthesis", "chloroplast", "pigment", "calvin"], i: "☀️", c: "#22c55e" },
-    { keys: ["respiration in plant", "glycolysis", "krebs", "plant growth", "phytohormone", "auxin"], i: "🌱", c: "#10b981" },
-    { keys: ["morphology of flowering", "flower", "inflorescence", "pollination", "sexual reproduction in flowering", "angiosperm"], i: "🌸", c: "#ec4899" },
-    { keys: ["anatomy of flowering", "xylem", "phloem", "meristem", "vascular", "plant kingdom", "algae", "bryophyte", "pteridophyte", "gymnosperm", "botany", "plant", "transport in plant", "mineral nutrition"], i: "🌿", c: "#22c55e" },
-    { keys: ["biological classification", "monera", "protista", "fungi", "virus", "viroid", "lichen", "bacteria", "microbe"], i: "🦠", c: "#84cc16" },
-    { keys: ["living world", "taxonomy", "nomenclature", "biodiversity", "conservation"], i: "🌍", c: "#10b981" },
-    { keys: ["ecosystem", "organisms and population", "ecology", "environment", "food chain", "biosphere", "pollution"], i: "🌲", c: "#10b981" },
-    { keys: ["biotechnology", "recombinant", "pcr", "plasmid", "cloning", "biopiracy"], i: "🧫", c: "#06b6d4" },
-    { keys: ["human health", "disease", "immunity", "vaccine", "cancer", "aids", "malaria", "pathology", "pharmacology"], i: "💊", c: "#f43f5e" },
-    { keys: ["neural", "brain", "nervous", "neuron", "synapse", "eye", "ear", "sensory"], i: "🧠", c: "#a855f7" },
-    { keys: ["body fluid", "circulation", "heart", "blood", "cardiac", "vascular", "ecg"], i: "🫀", c: "#ef4444" },
-    { keys: ["breathing", "exchange of gases", "lungs", "respiratory", "alveoli"], i: "🫁", c: "#38bdf8" },
-    { keys: ["locomotion", "movement", "skeletal", "muscle", "bone", "joint"], i: "🦴", c: "#eab308" },
-    { keys: ["digestion", "absorption", "alimentary", "liver", "stomach", "gut", "nutrition"], i: "🍎", c: "#f97316" },
-    { keys: ["excretory", "kidney", "nephron", "urine", "osmoregulation"], i: "💧", c: "#06b6d4" },
-    { keys: ["chemical coordination", "endocrine", "hormone", "pituitary", "thyroid", "adrenal", "insulin"], i: "⚗️", c: "#d946ef" },
-    { keys: ["human reproduction", "reproductive health", "gametogenesis", "embryo", "fertilisation"], i: "👶", c: "#ec4899" },
-    { keys: ["evolution", "darwin", "natural selection", "fossil", "hardy-weinberg", "origin of life"], i: "🦕", c: "#f59e0b" },
-    { keys: ["animal kingdom", "chordata", "non-chordata", "arthropoda", "mollusca", "zoology", "animal", "structural organisation", "cockroach", "frog", "earthworm", "epithelial"], i: "🦁", c: "#f59e0b" },
-    { keys: ["biology", "life science", "anatomy", "physiology"], i: "🧬", c: "#f43f5e" },
+    // 3. Exact Root Exam Categories (Checked early so "General Knowledge", "NEET", "JEE" match accurately!)
+    { keys: ["general knowledge", "static gk", "general awareness", "general studies", "gk"], i: "🌍", c: "#10b981" },
+    { keys: ["neet ug", "neet pg", "neet", "aiims", "jipmer", "ssuhs", "paramedical", "medical entrance", "medical"], i: "🩺", c: "#f43f5e" },
+    { keys: ["jee main", "jee advanced", "iit jee", "jee", "bitsat", "wbjee", "mht cet", "kcet", "cee", "vit", "engineering"], i: "🚀", c: "#38bdf8" },
+    { keys: ["upsc", "civil services", "ias", "ips", "apsc", "state pcs", "psc"], i: "🏛️", c: "#eab308" },
+    { keys: ["ssc cgl", "ssc chsl", "ssc mts", "ssc gd", "ssc", "staff selection"], i: "📋", c: "#06b6d4" },
+    { keys: ["banking", "ibps", "sbi po", "sbi clerk", "rbi", "nabard"], i: "🏦", c: "#22c55e" },
+    { keys: ["railway", "rrb ntpc", "rrb group d", "rrb"], i: "🚂", c: "#f59e0b" },
+    { keys: ["defense", "defence", "nda", "cds", "afcat", "agniveer", "army", "navy", "air force"], i: "🛡️", c: "#f97316" },
+    { keys: ["clat", "ailet", "judiciary", "llb", "legal studies"], i: "⚖️", c: "#a855f7" },
+    { keys: ["gate", "csir net", "ugc net", "iit jam", "cuet", "cat", "mba", "ctet", "tet", "olympiad", "ntse", "kvpy"], i: "🎓", c: "#6366f1" },
 
-    // 4. Physics & Subtopics
-    { keys: ["optics", "ray optics", "wave optics", "lens", "mirror", "prism", "refraction", "interference", "diffraction", "polarization"], i: "🌈", c: "#38bdf8" },
-    { keys: ["electrostatics", "electric charge", "electric field", "capacitance", "capacitor", "potentials", "gauss"], i: "⚡", c: "#eab308" },
-    { keys: ["current electricity", "ohm", "kirchhoff", "wheatstone", "circuit", "alternating current", "ac circuit", "transformer"], i: "🔌", c: "#f59e0b" },
-    { keys: ["magnetism", "magnetic", "moving charge", "biot-savart", "ampere", "solenoid", "electromagnetic induction", "faraday", "lenz", "em wave"], i: "🧲", c: "#ef4444" },
-    { keys: ["semiconductor", "diode", "transistor", "logic gate", "electronics", "pn junction", "rectifier", "communication"], i: "💻", c: "#06b6d4" },
-    { keys: ["atom", "nuclei", "nuclear", "radioactivity", "bohr", "dual nature", "photoelectric", "de broglie", "x-ray", "modern physics", "quantum"], i: "⚛️", c: "#a855f7" },
-    { keys: ["thermodynamics", "thermal", "heat", "calorimetry", "carnot", "kinetic theory", "gas"], i: "🔥", c: "#f97316" },
-    { keys: ["gravitation", "kepler", "satellite", "escape velocity", "orbit", "space", "astrophysics"], i: "🪐", c: "#6366f1" },
-    { keys: ["oscillation", "shm", "simple harmonic", "pendulum", "wave", "sound", "doppler", "acoustics"], i: "〰️", c: "#14b8a6" },
-    { keys: ["fluid", "bernoulli", "viscosity", "surface tension", "hydrostatics", "solid", "elasticity", "young's modulus"], i: "🌊", c: "#0ea5e9" },
-    { keys: ["rotational", "torque", "moment of inertia", "rolling", "center of mass", "work energy", "power", "collision", "laws of motion", "newton", "friction", "pulley", "kinematics", "straight line", "projectile", "motion in a plane", "vector", "units and measurement", "dimension", "error", "mechanics", "physics"], i: "⚙️", c: "#a855f7" },
+    // 4. NEET & NCERT Biology Chapters (Botany & Zoology - Class 11 & 12)
+    { keys: ["the living world", "living world", "taxonomy", "systematics", "binomial nomenclature"], i: "🌍", c: "#10b981" },
+    { keys: ["biological classification", "monera", "protista", "fungi", "virus", "viroids", "prions", "lichens", "five kingdom"], i: "🦠", c: "#84cc16" },
+    { keys: ["plant kingdom", "algae", "bryophytes", "bryophyta", "pteridophytes", "pteridophyta", "gymnosperms", "angiosperms"], i: "🌿", c: "#22c55e" },
+    { keys: ["animal kingdom", "basis of classification", "porifera", "coelenterata", "cnidaria", "ctenophora", "platyhelminthes", "aschelminthes", "annelida", "arthropoda", "mollusca", "echinodermata", "hemichordata", "chordata", "vertebrata", "non chordates", "chordates"], i: "🦁", c: "#f59e0b" },
+    { keys: ["morphology of flowering plants", "morphology", "inflorescence", "placentation", "aestivation", "semi technical description", "fabaceae", "solanaceae", "liliaceae", "brassicaceae", "malvaceae", "asteraceae", "poaceae"], i: "🌸", c: "#ec4899" },
+    { keys: ["anatomy of flowering plants", "meristematic", "permanent tissue", "vascular bundle", "dicot", "monocot", "secondary growth", "plant anatomy"], i: "🌱", c: "#10b981" },
+    { keys: ["structural organisation in animals", "animal tissues", "epithelial", "connective tissue", "muscular tissue", "Cockroach", "periplaneta", "frog", "rana tigrina", "earthworm", "pheretima"], i: "🐸", c: "#84cc16" },
+    { keys: ["cell the unit of life", "cell structure", "prokaryotic cell", "eukaryotic cell", "endomembrane", "mitochondria", "plastids", "ribosomes", "cytoskeleton", "cilia", "flagella", "centrosome", "vacuole", "cell organelle", "cell biology", "cytology"], i: "🔬", c: "#06b6d4" },
+    { keys: ["cell cycle and cell division", "cell cycle", "cell division", "mitosis", "meiosis", "interphase", "cytokinesis", "karyokinesis"], i: "🔄", c: "#ec4899" },
+    { keys: ["transport in plants", "water potential", "osmosis", "plasmolysis", "imbibition", "transpiration", "guttation", "phloem transport", "mass flow"], i: "💧", c: "#38bdf8" },
+    { keys: ["mineral nutrition", "macronutrients", "micronutrients", "nitrogen cycle", "nitrogen fixation", "nodule", "hydroponics"], i: "🌾", c: "#eab308" },
+    { keys: ["photosynthesis in higher plants", "photosynthesis", "chloroplast", "light reaction", "photophosphorylation", "calvin cycle", "c3 pathway", "c4 pathway", "hatch and slack", "photorespiration", "cam plants"], i: "☀️", c: "#22c55e" },
+    { keys: ["respiration in plants", "cellular respiration", "glycolysis", "emp pathway", "fermentation", "krebs cycle", "tca cycle", "electron transport system", "oxidative phosphorylation", "amphibolic", "respiratory quotient"], i: "🍃", c: "#14b8a6" },
+    { keys: ["plant growth and development", "plant growth", "phytohormones", "plant hormones", "auxin", "gibberellin", "cytokinin", "ethylene", "abscisic acid", "photoperiodism", "vernalisation", "seed dormancy", "dedifferentiation"], i: "🌻", c: "#f59e0b" },
+    { keys: ["digestion and absorption", "digestive system", "alimentary canal", "digestive glands", "peristalsis", "malnutrition", "vitamins"], i: "🍎", c: "#f97316" },
+    { keys: ["breathing and exchange of gases", "respiratory system", "human respiration", "lungs", "alveoli", "spirometry", "lung volumes", "oxygen dissociation", "bohr effect", "haldane effect"], i: "🫁", c: "#38bdf8" },
+    { keys: ["body fluids and circulation", "blood groups", "rh factor", "coagulation", "lymph", "circulatory pathways", "human heart", "cardiac cycle", "cardiac output", "electrocardiograph", "ecg", "double circulation"], i: "🫀", c: "#ef4444" },
+    { keys: ["excretory products and their elimination", "excretory system", "ammonotelism", "ureotelism", "uricotelism", "human kidney", "nephron", "urine formation", "counter current", "raas", "hemodialysis", "micturition"], i: "🫘", c: "#f43f5e" },
+    { keys: ["locomotion and movement", "types of movement", "skeletal muscle", "contractile proteins", "actin", "myosin", "sliding filament", "skeletal system", "axial skeleton", "appendicular skeleton", "joints", "muscular disorders"], i: "🦴", c: "#eab308" },
+    { keys: ["neural control and coordination", "nervous system", "neuron", "nerve impulse", "synapse", "central nervous system", "human brain", "forebrain", "midbrain", "hindbrain", "spinal cord", "reflex action", "human eye", "human ear"], i: "🧠", c: "#a855f7" },
+    { keys: ["chemical coordination and integration", "endocrine system", "endocrine glands", "hypothalamus", "pituitary", "pineal", "thyroid", "parathyroid", "thymus", "adrenal", "pancreas", "insulin", "glucagon", "testis", "ovary", "hormone action"], i: "⚗️", c: "#d946ef" },
+    { keys: ["reproduction in organisms", "asexual reproduction", "vegetative propagation", "sexual reproduction", "life span"], i: "🌱", c: "#10b981" },
+    { keys: ["sexual reproduction in flowering plants", "microsporogenesis", "pollen grain", "megasporogenesis", "embryo sac", "pollination", "outbreeding", "pollen pistil", "double fertilisation", "endosperm", "embryogeny", "apomixis", "polyembryony"], i: "🌺", c: "#ec4899" },
+    { keys: ["human reproduction", "male reproductive", "female reproductive", "gametogenesis", "spermatogenesis", "oogenesis", "menstrual cycle", "fertilisation", "implantation", "placenta", "pregnancy", "embryonic development", "parturition", "lactation"], i: "👶", c: "#f43f5e" },
+    { keys: ["reproductive health", "birth control", "contraception", "iud", "medical termination", "mtp", "sexually transmitted", "std", "infertility", "art", "ivf", "zift", "gift", "amniocentesis"], i: "🏥", c: "#06b6d4" },
+    { keys: ["principles of inheritance and variation", "mendel", "monohybrid", "dihybrid", "incomplete dominance", "codominance", "multiple alleles", "pleiotropy", "polygenic", "chromosomal theory", "linkage", "recombination", "sex determination", "mutation", "pedigree", "mendelian disorders", "hemophilia", "sickle cell", "thalassemia", "down syndrome", "klinefelter", "turner syndrome", "genetics", "inheritance", "genes", "gene"], i: "🧬", c: "#f43f5e" },
+    { keys: ["molecular basis of inheritance", "dna structure", "polynucleotide", "packaging of dna", "nucleosome", "transforming principle", "hershey and chase", "rna world", "dna replication", "meselson and stahl", "transcription", "genetic code", "trna", "translation", "gene expression", "lac operon", "human genome project", "dna fingerprinting", "dna", "rna"], i: "🧬", c: "#a855f7" },
+    { keys: ["evolution", "origin of life", "miller experiment", "darwin", "natural selection", "homologous", "analogous", "adaptive radiation", "hardy weinberg", "genetic drift", "founder effect", "human evolution"], i: "🦕", c: "#f59e0b" },
+    { keys: ["human health and disease", "common diseases", "typhoid", "pneumonia", "common cold", "malaria", "plasmodium", "amoebiasis", "ascariasis", "filariasis", "ringworm", "immunity", "innate immunity", "acquired immunity", "antibodies", "vaccination", "allergies", "auto immunity", "lymphoid organs", "aids", "hiv", "cancer", "oncogenes", "drug abuse", "adolescence"], i: "🛡️", c: "#ef4444" },
+    { keys: ["strategies for enhancement in food production", "animal husbandry", "dairy", "poultry", "inbreeding", "outbreeding", "moet", "apiculture", "fisheries", "plant breeding", "green revolution", "biofortification", "single cell protein", "tissue culture", "somatic hybridisation"], i: "🚜", c: "#84cc16" },
+    { keys: ["microbes in human welfare", "microbes in household", "lactic acid", "fermented", "antibiotics", "penicillin", "organic acids", "cyclosporin", "statins", "sewage treatment", "bod", "biogas", "methanogens", "biocontrol", "biofertilisers", "mycorrhiza"], i: "🧫", c: "#14b8a6" },
+    { keys: ["biotechnology principles and processes", "genetic engineering", "restriction enzymes", "endonuclease", "gel electrophoresis", "cloning vectors", "plasmid", "pbr322", "competent host", "pcr", "polymerase chain reaction", "bioreactor", "downstream processing", "recombinant dna"], i: "🧪", c: "#06b6d4" },
+    { keys: ["biotechnology and its applications", "bt cotton", "cry genes", "pest resistant", "rna interference", "genetically engineered insulin", "humulin", "gene therapy", "ada deficiency", "molecular diagnosis", "elisa", "transgenic animals", "ethical issues", "geac", "biopiracy", "biotechnology"], i: "🔬", c: "#38bdf8" },
+    { keys: ["organisms and populations", "abiotic factors", "homeostasis", "conformers", "regulators", "migration", "hibernation", "aestivation", "adaptations", "population attributes", "age pyramid", "exponential growth", "logistic growth", "population interactions", "predation", "competition", "parasitism", "commensalism", "mutualism", "amensalism"], i: "🦌", c: "#f97316" },
+    { keys: ["ecosystem", "stratification", "productivity", "gpp", "npp", "decomposition", "detritus", "energy flow", "food chain", "food web", "trophic level", "ecological pyramids", "ecological succession", "hydrarch", "xerarch", "nutrient cycling", "carbon cycle", "phosphorus cycle", "ecosystem services"], i: "🌲", c: "#10b981" },
+    { keys: ["biodiversity and conservation", "genetic diversity", "species diversity", "ecological diversity", "latitudinal gradients", "species area relationship", "rivet popper", "loss of biodiversity", "evil quartet", "in situ conservation", "biosphere reserve", "national park", "sacred groves", "hotspots", "ex situ conservation", "cryopreservation", "red data book"], i: "🐼", c: "#22c55e" },
+    { keys: ["environmental issues", "air pollution", "electrostatic precipitator", "scrubber", "catalytic converter", "cng", "water pollution", "algal bloom", "eutrophication", "biomagnification", "solid wastes", "radioactive waste", "greenhouse effect", "global warming", "ozone depletion", "deforestation", "chipko", "jfm"], i: "🌏", c: "#0ea5e9" },
+    { keys: ["botany", "plant physiology", "plant science"], i: "🌿", c: "#22c55e" },
+    { keys: ["zoology", "human physiology", "animal science"], i: "🦁", c: "#f59e0b" },
+    { keys: ["biology", "life sciences", "bioscience"], i: "🧬", c: "#f43f5e" },
 
-    // 5. Chemistry (Physical, Organic, Inorganic) & Chapters
-    { keys: ["organic", "hydrocarbon", "alkane", "alkene", "alkyne", "benzene", "aromatic", "haloalkane", "haloarene", "alcohol", "phenol", "ether", "aldehyde", "ketone", "carboxylic", "amine", "diazonium", "polymer", "isomerism", "iupac", "goc", "reaction mechanism"], i: "⌬", c: "#10b981" },
-    { keys: ["inorganic", "periodic table", "periodicity", "s-block", "p-block", "d-block", "f-block", "transition", "lanthanoid", "coordination compound", "ligand", "metallurgy", "isolation of element", "hydrogen", "salt analysis"], i: "💎", c: "#ec4899" },
-    { keys: ["electrochemistry", "nernst", "electrolysis", "conductance", "galvanic", "battery"], i: "🔋", c: "#eab308" },
-    { keys: ["chemical kinetics", "rate of reaction", "arrhenius", "half-life", "catalysis", "surface chemistry", "colloid", "adsorption"], i: "⏳", c: "#f97316" },
-    { keys: ["equilibrium", "ionic equilibrium", "ph", "buffer", "solubility", "le chatelier"], i: "⚖️", c: "#38bdf8" },
-    { keys: ["chemical bonding", "hybridisation", "vsepr", "molecular orbital", "dipole", "atomic structure", "structure of atom", "quantum number", "mole concept", "stoichiometry", "redox", "solid state", "crystal", "solution", "colligative", "raoult", "states of matter", "physical chemistry", "chemistry"], i: "🧪", c: "#06b6d4" },
+    // 5. NEET & JEE Physics Chapters (Class 11 & 12)
+    { keys: ["physical world", "units and measurements", "units and dimensions", "dimensional analysis", "significant figures", "errors in measurement", "vernier callipers", "screw gauge", "measurement"], i: "📏", c: "#38bdf8" },
+    { keys: ["motion in a straight line", "rectilinear motion", "kinematics", "distance and displacement", "relative velocity", "graphs of motion"], i: "🏎️", c: "#06b6d4" },
+    { keys: ["motion in a plane", "projectile motion", "uniform circular motion", "vectors", "vector addition", "relative motion in 2d"], i: "🏹", c: "#10b981" },
+    { keys: ["laws of motion", "newton laws", "inertia", "impulse", "conservation of momentum", "friction", "static friction", "kinetic friction", "banking of roads", "free body diagram", "pulley", "pseudo force"], i: "🍎", c: "#f43f5e" },
+    { keys: ["work energy and power", "work energy theorem", "conservative force", "potential energy", "vertical circular motion", "collisions", "elastic collision", "inelastic collision", "coefficient of restitution"], i: "⚡", c: "#eab308" },
+    { keys: ["system of particles and rotational motion", "rotational motion", "centre of mass", "center of mass", "torque", "angular momentum", "moment of inertia", "parallel axis", "perpendicular axis", "radius of gyration", "rolling motion", "rigid body"], i: "🎡", c: "#a855f7" },
+    { keys: ["gravitation", "kepler laws", "universal law of gravitation", "acceleration due to gravity", "gravitational potential", "escape velocity", "orbital velocity", "satellites", "geostationary", "weightlessness"], i: "🪐", c: "#6366f1" },
+    { keys: ["mechanical properties of solids", "elasticity", "stress and strain", "hooke law", "young modulus", "bulk modulus", "shear modulus", "poisson ratio", "elastic potential energy"], i: "🧱", c: "#f97316" },
+    { keys: ["mechanical properties of fluids", "fluid mechanics", "pascal law", "buoyancy", "archimedes", "streamline", "equation of continuity", "bernoulli theorem", "torricelli", "viscosity", "stokes law", "terminal velocity", "reynolds number", "surface tension", "capillarity", "excess pressure"], i: "🌊", c: "#0ea5e9" },
+    { keys: ["thermal properties of matter", "thermometry", "thermal expansion", "calorimetry", "specific heat", "latent heat", "heat transfer", "thermal conduction", "convection", "radiation", "stefan law", "wien displacement", "newton law of cooling"], i: "🌡️", c: "#ef4444" },
+    { keys: ["thermodynamics", "zeroth law", "first law of thermodynamics", "isothermal", "adiabatic", "isobaric", "isochoric", "heat engine", "refrigerator", "carnot engine", "second law of thermodynamics", "entropy"], i: "🔥", c: "#f97316" },
+    { keys: ["kinetic theory", "kinetic theory of gases", "ideal gas", "rms speed", "degrees of freedom", "law of equipartition", "mean free path"], i: "💨", c: "#14b8a6" },
+    { keys: ["oscillations", "simple harmonic motion", "shm", "simple pendulum", "spring mass", "damped oscillations", "forced oscillations"], i: "⏱️", c: "#ec4899" },
+    { keys: ["waves", "wave motion", "transverse wave", "longitudinal wave", "speed of sound", "laplace correction", "superposition", "standing waves", "organ pipe", "sonometer", "beats", "doppler effect", "acoustics"], i: "〰️", c: "#06b6d4" },
+    { keys: ["electric charges and fields", "electrostatics", "coulomb law", "electric field", "electric dipole", "electric flux", "gauss law"], i: "⚡", c: "#eab308" },
+    { keys: ["electrostatic potential and capacitance", "electric potential", "equipotential", "dielectrics", "capacitors", "parallel plate capacitor", "van de graaff", "capacitance"], i: "🔋", c: "#10b981" },
+    { keys: ["current electricity", "drift velocity", "mobility", "ohm law", "resistivity", "colour code", "combination of resistors", "emf", "internal resistance", "kirchhoff laws", "wheatstone bridge", "meter bridge", "potentiometer"], i: "🔌", c: "#f59e0b" },
+    { keys: ["moving charges and magnetism", "magnetic effect of current", "biot savart law", "ampere circuital law", "solenoid", "toroid", "lorentz force", "cyclotron", "moving coil galvanometer", "ammeter", "voltmeter"], i: "🧲", c: "#ef4444" },
+    { keys: ["magnetism and matter", "bar magnet", "earth magnetism", "magnetic declination", "angle of dip", "diamagnetic", "paramagnetic", "ferromagnetic", "hysteresis", "curie law"], i: "🧭", c: "#f43f5e" },
+    { keys: ["electromagnetic induction", "magnetic flux", "faraday law", "lenz law", "motional emf", "eddy currents", "self induction", "mutual induction", "inductance"], i: "🌀", c: "#8b5cf6" },
+    { keys: ["alternating current", "rms current", "phasor", "lcr circuit", "resonance", "power factor", "wattless current", "lc oscillations", "transformer", "ac generator"], i: "〰️", c: "#38bdf8" },
+    { keys: ["electromagnetic waves", "displacement current", "maxwell equations", "electromagnetic spectrum", "em waves"], i: "📡", c: "#ec4899" },
+    { keys: ["ray optics and optical instruments", "ray optics", "geometrical optics", "reflection", "spherical mirror", "refraction", "total internal reflection", "optical fibre", "lens maker formula", "prism", "dispersion", "microscope", "telescope", "optical instruments"], i: "🔭", c: "#06b6d4" },
+    { keys: ["wave optics", "huygens principle", "coherent sources", "interference", "young double slit", "ydse", "diffraction", "resolving power", "polarization", "brewster law", "malus law"], i: "🌈", c: "#a855f7" },
+    { keys: ["dual nature of radiation and matter", "dual nature", "photoelectric effect", "einstein photoelectric", "matter waves", "de broglie", "davisson and germer"], i: "☀️", c: "#eab308" },
+    { keys: ["atoms", "alpha particle scattering", "rutherford model", "bohr model", "hydrogen spectrum", "lyman", "balmer", "x rays", "moseley law"], i: "⚛️", c: "#38bdf8" },
+    { keys: ["nuclei", "nuclear physics", "mass defect", "binding energy", "nuclear force", "radioactivity", "half life", "mean life", "alpha decay", "beta decay", "gamma decay", "nuclear fission", "nuclear fusion"], i: "☢️", c: "#84cc16" },
+    { keys: ["semiconductor electronics", "semiconductors", "energy bands", "intrinsic", "extrinsic", "pn junction", "semiconductor diode", "rectifier", "zener diode", "photodiode", "led", "solar cell", "transistor", "logic gates", "boolean algebra", "digital electronics"], i: "💻", c: "#10b981" },
+    { keys: ["communication systems", "modulation", "amplitude modulation", "propagation of electromagnetic waves", "bandwidth"], i: "📶", c: "#6366f1" },
+    { keys: ["experimental skills", "practical physics"], i: "🔬", c: "#14b8a6" },
+    { keys: ["physics", "mechanics", "electrodynamics", "modern physics", "optics"], i: "⚛️", c: "#a855f7" },
 
-    // 6. Mathematics & Chapters
-    { keys: ["calculus", "limit", "derivative", "differentiation", "continuity", "differentiability", "integral", "integration", "differential equation", "area under curve"], i: "∫", c: "#6366f1" },
-    { keys: ["trigonometry", "trigonometric", "inverse trig", "triangle", "height and distance"], i: "📐", c: "#38bdf8" },
-    { keys: ["geometry", "straight line", "circle", "parabola", "ellipse", "hyperbola", "conic", "coordinate", "3d geometry", "mensuration"], i: "📏", c: "#10b981" },
-    { keys: ["matrix", "matrices", "determinant", "complex number", "quadratic", "polynomial", "binomial", "sequence", "series", "progression", "ap", "gp", "set", "relation", "function", "inequality", "algebra", "math"], i: "🔢", c: "#3b82f6" },
-    { keys: ["probability", "permutation", "combination", "statistics", "variance", "mean", "median", "data interpretation"], i: "🎲", c: "#ec4899" },
+    // 6. NEET & JEE Chemistry Chapters (Physical, Organic & Inorganic - Class 11 & 12)
+    { keys: ["some basic concepts of chemistry", "mole concept", "stoichiometry", "limiting reagent", "empirical formula", "molarity", "molality", "normality", "equivalent weight"], i: "⚖️", c: "#06b6d4" },
+    { keys: ["structure of atom", "atomic structure", "subatomic particles", "planck quantum", "bohr theory", "heisenberg uncertainty", "schrodinger", "quantum numbers", "aufbau", "pauli exclusion", "hund rule", "electronic configuration"], i: "⚛️", c: "#a855f7" },
+    { keys: ["classification of elements and periodicity", "periodic table", "periodic properties", "atomic radius", "ionization enthalpy", "electron gain enthalpy", "electronegativity"], i: "🗓️", c: "#ec4899" },
+    { keys: ["chemical bonding and molecular structure", "chemical bonding", "kossel lewis", "ionic bond", "lattice enthalpy", "fajan rule", "vsepr theory", "valence bond theory", "hybridisation", "molecular orbital theory", "bond order", "hydrogen bonding", "dipole moment"], i: "🔗", c: "#38bdf8" },
+    { keys: ["states of matter", "gaseous state", "boyle law", "charles law", "avogadro law", "dalton law", "graham law", "van der waals", "compressibility factor", "liquefaction"], i: "💨", c: "#14b8a6" },
+    { keys: ["chemical thermodynamics", "internal energy", "enthalpy", "hess law", "bond dissociation", "born haber", "spontaneity", "gibbs energy", "thermochemistry"], i: "🔥", c: "#f97316" },
+    { keys: ["equilibrium", "chemical equilibrium", "law of mass action", "le chatelier", "ionic equilibrium", "arrhenius", "bronsted lowry", "lewis acid", "ph scale", "common ion effect", "buffer solutions", "salt hydrolysis", "solubility product"], i: "⚖️", c: "#eab308" },
+    { keys: ["redox reactions", "oxidation number", "oxidising agent", "reducing agent", "balancing redox", "disproportionation"], i: "🔄", c: "#10b981" },
+    { keys: ["hydrogen", "isotopes of hydrogen", "hydrides", "hard and soft water", "heavy water", "hydrogen peroxide"], i: "💧", c: "#38bdf8" },
+    { keys: ["s block elements", "alkali metals", "alkaline earth metals", "diagonal relationship", "sodium carbonate", "sodium hydroxide", "plaster of paris", "cement"], i: "🧱", c: "#f43f5e" },
+    { keys: ["p block elements", "boron family", "borax", "diborane", "carbon family", "allotropes of carbon", "silicones", "zeolites", "nitrogen family", "ammonia", "nitric acid", "phosphorus", "oxygen family", "ozone", "sulphuric acid", "halogens", "interhalogen", "noble gases", "xenon compounds"], i: "💎", c: "#a855f7" },
+    { keys: ["organic chemistry some basic principles", "general organic chemistry", "goc", "iupac nomenclature", "isomerism", "structural isomerism", "stereoisomerism", "geometrical isomerism", "optical isomerism", "chirality", "inductive effect", "electromeric", "resonance", "mesomeric", "hyperconjugation", "carbocation", "carbanion", "free radical", "electrophile", "nucleophile", "purification of organic", "lassaigne", "dumas", "kjeldahl", "carius", "reaction mechanism"], i: "⌬", c: "#10b981" },
+    { keys: ["hydrocarbons", "alkanes", "conformations", "newman", "wurtz", "alkenes", "markovnikov", "ozonolysis", "alkynes", "aromatic hydrocarbons", "benzene", "huckel rule", "electrophilic substitution", "friedel crafts"], i: "⛽", c: "#f59e0b" },
+    { keys: ["environmental chemistry", "tropospheric", "stratospheric", "acid rain", "photochemical smog", "green chemistry"], i: "🌱", c: "#22c55e" },
+    { keys: ["solid state", "crystalline", "amorphous", "unit cell", "bravais", "packing efficiency", "voids", "radius ratio", "schottky defect", "frenkel defect"], i: "🧊", c: "#38bdf8" },
+    { keys: ["solutions", "henry law", "raoult law", "ideal and non ideal", "azeotropes", "colligative properties", "relative lowering", "elevation of boiling", "depression of freezing", "osmotic pressure", "van t hoff factor"], i: "🧪", c: "#06b6d4" },
+    { keys: ["electrochemistry", "galvanic cell", "daniell cell", "standard electrode potential", "nernst equation", "molar conductivity", "kohlrausch law", "electrolysis", "faraday laws", "batteries", "fuel cell", "corrosion"], i: "🔋", c: "#eab308" },
+    { keys: ["chemical kinetics", "rate of a reaction", "order and molecularity", "integrated rate equations", "zero order", "first order", "half life", "pseudo first order", "arrhenius equation", "activation energy", "collision theory"], i: "⏱️", c: "#f43f5e" },
+    { keys: ["surface chemistry", "adsorption", "physisorption", "chemisorption", "freundlich", "catalysis", "colloids", "tyndall effect", "brownian movement", "zeta potential", "coagulation", "hardy schulze", "gold number", "emulsions", "micelles"], i: "🫧", c: "#14b8a6" },
+    { keys: ["isolation of elements", "metallurgy", "concentration of ores", "froth floatation", "leaching", "calcination", "roasting", "ellingham diagram", "blast furnace", "electrolytic refining", "zone refining", "mond process", "van arkel"], i: "⛏️", c: "#f97316" },
+    { keys: ["d and f block elements", "transition elements", "interstitial compounds", "potassium dichromate", "potassium permanganate", "lanthanoids", "lanthanoid contraction", "actinoids"], i: "🪙", c: "#eab308" },
+    { keys: ["coordination compounds", "werner theory", "ligands", "chelation", "coordination number", "iupac of coordination", "crystal field theory", "cft", "spectrochemical series", "metal carbonyls"], i: "🕸️", c: "#8b5cf6" },
+    { keys: ["haloalkanes and haloarenes", "alkyl halides", "aryl halides", "sn1", "sn2", "walden inversion", "saytzeff", "grignard reagent", "finkelstein", "swarts", "sandmeyer", "ddt", "freons", "chloroform"], i: "🧪", c: "#10b981" },
+    { keys: ["alcohols phenols and ethers", "alcohols", "phenols", "ethers", "lucas test", "kolbe reaction", "reimer tiemann", "williamson synthesis"], i: "🍷", c: "#ec4899" },
+    { keys: ["aldehydes ketones and carboxylic acids", "aldehydes", "ketones", "carboxylic acids", "carbonyl compounds", "rosenmund", "stephen", "etard", "gatterman koch", "clemmensen", "wolff kishner", "tollens", "fehling", "haloform", "aldol condensation", "cannizzaro", "hvz reaction"], i: "🍋", c: "#f59e0b" },
+    { keys: ["amines", "diazonium salts", "gabriel phthalimide", "hoffmann bromamide", "carbylamine", "hinsberg", "coupling reaction", "nitrogen containing organic"], i: "🧬", c: "#06b6d4" },
+    { keys: ["biomolecules", "carbohydrates", "monosaccharides", "glucose", "fructose", "disaccharides", "polysaccharides", "amino acids", "peptide bond", "structure of proteins", "denaturation", "enzymes", "nucleic acids"], i: "🥖", c: "#14b8a6" },
+    { keys: ["polymers", "addition polymer", "condensation polymer", "polythene", "teflon", "pan", "nylon", "terylene", "dacron", "bakelite", "melamine", "vulcanisation", "neoprene", "buna", "biodegradable polymers", "phbv"], i: "🧶", c: "#a855f7" },
+    { keys: ["chemistry in everyday life", "drugs and medicines", "antacids", "antihistamines", "tranquilizers", "analgesics", "antibiotics", "antiseptics", "disinfectants", "antifertility", "artificial sweeteners", "soaps and detergents"], i: "💊", c: "#f43f5e" },
+    { keys: ["practical chemistry", "salt analysis", "qualitative analysis", "volumetric analysis", "titration", "functional group test"], i: "🔬", c: "#38bdf8" },
+    { keys: ["organic chemistry"], i: "⌬", c: "#10b981" },
+    { keys: ["inorganic chemistry"], i: "💎", c: "#ec4899" },
+    { keys: ["physical chemistry", "chemistry"], i: "🧪", c: "#06b6d4" },
 
-    // 7. General Knowledge, Humanities, Aptitude & Languages
-    { keys: ["history", "ancient", "medieval", "modern india", "freedom", "dynasty", "empire", "mughal", "british", "harappa", "vedic"], i: "🏛️", c: "#f97316" },
-    { keys: ["geography", "river", "mountain", "climate", "monsoon", "soil", "mineral", "continent", "ocean", "atlas", "map", "solar system", "earth"], i: "🗺️", c: "#10b981" },
-    { keys: ["polity", "constitution", "parliament", "president", "fundamental right", "directive", "judiciary", "supreme court", "panchayat", "governance", "amendment", "civics", "politics"], i: "⚖️", c: "#a855f7" },
-    { keys: ["economy", "economics", "budget", "gdp", "inflation", "tax", "gst", "rbi", "monetary", "fiscal", "five year plan", "commerce", "finance", "accounting"], i: "💰", c: "#22c55e" },
-    { keys: ["current affairs", "news", "headline", "international", "summit", "scheme", "appointment"], i: "📰", c: "#38bdf8" },
-    { keys: ["award", "nobel", "ratna", "oscar", "trophy", "medal", "honour"], i: "🏆", c: "#fdb813" },
-    { keys: ["sport", "cricket", "olympic", "football", "hockey", "tennis", "chess", "athletics"], i: "🏅", c: "#10b981" },
-    { keys: ["art", "culture", "dance", "music", "festival", "temple", "heritage", "painting", "literature"], i: "🎭", c: "#ec4899" },
-    { keys: ["assam", "north east", "ahom", "brahmaputra"], i: "🦏", c: "#22c55e" },
-    { keys: ["computer", "software", "hardware", "internet", "networking", "cyber", "coding", "programming", "python", "java", "dbms", "operating system", "it", "artificial intelligence"], i: "💻", c: "#38bdf8" },
-    { keys: ["reasoning", "logical", "puzzle", "syllogism", "blood relation", "coding-decoding", "seating", "analogy", "series", "direction", "clock", "calendar", "venn", "non-verbal"], i: "🧩", c: "#f97316" },
-    { keys: ["aptitude", "quantitative", "percentage", "profit", "loss", "interest", "ratio", "proportion", "time and work", "time and distance", "train", "boat", "mixture", "alligation", "average", "number system", "simplification", "hcf", "lcm"], i: "📈", c: "#14b8a6" },
-    { keys: ["english", "grammar", "vocabulary", "synonym", "antonym", "idiom", "phrase", "comprehension", "tense", "voice", "narration", "preposition", "error spotting", "cloze", "para jumble"], i: "📖", c: "#ec4899" },
-    { keys: ["hindi", "vyakaran", "sanskrit", "assamese", "bengali", "language"], i: "🔤", c: "#f97316" },
-    { keys: ["agriculture", "crop", "farming", "soil science", "horticulture"], i: "🌾", c: "#84cc16" },
-    { keys: ["psychology", "pedagogy", "teaching", "child development", "cdp", "education", "sociology", "philosophy", "ethics"], i: "🎓", c: "#8b5cf6" },
-    { keys: ["nursing", "bams", "bhms", "ayurveda", "homeopathy", "pharmacy", "dental", "veterinary", "clinical", "surgical", "first aid"], i: "🏥", c: "#f43f5e" },
+    // 7. JEE Mathematics Chapters (Class 11 & 12)
+    { keys: ["sets relations and functions", "sets", "relations and functions", "venn diagrams", "domain and range", " equivalence relation", "bijective", "composition of functions"], i: "🔗", c: "#38bdf8" },
+    { keys: ["trigonometric functions", "inverse trigonometric functions", "trigonometry", "trigonometric equations", "heights and distances", "properties of triangles", "sine rule", "cosine rule"], i: "📐", c: "#06b6d4" },
+    { keys: ["complex numbers and quadratic equations", "complex numbers", "argand plane", "modulus and argument", "de moivre", "cube roots of unity", "quadratic equations", "nature of roots"], i: "🔢", c: "#a855f7" },
+    { keys: ["linear inequalities", "linear programming", "lpp", "feasible region"], i: "📊", c: "#14b8a6" },
+    { keys: ["permutations and combinations", "permutation", "combination", "fundamental principle of counting", "circular permutation", "derangement"], i: "🔀", c: "#f97316" },
+    { keys: ["binomial theorem", "mathematical induction", "general and middle term", "multinomial"], i: "🧮", c: "#eab308" },
+    { keys: ["sequences and series", "arithmetic progression", "geometric progression", "harmonic progression", "agp", "am gm"], i: "📈", c: "#10b981" },
+    { keys: ["straight lines", "pair of straight lines", "slope of a line", "angle between two lines", "distance of a point", "concurrency", "locus", "coordinate geometry"], i: "📏", c: "#3b82f6" },
+    { keys: ["conic sections", "circles", "circle", "parabola", "ellipse", "hyperbola", "eccentricity", "latus rectum", "chord of contact", "director circle"], i: "⭕", c: "#ec4899" },
+    { keys: ["three dimensional geometry", "3d geometry", "direction cosines", "direction ratios", "equation of a line in space", "Equation of a plane", "shortest distance", "skew lines", "coplanarity"], i: "🧊", c: "#6366f1" },
+    { keys: ["vector algebra", "scalar product", "dot product", "vector product", "cross product", "scalar triple product", "vector triple product"], i: "↗️", c: "#22c55e" },
+    { keys: ["limits and derivatives", "continuity and differentiability", "limits", "continuity", "differentiability", "l hospital", "rolle theorem", "mean value theorem", "chain rule", "logarithmic differentiation", "parametric differentiation"], i: "📉", c: "#f43f5e" },
+    { keys: ["applications of derivatives", "rate of change", "increasing and decreasing", "monotonicity", "tangents and normals", "approximations", "maxima and minima"], i: "⛰️", c: "#f59e0b" },
+    { keys: ["integrals", "indefinite integrals", "definite integrals", "integration by substitution", "integration by parts", "partial fractions", "properties of definite integrals", "leibniz rule", "calculus"], i: "∫", c: "#6366f1" },
+    { keys: ["applications of integrals", "area under curves", "area bounded by curves", "quadrature"], i: "📐", c: "#10b981" },
+    { keys: ["differential equations", "order and degree", "variable separable", "homogeneous differential", "linear differential equation", "integrating factor"], i: "〰️", c: "#a855f7" },
+    { keys: ["matrices", "determinants", "matrix", "determinant", "transpose", "symmetric", "skew symmetric", "adjoint", "inverse of a matrix", "cramer rule", "cayley hamilton"], i: "🎛️", c: "#38bdf8" },
+    { keys: ["probability", "conditional probability", "multiplication theorem", "independent events", "bayes theorem", "random variable", "probability distribution", "bernoulli trials", "binomial distribution"], i: "🎲", c: "#ec4899" },
+    { keys: ["statistics", "measures of dispersion", "range", "mean deviation", "variance", "standard deviation"], i: "📊", c: "#eab308" },
+    { keys: ["mathematical reasoning", "tautology", "fallacy", "contrapositive", "quantifiers"], i: "🧠", c: "#14b8a6" },
+    { keys: ["mathematics", "maths", "algebra", "geometry", "mensuration"], i: "📐", c: "#3b82f6" },
 
-    // 8. Root Exam Categories (Checked last so specific subtopic names take priority)
-    { keys: ["neet", "medical", "aiims", "paramedical", "jipmer", "ssuhs"], i: "🩺", c: "#f43f5e" },
-    { keys: ["jee", "iit", "nit", "bitsat", "cee", "wbjee", "mht", "kcet", "engineering"], i: "🚀", c: "#38bdf8" },
-    { keys: ["gk", "general knowledge", "static gk", "general awareness", "general studies"], i: "🌍", c: "#10b981" },
-    { keys: ["upsc", "ias", "ips", "civil service", "apsc", "psc", "state pcs"], i: "🏛️", c: "#eab308" },
-    { keys: ["ssc", "cgl", "chsl", "mts", "gd", "staff selection"], i: "📋", c: "#06b6d4" },
-    { keys: ["banking", "ibps", "sbi", "rbi", "po", "clerk"], i: "🏦", c: "#22c55e" },
-    { keys: ["railway", "rrb", "ntpc", "group d"], i: "🚂", c: "#f59e0b" },
-    { keys: ["defense", "nda", "cds", "afcat", "agniveer", "army", "navy", "air force"], i: "🛡️", c: "#f97316" },
-    { keys: ["law", "clat", "ailet", "judiciary", "llb"], i: "⚖️", c: "#a855f7" },
-    { keys: ["gate", "net", "csir", "ugc", "iit jam", "cuet", "cat", "mba", "mat", "ctet", "tet"], i: "🎓", c: "#6366f1" }
+    // 8. General Knowledge, Humanities, Aptitude & Languages
+    { keys: ["history", "ancient india", "medieval india", "modern india", "world history", "freedom struggle", "indus valley", "vedic age", "maurya", "gupta", "mughal", "delhi sultanate"], i: "🏛️", c: "#f97316" },
+    { keys: ["geography", "indian geography", "world geography", "physical geography", "rivers", "mountains", "climate", "monsoon", "soils", "minerals", "continents", "oceans", "atlas", "solar system"], i: "🗺️", c: "#10b981" },
+    { keys: ["polity", "indian polity", "constitution", "parliament", "president", "prime minister", "fundamental rights", "directive principles", "supreme court", "panchayati raj", "constitutional amendments", "governance", "civics"], i: "⚖️", c: "#a855f7" },
+    { keys: ["economics", "indian economy", "economy", "macroeconomics", "microeconomics", "budget", "national income", "gdp", "inflation", "taxation", "gst", "banking awareness", "monetary policy", "fiscal policy", "five year plans", "commerce", "accountancy"], i: "💰", c: "#22c55e" },
+    { keys: ["current affairs", "daily news", "national affairs", "international affairs", "summits", "government schemes", "appointments"], i: "📰", c: "#38bdf8" },
+    { keys: ["awards and honours", "awards", "nobel prize", "bharat ratna", "padma awards", "gallantry"], i: "🏆", c: "#fdb813" },
+    { keys: ["sports", "cricket", "olympics", "commonwealth", "asian games", "football", "tennis", "trophies"], i: "🏅", c: "#10b981" },
+    { keys: ["art and culture", "classical dance", "folk dance", "music", "festivals", "temples", "unesco", "heritage", "paintings", "books and authors", "literature"], i: "🎭", c: "#ec4899" },
+    { keys: ["assam gk", "assam history", "assam geography", "north east", "ahom dynasty", "brahmaputra"], i: "🦏", c: "#22c55e" },
+    { keys: ["computer awareness", "computer science", "computers", "software", "hardware", "internet", "networking", "cyber security", "programming", "python", "java", "c++", "dbms", "operating system", "data structures", "artificial intelligence"], i: "💻", c: "#38bdf8" },
+    { keys: ["reasoning", "logical reasoning", "analytical reasoning", "verbal reasoning", "non verbal reasoning", "puzzles", "syllogism", "blood relations", "coding decoding", "seating arrangement", "analogy", "number series", "direction sense", "clocks", "calendars", "dice"], i: "🧩", c: "#f97316" },
+    { keys: ["quantitative aptitude", "aptitude", "arithmetic", "percentage", "profit and loss", "simple interest", "compound interest", "ratio and proportion", "time and work", "pipes and cisterns", "time speed and distance", "boats and streams", "mixture and alligation", "averages", "number system", "simplification", "hcf and lcm", "data interpretation"], i: "📈", c: "#14b8a6" },
+    { keys: ["english", "english grammar", "vocabulary", "synonyms", "antonyms", "idioms and phrases", "one word substitution", "reading comprehension", "tenses", "active and passive", "direct and indirect", "prepositions", "spotting errors", "cloze test", "para jumbles"], i: "📖", c: "#ec4899" },
+    { keys: ["hindi", "vyakaran", "sanskrit", "assamese", "bengali"], i: "🔤", c: "#f97316" },
+    { keys: ["agriculture", "agronomy", "horticulture", "soil science"], i: "🌾", c: "#84cc16" },
+    { keys: ["psychology", "child development", "pedagogy", "teaching aptitude", "sociology", "philosophy", "ethics"], i: "🎓", c: "#8b5cf6" },
+    { keys: ["nursing", "ayurveda", "bams", "bhms", "homeopathy", "pharmacy", "pharmacology", "pathology", "microbiology", "biochemistry", "forensic", "community medicine", "first aid", "clinical"], i: "🏥", c: "#f43f5e" }
 ];
 
-// Automatically returns the best study icon for any topic/subtopic name without requiring user input
+// Word-boundary keyword matcher so short words like "gene" never falsely match inside "general"!
+function matchesStudyKeyword(normalizedPaddedText, rawKeyword) {
+    let cleanKey = (rawKeyword || "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+    if (!cleanKey) return false;
+
+    // 1. Exact whole-word or whole-phrase match
+    if (normalizedPaddedText.includes(" " + cleanKey + " ")) {
+        return true;
+    }
+
+    // 2. Plural 's' or 'es' whole-word match (e.g., "gene" matches "genes", "hormone" matches "hormones")
+    if (normalizedPaddedText.includes(" " + cleanKey + "s ") || normalizedPaddedText.includes(" " + cleanKey + "es ")) {
+        return true;
+    }
+
+    // 3. Safe stem/prefix match ONLY for single-word scientific roots of 7+ characters (e.g., "thermodynamic" -> "thermodynamics")
+    if (!cleanKey.includes(" ") && cleanKey.length >= 7) {
+        return normalizedPaddedText.includes(" " + cleanKey);
+    }
+
+    return false;
+}
+
+function normalizeStudyTextForMatch(rawText) {
+    let stripped = String(rawText || "").replace(/^\d+\.\s*/, '').toLowerCase();
+    let wordsOnly = stripped.replace(/[^a-z0-9]+/g, " ").trim();
+    return " " + wordsOnly + " ";
+}
+
 function getAutomaticIconForName(name, folderType = null) {
-    let t = (name || "").replace(/^\d+\.\s*/, '').trim().toLowerCase();
+    let padded = normalizeStudyTextForMatch(name);
     for (let rule of STUDY_ICON_RULES) {
-        if (rule.keys.some(k => t.includes(k))) {
+        if (rule.keys.some(k => matchesStudyKeyword(padded, k))) {
             return rule.i;
         }
     }
     if (folderType === 'pdf') return "📄";
     if (folderType === 'mcq') return "📝";
+    let t = padded.trim();
     let hash = 0;
     for (let i = 0; i < t.length; i++) hash = t.charCodeAt(i) + ((hash << 5) - hash);
     return FALLBACK_TOPIC_ICONS[Math.abs(hash) % FALLBACK_TOPIC_ICONS.length];
@@ -173,20 +281,21 @@ function getAutomaticIconForName(name, folderType = null) {
 
 function getSmartIcon(text, customIcon = null) {
     let cleanText = (text || "").replace(/^\d+\.\s*/, '').trim();
-    // If title has a parenthetical suffix like "NCERT Book (NEET)", prioritize the main title before '(' first
-    let primaryPart = cleanText.split('(')[0].trim().toLowerCase();
-    let fullLower = cleanText.toLowerCase();
+    // Prioritize main title before '(' so "NCERT Book (NEET)" matches "NCERT Book" first
+    let primaryPart = cleanText.split('(')[0].trim();
+    let paddedPrimary = normalizeStudyTextForMatch(primaryPart);
+    let paddedFull = normalizeStudyTextForMatch(cleanText);
 
     let matchedRule = null;
     for (let rule of STUDY_ICON_RULES) {
-        if (rule.keys.some(k => primaryPart.includes(k))) {
+        if (rule.keys.some(k => matchesStudyKeyword(paddedPrimary, k))) {
             matchedRule = rule;
             break;
         }
     }
     if (!matchedRule) {
         for (let rule of STUDY_ICON_RULES) {
-            if (rule.keys.some(k => fullLower.includes(k))) {
+            if (rule.keys.some(k => matchesStudyKeyword(paddedFull, k))) {
                 matchedRule = rule;
                 break;
             }
@@ -268,7 +377,7 @@ async function _renderPdfResources(checkPath, niceTitle) {
                         <div style="font-size:12px; color:var(--text-muted);">${niceTitle}</div>
                     </div>
                 </div>
-                <a href="${item.fileUrl}" target="_blank" rel="noopener noreferrer" class="btn-exam" style="background:${theme.c}; color:#000; border:none; text-decoration:none; font-weight:800;">Open / Download ↗</a>
+                <a href="${item.fileUrl}" target="_blank" rel="noopener noreferrer" class="btn-exam" style="background:${theme.c} !important; color:#000 !important; border:none !important; text-decoration:none; font-weight:800;">Open / Download ↗</a>
             </div>`;
         }).join('');
 
@@ -355,7 +464,7 @@ function _renderView() {
                 <div class="card page-transition">
                     <h2 class="section-title">${headerTitle}</h2>
                     <p style="color:var(--text-muted); margin-bottom:25px;">${signPrompt}</p>
-                    <button class="btn-exam" onclick="forceStartQuiz()" style="background:var(--primary-yellow) !important; color:black !important; width:100%; max-width:250px; font-size:16px; font-weight:bold; border:none !important; box-shadow:0 4px 15px rgba(253,184,19,0.3) !important;">Start Quiz &rarr;</button>
+                    <button class="btn-exam btn-yellow-glow" onclick="forceStartQuiz()" style="background:var(--primary-yellow) !important; color:black !important; width:100%; max-width:250px; font-size:16px; font-weight:bold; border:none !important; box-shadow:0 4px 15px rgba(253,184,19,0.3) !important;">Start Quiz &rarr;</button>
                 </div>`;
             }
             return;
@@ -424,7 +533,9 @@ function _renderView() {
             let displayKey = (topicType && topicType.displayName) ? topicType.displayName : key.replace(/^\d+\.\s*/, '');
             let fallbackIcon = typeLabel === '📄' ? "📄" : (typeLabel === '📝' ? "📝" : null);
 
-            let iconData = getAutoTopicTheme(displayKey, customIcon, colorIdx, usedColors, fallbackIcon);
+            // Use the automatic icon matcher so old custom topics never keep an accidental mismatch
+            let resolvedIcon = getSmartIcon(displayKey) ? null : customIcon;
+            let iconData = getAutoTopicTheme(displayKey, resolvedIcon, colorIdx, usedColors, fallbackIcon);
             colorIdx++;
 
             h += `<button class="category-tile colored-tile" style="--topic-color:${iconData.c}; --topic-bg:${iconData.bg}; --topic-border:${iconData.border}; --topic-glow:${iconData.glow};" onclick="navigateTo('${safeKey}')">
@@ -491,7 +602,7 @@ async function resetProgress(safePath) {
 
 function _renderProgressSelection() {
     if (!currentUser) {
-        document.getElementById('dynamic-content').innerHTML = `<div class="card page-transition" style="text-align:center;"><h2>⚠ Sign In Required</h2><p style="color:var(--text-muted); margin-bottom:20px;">Please sign in to view your personalized exam analytics.</p><button class="btn-exam" onclick="showAuthModal()" style="background:var(--primary-yellow); color:#000; border:none;">Sign In</button></div>`;
+        document.getElementById('dynamic-content').innerHTML = `<div class="card page-transition" style="text-align:center;"><h2>⚠ Sign In Required</h2><p style="color:var(--text-muted); margin-bottom:20px;">Please sign in to view your personalized exam analytics.</p><button class="btn-exam btn-yellow-glow" onclick="showAuthModal()" style="background:var(--primary-yellow) !important; color:#000 !important; border:none;">Sign In</button></div>`;
         return;
     }
     document.getElementById('breadcrumb-text').innerText = "Home / Profile / Track Progress";
@@ -733,7 +844,7 @@ function _renderLeaderboardOptions() {
             <p style="color:var(--text-muted); font-size:14px; line-height:1.6; margin-bottom: 25px;">
                 Only signed-in students with at least <b>100 MCQs attempted</b> in their respective exam category can view official Leaderboard rankings.
             </p>
-            <button class="btn-exam" onclick="showAuthModal()" style="background:var(--primary-yellow); color:#000; border:none; padding:12px 24px; font-size:14px;">Sign In with Google</button>
+            <button class="btn-exam btn-yellow-glow" onclick="showAuthModal()" style="background:var(--primary-yellow) !important; color:#000 !important; border:none; padding:12px 24px; font-size:14px;">Sign In with Google</button>
         </div>`;
         return;
     }
@@ -844,7 +955,7 @@ async function fetchLiveLeaderboard(category) {
                         Attempt <b>${remaining} more MCQ${remaining === 1 ? '' : 's'}</b> in ${cleanCategory} to unlock your official rank!
                     </div>
                 </div>
-                <button class="btn-exam" onclick="jumpToSection(['${safeCat}'])" style="background:var(--primary-yellow); color:#000; border:none; padding:12px 24px; font-size:14px;">Practice ${cleanCategory} Now 🚀</button>
+                <button class="btn-exam btn-yellow-glow" onclick="jumpToSection(['${safeCat}'])" style="background:var(--primary-yellow) !important; color:#000 !important; border:none; padding:12px 24px; font-size:14px;">Practice ${cleanCategory} Now 🚀</button>
             </div>`;
             return;
         }
@@ -1164,7 +1275,7 @@ function cwStep2() {
 
         <div style="display:flex; gap:15px; flex-wrap:wrap;">
             <button class="btn-exam" onclick="cwStep1()" style="flex:1; min-width:140px; background:#0d1527;">&larr; Change Exam</button>
-            <button id="cwLaunchBtn" class="btn-exam" onclick="cwLaunch()" style="flex:2; min-width:200px; background:var(--primary-yellow); color:black; border:none; box-shadow: 0 4px 15px rgba(253,184,19,0.3); font-size:15px;">Launch Practice 🚀</button>
+            <button id="cwLaunchBtn" class="btn-exam btn-yellow-glow" onclick="cwLaunch()" style="flex:2; min-width:200px; background:var(--primary-yellow) !important; color:black !important; border:none; box-shadow: 0 4px 15px rgba(253,184,19,0.3); font-size:15px;">Launch Practice 🚀</button>
         </div>
     </div>`;
 
@@ -1313,7 +1424,7 @@ function cwRenderChaptersList(searchQuery = "") {
             <input type="checkbox" value="${ch.fullPath.replace(/"/g, '&quot;')}" ${isChecked ? 'checked' : ''} onchange="cwToggleChapter(this, ${idx})">
             <div style="overflow:hidden; text-overflow:ellipsis;">
                 <div style="font-size:10px; color:${chapTheme.c}; font-weight:800; text-transform:uppercase; letter-spacing:0.4px;">${ch.subjLabel}</div>
-                <div style="font-size:12.5px;">${ch.label} ${chapTheme.i}</div>
+                <div style="font-size:12.5px;">${chapTheme.i} ${ch.label}</div>
             </div>
         </label>`;
     }).join('');
