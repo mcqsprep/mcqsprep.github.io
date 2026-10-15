@@ -1,14 +1,23 @@
 // ==========================================
-// 1. SYSTEM INITIALIZATION, SYNCHRONIZED 3D SPLASH & CONFIGURATION
+// 1. SYSTEM INITIALIZATION, SEAMLESS 3D SPLASH & CONFIGURATION
 // ==========================================
 
-// Global synchronization gate so the 3D splash screen only exits AFTER all app content is loaded & rendered
+// Global synchronization gate so the 3D splash screen only exits AFTER 100% of app content is loaded & rendered
 let _resolveAppReady;
 window.appContentReadyPromise = new Promise((resolve) => {
     _resolveAppReady = resolve;
 });
 window.markAppContentReady = function() {
-    if (_resolveAppReady) _resolveAppReady();
+    if (_resolveAppReady) {
+        _resolveAppReady();
+        _resolveAppReady = null;
+    }
+};
+window.updateSplashProgress = function(pct, statusLabel) {
+    const bar = document.getElementById('splash-loader-bar');
+    const txt = document.getElementById('splash-status-text');
+    if (bar && typeof pct === 'number') bar.style.width = pct + '%';
+    if (txt && statusLabel) txt.innerText = statusLabel;
 };
 
 let deferredPrompt;
@@ -49,7 +58,7 @@ if ('serviceWorker' in navigator) {
 }
 
 // ==========================================
-// PREMIUM 3D OPENING ANIMATION (INSTALLED MOBILE APP ONLY)
+// SEAMLESS 3D OPENING ANIMATION (INSTALLED MOBILE APP ONLY)
 // ==========================================
 function isInstalledMobileApp() {
     return (
@@ -62,8 +71,8 @@ function isInstalledMobileApp() {
 
 function launch3DInstalledAppSplash() {
     if (!isInstalledMobileApp()) return;
-    if (sessionStorage.getItem('mcqs_3d_splash_played')) return;
-    sessionStorage.setItem('mcqs_3d_splash_played', 'true');
+    if (window.__mcqsSplashMounted) return;
+    window.__mcqsSplashMounted = true;
 
     const mountSplash = () => {
         if (document.getElementById('pwa-3d-splash-screen')) return;
@@ -71,56 +80,56 @@ function launch3DInstalledAppSplash() {
         const splash = document.createElement('div');
         splash.id = 'pwa-3d-splash-screen';
         splash.innerHTML = `
+            <div class="splash-nebula-bg"></div>
             <div class="splash-ambient-glow"></div>
-            <div class="splash-3d-stage">
+
+            <!-- Locked at exact 50% X, 50% Y screen center so the OS launch icon morphs in-place without jumping -->
+            <div class="splash-3d-center-anchor">
                 <div class="splash-3d-assembly">
                     <div class="splash-gyro-ring ring-gold"></div>
                     <div class="splash-gyro-ring ring-cyan"></div>
                     <div class="splash-gyro-ring ring-rose"></div>
                     <div class="splash-3d-core-card">
                         <div class="splash-core-sheen"></div>
-                        <img src="/icon-192.png" alt="MCQsPrep" class="splash-3d-logo" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                        <div class="splash-3d-fallback-icon" style="display:none;">🩺</div>
+                        <img src="/icon-512.png" alt="MCQsPrep" class="splash-3d-logo" onerror="this.src='/icon-192.png'">
                     </div>
                 </div>
+            </div>
 
-                <div class="splash-brand-block">
-                    <h1 class="splash-brand-title">MCQs<span>Prep</span><b class="splash-dot">.</b></h1>
-                    <div class="splash-brand-subtitle" id="splash-status-text">PREPARING YOUR WORKSPACE...</div>
-                    <div class="splash-loader-track">
-                        <div class="splash-loader-fill" id="splash-loader-bar"></div>
-                    </div>
+            <div class="splash-brand-block">
+                <h1 class="splash-brand-title">MCQs<span>Prep</span><b class="splash-dot">.</b></h1>
+                <div class="splash-brand-subtitle" id="splash-status-text">SYNCING EXAM ENGINE...</div>
+                <div class="splash-loader-track">
+                    <div class="splash-loader-fill" id="splash-loader-bar"></div>
                 </div>
             </div>
         `;
         document.body.appendChild(splash);
 
-        // Wait for BOTH:
-        // 1) A smooth 1.45s minimum 3D animation showcase
-        // 2) 100% of Firestore topics, sidebar links, auth profile & dashboard DOM to finish rendering underneath
-        // (with a 3.2s max safety timeout so slow/offline networks never hang)
-        const minAnimationTime = new Promise(r => setTimeout(r, 1450));
+        // Hold the 3D splash until BOTH:
+        // 1) Minimum 1.35s 3D animation showcase completes
+        // 2) 100% of Firestore topics, sidebar links, user profile & dashboard DOM are rendered behind the splash
+        // (with a 3.0s max safety cap for offline/weak connections)
+        const minAnimationTime = new Promise(r => setTimeout(r, 1350));
         const dataLoadWithTimeout = Promise.race([
             window.appContentReadyPromise,
-            new Promise(r => setTimeout(r, 3200))
+            new Promise(r => setTimeout(r, 3000))
         ]);
 
         Promise.all([minAnimationTime, dataLoadWithTimeout]).then(() => {
-            const bar = document.getElementById('splash-loader-bar');
+            window.updateSplashProgress(100, 'WORKSPACE READY');
             const statusText = document.getElementById('splash-status-text');
-            if (bar) bar.style.width = '100%';
-            if (statusText) {
-                statusText.innerText = 'READY';
-                statusText.style.color = '#10b981';
-            }
+            if (statusText) statusText.style.color = '#10b981';
 
-            // Brief 180ms pause at 100% before smooth 3D camera zoom-out into the already-rendered dashboard
-            setTimeout(() => {
-                splash.classList.add('splash-exit-3d');
+            // Wait 1 frame for the browser to paint the final dashboard behind the splash, then 3D zoom-out
+            requestAnimationFrame(() => {
                 setTimeout(() => {
-                    if (splash && splash.parentNode) splash.parentNode.removeChild(splash);
-                }, 550);
-            }, 180);
+                    splash.classList.add('splash-exit-3d');
+                    setTimeout(() => {
+                        if (splash && splash.parentNode) splash.parentNode.removeChild(splash);
+                    }, 520);
+                }, 120);
+            });
         });
     };
 
@@ -169,59 +178,72 @@ window.addEventListener('DOMContentLoaded', handlePCBackButton);
 const styleSheet = document.createElement('style');
 styleSheet.innerHTML = `
     @keyframes fadeSlideUp { 0% { transform: translateY(15px); opacity: 0; } 100% { transform: translateY(0); opacity: 1; } }
-    .page-transition { animation: fadeSlideUp 0.3s cubic-bezier(0.25, 1, 0.5, 1) forwards; }
+    .page-transition { animation: fadeSlideUp 0.28s cubic-bezier(0.25, 1, 0.5, 1) forwards; }
+
+    /* Disable fadeSlideUp flicker while the 3D splash screen is pre-rendering the dashboard */
+    body:has(#pwa-3d-splash-screen) .page-transition {
+        animation: none !important;
+        opacity: 1 !important;
+        transform: none !important;
+    }
 
     /* =====================================================
-       🌌 PREMIUM 3D INSTALLED APP SPLASH SCREEN ANIMATION
+       🌌 SEAMLESS CENTER-LOCKED 3D SPLASH SCREEN ANIMATION
        ===================================================== */
     #pwa-3d-splash-screen {
         position: fixed;
         inset: 0;
         width: 100vw;
         height: 100vh;
-        background: radial-gradient(circle at 50% 42%, #0e1933 0%, #050811 72%, #020307 100%);
+        background-color: #000000;
         z-index: 999999;
-        display: flex;
-        align-items: center;
-        justify-content: center;
         overflow: hidden;
         perspective: 1200px;
         -webkit-user-select: none;
         user-select: none;
-        transition: opacity 0.52s cubic-bezier(0.22, 1, 0.36, 1), transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+        transition: opacity 0.48s cubic-bezier(0.22, 1, 0.36, 1), transform 0.52s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    .splash-nebula-bg {
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(circle at 50% 50%, #0f1b38 0%, #050811 68%, #000000 100%);
+        opacity: 0;
+        animation: splashNebulaBloom 0.45s ease-out forwards;
     }
     #pwa-3d-splash-screen.splash-exit-3d {
         opacity: 0;
-        transform: scale(1.16) translateZ(110px);
+        transform: scale(1.15);
         pointer-events: none;
     }
     .splash-ambient-glow {
         position: absolute;
+        top: 50%;
+        left: 50%;
         width: 340px;
         height: 340px;
+        margin-top: -170px;
+        margin-left: -170px;
         border-radius: 50%;
-        background: radial-gradient(circle, rgba(253, 184, 19, 0.22) 0%, rgba(56, 189, 248, 0.14) 45%, transparent 72%);
-        filter: blur(28px);
-        animation: splashAmbientPulse 2.2s ease-in-out infinite alternate;
+        background: radial-gradient(circle, rgba(253, 184, 19, 0.25) 0%, rgba(56, 189, 248, 0.16) 45%, transparent 72%);
+        filter: blur(26px);
+        animation: splashAmbientPulse 2.0s ease-in-out infinite alternate;
     }
-    .splash-3d-stage {
-        position: relative;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
+    /* Exact Dead-Center Anchor (50% X, 50% Y) to match Android OS Boot Icon Position */
+    .splash-3d-center-anchor {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
         transform-style: preserve-3d;
-        animation: splashStageEntrance 0.55s cubic-bezier(0.16, 1, 0.3, 1) forwards;
     }
     .splash-3d-assembly {
         position: relative;
-        width: 210px;
-        height: 210px;
+        width: 220px;
+        height: 220px;
         display: flex;
         align-items: center;
         justify-content: center;
         transform-style: preserve-3d;
-        margin-bottom: 34px;
     }
     /* 3D Gyroscopic Orbital Rings */
     .splash-gyro-ring {
@@ -232,44 +254,44 @@ styleSheet.innerHTML = `
         pointer-events: none;
     }
     .splash-gyro-ring.ring-gold {
-        border: 2.2px solid transparent;
+        border: 2.5px solid transparent;
         border-top-color: #fdb813;
-        border-bottom-color: rgba(253, 184, 19, 0.55);
-        box-shadow: 0 0 22px rgba(253, 184, 19, 0.38), inset 0 0 15px rgba(253, 184, 19, 0.2);
-        animation: gyroSpinGold 2.4s linear infinite;
+        border-bottom-color: rgba(253, 184, 19, 0.6);
+        box-shadow: 0 0 24px rgba(253, 184, 19, 0.42), inset 0 0 15px rgba(253, 184, 19, 0.22);
+        animation: gyroIgniteGold 2.2s linear infinite;
     }
     .splash-gyro-ring.ring-cyan {
         inset: 14px;
-        border: 2.2px solid transparent;
+        border: 2.5px solid transparent;
         border-left-color: #38bdf8;
-        border-right-color: rgba(56, 189, 248, 0.55);
-        box-shadow: 0 0 22px rgba(56, 189, 248, 0.38), inset 0 0 15px rgba(56, 189, 248, 0.2);
-        animation: gyroSpinCyan 2.0s linear infinite;
+        border-right-color: rgba(56, 189, 248, 0.6);
+        box-shadow: 0 0 24px rgba(56, 189, 248, 0.42), inset 0 0 15px rgba(56, 189, 248, 0.22);
+        animation: gyroIgniteCyan 1.85s linear infinite;
     }
     .splash-gyro-ring.ring-rose {
         inset: 28px;
-        border: 1.5px dashed rgba(244, 63, 94, 0.65);
-        box-shadow: 0 0 16px rgba(244, 63, 94, 0.25);
-        animation: gyroSpinRose 3.0s linear infinite;
+        border: 1.5px dashed rgba(244, 63, 94, 0.7);
+        box-shadow: 0 0 18px rgba(244, 63, 94, 0.3);
+        animation: gyroIgniteRose 2.8s linear infinite;
     }
-    /* Central 3D Floating Glass Medallion (Seamless Icon Blending) */
+    /* Central 3D Medallion — Morphs directly from the 128px square OS icon into a 3D floating card */
     .splash-3d-core-card {
         position: relative;
-        width: 108px;
-        height: 108px;
-        border-radius: 28px;
+        width: 124px;
+        height: 124px;
+        border-radius: 26px;
         background: #1c2229;
-        border: 2px solid rgba(253, 184, 19, 0.8);
+        border: 2px solid rgba(253, 184, 19, 0.85);
         box-shadow:
-            0 20px 45px rgba(0, 0, 0, 0.9),
-            0 0 32px rgba(253, 184, 19, 0.38),
-            inset 0 0 18px rgba(56, 189, 248, 0.22);
+            0 22px 48px rgba(0, 0, 0, 0.92),
+            0 0 34px rgba(253, 184, 19, 0.42),
+            inset 0 0 18px rgba(56, 189, 248, 0.25);
         display: flex;
         align-items: center;
         justify-content: center;
         overflow: hidden;
-        transform: translateZ(45px);
-        animation: splashCoreFloat3D 2.2s ease-in-out infinite;
+        transform: translateZ(50px);
+        animation: splashCoreMorph3D 2.1s ease-in-out infinite;
     }
     .splash-core-sheen {
         position: absolute;
@@ -277,34 +299,35 @@ styleSheet.innerHTML = `
         left: -120%;
         width: 80%;
         height: 220%;
-        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.35), transparent);
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.38), transparent);
         transform: rotate(30deg);
         z-index: 2;
         pointer-events: none;
-        animation: splashLightSweep 1.7s ease-in-out infinite;
+        animation: splashLightSweep 1.5s ease-in-out infinite;
     }
     .splash-3d-logo {
         width: 100%;
         height: 100%;
         object-fit: cover;
-        transform: scale(1.06);
-        border-radius: 26px;
+        transform: scale(1.04);
     }
-    .splash-3d-fallback-icon {
-        font-size: 52px;
-        filter: drop-shadow(0 0 14px rgba(253, 184, 19, 0.6));
-    }
+    /* Positioned below the center anchor so it never shifts the center icon */
     .splash-brand-block {
+        position: absolute;
+        top: calc(50% + 132px);
+        left: 50%;
+        transform: translateX(-50%);
+        width: 90vw;
+        max-width: 340px;
         text-align: center;
-        transform: translateZ(30px);
     }
     .splash-brand-title {
         margin: 0;
-        font-size: 32px;
+        font-size: 31px;
         font-weight: 900;
-        letter-spacing: 1px;
+        letter-spacing: 0.8px;
         color: #ffffff;
-        text-shadow: 0 8px 25px rgba(0, 0, 0, 0.8), 0 0 18px rgba(255, 255, 255, 0.15);
+        text-shadow: 0 8px 25px rgba(0, 0, 0, 0.85), 0 0 18px rgba(255, 255, 255, 0.15);
     }
     .splash-brand-title span {
         color: #fdb813;
@@ -314,65 +337,60 @@ styleSheet.innerHTML = `
         color: #38bdf8;
     }
     .splash-brand-subtitle {
-        margin-top: 8px;
-        font-size: 10.5px;
+        margin-top: 7px;
+        font-size: 10px;
         font-weight: 800;
-        letter-spacing: 3px;
+        letter-spacing: 2.8px;
         color: #94a3b8;
         text-transform: uppercase;
-        transition: color 0.25s ease;
+        transition: color 0.2s ease;
     }
     .splash-loader-track {
-        width: 190px;
+        width: 185px;
         height: 4.5px;
-        background: rgba(255, 255, 255, 0.08);
+        background: rgba(255, 255, 255, 0.09);
         border-radius: 999px;
-        margin: 20px auto 0 auto;
+        margin: 16px auto 0 auto;
         overflow: hidden;
         border: 1px solid rgba(255, 255, 255, 0.08);
     }
     .splash-loader-fill {
         height: 100%;
-        width: 82%;
+        width: 28%;
         border-radius: 999px;
         background: linear-gradient(90deg, #fdb813 0%, #38bdf8 55%, #10b981 100%);
-        box-shadow: 0 0 14px rgba(253, 184, 19, 0.8);
-        animation: splashInitialCrawl 1.4s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-        transition: width 0.2s ease-out;
+        box-shadow: 0 0 14px rgba(253, 184, 19, 0.85);
+        transition: width 0.25s cubic-bezier(0.22, 1, 0.36, 1);
     }
 
-    @keyframes splashStageEntrance {
-        0% { opacity: 0; transform: scale(0.84) rotateX(16deg); }
-        100% { opacity: 1; transform: scale(1) rotateX(0deg); }
+    @keyframes splashNebulaBloom {
+        0% { opacity: 0; }
+        100% { opacity: 1; }
     }
-    @keyframes gyroSpinGold {
+    @keyframes gyroIgniteGold {
         0% { transform: rotateX(64deg) rotateY(18deg) rotateZ(0deg); }
         100% { transform: rotateX(64deg) rotateY(18deg) rotateZ(360deg); }
     }
-    @keyframes gyroSpinCyan {
+    @keyframes gyroIgniteCyan {
         0% { transform: rotateX(22deg) rotateY(66deg) rotateZ(360deg); }
         100% { transform: rotateX(22deg) rotateY(66deg) rotateZ(0deg); }
     }
-    @keyframes gyroSpinRose {
+    @keyframes gyroIgniteRose {
         0% { transform: rotateX(-52deg) rotateY(-35deg) rotateZ(0deg); }
         100% { transform: rotateX(-52deg) rotateY(-35deg) rotateZ(360deg); }
     }
-    @keyframes splashCoreFloat3D {
-        0%, 100% { transform: translateZ(45px) rotateY(-10deg) rotateX(8deg) translateY(0px); }
-        50% { transform: translateZ(65px) rotateY(12deg) rotateX(-8deg) translateY(-6px); }
+    @keyframes splashCoreMorph3D {
+        0% { transform: translateZ(10px) rotateY(0deg) rotateX(0deg); }
+        50% { transform: translateZ(60px) rotateY(14deg) rotateX(-10deg); }
+        100% { transform: translateZ(10px) rotateY(0deg) rotateX(0deg); }
     }
     @keyframes splashLightSweep {
         0% { left: -120%; }
         55%, 100% { left: 160%; }
     }
     @keyframes splashAmbientPulse {
-        0% { transform: scale(0.9); opacity: 0.65; }
+        0% { transform: scale(0.85); opacity: 0.55; }
         100% { transform: scale(1.15); opacity: 1; }
-    }
-    @keyframes splashInitialCrawl {
-        0% { width: 8%; }
-        50% { width: 58%; }
-        100% { width: 86%; }
     }
     
     /* Permanently hide duplicate bottom back button container */
@@ -578,7 +596,7 @@ styleSheet.innerHTML = `
 `;
 document.head.appendChild(styleSheet);
 
-// Mount the 3D splash screen immediately after injecting styles so there is 0ms gap
+// Mount the 3D splash screen immediately
 launch3DInstalledAppSplash();
 
 function formatTextWithMath(text) {
@@ -658,7 +676,7 @@ window.customPracticeConfig = {
     exams: {}
 };
 
-// Instant LocalStorage State Hydration so topics & sidebar links are already in memory at 0ms
+// Instant 0ms LocalStorage State Hydration
 try {
     const cachedBoot = JSON.parse(localStorage.getItem('mcqs_boot_cache_v1') || 'null');
     if (cachedBoot) {
