@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mcqsprep-cache-v44';
+const CACHE_NAME = 'mcqsprep-cache-v45';
 const ASSETS = [
   '/',
   '/index.html',
@@ -32,19 +32,44 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-    if (event.request.method === 'GET' && !event.request.url.includes('firestore.googleapis.com') && !event.request.url.includes('googleapis.com')) {
+    if (event.request.method !== 'GET') return;
+    const url = event.request.url;
+
+    // Never intercept live Firestore data or AI Worker calls
+    if (url.includes('firestore.googleapis.com') || url.includes('identitytoolkit.googleapis.com') || url.includes('securetoken.googleapis.com')) {
+        return;
+    }
+
+    // 1. INSTANT 0ms HTML NAVIGATION (Eliminates the 1-second startup delay on installed mobile app)
+    if (event.request.mode === 'navigate') {
         event.respondWith(
-            caches.open(CACHE_NAME).then((cache) => {
-                return cache.match(event.request).then((cachedResponse) => {
-                    const fetchedResponse = fetch(event.request).then((networkResponse) => {
-                        if (networkResponse && networkResponse.status === 200) {
-                            cache.put(event.request, networkResponse.clone());
-                        }
-                        return networkResponse;
-                    }).catch(() => cachedResponse);
-                    return cachedResponse || fetchedResponse;
-                });
+            caches.open(CACHE_NAME).then(async (cache) => {
+                const cachedIndex = await cache.match('/index.html', { ignoreSearch: true }) || await cache.match('/', { ignoreSearch: true });
+                const networkFetch = fetch(event.request).then((networkResponse) => {
+                    if (networkResponse && networkResponse.status === 200) {
+                        cache.put('/index.html', networkResponse.clone());
+                    }
+                    return networkResponse;
+                }).catch(() => cachedIndex);
+
+                return cachedIndex || networkFetch;
             })
         );
+        return;
     }
+
+    // 2. CACHE-FIRST WITH BACKGROUND REFRESH FOR ALL SCRIPTS, STYLES, FONTS & ICONS
+    event.respondWith(
+        caches.open(CACHE_NAME).then(async (cache) => {
+            const cachedResponse = await cache.match(event.request, { ignoreSearch: true });
+            const fetchedResponse = fetch(event.request).then((networkResponse) => {
+                if (networkResponse && networkResponse.status === 200) {
+                    cache.put(event.request, networkResponse.clone());
+                }
+                return networkResponse;
+            }).catch(() => cachedResponse);
+
+            return cachedResponse || fetchedResponse;
+        })
+    );
 });
