@@ -86,6 +86,47 @@ styleSheet.innerHTML = `
     /* Keep upper back button accessible on both desktop and mobile when inside pages */
     .pc-back-btn.hide-on-mobile { display: flex; }
 
+    /* 🔆 FIX DARK BUTTONS EVERYWHERE (Authenticate, + Create Folder, Submit, Upload, Modals) */
+    #loginBtn,
+    #submitFeedbackBtn,
+    .btn-yellow-glow,
+    .btn-exam[style*="background-color: var(--primary-yellow)"],
+    .btn-exam[style*="background-color:var(--primary-yellow)"],
+    .btn-exam[style*="background: var(--primary-yellow)"],
+    .btn-exam[style*="background:var(--primary-yellow)"] {
+        background: linear-gradient(135deg, #fdb813 0%, #f59e0b 100%) !important;
+        color: #050811 !important;
+        font-weight: 800 !important;
+        border: 1px solid rgba(253, 184, 19, 0.85) !important;
+        box-shadow: 0 4px 18px rgba(253, 184, 19, 0.38) !important;
+        opacity: 1 !important;
+    }
+    #loginBtn:hover,
+    #submitFeedbackBtn:hover,
+    .btn-yellow-glow:hover,
+    .btn-exam[style*="background-color: var(--primary-yellow)"]:hover,
+    .btn-exam[style*="background-color:var(--primary-yellow)"]:hover,
+    .btn-exam[style*="background: var(--primary-yellow)"]:hover,
+    .btn-exam[style*="background:var(--primary-yellow)"]:hover {
+        background: linear-gradient(135deg, #ffc738 0%, #fdb813 100%) !important;
+        box-shadow: 0 6px 24px rgba(253, 184, 19, 0.58) !important;
+        transform: translateY(-1px) !important;
+    }
+
+    #uploadBtn,
+    .btn-green-glow,
+    .btn-exam[style*="background-color: var(--correct-green)"],
+    .btn-exam[style*="background-color:var(--correct-green)"],
+    .btn-exam[style*="background: var(--correct-green)"],
+    .btn-exam[style*="background:var(--correct-green)"] {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+        color: #ffffff !important;
+        font-weight: 800 !important;
+        border: 1px solid rgba(16, 185, 129, 0.8) !important;
+        box-shadow: 0 4px 18px rgba(16, 185, 129, 0.35) !important;
+        opacity: 1 !important;
+    }
+
     /* 🟢 CLEAN, COLORED & GLOWING INSTALL BUTTON (Mobile Web & PC) */
     @keyframes installPulseGlow {
         0% { box-shadow: 0 0 10px rgba(16, 185, 129, 0.45), 0 0 20px rgba(6, 182, 212, 0.25); }
@@ -289,7 +330,6 @@ const CLOUDINARY_URL = "https://api.cloudinary.com/v1_1/h5gdez7a/auto/upload";
 const CLOUDINARY_PRESET = "mcq_uploads"; 
 const AI_WORKER_URL = "https://shy-waterfall-08a4.md-habibullah9957.workers.dev/";
 
-// FIXED (Requirement 1): Deleted all subtopics under General Knowledge ("General Knowledge": {})
 const DEFAULT_APP_DATA = { 
     "NEET": { 
         "NCERT Book": {}, 
@@ -308,15 +348,12 @@ let appData = JSON.parse(JSON.stringify(DEFAULT_APP_DATA));
 let customTopicTypes = {};
 let topicOverrides = { deletedPaths: [], editedPaths: {} };
 
-// FIXED (Requirement 2): Quick Links & Essential Practice start with 0 auto-subtopics; 100% manually controlled from Admin Panel
 window.sidebarConfig = {
-    quickLinks: [],        // Array of { id, title, path, icon }
-    essentialPractice: []  // Array of { id, title, path, icon }
+    quickLinks: [],
+    essentialPractice: []
 };
 
-// FIXED (Requirement 3): Manual Custom Practice Subjects & Chapters config controlled from Admin Panel
 window.customPracticeConfig = {
-    // examKey -> { subjects: [ { path, label, chapters: [ { path, label } ] } ] }
     exams: {}
 };
 
