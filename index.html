@@ -4,8 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
-    <!-- 🔍 PRIMARY SEO TITLE & META TAGS (Helps mcqsprep.github.io outrank the GitHub repo) -->
+    <!-- 🔍 PRIMARY SEO TITLE & SITE NAME SIGNALS FOR GOOGLE SEARCH -->
     <title>MCQsPrep — Free NEET, JEE & Competitive Exam MCQ Practice Platform</title>
+    <meta name="application-name" content="MCQsPrep">
+    <meta name="apple-mobile-web-app-title" content="MCQsPrep">
     <meta name="description" content="MCQsPrep is a smart, free MCQ practice platform for NEET, JEE, General Knowledge, and competitive exams. Practice chapter-wise MCQs, custom mock tests, PYQs, NCERT notes, and AI doubt solving.">
     <meta name="keywords" content="MCQsPrep, mcqsprep, NEET MCQ practice, JEE mock test, NCERT MCQs, PYQs, daily quiz challenge, competitive exam preparation">
     <meta name="author" content="MCQsPrep">
@@ -20,7 +22,7 @@
     <meta property="og:url" content="https://mcqsprep.github.io/">
     <meta property="og:image" content="https://mcqsprep.github.io/icon-512.png">
 
-    <!-- 🩺 REAL PNG FAVICONS FOR GOOGLE & BRAVE SEARCH RESULTS (Replaces the grey globe icon) -->
+    <!-- 🩺 REAL PNG FAVICONS FOR GOOGLE & BRAVE SEARCH RESULTS -->
     <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
     <link rel="icon" type="image/png" sizes="512x512" href="/icon-512.png">
     <link rel="shortcut icon" type="image/png" href="/icon-192.png">
@@ -32,25 +34,14 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="preload" as="image" href="icon-192.png">
 
-    <!-- 🏆 STRUCTURED DATA (Tells Google & Brave Search your official Brand Name, URL & Logo) -->
+    <!-- 🏆 STRICT GOOGLE SITE NAME STRUCTURED DATA (Replaces "GitHub" with "MCQsPrep") -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
       "@type": "WebSite",
       "name": "MCQsPrep",
-      "alternateName": ["MCQsPrep.github.io", "MCQs Prep"],
-      "url": "https://mcqsprep.github.io/",
-      "description": "Free, smart MCQ practice platform and custom mock test engine for NEET, JEE, and competitive exams.",
-      "publisher": {
-        "@type": "Organization",
-        "name": "MCQsPrep",
-        "logo": {
-          "@type": "ImageObject",
-          "url": "https://mcqsprep.github.io/icon-512.png",
-          "width": 512,
-          "height": 512
-        }
-      }
+      "alternateName": ["MCQs Prep", "mcqsprep", "MCQsPrep Web App"],
+      "url": "https://mcqsprep.github.io/"
     }
     </script>
 
@@ -71,7 +62,6 @@
             transition: opacity 0.48s cubic-bezier(0.22, 1, 0.36, 1), transform 0.52s cubic-bezier(0.22, 1, 0.36, 1);
             font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         }
-        /* Automatically visible at 0ms ONLY in the Installed Mobile App */
         @media all and (display-mode: standalone), all and (display-mode: fullscreen) {
             body { background-color: #000000; }
             #pwa-3d-splash-screen { display: block; }
@@ -102,7 +92,6 @@
             filter: blur(26px);
             animation: splashAmbientPulse 2s ease-in-out infinite alternate;
         }
-        /* Locked at exact 50% X, 50% Y center to seamlessly take over from the OS launch icon */
         .splash-3d-center-anchor {
             position: absolute;
             top: 50%;
@@ -248,7 +237,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" media="print" onload="this.media='all'">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css" media="print" onload="this.media='all'">
 
-    <!-- All external scripts use defer -->
+    <!-- Deferred external scripts -->
     <script defer src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script defer src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
     <script defer src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
