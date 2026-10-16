@@ -1716,7 +1716,9 @@ async function uploadFileToCloudinary(file) {
     const fd = new FormData();
     fd.append('file', file);
     fd.append('upload_preset', CLOUDINARY_PRESET);
-    const res = await fetch(CLOUDINARY_URL, { method: 'POST', body: fd });
+    const isPdf = file && (file.type === 'application/pdf' || /\.pdf$/i.test(file.name));
+    const uploadEndpoint = isPdf ? CLOUDINARY_URL.replace('/auto/upload', '/raw/upload') : CLOUDINARY_URL;
+    const res = await fetch(uploadEndpoint, { method: 'POST', body: fd });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error?.message || 'File upload failed');
     return data.secure_url;
