@@ -1,5 +1,5 @@
 // ==========================================
-// 2. DATA LOADING, PARALLEL PRE-LOADER & AUTHENTICATION
+// 2. DATA LOADING, UNIVERSAL PDF RENDERER & AUTHENTICATION
 // ==========================================
 
 function removePathFromAppData(fullPathStr) {
@@ -14,6 +14,18 @@ function removePathFromAppData(fullPathStr) {
     delete customTopicTypes[fullPathStr];
 }
 
+function isPdfSectionPath(fullPathStr) {
+    let lower = (fullPathStr || "").toLowerCase();
+    return (
+        lower.includes("ncert book") ||
+        lower.includes("pyq") ||
+        lower.includes("pdf") ||
+        lower.includes("study material") ||
+        lower.includes("handwritten note") ||
+        lower.includes("syllabus")
+    );
+}
+
 async function loadCustomTopics() {
     try {
         if (typeof window.updateSplashProgress === 'function') {
@@ -24,7 +36,6 @@ async function loadCustomTopics() {
         let freshTopicTypes = {};
         let freshOverrides = { deletedPaths: [], editedPaths: {} };
 
-        // Fetch all 4 Firestore configuration collections in parallel during the 3D animation
         const [ovResult, topicsResult, sbResult, cpResult] = await Promise.allSettled([
             db.collection("settings").doc("topic_overrides").get(),
             db.collection("custom_topics").get(),
@@ -85,6 +96,27 @@ async function loadCustomTopics() {
             removePathFromAppData(delPath);
         });
 
+        // Smart Auto-Correction: If any leaf folder (0 subfolders) is inside "NCERT Book" and was left as "both", mark it as "pdf"
+        function autoFixPdfLeafTypes(obj, pathArr = []) {
+            if (!obj || typeof obj !== 'object') return;
+            Object.keys(obj).forEach(k => {
+                let nextPath = [...pathArr, k];
+                let fullStr = nextPath.join(' > ');
+                let children = obj[k] && typeof obj[k] === 'object' ? Object.keys(obj[k]) : [];
+                if (children.length === 0 && isPdfSectionPath(fullStr)) {
+                    if (!customTopicTypes[fullStr] || customTopicTypes[fullStr].type === 'both') {
+                        customTopicTypes[fullStr] = {
+                            ...(customTopicTypes[fullStr] || {}),
+                            type: 'pdf'
+                        };
+                    }
+                } else if (children.length > 0) {
+                    autoFixPdfLeafTypes(obj[k], nextPath);
+                }
+            });
+        }
+        autoFixPdfLeafTypes(appData, []);
+
         // 3. Automatic Daily Quiz Challenge Engine
         appData["Daily Quiz Challenge"] = {};
         let deletedSet = new Set((topicOverrides && topicOverrides.deletedPaths) || []);
@@ -121,7 +153,6 @@ async function loadCustomTopics() {
             window.customPracticeConfig = { exams: {} };
         }
 
-        // Save complete state to localStorage for instant 0ms hydration on next launch
         try {
             localStorage.setItem('mcqs_boot_cache_v1', JSON.stringify({
                 appData: appData,
@@ -137,6 +168,146 @@ async function loadCustomTopics() {
         }
 
     } catch(e) { console.error("Custom topics loading error:", e); }
+}
+
+// ==========================================
+// UNIVERSAL PDF & STUDY MATERIAL RENDERER + IN-APP READER
+// ==========================================
+function openInAppMaterialViewer(encodedUrl, encodedTitle) {
+    const fileUrl = decodeURIComponent(encodedUrl);
+    const title = decodeURIComponent(encodedTitle || "Study Material");
+
+    let existingModal = document.getElementById('inAppPdfViewerModal');
+    if (existingModal) existingModal.remove();
+
+    const isImage = /\.(png|jpe?g|webp|gif|svg)(\?|$)/i.test(fileUrl);
+    const isGoogleDrive = fileUrl.includes('drive.google.com');
+
+    let viewerEmbedUrl = fileUrl;
+    if (isGoogleDrive && fileUrl.includes('/view')) {
+        viewerEmbedUrl = fileUrl.replace(/\/view.*$/, '/preview');
+    } else if (!isImage && !isGoogleDrive) {
+        viewerEmbedUrl = `https://docs.google.com/gview?embedded=true&url=${encodeURIComponent(fileUrl)}`;
+    }
+
+    const modal = document.createElement('div');
+    modal.id = 'inAppPdfViewerModal';
+    modal.style.cssText = 'position:fixed; inset:0; background:rgba(5,8,17,0.96); z-index:99999; display:flex; flex-direction:column; backdrop-filter:blur(12px);';
+    modal.innerHTML = `
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 18px; background:#0d1527; border-bottom:1px solid rgba(253,184,19,0.3); gap:10px; flex-wrap:wrap;">
+            <div style="display:flex; align-items:center; gap:10px; min-width:0; flex:1;">
+                <span style="font-size:20px;">📄</span>
+                <b style="color:#fff; font-size:15px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${title}</b>
+            </div>
+            <div style="display:flex; align-items:center; gap:10px;">
+                <a href="${fileUrl}" target="_blank" rel="noopener noreferrer" class="btn-exam" style="background:rgba(56,189,248,0.15); color:#38bdf8; border:1px solid rgba(56,189,248,0.4); padding:6px 12px; font-size:12px; text-decoration:none; border-radius:8px; font-weight:700;">↗️ Open Direct</a>
+                <a href="${fileUrl}" download target="_blank" rel="noopener noreferrer" class="btn-exam btn-yellow-glow" style="padding:6px 12px; font-size:12px; text-decoration:none; border-radius:8px;">⬇️ Download</a>
+                <button onclick="document.getElementById('inAppPdfViewerModal').remove()" style="background:rgba(239,68,68,0.2); border:1px solid rgba(239,68,68,0.5); color:#ef4444; width:34px; height:34px; border-radius:8px; font-size:18px; font-weight:bold; cursor:pointer; display:flex; align-items:center; justify-content:center;">✕</button>
+            </div>
+        </div>
+        <div style="flex:1; width:100%; position:relative; overflow:auto; display:flex; align-items:center; justify-content:center;">
+            ${isImage
+                ? `<img src="${fileUrl}" alt="${title}" style="max-width:96%; max-height:94%; object-fit:contain; border-radius:8px;">`
+                : `<iframe src="${viewerEmbedUrl}" style="width:100%; height:100%; border:none; background:#111522;" allowfullscreen></iframe>`
+            }
+        </div>
+    `;
+    document.body.appendChild(modal);
+}
+
+let _pdfRenderToken = 0;
+async function ensureUploadedPdfsVisible(pathArray) {
+    if (!Array.isArray(pathArray) || pathArray.length === 0) return;
+    let rawHash = window.location.hash.replace(/^#\/?/, '');
+    if (!rawHash.startsWith('path/')) return;
+
+    const myToken = ++_pdfRenderToken;
+    const fullPath = pathArray.join(' > ');
+
+    try {
+        // Single-field query so Firestore NEVER requires a composite index
+        const snap = await db.collection("content").where("path", "==", fullPath).get();
+        if (myToken !== _pdfRenderToken) return;
+
+        let materials = [];
+        snap.forEach(doc => {
+            let d = doc.data();
+            if (d.type === 'material' || d.type === 'pdf' || Boolean(d.fileUrl)) {
+                materials.push({ id: doc.id, ...d });
+            }
+        });
+
+        if (materials.length === 0) return;
+
+        // Sort cleanly by title (supports 01., 02. numbering) or newest timestamp
+        materials.sort((a, b) => {
+            let tA = (a.title || "").trim();
+            let tB = (b.title || "").trim();
+            return tA.localeCompare(tB, undefined, { numeric: true, sensitivity: 'base' });
+        });
+
+        const mc = document.getElementById('dynamic-content');
+        if (!mc) return;
+
+        // Check if js/3-ui-progress.js already rendered these exact PDF links
+        const firstUrl = materials[0].fileUrl;
+        if (firstUrl && mc.innerHTML.includes(firstUrl) && !mc.querySelector('#universal-pdf-materials-box')) {
+            return;
+        }
+
+        // Remove any previous injected box before rendering fresh
+        const oldBox = document.getElementById('universal-pdf-materials-box');
+        if (oldBox) oldBox.remove();
+
+        const cardsHtml = materials.map((item, idx) => {
+            let safeTitle = (item.title || `Study Material ${idx + 1}`).replace(/^\d+\.\s*/, '');
+            let encodedUrl = encodeURIComponent(item.fileUrl || '');
+            let encodedTitle = encodeURIComponent(safeTitle);
+            let theme = typeof getAutoTopicTheme === 'function'
+                ? getAutoTopicTheme(safeTitle, '📄', idx)
+                : { i: '📄', c: '#fdb813', bg: 'rgba(253,184,19,0.15)', border: 'rgba(253,184,19,0.55)', glow: 'rgba(253,184,19,0.22)' };
+
+            return `
+            <div style="background:linear-gradient(145deg, ${theme.bg} 0%, rgba(13,21,39,0.96) 85%); border:1.5px solid ${theme.border}; border-left:5px solid ${theme.c}; box-shadow:0 4px 18px ${theme.glow}; border-radius:14px; padding:18px 20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:14px; transition:transform 0.2s ease;">
+                <div style="display:flex; align-items:center; gap:14px; min-width:200px; flex:1;">
+                    <div style="width:46px; height:46px; border-radius:12px; background:${theme.bg}; border:1px solid ${theme.border}; color:${theme.c}; display:flex; align-items:center; justify-content:center; font-size:22px; flex-shrink:0; box-shadow:0 0 12px ${theme.glow};">📄</div>
+                    <div>
+                        <div style="font-size:16px; font-weight:800; color:#ffffff; line-height:1.35;">${item.title || safeTitle}</div>
+                        <div style="font-size:12px; color:#94a3b8; margin-top:4px;">📚 ${pathArray[pathArray.length - 1].replace(/^\d+\.\s*/, '')} • PDF / Study Material</div>
+                    </div>
+                </div>
+                <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                    <button type="button" class="btn-exam btn-yellow-glow" onclick="openInAppMaterialViewer('${encodedUrl}', '${encodedTitle}')" style="padding:9px 18px; font-size:13px; border-radius:10px;">📖 Read PDF</button>
+                    <a href="${item.fileUrl}" target="_blank" rel="noopener noreferrer" class="btn-exam" style="background:rgba(56,189,248,0.14); color:#38bdf8; border:1px solid rgba(56,189,248,0.45); padding:9px 16px; font-size:13px; border-radius:10px; text-decoration:none; font-weight:700; display:inline-flex; align-items:center; gap:6px;">⬇️ Download</a>
+                </div>
+            </div>`;
+        }).join('');
+
+        const sectionHtml = `
+            <div id="universal-pdf-materials-box" class="card page-transition" style="margin-top:16px; border:1px solid rgba(253,184,19,0.35);">
+                <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:14px; margin-bottom:18px; flex-wrap:wrap; gap:10px;">
+                    <h3 style="margin:0; font-size:18px; color:#fff; display:flex; align-items:center; gap:10px;">
+                        <span>📚</span> <span>${pathArray[pathArray.length - 1].replace(/^\d+\.\s*/, '')} — PDFs & Study Materials</span>
+                    </h3>
+                    <span style="font-size:12px; background:rgba(253,184,19,0.15); color:var(--primary-yellow); border:1px solid rgba(253,184,19,0.35); padding:4px 12px; border-radius:20px; font-weight:700;">${materials.length} Document${materials.length > 1 ? 's' : ''}</span>
+                </div>
+                <div style="display:flex; flex-direction:column; gap:14px;">
+                    ${cardsHtml}
+                </div>
+            </div>
+        `;
+
+        // If #dynamic-content has subfolder tiles (.category-tile), append the PDFs right below them;
+        // Otherwise (if it was showing an "empty folder" or wrong MCQ screen), replace with the clean PDF section!
+        const hasSubfolderTiles = mc.querySelector('.category-tile') !== null;
+        if (hasSubfolderTiles) {
+            mc.insertAdjacentHTML('beforeend', sectionHtml);
+        } else {
+            mc.innerHTML = sectionHtml;
+        }
+    } catch (err) {
+        console.error("PDF Material load error:", err);
+    }
 }
 
 function showAuthModal() { 
@@ -259,32 +430,26 @@ auth.onAuthStateChanged(async (user) => {
         _resolveInitialAuth = null;
     }
 
-    // Only trigger a re-render if the user explicitly signs in or signs out after boot
     if (authChangedAfterBoot && dataLoaded) {
         handleRouting();
     }
 });
 
-// Synchronized Bootloader: Loads all data & renders the complete dashboard BEFORE the 3D splash screen exits
 async function initApp() { 
     dataLoaded = true; 
     if (!window.location.hash) window.location.hash = '#/home'; 
     
-    // 1. Paint immediately from localStorage boot cache (0ms)
     handleRouting(); 
     
-    // 2. Fetch all live Firestore data, ratings & user profile while the 3D animation plays
     await Promise.allSettled([
         loadCustomTopics(),
         typeof loadGlobalRating === 'function' ? loadGlobalRating() : Promise.resolve(),
         Promise.race([initialAuthReadyPromise, new Promise(r => setTimeout(r, 1400))])
     ]);
 
-    // 3. Render final dashboard DOM behind the splash screen
     handleRouting();
     _bootSequenceComplete = true;
 
-    // 4. Signal the 3D splash screen that 100% of content is ready
     if (typeof window.markAppContentReady === 'function') {
         window.markAppContentReady();
     }
@@ -386,14 +551,12 @@ function updateSidebarLinks() {
     let essentialPracticeHtml = '';
     let usedColorsE = new Set(["#fdb813"]);
 
-    // 1. Automatic Daily Quiz Challenge (Always present in Essential Practice)
     essentialPracticeHtml += `
         <a class="action-link colored-link" style="--topic-color:#fdb813; --topic-border:rgba(253,184,19,0.65); --topic-glow:rgba(253,184,19,0.28); --topic-bg:rgba(253,184,19,0.16);" onclick="jumpToSection(['Daily Quiz Challenge'])">
             <span class="link-icon" style="color: #fdb813;">📅</span>
             <span class="link-text">Daily Quiz Challenge</span>
         </a>`;
 
-    // 2. Manual items added via Admin Panel
     essentialList.forEach((item, idx) => {
         if (item.path === 'Daily Quiz Challenge') return;
         let displayTitle = (item.title || item.path.split(' > ').pop() || '').replace(/^\d+\.\s*/, '');
@@ -437,18 +600,35 @@ function handleRouting() {
         if (typeof handlePCBackButton === 'function') handlePCBackButton();
         updateBottomNav(rawHash);
         
-        if (isRootHome) { currentPath = []; if (typeof _renderView === 'function') _renderView(); } 
-        else if (hash === 'custom-setup') { if (typeof cwStep1 === 'function') cwStep1(); } 
-        else if (hash.startsWith('path/')) { currentPath = hash.replace('path/', '').split('/').filter(Boolean); if (typeof _renderView === 'function') _renderView(); } 
-        else if (hash === 'leaderboard') { if (typeof _renderLeaderboardOptions === 'function') _renderLeaderboardOptions(); } 
-        else if (hash.startsWith('board/')) { if (typeof fetchLiveLeaderboard === 'function') fetchLiveLeaderboard(decodeURIComponent(hash.replace('board/', ''))); } 
-        else if (hash === 'quiz') { if (typeof _initiateQuizEngine === 'function') _initiateQuizEngine(); } 
-        else if (hash === 'progress') { if (typeof _renderProgressSelection === 'function') _renderProgressSelection(); } 
-        else if (hash.startsWith('progress/')) { if (typeof _renderProgressDashboard === 'function') _renderProgressDashboard(decodeURIComponent(hash.split('/')[1])); }
-        else if (hash === 'bookmarks') { if (typeof _initiateBookmarkQuiz === 'function') _initiateBookmarkQuiz(); }
-        else if (hash === 'diary') { if (typeof _renderDoubtDiary === 'function') _renderDoubtDiary(); } 
-        else if (hash === 'admin') { if (typeof _renderAdminLogin === 'function') _renderAdminLogin(); } 
-        else if (hash === 'admin-panel') { if (typeof _renderAdminPanel === 'function') _renderAdminPanel(); }
+        if (isRootHome) {
+            currentPath = [];
+            if (typeof _renderView === 'function') _renderView();
+        } else if (hash === 'custom-setup') {
+            if (typeof cwStep1 === 'function') cwStep1();
+        } else if (hash.startsWith('path/')) {
+            currentPath = hash.replace('path/', '').split('/').filter(Boolean);
+            if (typeof _renderView === 'function') _renderView();
+            // Automatically check & render any uploaded PDFs at this path (even in parent categories like NCERT Book!)
+            ensureUploadedPdfsVisible(currentPath);
+        } else if (hash === 'leaderboard') {
+            if (typeof _renderLeaderboardOptions === 'function') _renderLeaderboardOptions();
+        } else if (hash.startsWith('board/')) {
+            if (typeof fetchLiveLeaderboard === 'function') fetchLiveLeaderboard(decodeURIComponent(hash.replace('board/', '')));
+        } else if (hash === 'quiz') {
+            if (typeof _initiateQuizEngine === 'function') _initiateQuizEngine();
+        } else if (hash === 'progress') {
+            if (typeof _renderProgressSelection === 'function') _renderProgressSelection();
+        } else if (hash.startsWith('progress/')) {
+            if (typeof _renderProgressDashboard === 'function') _renderProgressDashboard(decodeURIComponent(hash.split('/')[1]));
+        } else if (hash === 'bookmarks') {
+            if (typeof _initiateBookmarkQuiz === 'function') _initiateBookmarkQuiz();
+        } else if (hash === 'diary') {
+            if (typeof _renderDoubtDiary === 'function') _renderDoubtDiary();
+        } else if (hash === 'admin') {
+            if (typeof _renderAdminLogin === 'function') _renderAdminLogin();
+        } else if (hash === 'admin-panel') {
+            if (typeof _renderAdminPanel === 'function') _renderAdminPanel();
+        }
         
         updateSidebarLinks();
     } catch (err) { console.error("Routing Error:", err); }
