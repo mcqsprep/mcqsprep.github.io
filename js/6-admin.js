@@ -1,11 +1,12 @@
 // ==========================================
-// 10. SMART ADMIN PANEL, BULK CREATOR, FILTERS, SIDEBAR & CUSTOM PRACTICE MANAGERS
+// 10. SMART ADMIN PANEL, BULK CREATOR, PDF MANAGER, SIDEBAR & CUSTOM PRACTICE
 // ==========================================
 let adminCurrentTab = 'upload';
 let adminNewTopicPath = [];
-let adminMultiTargetChildren = []; // Selected sibling/child folders for batch subtopic creation
+let adminMultiTargetChildren = [];
 let adminSelectedPath = [];
 let adminManageSelectedPath = [];
+let adminManageContentTypeFilter = 'ALL'; // 'ALL' | 'mcq' | 'material'
 
 // State for Edit / Delete Topics Filter & Bulk Actions
 let adminTopicFilterPath = [];
@@ -28,7 +29,6 @@ let isFetchingManageContent = false;
 
 const adminStyles = `
 <style>
-    /* Visible, Draggable Glowing Slide Bar Under Admin Navigation Buttons */
     .admin-nav-pills {
         display: flex;
         gap: 10px;
@@ -59,7 +59,6 @@ const adminStyles = `
     .admin-cb-label:has(input:checked) { background: rgba(76, 175, 80, 0.15); border-color: #4CAF50; color: #4CAF50; }
     .admin-cb-label input { display: none; }
 
-    /* Smart Preset Chips & Multi-Target Grid */
     .admin-preset-bar { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
     .admin-preset-chip { background: rgba(253, 184, 19, 0.1); border: 1px solid rgba(253, 184, 19, 0.35); color: #fdb813; padding: 6px 12px; border-radius: 20px; font-size: 11.5px; font-weight: 700; cursor: pointer; transition: 0.2s; display: inline-flex; align-items: center; gap: 5px; }
     .admin-preset-chip:hover { background: rgba(253, 184, 19, 0.22); transform: translateY(-1px); box-shadow: 0 2px 10px rgba(253,184,19,0.2); }
@@ -71,7 +70,6 @@ const adminStyles = `
     .admin-target-item.checked { background: rgba(253, 184, 19, 0.15); border-color: #fdb813; color: #fff; box-shadow: 0 0 10px rgba(253,184,19,0.18); }
     .admin-target-item input { accent-color: #fdb813; width: 15px; height: 15px; margin: 0; cursor: pointer; flex-shrink: 0; }
 
-    /* Clean Filter Bar & Topic Group Headers */
     .admin-scope-bar { display: flex; gap: 8px; flex-wrap: wrap; background: #111117; padding: 6px; border-radius: 12px; border: 1px solid #2b2b36; }
     .admin-scope-btn { flex: 1; min-width: 130px; padding: 10px 14px; border-radius: 8px; border: none; background: transparent; color: #9e9ea7; font-size: 13px; font-weight: 700; cursor: pointer; transition: 0.2s; text-align: center; }
     .admin-scope-btn:hover { color: #fff; }
@@ -133,13 +131,9 @@ function logoutAdmin() {
 
 function parseFolderNamesList(rawInput) {
     if (!rawInput) return [];
-    return rawInput
-        .split(/[\n,]+/)
-        .map(s => s.trim())
-        .filter(Boolean);
+    return rawInput.split(/[\n,]+/).map(s => s.trim()).filter(Boolean);
 }
 
-// Live Auto-Icon Preview Updater (Supports Single or Multi-Folder Batch Preview)
 function updateLiveAutoIconPreview() {
     const nameInput = document.getElementById('newFolderName');
     const typeSelect = document.getElementById('newFolderType');
@@ -181,7 +175,6 @@ function updateLiveAutoIconPreview() {
     }
 }
 
-// 1-Click Preset Filler for Create Topic Tab
 function applyFolderPreset(presetType) {
     const nameInput = document.getElementById('newFolderName');
     const typeSelect = document.getElementById('newFolderType');
@@ -216,7 +209,6 @@ function applyFolderPreset(presetType) {
     updateLiveAutoIconPreview();
 }
 
-// Smart Quick-Paste MCQ Parser for Rapid Upload Tab
 function parseQuickPasteMCQ() {
     const rawEl = document.getElementById('admSmartPasteInput');
     if (!rawEl || !rawEl.value.trim()) {
@@ -225,14 +217,12 @@ function parseQuickPasteMCQ() {
     }
     let text = rawEl.value.trim();
 
-    // Extract Explanation if present
     let expMatch = text.match(/(?:Explanation|Exp|Solution|Sol)\s*[:\-]\s*([\s\S]+)$/i);
     if (expMatch) {
         document.getElementById('admExplanation').value = expMatch[1].trim();
         text = text.slice(0, expMatch.index).trim();
     }
 
-    // Extract Answer if present
     let ansMatch = text.match(/(?:Answer|Ans|Correct(?:\s*Answer)?)\s*[:\-]\s*([A-Da-d](?:\s*,\s*[A-Da-d])*)/i);
     if (ansMatch) {
         let ansLetters = ansMatch[1].toUpperCase().split(',').map(s => s.trim());
@@ -242,7 +232,6 @@ function parseQuickPasteMCQ() {
         text = text.slice(0, ansMatch.index).trim();
     }
 
-    // Extract Options A, B, C, D
     let optRegex = /(?:^|\n|\s)\(?([A-D])[\)\.\:]\s*([\s\S]*?)(?=(?:\n|\s+)\(?[B-D][\)\.\:]|\s*$)/gi;
     let matches = [...text.matchAll(optRegex)];
     if (matches.length >= 2) {
@@ -298,23 +287,23 @@ async function _renderAdminPanel() {
                 <div class="admin-panel-card">
                     <h3 class="admin-section-header"><span>🎯</span> 1. Select Target Destination</h3>
                     <div id="dynamic-path-selectors" style="display:flex; gap:15px; flex-wrap:wrap;"></div>
-                    <div id="upload-path-display" style="margin-top:15px; font-size:14px; background: rgba(76, 175, 80, 0.1); border: 1px solid rgba(76, 175, 80, 0.3); padding: 12px; border-radius: 8px; color:var(--correct-green);">
-                        <b>Uploading To:</b> <span id="upload-path-text" style="color:white;">None</span>
+                    <div id="upload-path-display" style="margin-top:15px; font-size:14px; background: rgba(76, 175, 80, 0.1); border: 1px solid rgba(76, 175, 80, 0.3); padding: 12px; border-radius: 8px; color:var(--correct-green); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+                        <div><b>Uploading To:</b> <span id="upload-path-text" style="color:white;">None</span></div>
+                        <button type="button" class="btn-exam" onclick="jumpToUploadedFolderLive()" style="background:#1c1c24; border:1px solid rgba(76,175,80,0.5); color:var(--correct-green); padding:5px 12px; font-size:11.5px;">👁️ View This Folder Live &rarr;</button>
                     </div>
                 </div>
                 
                 <div id="upload-form-area" style="display:none;">
                     <div class="admin-panel-card">
-                        <h3 class="admin-section-header" style="justify-content: space-between;">
+                        <h3 class="admin-section-header" style="justify-content: space-between; flex-wrap:wrap; gap:10px;">
                             <div style="display:flex; align-items:center; gap:10px;"><span>📝</span> 2. Draft Content</div>
-                            <select id="admResourceType" class="input-field" onchange="toggleAdminFormType()" style="margin: 0; width: auto; min-width: 150px; padding: 6px 12px;">
-                                <option value="mcq">MCQ Format</option>
-                                <option value="pdf">PDF / Image Link</option>
+                            <select id="admResourceType" class="input-field" onchange="toggleAdminFormType()" style="margin: 0; width: auto; min-width: 190px; padding: 7px 14px; font-weight:700; border-color:var(--primary-yellow);">
+                                <option value="mcq">📝 MCQ Format</option>
+                                <option value="pdf">📄 PDF / Study Material</option>
                             </select>
                         </h3>
                         
                         <div id="admin-mcq-form">
-                            <!-- Smart Quick-Paste MCQ Auto-Filler -->
                             <div style="background:#111522; border:1px dashed rgba(253,184,19,0.4); border-radius:12px; padding:14px; margin-bottom:18px;">
                                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; flex-wrap:wrap; gap:8px;">
                                     <span style="font-size:12px; font-weight:700; color:var(--primary-yellow);">⚡ SMART QUICK-PASTE AUTO-FILLER (OPTIONAL)</span>
@@ -362,11 +351,27 @@ async function _renderAdminPanel() {
                             <textarea id="admExplanation" class="input-field" style="min-height: 80px;" placeholder="Explain why the answer is correct..."></textarea>
                         </div>
                         
+                        <!-- UPGRADED PDF / STUDY MATERIAL UPLOAD FORM (Supports Multi-File Upload + Direct URL / Drive Link) -->
                         <div id="admin-pdf-form" style="display:none;">
-                            <label class="admin-label">Document Title</label>
-                            <input type="text" id="admPdfTitle" class="input-field" placeholder="e.g. Chapter 1 Handwritten Notes">
-                            <label class="admin-label" style="margin-top: 15px;">Select File (PDF or Image)</label>
-                            <input type="file" id="admPdfFile" class="input-field" accept=".pdf, image/*" style="padding: 9px 14px;">
+                            <div style="background:rgba(56,189,248,0.08); border:1px solid rgba(56,189,248,0.3); border-radius:10px; padding:12px 15px; margin-bottom:18px; font-size:12.5px; color:#cbd5e1;">
+                                💡 <b>Smart PDF Uploader:</b> Upload one or multiple PDF/Image files from your device, <b>OR</b> paste a direct PDF / Google Drive link below. Uploaded PDFs appear immediately inside this folder on both Website & App!
+                            </div>
+
+                            <label class="admin-label">Document Title (Optional if uploading multiple files — uses file names automatically)</label>
+                            <input type="text" id="admPdfTitle" class="input-field" placeholder="e.g. 01. Class 11 NCERT Chapter 1 - The Living World">
+
+                            <div class="admin-grid-2" style="margin-top: 10px;">
+                                <div>
+                                    <label class="admin-label">Option A: Select File(s) from Device (PDF or Image)</label>
+                                    <input type="file" id="admPdfFile" class="input-field" accept=".pdf,application/pdf,image/*" multiple style="padding: 9px 14px;" onchange="autoFillPdfTitleFromFile(this)">
+                                    <span style="font-size:11px; color:#888;">*You can select 1 or multiple PDF files at once!</span>
+                                </div>
+                                <div>
+                                    <label class="admin-label">Option B: Or Paste Direct PDF / Google Drive Link</label>
+                                    <input type="url" id="admPdfDirectUrl" class="input-field" placeholder="https://drive.google.com/... or direct .pdf link">
+                                    <span style="font-size:11px; color:#888;">*Great for large NCERT books (>10 MB) hosted on Google Drive!</span>
+                                </div>
+                            </div>
                         </div>
                         
                         <div style="display: flex; gap: 15px; margin-top: 30px; border-top: 1px solid #2b2b36; padding-top: 20px;">
@@ -377,7 +382,7 @@ async function _renderAdminPanel() {
                 </div>
             </div>
             
-            <!-- 2. SMART CREATE TOPIC TAB (MULTI-TARGET PARENTS + MULTI-FOLDER BATCHES + 1-CLICK PRESETS) -->
+            <!-- 2. SMART CREATE TOPIC TAB -->
             <div id="admin-topics-view" style="display:${adminCurrentTab === 'topics' ? 'block' : 'none'};">
                 <div class="admin-panel-card" style="border-color: rgba(253, 184, 19, 0.4); background: rgba(253, 184, 19, 0.02);">
                     <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; border-bottom: 1px solid rgba(253, 184, 19, 0.2); padding-bottom: 15px; margin-bottom: 20px;">
@@ -394,21 +399,20 @@ async function _renderAdminPanel() {
                         <b>Active Base Path:</b> <span id="new-topic-path-text" style="color:white;">Root (Main Menu)</span>
                     </div>
 
-                    <!-- 1B: MULTI-TARGET SIBLING / CHAPTER SELECTOR -->
                     <div id="admin-multi-target-container"></div>
                     
                     <div class="admin-grid-2">
                         <div>
                             <label class="admin-label">2. Folder Name(s) — Comma or Line Separated for Batch Creation</label>
                             <div class="admin-preset-bar">
-                                <button type="button" class="admin-preset-chip" onclick="applyFolderPreset('DIFF_4')" title="Fill Easy, Medium, Hard, Mixed">🟢🟡🔴⚡ + Difficulty Set (4)</button>
-                                <button type="button" class="admin-preset-chip" onclick="applyFolderPreset('DIFF_3')" title="Fill Easy, Medium, Hard">🟢🟡🔴 + Easy/Med/Hard</button>
-                                <button type="button" class="admin-preset-chip" onclick="applyFolderPreset('NEET_SUBJ')" title="Fill all 6 NEET Subjects">🩺 + NEET Subjects</button>
-                                <button type="button" class="admin-preset-chip" onclick="applyFolderPreset('JEE_SUBJ')" title="Fill all 5 JEE Subjects">🚀 + JEE Subjects</button>
-                                <button type="button" class="admin-preset-chip" onclick="applyFolderPreset('EXAM_SECTIONS')" title="Fill NCERT Book, PYQs, Practice Paper, MCQs Practice, Mock Test">📂 + Exam Sections</button>
-                                <button type="button" class="admin-preset-chip" style="color:#38bdf8; border-color:rgba(56,189,248,0.4); background:rgba(56,189,248,0.1);" onclick="applyFolderPreset('AUTO_NUM')" title="Add 01., 02., 03. numbering to list">🔢 Auto-Number List</button>
+                                <button type="button" class="admin-preset-chip" onclick="applyFolderPreset('DIFF_4')">🟢🟡🔴⚡ + Difficulty Set (4)</button>
+                                <button type="button" class="admin-preset-chip" onclick="applyFolderPreset('DIFF_3')">🟢🟡🔴 + Easy/Med/Hard</button>
+                                <button type="button" class="admin-preset-chip" onclick="applyFolderPreset('NEET_SUBJ')">🩺 + NEET Subjects</button>
+                                <button type="button" class="admin-preset-chip" onclick="applyFolderPreset('JEE_SUBJ')">🚀 + JEE Subjects</button>
+                                <button type="button" class="admin-preset-chip" onclick="applyFolderPreset('EXAM_SECTIONS')">📂 + Exam Sections</button>
+                                <button type="button" class="admin-preset-chip" style="color:#38bdf8; border-color:rgba(56,189,248,0.4); background:rgba(56,189,248,0.1);" onclick="applyFolderPreset('AUTO_NUM')">🔢 Auto-Number List</button>
                             </div>
-                            <textarea id="newFolderName" class="input-field" style="min-height:76px; font-size:14px; margin-bottom:4px;" placeholder="Type 1 folder name (e.g. Thermodynamics) OR multiple separated by commas (e.g. Easy, Medium, Hard, Mixed)..." oninput="updateLiveAutoIconPreview()"></textarea>
+                            <textarea id="newFolderName" class="input-field" style="min-height:76px; font-size:14px; margin-bottom:4px;" placeholder="Type 1 folder name (e.g. Class 11 Biology) OR multiple separated by commas (e.g. Easy, Medium, Hard, Mixed)..." oninput="updateLiveAutoIconPreview()"></textarea>
                             <span style="font-size: 11px; color: #888;">*Tip: Separate multiple names with commas (,) or new lines to create them all at once!</span>
                         </div>
                         <div>
@@ -445,7 +449,7 @@ async function _renderAdminPanel() {
                 </div>
             </div>
 
-            <!-- 3. CLEAN EDIT & DELETE TOPICS / SUBTOPICS TAB (WITH BULK ACTIONS) -->
+            <!-- 3. CLEAN EDIT & DELETE TOPICS / SUBTOPICS TAB -->
             <div id="admin-edit-topics-view" style="display:${adminCurrentTab === 'edit-topics' ? 'block' : 'none'};">
                 <div class="admin-panel-card">
                     <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; border-bottom:1px solid #2b2b36; padding-bottom:15px; margin-bottom:20px;">
@@ -488,7 +492,6 @@ async function _renderAdminPanel() {
                     </div>
                 </div>
 
-                <!-- Bulk Action Bar -->
                 <div class="admin-bulk-toolbar">
                     <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
                         <button type="button" class="btn-exam" onclick="toggleSelectAllFilteredTopics(true)" style="background:#1c1c24; border:1px solid #444; padding:6px 12px; font-size:12px;">☑️ Select All Shown</button>
@@ -508,10 +511,6 @@ async function _renderAdminPanel() {
             <div id="admin-sidebar-links-view" style="display:${adminCurrentTab === 'sidebar-links' ? 'block' : 'none'};">
                 <div class="admin-panel-card" style="border-color:rgba(168,85,247,0.4);">
                     <h3 class="admin-section-header" style="color:#c084fc;">🔗 Add Existing Topic / Subtopic to Home Sidebar</h3>
-                    <p style="color:var(--text-muted); font-size:13px; margin-top:-10px; margin-bottom:20px;">
-                        Select any existing topic or subtopic folder below and add it to <b>Quick Links</b> or <b>Essential Practice</b>. (Note: <b>📅 Daily Quiz Challenge</b> is already automatic under Essential Practice for all exams!)
-                    </p>
-
                     <label class="admin-label">1. Select Existing Topic or Subtopic Folder</label>
                     <div id="admin-sidebar-pick-selectors" style="display:flex; gap:12px; flex-wrap:wrap; margin-bottom:12px;"></div>
                     <div style="font-size:13px; color:var(--correct-green); background:rgba(16,185,129,0.08); border:1px solid rgba(16,185,129,0.25); padding:10px 14px; border-radius:8px; margin-bottom:18px;">
@@ -561,7 +560,7 @@ async function _renderAdminPanel() {
                 </div>
             </div>
 
-            <!-- 5. MANUAL CUSTOM PRACTICE (SUBJECTS & CHAPTERS) MANAGER TAB -->
+            <!-- 5. MANUAL CUSTOM PRACTICE MANAGER TAB -->
             <div id="admin-custom-practice-view" style="display:${adminCurrentTab === 'custom-practice' ? 'block' : 'none'};">
                 <div class="admin-panel-card" style="border-color:rgba(253,184,19,0.4);">
                     <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; border-bottom:1px solid #2b2b36; padding-bottom:15px; margin-bottom:20px;">
@@ -581,10 +580,8 @@ async function _renderAdminPanel() {
                     </div>
 
                     <div class="admin-grid-2">
-                        <!-- 2A: Add Existing Subject Box -->
                         <div style="background:#121218; border:1px solid #2b2b36; border-radius:12px; padding:18px;">
                             <label class="admin-label" style="color:var(--primary-yellow);">2A. Add Existing Subject Folder</label>
-                            <p style="font-size:12px; color:var(--text-muted); margin-top:0; margin-bottom:12px;">Pick an existing subject folder under the selected exam to add as a Subject.</p>
                             <div id="admin-cp-subj-selectors" style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:12px;"></div>
                             <div style="font-size:12px; color:#ccc; margin-bottom:12px;"><b>Selected Subject Path:</b> <span id="admin-cp-subj-path-text" style="color:var(--primary-yellow);">None</span></div>
                             <div style="display:flex; gap:10px; flex-wrap:wrap;">
@@ -593,7 +590,6 @@ async function _renderAdminPanel() {
                             </div>
                         </div>
 
-                        <!-- 2B: Add Existing Chapter Under Subject Box -->
                         <div style="background:#121218; border:1px solid #2b2b36; border-radius:12px; padding:18px;">
                             <label class="admin-label" style="color:#38bdf8;">2B. Add Existing Chapter Under a Subject</label>
                             <label class="admin-label" style="margin-top:8px;">Target Subject in Custom Practice</label>
@@ -610,12 +606,19 @@ async function _renderAdminPanel() {
                 <div id="admin-cp-configured-list"></div>
             </div>
 
-            <!-- 6. MANAGE CONTENT TAB -->
+            <!-- 6. MANAGE CONTENT TAB (WITH ALL / MCQs / PDFs FILTER & PDF EDITING) -->
             <div id="admin-manage-view" style="display:${adminCurrentTab === 'manage' ? 'block' : 'none'};">
                 <div class="admin-panel-card">
                     <h3 class="admin-section-header">🔍 Filter & Fetch MCQs / PDFs</h3>
-                    <div id="manage-path-selectors" style="display:flex; gap:15px; flex-wrap:wrap; margin-bottom:20px;"></div>
-                    <button class="btn-exam btn-yellow-glow" onclick="loadContentForManagement(false)" style="padding:12px 20px; width:100%; max-width:250px; font-size:15px;">Fetch Content</button>
+                    <div id="manage-path-selectors" style="display:flex; gap:15px; flex-wrap:wrap; margin-bottom:16px;"></div>
+                    <div style="display:flex; gap:14px; align-items:center; flex-wrap:wrap;">
+                        <select id="admManageTypeFilter" class="input-field" style="width:auto; min-width:200px; margin-bottom:0;" onchange="adminManageContentTypeFilter = this.value; loadContentForManagement(false);">
+                            <option value="ALL" ${adminManageContentTypeFilter === 'ALL' ? 'selected' : ''}>📂 All Items (MCQs + PDFs)</option>
+                            <option value="mcq" ${adminManageContentTypeFilter === 'mcq' ? 'selected' : ''}>📝 MCQs Only</option>
+                            <option value="material" ${adminManageContentTypeFilter === 'material' ? 'selected' : ''}>📄 PDFs / Study Materials Only</option>
+                        </select>
+                        <button class="btn-exam btn-yellow-glow" onclick="loadContentForManagement(false)" style="padding:12px 24px; font-size:14px;">🔍 Fetch Content</button>
+                    </div>
                 </div>
                 <div id="manage-content-list">
                     <p style="color:var(--text-muted); text-align: center; padding: 40px; border: 1px dashed #333; border-radius: 12px;">Select a folder above and click Fetch to load items.</p>
@@ -677,33 +680,54 @@ async function _renderAdminPanel() {
 function switchAdminTab(tab) { adminCurrentTab = tab; _renderAdminPanel(); }
 
 function toggleAdminFormType() {
-    let val = document.getElementById('admResourceType').value;
-    document.getElementById('admin-mcq-form').style.display = val === 'mcq' ? 'block' : 'none';
-    document.getElementById('admin-pdf-form').style.display = val === 'pdf' ? 'block' : 'none';
+    let el = document.getElementById('admResourceType');
+    if (!el) return;
+    let val = el.value;
+    const mcqForm = document.getElementById('admin-mcq-form');
+    const pdfForm = document.getElementById('admin-pdf-form');
+    if (mcqForm) mcqForm.style.display = val === 'mcq' ? 'block' : 'none';
+    if (pdfForm) pdfForm.style.display = val === 'pdf' ? 'block' : 'none';
+}
+
+function autoFillPdfTitleFromFile(fileInput) {
+    const titleInput = document.getElementById('admPdfTitle');
+    if (!fileInput || !fileInput.files || fileInput.files.length === 0 || !titleInput) return;
+    if (fileInput.files.length === 1 && !titleInput.value.trim()) {
+        let rawName = fileInput.files[0].name.replace(/\.[^/.]+$/, "");
+        titleInput.value = rawName;
+    }
+}
+
+function jumpToUploadedFolderLive() {
+    if (!adminSelectedPath || adminSelectedPath.length === 0) {
+        showNotification("⚠️ Select a target folder first.");
+        return;
+    }
+    jumpToSection(adminSelectedPath);
 }
 
 function clearAdminUploadForm(isSmartClear = false) {
     if(!isSmartClear && !confirm("Are you sure you want to clear all typed fields?")) return;
     
-    document.getElementById('admQuestion').value = ""; 
-    document.getElementById('admQImage').value = ""; 
-    document.getElementById('admExplanation').value = "";
-    document.getElementById('admOptA').value = ""; 
-    document.getElementById('admOptB').value = ""; 
-    document.getElementById('admOptC').value = ""; 
-    document.getElementById('admOptD').value = "";
+    if (document.getElementById('admQuestion')) document.getElementById('admQuestion').value = ""; 
+    if (document.getElementById('admQImage')) document.getElementById('admQImage').value = ""; 
+    if (document.getElementById('admExplanation')) document.getElementById('admExplanation').value = "";
+    if (document.getElementById('admOptA')) document.getElementById('admOptA').value = ""; 
+    if (document.getElementById('admOptB')) document.getElementById('admOptB').value = ""; 
+    if (document.getElementById('admOptC')) document.getElementById('admOptC').value = ""; 
+    if (document.getElementById('admOptD')) document.getElementById('admOptD').value = "";
     if (document.getElementById('admSmartPasteInput')) document.getElementById('admSmartPasteInput').value = "";
     document.querySelectorAll('.admCorrectCb').forEach(cb => cb.checked = false); 
-    document.getElementById('admPdfTitle').value = ""; 
-    document.getElementById('admPdfFile').value = ""; 
+    if (document.getElementById('admPdfTitle')) document.getElementById('admPdfTitle').value = ""; 
+    if (document.getElementById('admPdfFile')) document.getElementById('admPdfFile').value = ""; 
+    if (document.getElementById('admPdfDirectUrl')) document.getElementById('admPdfDirectUrl').value = "";
     
     if(!isSmartClear) {
-        document.getElementById('admDifficulty').value = "Mixed";
+        if (document.getElementById('admDifficulty')) document.getElementById('admDifficulty').value = "Mixed";
         showNotification("🧹 Form cleared!");
     }
 }
 
-// Helper to get all child keys under a path from both appData AND customTopicTypes
 function getMergedChildKeysAtPath(pathArr) {
     let deletedSet = new Set((topicOverrides && topicOverrides.deletedPaths) || []);
     let keys = new Set();
@@ -749,60 +773,58 @@ function doesTopicPathExist(fullPathStr) {
     return true;
 }
 
+// === PASTE CHUNK B IMMEDIATELY BELOW THIS LINE ===
 // ==========================================
 // UNIFIED TOPIC & SUBTOPIC FILTER, EDIT, DELETE & BULK ACTIONS
 // ==========================================
 function inferTopicType(fullPath, name, hasChildren) {
-    let meta = customTopicTypes[fullPath];
+    const meta = customTopicTypes[fullPath];
     if (meta && meta.type) return meta.type;
     if (hasChildren) return 'both';
-    let lower = (name || '').toLowerCase();
-    let pdfKeys = ["ncert", "book", "pyq", "previous", "pdf", "note", "material", "syllabus"];
-    if (pdfKeys.some(k => lower.includes(k)) && !lower.includes('mcq') && !lower.includes('practice')) return 'pdf';
+    const lower = (name || '').toLowerCase();
+    const pdfTags = ['ncert', 'book', 'pyq', 'previous', 'pdf', 'note', 'material', 'syllabus'];
+    if (pdfTags.some(t => lower.includes(t)) && !lower.includes('mcq') && !lower.includes('practice')) {
+        return 'pdf';
+    }
     return 'mcq';
 }
 
 function _buildAdminTopicFilterSelectors() {
-    const container = document.getElementById('admin-topic-filter-selectors');
-    if (!container) return;
+    const box = document.getElementById('admin-topic-filter-selectors');
+    if (!box) return;
 
-    let html = '';
-    for (let i = 0; i <= adminTopicFilterPath.length; i++) {
-        let parentSlice = adminTopicFilterPath.slice(0, i);
-        let keys = getMergedChildKeysAtPath(parentSlice);
-        if (keys.length === 0) break;
+    let markup = '';
+    for (let depth = 0; depth <= adminTopicFilterPath.length; depth++) {
+        const slice = adminTopicFilterPath.slice(0, depth);
+        const childKeys = getMergedChildKeysAtPath(slice);
+        if (!childKeys.length) break;
 
-        let placeholder = i === 0
+        const label = depth === 0
             ? '-- All Exam Categories --'
-            : `-- All Subfolders Under ${adminTopicFilterPath[i - 1].replace(/^\d+\.\s*/, '')} --`;
+            : `-- All Subfolders Under ${adminTopicFilterPath[depth - 1].replace(/^\d+\.\s*/, '')} --`;
 
-        html += `<select class="input-field" style="flex:1; min-width:180px; margin-bottom:0;" onchange="handleAdminTopicFilterPathChange(event, ${i})">`;
-        html += `<option value="" ${!adminTopicFilterPath[i] ? 'selected' : ''}>${placeholder}</option>`;
-
-        keys.forEach(key => {
-            let selected = (adminTopicFilterPath[i] === key) ? 'selected' : '';
-            html += `<option value="${key.replace(/"/g, '&quot;')}" ${selected}>${key}</option>`;
+        markup += `<select class="input-field" style="flex:1; min-width:180px; margin-bottom:0;" onchange="handleAdminTopicFilterPathChange(event, ${depth})">`;
+        markup += `<option value="" ${!adminTopicFilterPath[depth] ? 'selected' : ''}>${label}</option>`;
+        childKeys.forEach(k => {
+            const sel = adminTopicFilterPath[depth] === k ? 'selected' : '';
+            markup += `<option value="${k.replace(/"/g, '&quot;')}" ${sel}>${k}</option>`;
         });
-        html += `</select>`;
+        markup += `</select>`;
 
-        if (!adminTopicFilterPath[i]) break;
+        if (!adminTopicFilterPath[depth]) break;
     }
-    container.innerHTML = html;
+    box.innerHTML = markup;
 
-    const pathTextEl = document.getElementById('admin-topic-filter-path-text');
-    if (pathTextEl) {
-        pathTextEl.innerText = adminTopicFilterPath.length > 0
-            ? adminTopicFilterPath.join(' > ')
-            : 'All Exam Categories';
+    const summaryEl = document.getElementById('admin-topic-filter-path-text');
+    if (summaryEl) {
+        summaryEl.innerText = adminTopicFilterPath.length ? adminTopicFilterPath.join(' > ') : 'All Exam Categories';
     }
 }
 
 function handleAdminTopicFilterPathChange(event, depth) {
-    const val = event.target.value;
+    const chosen = event.target.value;
     adminTopicFilterPath = adminTopicFilterPath.slice(0, depth);
-    if (val !== "") {
-        adminTopicFilterPath.push(val);
-    }
+    if (chosen !== '') adminTopicFilterPath.push(chosen);
     _buildAdminTopicFilterSelectors();
     filterAdminTopics();
 }
@@ -826,96 +848,87 @@ function resetAdminTopicFilters() {
 }
 
 async function loadAdminTopicsList() {
-    const container = document.getElementById('admin-topic-list-container'); 
-    if (!container) return;
-    container.innerHTML = `<p style="color:#777; text-align:center; padding:25px;">Loading all topics and subtopics...</p>`;
+    const holder = document.getElementById('admin-topic-list-container');
+    if (!holder) return;
+    holder.innerHTML = `<p style="color:#777; text-align:center; padding:25px;">Loading all topics and subtopics...</p>`;
 
     try {
         await loadCustomTopics();
-        let mapByFullPath = new Map();
-        let deletedSet = new Set((topicOverrides && topicOverrides.deletedPaths) || []);
+        const topicMap = new Map();
+        const removedSet = new Set((topicOverrides && topicOverrides.deletedPaths) || []);
 
-        function scanAppData(obj, parentArr = []) {
-            if (!obj || typeof obj !== 'object') return;
-            Object.keys(obj).forEach(key => {
-                if (parentArr.length === 0 && key === "Daily Quiz Challenge") return;
-                let currentArr = [...parentArr, key];
-                let fullPath = currentArr.join(' > ');
-                if (deletedSet.has(fullPath)) return;
+        const walkTree = (node, trail = []) => {
+            if (!node || typeof node !== 'object') return;
+            Object.keys(node).forEach(k => {
+                if (trail.length === 0 && k === 'Daily Quiz Challenge') return;
+                const nextTrail = [...trail, k];
+                const fullKey = nextTrail.join(' > ');
+                if (removedSet.has(fullKey)) return;
 
-                let parentPath = parentArr.join(' > ');
-                let childObj = obj[key];
-                let hasChildren = childObj && typeof childObj === 'object' && Object.keys(childObj).length > 0;
-                let meta = customTopicTypes[fullPath] || {};
-                let displayName = meta.displayName || key;
+                const parentStr = trail.join(' > ');
+                const subNode = node[k];
+                const hasSub = subNode && typeof subNode === 'object' && Object.keys(subNode).length > 0;
+                const info = customTopicTypes[fullKey] || {};
+                const shownTitle = info.displayName || k;
 
-                mapByFullPath.set(fullPath, {
-                    fullPath: fullPath,
-                    parentPath: parentPath,
-                    name: displayName,
-                    rawKey: key,
-                    type: inferTopicType(fullPath, displayName, hasChildren),
-                    icon: meta.icon || null,
-                    docId: meta.docId || null
+                topicMap.set(fullKey, {
+                    fullPath: fullKey,
+                    parentPath: parentStr,
+                    name: shownTitle,
+                    rawKey: k,
+                    type: inferTopicType(fullKey, shownTitle, hasSub),
+                    icon: info.icon || null,
+                    docId: info.docId || null
                 });
 
-                if (hasChildren) {
-                    scanAppData(childObj, currentArr);
-                }
+                if (hasSub) walkTree(subNode, nextTrail);
             });
-        }
-        scanAppData(appData, []);
+        };
+        walkTree(appData, []);
 
-        const snap = await db.collection("custom_topics").get();
+        const snap = await db.collection('custom_topics').get();
         snap.forEach(doc => {
-            let d = doc.data();
-            let pPath = (d.parentPath || "").trim();
-            let fullPath = pPath ? `${pPath} > ${d.name}` : d.name;
-            if (deletedSet.has(fullPath)) return;
+            const d = doc.data();
+            const pStr = (d.parentPath || '').trim();
+            const fKey = pStr ? `${pStr} > ${d.name}` : d.name;
+            if (removedSet.has(fKey)) return;
 
-            let existing = mapByFullPath.get(fullPath);
-            mapByFullPath.set(fullPath, {
-                fullPath: fullPath,
-                parentPath: pPath,
-                name: (existing && existing.name) || d.name,
+            const prev = topicMap.get(fKey);
+            topicMap.set(fKey, {
+                fullPath: fKey,
+                parentPath: pStr,
+                name: (prev && prev.name) || d.name,
                 rawKey: d.name,
-                type: d.type || (existing ? existing.type : 'both'),
-                icon: d.icon || (existing ? existing.icon : null),
+                type: d.type || (prev ? prev.type : 'both'),
+                icon: d.icon || (prev ? prev.icon : null),
                 docId: doc.id
             });
         });
 
-        unifiedAdminTopics = Array.from(mapByFullPath.values()).sort((a, b) => {
-            let pCmp = (a.parentPath || "").localeCompare(b.parentPath || "");
-            if (pCmp !== 0) return pCmp;
-            return (a.name || "").localeCompare(b.name || "");
+        unifiedAdminTopics = Array.from(topicMap.values()).sort((a, b) => {
+            const cmp = (a.parentPath || '').localeCompare(b.parentPath || '');
+            return cmp !== 0 ? cmp : (a.name || '').localeCompare(b.name || '');
         });
 
         _buildAdminTopicFilterSelectors();
         filterAdminTopics();
-    } catch(e) {
-        container.innerHTML = `<p style="color:var(--wrong-red);">Error loading topics: ${e.message}</p>`;
+    } catch (err) {
+        holder.innerHTML = `<p style="color:var(--wrong-red);">Error loading topics: ${err.message}</p>`;
     }
 }
 
 let currentFilteredAdminTopics = [];
 function filterAdminTopics() {
-    let prefix = adminTopicFilterPath.join(' > ');
-
-    currentFilteredAdminTopics = unifiedAdminTopics.filter(t => {
-        let isMainTopic = !t.parentPath || t.parentPath === "";
-
-        if (adminTopicScopeFilter === 'MAIN' && !isMainTopic) return false;
-        if (adminTopicScopeFilter === 'SUB' && isMainTopic) return false;
-
-        if (adminTopicTypeFilter !== 'ALL' && t.type !== adminTopicTypeFilter) return false;
+    const prefix = adminTopicFilterPath.join(' > ');
+    currentFilteredAdminTopics = unifiedAdminTopics.filter(item => {
+        const isRoot = !item.parentPath;
+        if (adminTopicScopeFilter === 'MAIN' && !isRoot) return false;
+        if (adminTopicScopeFilter === 'SUB' && isRoot) return false;
+        if (adminTopicTypeFilter !== 'ALL' && item.type !== adminTopicTypeFilter) return false;
 
         if (prefix && adminTopicScopeFilter !== 'MAIN') {
-            if (isMainTopic) {
-                return t.rawKey === adminTopicFilterPath[0];
-            } else {
-                return t.parentPath === prefix || t.parentPath.startsWith(prefix + " > ") || t.fullPath === prefix;
-            }
+            if (isRoot) return item.rawKey === adminTopicFilterPath[0];
+            return item.parentPath === prefix || item.parentPath.startsWith(prefix + ' > ') || item.fullPath === prefix;
         }
         return true;
     });
@@ -925,274 +938,215 @@ function filterAdminTopics() {
 }
 
 function updateAdminBulkSelectedCounter() {
-    const el = document.getElementById('adminBulkSelectedCount');
-    if (el) el.innerText = `${adminBulkSelectedPaths.size} Folder${adminBulkSelectedPaths.size === 1 ? '' : 's'} Selected`;
+    const badge = document.getElementById('adminBulkSelectedCount');
+    if (badge) badge.innerText = `${adminBulkSelectedPaths.size} Folder${adminBulkSelectedPaths.size === 1 ? '' : 's'} Selected`;
 }
 
-function toggleAdminBulkTopicSelect(fullPath, isChecked) {
-    if (isChecked) adminBulkSelectedPaths.add(fullPath);
+function toggleAdminBulkTopicSelect(fullPath, checked) {
+    if (checked) adminBulkSelectedPaths.add(fullPath);
     else adminBulkSelectedPaths.delete(fullPath);
     updateAdminBulkSelectedCounter();
 }
 
 function toggleSelectAllFilteredTopics(selectAll) {
-    if (selectAll) {
-        currentFilteredAdminTopics.forEach(t => adminBulkSelectedPaths.add(t.fullPath));
-    } else {
-        adminBulkSelectedPaths.clear();
-    }
+    if (selectAll) currentFilteredAdminTopics.forEach(t => adminBulkSelectedPaths.add(t.fullPath));
+    else adminBulkSelectedPaths.clear();
     renderAdminTopicsList(currentFilteredAdminTopics);
     updateAdminBulkSelectedCounter();
 }
 
 async function bulkInjectDifficultyToSelectedTopics() {
-    if (adminBulkSelectedPaths.size === 0) {
-        showNotification("⚠️ Select at least one chapter/folder using the checkboxes first.");
-        return;
-    }
-    const diffNames = ["Easy", "Medium", "Hard", "Mixed"];
-    let targetPaths = Array.from(adminBulkSelectedPaths);
-    if (!confirm(`Add Difficulty Set (Easy, Medium, Hard, Mixed) inside ${targetPaths.length} selected folder(s)?`)) return;
+    if (!adminBulkSelectedPaths.size) return showNotification('⚠️ Select at least one folder first.');
+    const levels = ['Easy', 'Medium', 'Hard', 'Mixed'];
+    const targets = Array.from(adminBulkSelectedPaths);
+    if (!confirm(`Add Easy, Medium, Hard, Mixed inside ${targets.length} selected folder(s)?`)) return;
 
     try {
-        let createdCount = 0;
-        let ops = [];
-
-        targetPaths.forEach(parentFullPath => {
-            diffNames.forEach(dName => {
-                let childFull = `${parentFullPath} > ${dName}`;
-                if (!doesTopicPathExist(childFull)) {
-                    let autoIcon = typeof getAutomaticIconForName === 'function' ? getAutomaticIconForName(dName, 'mcq') : '📝';
-                    ops.push({
-                        parentPath: parentFullPath,
-                        name: dName,
-                        type: 'mcq',
-                        icon: autoIcon
-                    });
+        const pending = [];
+        targets.forEach(pPath => {
+            levels.forEach(lvl => {
+                const combined = `${pPath} > ${lvl}`;
+                if (!doesTopicPathExist(combined)) {
+                    const ic = typeof getAutomaticIconForName === 'function' ? getAutomaticIconForName(lvl, 'mcq') : '📝';
+                    pending.push({ parentPath: pPath, name: lvl, type: 'mcq', icon: ic });
                 }
             });
         });
 
-        for (let i = 0; i < ops.length; i += 400) {
-            let chunk = ops.slice(i, i + 400);
-            let batch = db.batch();
-            chunk.forEach(item => {
-                let ref = db.collection("custom_topics").doc();
-                batch.set(ref, {
-                    ...item,
+        for (let i = 0; i < pending.length; i += 400) {
+            const batch = db.batch();
+            pending.slice(i, i + 400).forEach(entry => {
+                batch.set(db.collection('custom_topics').doc(), {
+                    ...entry,
                     timestamp: firebase.firestore.FieldValue.serverTimestamp()
                 });
-                createdCount++;
             });
             await batch.commit();
         }
 
-        showNotification(`✅ Created ${createdCount} difficulty folder(s) across ${targetPaths.length} selected topic(s)!`);
+        showNotification(`✅ Added ${pending.length} difficulty folder(s)!`);
         adminBulkSelectedPaths.clear();
         await loadAdminTopicsList();
     } catch (e) {
-        showNotification("❌ Bulk creation error: " + e.message);
+        showNotification('❌ Bulk error: ' + e.message);
     }
 }
 
 async function bulkDeleteSelectedTopics() {
-    if (adminBulkSelectedPaths.size === 0) {
-        showNotification("⚠️ Select at least one folder using the checkboxes first.");
-        return;
-    }
-    let targets = Array.from(adminBulkSelectedPaths);
-    if (!confirm(`Are you sure you want to delete ${targets.length} selected folder(s)?`)) return;
+    if (!adminBulkSelectedPaths.size) return showNotification('⚠️ Select at least one folder first.');
+    const targets = Array.from(adminBulkSelectedPaths);
+    if (!confirm(`Delete ${targets.length} selected folder(s)?`)) return;
 
     try {
-        const snap = await db.collection("custom_topics").get();
-        let batch = db.batch();
-        let batchCount = 0;
-
+        const snap = await db.collection('custom_topics').get();
+        const batch = db.batch();
+        let count = 0;
         snap.forEach(doc => {
-            let d = doc.data();
-            let p = (d.parentPath || "").trim();
-            let f = p ? `${p} > ${d.name}` : d.name;
-            if (targets.some(tPath => f === tPath || p === tPath || p.startsWith(tPath + " > "))) {
+            const d = doc.data();
+            const p = (d.parentPath || '').trim();
+            const f = p ? `${p} > ${d.name}` : d.name;
+            if (targets.some(t => f === t || p === t || p.startsWith(t + ' > '))) {
                 batch.delete(doc.ref);
-                batchCount++;
+                count++;
             }
         });
-        if (batchCount > 0) await batch.commit();
+        if (count > 0) await batch.commit();
 
         topicOverrides.deletedPaths = Array.from(new Set([...(topicOverrides.deletedPaths || []), ...targets]));
-        await db.collection("settings").doc("topic_overrides").set(topicOverrides, { merge: true });
+        await db.collection('settings').doc('topic_overrides').set(topicOverrides, { merge: true });
 
         adminBulkSelectedPaths.clear();
         showNotification(`🗑️ Deleted ${targets.length} folder(s)!`);
         await loadAdminTopicsList();
     } catch (e) {
-        showNotification("❌ Bulk delete error: " + e.message);
+        showNotification('❌ Delete error: ' + e.message);
     }
 }
 
-function buildAdminTopicCardHtml(d, idx) {
-    let identifier = d.docId ? `doc:${d.docId}` : `builtin:${d.fullPath}`;
-    let safeId = identifier.replace(/'/g, "\\'");
-    let safeFullPath = d.fullPath.replace(/'/g, "\\'");
-    let cleanName = (d.name || '').replace(/'/g, "\\'");
-    let cleanIcon = d.icon ? d.icon.replace(/'/g, "\\'") : '';
-    let typeBadgeStr = d.type === 'both' ? 'PARENT CATEGORY' : (d.type || 'mcq').toUpperCase();
-    let parentStr = d.parentPath ? d.parentPath : 'Root (Main Menu)';
-    let isChecked = adminBulkSelectedPaths.has(d.fullPath);
-    let smartTheme = typeof getAutoTopicTheme === 'function'
-        ? getAutoTopicTheme(d.name || '', d.icon, idx)
-        : { i: d.icon || '📁', c: '#fdb813' };
+function buildAdminTopicCardHtml(item, idx) {
+    const idToken = item.docId ? `doc:${item.docId}` : `builtin:${item.fullPath}`;
+    const escId = idToken.replace(/'/g, "\\'");
+    const escPath = item.fullPath.replace(/'/g, "\\'");
+    const escName = (item.name || '').replace(/'/g, "\\'");
+    const escIcon = item.icon ? item.icon.replace(/'/g, "\\'") : '';
+    const badge = item.type === 'both' ? 'PARENT CATEGORY' : (item.type || 'mcq').toUpperCase();
+    const pText = item.parentPath || 'Root (Main Menu)';
+    const checked = adminBulkSelectedPaths.has(item.fullPath);
+    const th = typeof getAutoTopicTheme === 'function' ? getAutoTopicTheme(item.name || '', item.icon, idx) : { i: item.icon || '📁', c: '#fdb813' };
 
     return `
-    <div style="background:#1c1c24; border:1px solid ${isChecked ? '#fdb813' : '#2b2b36'}; border-left: 4px solid ${smartTheme.c}; border-radius:12px; padding:14px 18px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center; flex-wrap: wrap; gap: 15px;">
+    <div style="background:#1c1c24; border:1px solid ${checked ? '#fdb813' : '#2b2b36'}; border-left:4px solid ${th.c}; border-radius:12px; padding:14px 18px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:15px;">
         <div style="display:flex; align-items:center; gap:14px; flex:1; min-width:220px;">
-            <input type="checkbox" ${isChecked ? 'checked' : ''} onchange="toggleAdminBulkTopicSelect('${safeFullPath}', this.checked)" style="accent-color:#fdb813; width:18px; height:18px; cursor:pointer; flex-shrink:0;">
+            <input type="checkbox" ${checked ? 'checked' : ''} onchange="toggleAdminBulkTopicSelect('${escPath}', this.checked)" style="accent-color:#fdb813; width:18px; height:18px; cursor:pointer;">
             <div>
-                <span style="color:var(--text-muted); font-size:12px; display:block; margin-bottom:4px;">Path: ${parentStr}</span>
+                <span style="color:var(--text-muted); font-size:12px; display:block; margin-bottom:4px;">Path: ${pText}</span>
                 <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-                    <b style="font-size:15.5px; color:#fff;">${smartTheme.i} ${d.name}</b>
-                    <span style="font-size:10.5px; background:#2b2b36; color:#ccc; padding:3px 9px; border-radius:6px; font-weight:700; letter-spacing:0.4px;">${typeBadgeStr}</span>
+                    <b style="font-size:15.5px; color:#fff;">${th.i} ${item.name}</b>
+                    <span style="font-size:10.5px; background:#2b2b36; color:#ccc; padding:3px 9px; border-radius:6px; font-weight:700;">${badge}</span>
                 </div>
             </div>
         </div>
         <div style="display:flex; gap:10px;">
-            <button onclick="openEditTopicModal('${safeId}', '${cleanName}', '${d.type}', '${cleanIcon}', '${safeFullPath}')" style="background:rgba(33, 150, 243, 0.15); border:1px solid rgba(33,150,243,0.4); color:#38bdf8; padding:8px 16px; border-radius:8px; cursor:pointer; font-weight:bold; transition:0.2s;">Edit</button>
-            <button onclick="deleteUnifiedTopic('${safeId}', '${safeFullPath}')" style="background:rgba(244, 67, 54, 0.15); border:1px solid rgba(244,67,54,0.4); color:var(--wrong-red); padding:8px 16px; border-radius:8px; cursor:pointer; font-weight:bold; transition:0.2s;">Delete</button>
+            <button onclick="openEditTopicModal('${escId}', '${escName}', '${item.type}', '${escIcon}', '${escPath}')" style="background:rgba(33,150,243,0.15); border:1px solid rgba(33,150,243,0.4); color:#38bdf8; padding:8px 16px; border-radius:8px; cursor:pointer; font-weight:bold;">Edit</button>
+            <button onclick="deleteUnifiedTopic('${escId}', '${escPath}')" style="background:rgba(244,67,54,0.15); border:1px solid rgba(244,67,54,0.4); color:var(--wrong-red); padding:8px 16px; border-radius:8px; cursor:pointer; font-weight:bold;">Delete</button>
         </div>
     </div>`;
 }
 
-function renderAdminTopicsList(topicsArray) {
-    const container = document.getElementById('admin-topic-list-container');
-    if (!container) return;
-
-    if (topicsArray.length === 0) {
-        container.innerHTML = `<div class="admin-panel-card" style="text-align:center; color:#888; padding:35px;">No topics or subtopics match the selected filters.</div>`;
+function renderAdminTopicsList(list) {
+    const holder = document.getElementById('admin-topic-list-container');
+    if (!holder) return;
+    if (!list.length) {
+        holder.innerHTML = `<div class="admin-panel-card" style="text-align:center; color:#888; padding:35px;">No folders match the selected filters.</div>`;
         return;
     }
 
-    let mainTopics = topicsArray.filter(t => !t.parentPath || t.parentPath === "");
-    let subTopics = topicsArray.filter(t => t.parentPath && t.parentPath !== "");
+    const mains = list.filter(t => !t.parentPath);
+    const subs = list.filter(t => Boolean(t.parentPath));
+    let out = '';
 
-    let html = '';
-
-    if (adminTopicScopeFilter !== 'SUB' && mainTopics.length > 0) {
-        html += `
-        <div class="admin-topic-group-header">
-            <span>🌟 Main Topics (Root Exam Categories)</span>
-            <span class="admin-topic-group-count">${mainTopics.length} Topic${mainTopics.length > 1 ? 's' : ''}</span>
-        </div>`;
-        mainTopics.forEach((d, idx) => {
-            html += buildAdminTopicCardHtml(d, idx);
-        });
+    if (adminTopicScopeFilter !== 'SUB' && mains.length) {
+        out += `<div class="admin-topic-group-header"><span>🌟 Main Topics</span><span class="admin-topic-group-count">${mains.length}</span></div>`;
+        mains.forEach((d, i) => { out += buildAdminTopicCardHtml(d, i); });
     }
-
-    if (adminTopicScopeFilter !== 'MAIN' && subTopics.length > 0) {
-        html += `
-        <div class="admin-topic-group-header" style="border-left-color:#38bdf8; background:rgba(56, 189, 248, 0.08); border-color:rgba(56,189,248,0.25);">
-            <span>📂 Subtopics & Chapters</span>
-            <span class="admin-topic-group-count" style="color:#38bdf8;">${subTopics.length} Subtopic${subTopics.length > 1 ? 's' : ''}</span>
-        </div>`;
-        subTopics.forEach((d, idx) => {
-            html += buildAdminTopicCardHtml(d, idx + 4);
-        });
+    if (adminTopicScopeFilter !== 'MAIN' && subs.length) {
+        out += `<div class="admin-topic-group-header" style="border-left-color:#38bdf8; background:rgba(56,189,248,0.08); border-color:rgba(56,189,248,0.25);"><span>📂 Subtopics & Chapters</span><span class="admin-topic-group-count" style="color:#38bdf8;">${subs.length}</span></div>`;
+        subs.forEach((d, i) => { out += buildAdminTopicCardHtml(d, i + 4); });
     }
-
-    container.innerHTML = html;
+    holder.innerHTML = out;
 }
 
-let activeEditFullPath = "";
-function openEditTopicModal(identifier, name, type, icon = null, fullPath = "") {
+let activeEditFullPath = '';
+function openEditTopicModal(idToken, name, type, icon = '', fullPath = '') {
     activeEditFullPath = fullPath;
-    document.getElementById('editTopicId').value = identifier;
+    document.getElementById('editTopicId').value = idToken;
     document.getElementById('editTopicName').value = name;
     document.getElementById('editTopicType').value = type || 'both';
     document.getElementById('editTopicIcon').value = icon || '';
     document.getElementById('editTopicModal').style.display = 'flex';
 }
 
-function closeEditTopicModal() { document.getElementById('editTopicModal').style.display = 'none'; }
+function closeEditTopicModal() {
+    document.getElementById('editTopicModal').style.display = 'none';
+}
 
 async function saveEditedTopic() {
-    let identifier = document.getElementById('editTopicId').value;
-    let name = document.getElementById('editTopicName').value.trim();
-    let type = document.getElementById('editTopicType').value;
+    const idToken = document.getElementById('editTopicId').value;
+    const name = document.getElementById('editTopicName').value.trim();
+    const type = document.getElementById('editTopicType').value;
     let icon = document.getElementById('editTopicIcon').value.trim();
-    if(!name) return alert("Folder name is required.");
-
-    if (!icon && typeof getAutomaticIconForName === 'function') {
-        icon = getAutomaticIconForName(name, type);
-    }
+    if (!name) return alert('Folder name is required.');
+    if (!icon && typeof getAutomaticIconForName === 'function') icon = getAutomaticIconForName(name, type);
 
     try {
-        if (identifier.startsWith('doc:')) {
-            let docId = identifier.slice(4);
-            await db.collection("custom_topics").doc(docId).update({
-                name: name,
-                type: type,
-                icon: icon || null
-            });
+        if (idToken.startsWith('doc:')) {
+            await db.collection('custom_topics').doc(idToken.slice(4)).update({ name, type, icon: icon || null });
         }
         if (activeEditFullPath) {
             topicOverrides.editedPaths = topicOverrides.editedPaths || {};
-            topicOverrides.editedPaths[activeEditFullPath] = {
-                displayName: name,
-                type: type,
-                icon: icon || null
-            };
-            await db.collection("settings").doc("topic_overrides").set(topicOverrides, { merge: true });
+            topicOverrides.editedPaths[activeEditFullPath] = { displayName: name, type, icon: icon || null };
+            await db.collection('settings').doc('topic_overrides').set(topicOverrides, { merge: true });
         }
-
         closeEditTopicModal();
-        showNotification("✅ Folder updated with smart icon!");
+        showNotification('✅ Folder updated!');
         await loadAdminTopicsList();
-    } catch(e) { alert("Error: " + e.message); }
-}
-
-async function deleteUnifiedTopic(identifier, fullPath) {
-    if(!confirm(`Are you sure you want to delete "${fullPath}" from the menu?`)) return;
-    try {
-        if (identifier.startsWith('doc:')) {
-            let docId = identifier.slice(4);
-            await db.collection("custom_topics").doc(docId).delete();
-        }
-
-        const snap = await db.collection("custom_topics").get();
-        let batch = db.batch();
-        let hasBatchDeletes = false;
-        snap.forEach(doc => {
-            let d = doc.data();
-            let p = (d.parentPath || "").trim();
-            let f = p ? `${p} > ${d.name}` : d.name;
-            if (f === fullPath || p === fullPath || p.startsWith(fullPath + " > ")) {
-                batch.delete(doc.ref);
-                hasBatchDeletes = true;
-            }
-        });
-        if (hasBatchDeletes) await batch.commit();
-
-        topicOverrides.deletedPaths = Array.from(new Set([...(topicOverrides.deletedPaths || []), fullPath]));
-        await db.collection("settings").doc("topic_overrides").set(topicOverrides, { merge: true });
-
-        adminBulkSelectedPaths.delete(fullPath);
-        showNotification("🗑️ Topic deleted!");
-        await loadAdminTopicsList();
-    } catch(e) {
-        showNotification("❌ Delete error: " + e.message);
+    } catch (e) {
+        alert('Error: ' + e.message);
     }
 }
 
-async function deleteCustomTopic(docId) {
-    if(!confirm("Are you sure? This will remove the folder from the app menu.")) return;
+async function deleteUnifiedTopic(idToken, fullPath) {
+    if (!confirm(`Delete "${fullPath}" from the menu?`)) return;
     try {
-        await db.collection("custom_topics").doc(docId).delete();
-        showNotification("✅ Folder deleted");
+        if (idToken.startsWith('doc:')) {
+            await db.collection('custom_topics').doc(idToken.slice(4)).delete();
+        }
+        const snap = await db.collection('custom_topics').get();
+        const batch = db.batch();
+        let count = 0;
+        snap.forEach(doc => {
+            const d = doc.data();
+            const p = (d.parentPath || '').trim();
+            const f = p ? `${p} > ${d.name}` : d.name;
+            if (f === fullPath || p === fullPath || p.startsWith(fullPath + ' > ')) {
+                batch.delete(doc.ref);
+                count++;
+            }
+        });
+        if (count > 0) await batch.commit();
+
+        topicOverrides.deletedPaths = Array.from(new Set([...(topicOverrides.deletedPaths || []), fullPath]));
+        await db.collection('settings').doc('topic_overrides').set(topicOverrides, { merge: true });
+        adminBulkSelectedPaths.delete(fullPath);
+        showNotification('🗑️ Topic deleted!');
         await loadAdminTopicsList();
-    } catch(e){}
+    } catch (e) {
+        showNotification('❌ Delete error: ' + e.message);
+    }
 }
 
 // ==========================================
-// MANUAL QUICK LINKS & ESSENTIAL PRACTICE MANAGER
+// SIDEBAR & CUSTOM PRACTICE MANAGERS
 // ==========================================
 function initAdminSidebarLinksTab() {
     _buildAdminSidebarPickSelectors();
@@ -1200,105 +1154,66 @@ function initAdminSidebarLinksTab() {
 }
 
 function _buildAdminSidebarPickSelectors() {
-    const container = document.getElementById('admin-sidebar-pick-selectors');
-    if (!container) return;
-
+    const box = document.getElementById('admin-sidebar-pick-selectors');
+    if (!box) return;
     let html = '';
     for (let i = 0; i <= adminSidebarPickPath.length; i++) {
-        let parentSlice = adminSidebarPickPath.slice(0, i);
-        let keys = getMergedChildKeysAtPath(parentSlice);
-        if (keys.length === 0) break;
-
-        let placeholder = i === 0 ? '-- Select Main Topic --' : '-- Stop Here / Select Subtopic --';
+        const keys = getMergedChildKeysAtPath(adminSidebarPickPath.slice(0, i));
+        if (!keys.length) break;
         html += `<select class="input-field" style="flex:1; min-width:170px; margin-bottom:0;" onchange="handleAdminSidebarPickChange(event, ${i})">`;
-        html += `<option value="" ${!adminSidebarPickPath[i] ? 'selected' : ''}>${placeholder}</option>`;
-
-        keys.forEach(key => {
-            let selected = (adminSidebarPickPath[i] === key) ? 'selected' : '';
-            html += `<option value="${key.replace(/"/g, '&quot;')}" ${selected}>${key}</option>`;
+        html += `<option value="" ${!adminSidebarPickPath[i] ? 'selected' : ''}>${i === 0 ? '-- Select Main Topic --' : '-- Stop Here / Select Subtopic --'}</option>`;
+        keys.forEach(k => {
+            html += `<option value="${k.replace(/"/g, '&quot;')}" ${adminSidebarPickPath[i] === k ? 'selected' : ''}>${k}</option>`;
         });
         html += `</select>`;
-
         if (!adminSidebarPickPath[i]) break;
     }
-    container.innerHTML = html;
-
-    const textEl = document.getElementById('admin-sidebar-pick-text');
-    if (textEl) {
-        textEl.innerText = adminSidebarPickPath.length > 0 ? adminSidebarPickPath.join(' > ') : 'None selected';
-    }
+    box.innerHTML = html;
+    const txt = document.getElementById('admin-sidebar-pick-text');
+    if (txt) txt.innerText = adminSidebarPickPath.length ? adminSidebarPickPath.join(' > ') : 'None selected';
 }
 
 function handleAdminSidebarPickChange(event, depth) {
-    const val = event.target.value;
     adminSidebarPickPath = adminSidebarPickPath.slice(0, depth);
-    if (val !== "") adminSidebarPickPath.push(val);
+    if (event.target.value !== '') adminSidebarPickPath.push(event.target.value);
     _buildAdminSidebarPickSelectors();
 }
 
 async function addTopicToSidebarSection() {
-    if (adminSidebarPickPath.length === 0) {
-        showNotification("⚠️ Please select an existing topic or subtopic folder first.");
-        return;
-    }
+    if (!adminSidebarPickPath.length) return showNotification('⚠️ Select a folder first.');
+    const sec = document.getElementById('adminSidebarSectionType').value;
+    const customInput = document.getElementById('adminSidebarCustomTitle');
+    const fullPath = adminSidebarPickPath.join(' > ');
+    const leaf = adminSidebarPickPath[adminSidebarPickPath.length - 1].replace(/^\d+\.\s*/, '');
+    const defaultTitle = adminSidebarPickPath.length > 1 ? `${leaf} (${adminSidebarPickPath[0].replace(/^\d+\.\s*/, '')})` : leaf;
+    const title = (customInput && customInput.value.trim()) ? customInput.value.trim() : defaultTitle;
 
-    const sectionType = document.getElementById('adminSidebarSectionType').value;
-    const customTitleInput = document.getElementById('adminSidebarCustomTitle');
-    let fullPath = adminSidebarPickPath.join(' > ');
-    let leafName = adminSidebarPickPath[adminSidebarPickPath.length - 1].replace(/^\d+\.\s*/, '');
-    let defaultTitle = adminSidebarPickPath.length > 1
-        ? `${leafName} (${adminSidebarPickPath[0].replace(/^\d+\.\s*/, '')})`
-        : leafName;
-    let finalTitle = (customTitleInput && customTitleInput.value.trim()) ? customTitleInput.value.trim() : defaultTitle;
+    const list = window.sidebarConfig[sec] || [];
+    if (list.some(x => x.path === fullPath)) return showNotification('⚠️ Already in that section.');
+    list.push({ id: 'sb_' + Date.now(), title, path: fullPath });
+    window.sidebarConfig[sec] = list;
 
-    let list = window.sidebarConfig[sectionType] || [];
-    if (list.some(item => item.path === fullPath)) {
-        showNotification("⚠️ This folder is already in that section.");
-        return;
-    }
-
-    list.push({
-        id: 'sb_' + Date.now(),
-        title: finalTitle,
-        path: fullPath
-    });
-    window.sidebarConfig[sectionType] = list;
-
-    try {
-        await db.collection("settings").doc("sidebar_config").set(window.sidebarConfig, { merge: true });
-        if (customTitleInput) customTitleInput.value = '';
-        showNotification("✅ Added to Home Sidebar!");
-        renderAdminSidebarConfigLists();
-        if (typeof updateSidebarLinks === 'function') updateSidebarLinks();
-    } catch (e) {
-        showNotification("❌ Failed to save: " + e.message);
-    }
+    await db.collection('settings').doc('sidebar_config').set(window.sidebarConfig, { merge: true });
+    if (customInput) customInput.value = '';
+    showNotification('✅ Added to Sidebar!');
+    renderAdminSidebarConfigLists();
+    if (typeof updateSidebarLinks === 'function') updateSidebarLinks();
 }
 
-async function removeSidebarConfigItem(sectionType, itemId) {
-    window.sidebarConfig[sectionType] = (window.sidebarConfig[sectionType] || []).filter(item => item.id !== itemId);
-    try {
-        await db.collection("settings").doc("sidebar_config").set(window.sidebarConfig, { merge: true });
-        showNotification("🗑️ Removed from Sidebar!");
-        renderAdminSidebarConfigLists();
-        if (typeof updateSidebarLinks === 'function') updateSidebarLinks();
-    } catch (e) {
-        showNotification("❌ Error: " + e.message);
-    }
+async function removeSidebarConfigItem(sec, itemId) {
+    window.sidebarConfig[sec] = (window.sidebarConfig[sec] || []).filter(x => x.id !== itemId);
+    await db.collection('settings').doc('sidebar_config').set(window.sidebarConfig, { merge: true });
+    showNotification('🗑️ Removed!');
+    renderAdminSidebarConfigLists();
+    if (typeof updateSidebarLinks === 'function') updateSidebarLinks();
 }
 
-async function clearAllSidebarSection(sectionType) {
-    let label = sectionType === 'quickLinks' ? 'Quick Links' : 'Essential Practice (manual links)';
-    if (!confirm(`Delete ALL manual items from ${label}?`)) return;
-    window.sidebarConfig[sectionType] = [];
-    try {
-        await db.collection("settings").doc("sidebar_config").set(window.sidebarConfig, { merge: true });
-        showNotification(`🗑️ Cleared manual items from ${label}!`);
-        renderAdminSidebarConfigLists();
-        if (typeof updateSidebarLinks === 'function') updateSidebarLinks();
-    } catch (e) {
-        showNotification("❌ Error: " + e.message);
-    }
+async function clearAllSidebarSection(sec) {
+    if (!confirm('Delete all manual items in this section?')) return;
+    window.sidebarConfig[sec] = [];
+    await db.collection('settings').doc('sidebar_config').set(window.sidebarConfig, { merge: true });
+    renderAdminSidebarConfigLists();
+    if (typeof updateSidebarLinks === 'function') updateSidebarLinks();
 }
 
 function renderAdminSidebarConfigLists() {
@@ -1306,88 +1221,51 @@ function renderAdminSidebarConfigLists() {
     const eEl = document.getElementById('admin-essential-practice-list');
     if (!qEl || !eEl) return;
 
-    const renderItems = (items, sectionType, accentColor) => {
-        if (!items || items.length === 0) {
-            return `<p style="color:#777; font-size:13px; text-align:center; padding:18px; border:1px dashed #2b2b36; border-radius:10px; margin:0;">No manual items added. Use the form above to add existing topics or subtopics.</p>`;
-        }
-        return items.map((item, idx) => {
-            let theme = typeof getAutoTopicTheme === 'function' ? getAutoTopicTheme(item.title, null, idx) : { i: '📂', c: accentColor };
-            return `
-            <div style="background:#1c1c24; border:1px solid #2b2b36; border-left:4px solid ${theme.c}; border-radius:10px; padding:12px 15px; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center; gap:10px;">
-                <div>
-                    <div style="font-weight:700; color:#fff; font-size:14px;">${theme.i} ${item.title}</div>
-                    <div style="font-size:11px; color:var(--text-muted); margin-top:3px;">Path: ${item.path}</div>
-                </div>
-                <button onclick="removeSidebarConfigItem('${sectionType}', '${item.id}')" style="background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.4); color:var(--wrong-red); padding:6px 12px; border-radius:6px; cursor:pointer; font-size:12px; font-weight:bold;">Delete</button>
+    const draw = (arr, sec, col) => {
+        if (!arr || !arr.length) return `<p style="color:#777; font-size:13px; text-align:center; padding:18px; border:1px dashed #2b2b36; border-radius:10px; margin:0;">No manual links added.</p>`;
+        return arr.map((it, idx) => {
+            const th = typeof getAutoTopicTheme === 'function' ? getAutoTopicTheme(it.title, null, idx) : { i: '📂', c: col };
+            return `<div style="background:#1c1c24; border:1px solid #2b2b36; border-left:4px solid ${th.c}; border-radius:10px; padding:12px 15px; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center;">
+                <div><div style="font-weight:700; color:#fff; font-size:14px;">${th.i} ${it.title}</div><div style="font-size:11px; color:var(--text-muted);">${it.path}</div></div>
+                <button onclick="removeSidebarConfigItem('${sec}', '${it.id}')" style="background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.4); color:var(--wrong-red); padding:6px 12px; border-radius:6px; cursor:pointer; font-weight:bold;">Delete</button>
             </div>`;
         }).join('');
     };
-
-    qEl.innerHTML = renderItems(window.sidebarConfig.quickLinks, 'quickLinks', '#a855f7');
-    eEl.innerHTML = renderItems(window.sidebarConfig.essentialPractice, 'essentialPractice', '#38bdf8');
+    qEl.innerHTML = draw(window.sidebarConfig.quickLinks, 'quickLinks', '#a855f7');
+    eEl.innerHTML = draw(window.sidebarConfig.essentialPractice, 'essentialPractice', '#38bdf8');
 }
 
-// ==========================================
-// MANUAL CUSTOM PRACTICE (SUBJECTS & CHAPTERS) MANAGER
-// ==========================================
 function getAllCandidateSubjectsForExam(examKey) {
     if (!examKey) return [];
-    let map = new Map();
-
-    let manualList = window.customPracticeConfig?.exams?.[examKey]?.subjects || [];
-    manualList.forEach(s => {
-        map.set(s.path, {
-            path: s.path,
-            label: (s.label || s.path.split(' > ').pop() || '').replace(/^\d+\.\s*/, ''),
-            isConfigured: true
-        });
+    const map = new Map();
+    (window.customPracticeConfig?.exams?.[examKey]?.subjects || []).forEach(s => {
+        map.set(s.path, { path: s.path, label: (s.label || s.path.split(' > ').pop()).replace(/^\d+\.\s*/, '') });
     });
-
     if (typeof buildCwCatalogForExam === 'function') {
-        let scanned = buildCwCatalogForExam(examKey, true);
-        scanned.forEach(s => {
-            if (!map.has(s.fullPath)) {
-                map.set(s.fullPath, {
-                    path: s.fullPath,
-                    label: s.label,
-                    isConfigured: false
-                });
-            }
+        buildCwCatalogForExam(examKey, true).forEach(s => {
+            if (!map.has(s.fullPath)) map.set(s.fullPath, { path: s.fullPath, label: s.label });
         });
     }
-
-    let directChildren = typeof getMergedChildKeysAtPath === 'function' ? getMergedChildKeysAtPath([examKey]) : [];
-    directChildren.forEach(childKey => {
-        if (childKey === "MCQs Practice" || childKey === "Mock Test") {
-            let subChildren = getMergedChildKeysAtPath([examKey, childKey]);
-            subChildren.forEach(sc => {
-                let full = `${examKey} > ${childKey} > ${sc}`;
-                if (!map.has(full) && (typeof isExcludedSubjectOrPdfFolder !== 'function' || !isExcludedSubjectOrPdfFolder(full, sc))) {
-                    map.set(full, { path: full, label: sc.replace(/^\d+\.\s*/, ''), isConfigured: false });
-                }
+    getMergedChildKeysAtPath([examKey]).forEach(k => {
+        if (k === 'MCQs Practice' || k === 'Mock Test') {
+            getMergedChildKeysAtPath([examKey, k]).forEach(sc => {
+                const f = `${examKey} > ${k} > ${sc}`;
+                if (!map.has(f)) map.set(f, { path: f, label: sc.replace(/^\d+\.\s*/, '') });
             });
         } else {
-            let full = `${examKey} > ${childKey}`;
-            if (!map.has(full) && (typeof isExcludedSubjectOrPdfFolder !== 'function' || !isExcludedSubjectOrPdfFolder(full, childKey))) {
-                map.set(full, { path: full, label: childKey.replace(/^\d+\.\s*/, ''), isConfigured: false });
-            }
+            const f = `${examKey} > ${k}`;
+            if (!map.has(f)) map.set(f, { path: f, label: k.replace(/^\d+\.\s*/, '') });
         }
     });
-
     return Array.from(map.values());
 }
 
 function initAdminCustomPracticeTab() {
-    const examSelect = document.getElementById('adminCpExamSelect');
-    if (!examSelect) return;
-
-    let rootExams = getMergedChildKeysAtPath([]);
-    if (!adminCpSelectedExam || !rootExams.includes(adminCpSelectedExam)) {
-        adminCpSelectedExam = rootExams[0] || '';
-    }
-
-    examSelect.innerHTML = rootExams.map(k => `<option value="${k.replace(/"/g, '&quot;')}" ${k === adminCpSelectedExam ? 'selected' : ''}>${k.replace(/^\d+\.\s*/, '')}</option>`).join('');
-
+    const sel = document.getElementById('adminCpExamSelect');
+    if (!sel) return;
+    const exams = getMergedChildKeysAtPath([]);
+    if (!adminCpSelectedExam || !exams.includes(adminCpSelectedExam)) adminCpSelectedExam = exams[0] || '';
+    sel.innerHTML = exams.map(k => `<option value="${k.replace(/"/g, '&quot;')}" ${k === adminCpSelectedExam ? 'selected' : ''}>${k.replace(/^\d+\.\s*/, '')}</option>`).join('');
     adminCpSubjectPickPath = [];
     adminCpChapterPickPath = [];
     _buildAdminCpSubjectPickSelectors();
@@ -1408,66 +1286,44 @@ function handleAdminCpExamChange(examKey) {
 }
 
 function _buildAdminCpSubjectPickSelectors() {
-    const container = document.getElementById('admin-cp-subj-selectors');
-    const pathEl = document.getElementById('admin-cp-subj-path-text');
-    if (!container || !adminCpSelectedExam) return;
-
+    const box = document.getElementById('admin-cp-subj-selectors');
+    const txt = document.getElementById('admin-cp-subj-path-text');
+    if (!box || !adminCpSelectedExam) return;
     let html = '';
     for (let i = 0; i <= adminCpSubjectPickPath.length; i++) {
-        let parentSlice = [adminCpSelectedExam, ...adminCpSubjectPickPath.slice(0, i)];
-        let keys = getMergedChildKeysAtPath(parentSlice);
-        if (keys.length === 0) break;
-
-        let placeholder = i === 0 ? `-- Select Folder Under ${adminCpSelectedExam} --` : `-- Stop Here / Select Subfolder --`;
+        const keys = getMergedChildKeysAtPath([adminCpSelectedExam, ...adminCpSubjectPickPath.slice(0, i)]);
+        if (!keys.length) break;
         html += `<select class="input-field" style="flex:1; min-width:160px; margin-bottom:0;" onchange="handleAdminCpSubjPickChange(event, ${i})">`;
-        html += `<option value="" ${!adminCpSubjectPickPath[i] ? 'selected' : ''}>${placeholder}</option>`;
-
-        keys.forEach(key => {
-            let selected = (adminCpSubjectPickPath[i] === key) ? 'selected' : '';
-            html += `<option value="${key.replace(/"/g, '&quot;')}" ${selected}>${key}</option>`;
+        html += `<option value="" ${!adminCpSubjectPickPath[i] ? 'selected' : ''}>-- Select Folder --</option>`;
+        keys.forEach(k => {
+            html += `<option value="${k.replace(/"/g, '&quot;')}" ${adminCpSubjectPickPath[i] === k ? 'selected' : ''}>${k}</option>`;
         });
         html += `</select>`;
-
         if (!adminCpSubjectPickPath[i]) break;
     }
-
-    container.innerHTML = html || `<span style="color:#f59e0b; font-size:12px;">No subject folders created under <b>${adminCpSelectedExam}</b> yet. Go to <b>📁 Create Topic</b> to add subjects under ${adminCpSelectedExam} first.</span>`;
-
-    if (pathEl) {
-        pathEl.innerText = adminCpSubjectPickPath.length > 0
-            ? `${adminCpSelectedExam} > ${adminCpSubjectPickPath.join(' > ')}`
-            : 'None';
-    }
+    box.innerHTML = html || `<span style="color:#f59e0b; font-size:12px;">No subfolders under ${adminCpSelectedExam} yet.</span>`;
+    if (txt) txt.innerText = adminCpSubjectPickPath.length ? `${adminCpSelectedExam} > ${adminCpSubjectPickPath.join(' > ')}` : 'None';
 }
 
 function handleAdminCpSubjPickChange(event, depth) {
-    const val = event.target.value;
     adminCpSubjectPickPath = adminCpSubjectPickPath.slice(0, depth);
-    if (val !== "") adminCpSubjectPickPath.push(val);
+    if (event.target.value !== '') adminCpSubjectPickPath.push(event.target.value);
     _buildAdminCpSubjectPickSelectors();
 }
 
 function _syncAdminCpTargetSubjectDropdown() {
-    const selectEl = document.getElementById('adminCpTargetSubjSelect');
-    if (!selectEl) return;
-
-    let candidates = getAllCandidateSubjectsForExam(adminCpSelectedExam);
-
-    if (candidates.length === 0) {
+    const sel = document.getElementById('adminCpTargetSubjSelect');
+    if (!sel) return;
+    const cands = getAllCandidateSubjectsForExam(adminCpSelectedExam);
+    if (!cands.length) {
         adminCpTargetSubjectPath = '';
-        selectEl.innerHTML = `<option value="">-- No Subjects Created Under ${adminCpSelectedExam} Yet --</option>`;
+        sel.innerHTML = `<option value="">-- No Subjects Yet --</option>`;
         return;
     }
-
-    if (!adminCpTargetSubjectPath || !candidates.some(s => s.path === adminCpTargetSubjectPath)) {
-        adminCpTargetSubjectPath = candidates[0].path;
+    if (!adminCpTargetSubjectPath || !cands.some(s => s.path === adminCpTargetSubjectPath)) {
+        adminCpTargetSubjectPath = cands[0].path;
     }
-
-    selectEl.innerHTML = candidates.map(s => {
-        let iconObj = typeof getSmartIcon === 'function' ? getSmartIcon(s.label) : null;
-        let iconChar = iconObj ? iconObj.i : '📘';
-        return `<option value="${s.path.replace(/"/g, '&quot;')}" ${s.path === adminCpTargetSubjectPath ? 'selected' : ''}>${iconChar} ${s.label} (${s.path})</option>`;
-    }).join('');
+    sel.innerHTML = cands.map(s => `<option value="${s.path.replace(/"/g, '&quot;')}" ${s.path === adminCpTargetSubjectPath ? 'selected' : ''}>📘 ${s.label} (${s.path})</option>`).join('');
 }
 
 function handleAdminCpTargetSubjChange(subjPath) {
@@ -1477,198 +1333,113 @@ function handleAdminCpTargetSubjChange(subjPath) {
 }
 
 function _buildAdminCpChapterPickSelectors() {
-    const container = document.getElementById('admin-cp-chap-selectors');
-    const pathEl = document.getElementById('admin-cp-chap-path-text');
-    if (!container) return;
-
-    if (!adminCpTargetSubjectPath) {
-        container.innerHTML = `<span style="color:#777; font-size:12px;">Create a Subject folder under ${adminCpSelectedExam} first.</span>`;
-        if (pathEl) pathEl.innerText = 'None';
-        return;
-    }
-
-    let baseParts = adminCpTargetSubjectPath.split(' > ').filter(Boolean);
-
+    const box = document.getElementById('admin-cp-chap-selectors');
+    const txt = document.getElementById('admin-cp-chap-path-text');
+    if (!box || !adminCpTargetSubjectPath) return;
+    const base = adminCpTargetSubjectPath.split(' > ').filter(Boolean);
     let html = '';
     for (let i = 0; i <= adminCpChapterPickPath.length; i++) {
-        let parentSlice = [...baseParts, ...adminCpChapterPickPath.slice(0, i)];
-        let keys = getMergedChildKeysAtPath(parentSlice).filter(k => typeof isCwDifficultyFolder === 'function' ? !isCwDifficultyFolder(k) : true);
-        if (keys.length === 0) break;
-
-        let placeholder = i === 0 ? '-- Select Chapter Folder --' : '-- Stop Here / Select Sub-chapter --';
+        const keys = getMergedChildKeysAtPath([...base, ...adminCpChapterPickPath.slice(0, i)]).filter(k => typeof isCwDifficultyFolder === 'function' ? !isCwDifficultyFolder(k) : true);
+        if (!keys.length) break;
         html += `<select class="input-field" style="flex:1; min-width:160px; margin-bottom:0;" onchange="handleAdminCpChapPickChange(event, ${i})">`;
-        html += `<option value="" ${!adminCpChapterPickPath[i] ? 'selected' : ''}>${placeholder}</option>`;
-
-        keys.forEach(key => {
-            let selected = (adminCpChapterPickPath[i] === key) ? 'selected' : '';
-            html += `<option value="${key.replace(/"/g, '&quot;')}" ${selected}>${key}</option>`;
+        html += `<option value="" ${!adminCpChapterPickPath[i] ? 'selected' : ''}>-- Select Chapter --</option>`;
+        keys.forEach(k => {
+            html += `<option value="${k.replace(/"/g, '&quot;')}" ${adminCpChapterPickPath[i] === k ? 'selected' : ''}>${k}</option>`;
         });
         html += `</select>`;
-
         if (!adminCpChapterPickPath[i]) break;
     }
-
-    let subjShort = baseParts[baseParts.length - 1] || adminCpTargetSubjectPath;
-    container.innerHTML = html || `<span style="color:#f59e0b; font-size:12px;">No chapter subfolders found inside <b>${subjShort}</b> yet.</span>`;
-    if (pathEl) {
-        pathEl.innerText = adminCpChapterPickPath.length > 0
-            ? `${adminCpTargetSubjectPath} > ${adminCpChapterPickPath.join(' > ')}`
-            : 'None';
-    }
+    box.innerHTML = html || `<span style="color:#f59e0b; font-size:12px;">No chapters inside selected subject yet.</span>`;
+    if (txt) txt.innerText = adminCpChapterPickPath.length ? `${adminCpTargetSubjectPath} > ${adminCpChapterPickPath.join(' > ')}` : 'None';
 }
 
 function handleAdminCpChapPickChange(event, depth) {
-    const val = event.target.value;
     adminCpChapterPickPath = adminCpChapterPickPath.slice(0, depth);
-    if (val !== "") adminCpChapterPickPath.push(val);
+    if (event.target.value !== '') adminCpChapterPickPath.push(event.target.value);
     _buildAdminCpChapterPickSelectors();
 }
 
 async function saveAdminCustomPracticeConfig() {
-    await db.collection("settings").doc("custom_practice_config").set(window.customPracticeConfig, { merge: true });
+    await db.collection('settings').doc('custom_practice_config').set(window.customPracticeConfig, { merge: true });
 }
 
-function collectDirectChaptersFromAppData(subjFullPath) {
-    let baseParts = subjFullPath.split(' > ').filter(Boolean);
-    let keys = getMergedChildKeysAtPath(baseParts);
-    let chapters = [];
-    keys.forEach(k => {
-        if (typeof isCwDifficultyFolder === 'function' && isCwDifficultyFolder(k)) return;
-        chapters.push({
-            path: `${subjFullPath} > ${k}`,
-            label: k.replace(/^\d+\.\s*/, '')
-        });
-    });
-    return chapters;
+function collectDirectChaptersFromAppData(subjPath) {
+    const base = subjPath.split(' > ').filter(Boolean);
+    return getMergedChildKeysAtPath(base)
+        .filter(k => typeof isCwDifficultyFolder === 'function' ? !isCwDifficultyFolder(k) : true)
+        .map(k => ({ path: `${subjPath} > ${k}`, label: k.replace(/^\d+\.\s*/, '') }));
 }
 
-async function addSubjectToCustomPractice(includeChapters = false) {
-    if (!adminCpSelectedExam || adminCpSubjectPickPath.length === 0) {
-        showNotification("⚠️ Please select a Subject folder in 2A first.");
-        return;
-    }
-
-    let fullSubjPath = `${adminCpSelectedExam} > ${adminCpSubjectPickPath.join(' > ')}`;
-    let subjLabel = adminCpSubjectPickPath[adminCpSubjectPickPath.length - 1].replace(/^\d+\.\s*/, '');
-
+async function addSubjectToCustomPractice(withChaps = false) {
+    if (!adminCpSelectedExam || !adminCpSubjectPickPath.length) return showNotification('⚠️ Select a Subject folder first.');
+    const full = `${adminCpSelectedExam} > ${adminCpSubjectPickPath.join(' > ')}`;
+    const lbl = adminCpSubjectPickPath[adminCpSubjectPickPath.length - 1].replace(/^\d+\.\s*/, '');
     window.customPracticeConfig.exams = window.customPracticeConfig.exams || {};
-    if (!window.customPracticeConfig.exams[adminCpSelectedExam]) {
-        window.customPracticeConfig.exams[adminCpSelectedExam] = { subjects: [] };
-    }
-
-    let subjects = window.customPracticeConfig.exams[adminCpSelectedExam].subjects;
-    if (subjects.some(s => s.path === fullSubjPath)) {
-        showNotification("⚠️ This Subject is already added for " + adminCpSelectedExam);
-        return;
-    }
-
-    let initialChapters = includeChapters ? collectDirectChaptersFromAppData(fullSubjPath) : [];
-    subjects.push({
-        path: fullSubjPath,
-        label: subjLabel,
-        chapters: initialChapters
-    });
-
-    adminCpTargetSubjectPath = fullSubjPath;
+    window.customPracticeConfig.exams[adminCpSelectedExam] = window.customPracticeConfig.exams[adminCpSelectedExam] || { subjects: [] };
+    const list = window.customPracticeConfig.exams[adminCpSelectedExam].subjects;
+    if (list.some(s => s.path === full)) return showNotification('⚠️ Subject already added.');
+    list.push({ path: full, label: lbl, chapters: withChaps ? collectDirectChaptersFromAppData(full) : [] });
+    adminCpTargetSubjectPath = full;
     await saveAdminCustomPracticeConfig();
-    showNotification(`✅ Subject "${subjLabel}" added to Custom Practice!`);
+    showNotification(`✅ Subject "${lbl}" added!`);
     _syncAdminCpTargetSubjectDropdown();
     _buildAdminCpChapterPickSelectors();
     renderAdminCpConfiguredList();
 }
 
 async function addChapterToCustomPractice() {
-    if (!adminCpSelectedExam || !adminCpTargetSubjectPath) {
-        showNotification("⚠️ Please select a Target Subject first.");
-        return;
-    }
-    if (adminCpChapterPickPath.length === 0) {
-        showNotification("⚠️ Please select an existing Chapter folder to add.");
-        return;
-    }
-
-    let fullChapPath = `${adminCpTargetSubjectPath} > ${adminCpChapterPickPath.join(' > ')}`;
-    let chapLabel = adminCpChapterPickPath[adminCpChapterPickPath.length - 1].replace(/^\d+\.\s*/, '');
-
+    if (!adminCpSelectedExam || !adminCpTargetSubjectPath || !adminCpChapterPickPath.length) return showNotification('⚠️ Select a Subject and Chapter first.');
+    const fullChap = `${adminCpTargetSubjectPath} > ${adminCpChapterPickPath.join(' > ')}`;
+    const lbl = adminCpChapterPickPath[adminCpChapterPickPath.length - 1].replace(/^\d+\.\s*/, '');
     window.customPracticeConfig.exams = window.customPracticeConfig.exams || {};
-    if (!window.customPracticeConfig.exams[adminCpSelectedExam]) {
-        window.customPracticeConfig.exams[adminCpSelectedExam] = { subjects: [] };
+    window.customPracticeConfig.exams[adminCpSelectedExam] = window.customPracticeConfig.exams[adminCpSelectedExam] || { subjects: [] };
+    const list = window.customPracticeConfig.exams[adminCpSelectedExam].subjects;
+    let subj = list.find(s => s.path === adminCpTargetSubjectPath);
+    if (!subj) {
+        subj = { path: adminCpTargetSubjectPath, label: adminCpTargetSubjectPath.split(' > ').pop().replace(/^\d+\.\s*/, ''), chapters: [] };
+        list.push(subj);
     }
-
-    let subjects = window.customPracticeConfig.exams[adminCpSelectedExam].subjects;
-    let subjObj = subjects.find(s => s.path === adminCpTargetSubjectPath);
-
-    if (!subjObj) {
-        let subjLabel = adminCpTargetSubjectPath.split(' > ').pop().replace(/^\d+\.\s*/, '');
-        subjObj = {
-            path: adminCpTargetSubjectPath,
-            label: subjLabel,
-            chapters: []
-        };
-        subjects.push(subjObj);
-    }
-
-    subjObj.chapters = subjObj.chapters || [];
-    if (subjObj.chapters.some(c => c.path === fullChapPath)) {
-        showNotification("⚠️ This Chapter is already added under " + subjObj.label);
-        return;
-    }
-
-    subjObj.chapters.push({
-        path: fullChapPath,
-        label: chapLabel
-    });
-
+    subj.chapters = subj.chapters || [];
+    if (subj.chapters.some(c => c.path === fullChap)) return showNotification('⚠️ Chapter already added.');
+    subj.chapters.push({ path: fullChap, label: lbl });
     await saveAdminCustomPracticeConfig();
-    showNotification(`✅ Chapter "${chapLabel}" added under ${subjObj.label}!`);
+    showNotification(`✅ Chapter "${lbl}" added!`);
     renderAdminCpConfiguredList();
 }
 
 async function addAllChaptersForConfiguredSubject(subjPath) {
-    let subjects = window.customPracticeConfig.exams?.[adminCpSelectedExam]?.subjects || [];
-    let subjObj = subjects.find(s => s.path === subjPath);
-    if (!subjObj) return;
-
-    let foundChaps = collectDirectChaptersFromAppData(subjPath);
-    let existingPaths = new Set((subjObj.chapters || []).map(c => c.path));
-    let added = 0;
-    foundChaps.forEach(ch => {
-        if (!existingPaths.has(ch.path)) {
-            subjObj.chapters.push(ch);
-            added++;
-        }
+    const list = window.customPracticeConfig.exams?.[adminCpSelectedExam]?.subjects || [];
+    const subj = list.find(s => s.path === subjPath);
+    if (!subj) return;
+    const existing = new Set((subj.chapters || []).map(c => c.path));
+    collectDirectChaptersFromAppData(subjPath).forEach(ch => {
+        if (!existing.has(ch.path)) subj.chapters.push(ch);
     });
-
     await saveAdminCustomPracticeConfig();
-    showNotification(`✅ Added ${added} chapter(s) to ${subjObj.label}!`);
+    showNotification('✅ Imported chapters!');
     renderAdminCpConfiguredList();
 }
 
 async function removeSubjectFromCustomPractice(subjPath) {
-    if (!confirm("Remove this Subject and its chapters from Custom Practice?")) return;
-    let subjects = window.customPracticeConfig.exams?.[adminCpSelectedExam]?.subjects || [];
-    window.customPracticeConfig.exams[adminCpSelectedExam].subjects = subjects.filter(s => s.path !== subjPath);
+    if (!confirm('Remove this Subject from Custom Practice?')) return;
+    const list = window.customPracticeConfig.exams?.[adminCpSelectedExam]?.subjects || [];
+    window.customPracticeConfig.exams[adminCpSelectedExam].subjects = list.filter(s => s.path !== subjPath);
     await saveAdminCustomPracticeConfig();
-    showNotification("🗑️ Subject removed from Custom Practice.");
-    _syncAdminCpTargetSubjectDropdown();
-    _buildAdminCpChapterPickSelectors();
     renderAdminCpConfiguredList();
 }
 
 async function removeChapterFromCustomPractice(subjPath, chapPath) {
-    let subjects = window.customPracticeConfig.exams?.[adminCpSelectedExam]?.subjects || [];
-    let subjObj = subjects.find(s => s.path === subjPath);
-    if (!subjObj) return;
-    subjObj.chapters = (subjObj.chapters || []).filter(c => c.path !== chapPath);
+    const subj = (window.customPracticeConfig.exams?.[adminCpSelectedExam]?.subjects || []).find(s => s.path === subjPath);
+    if (!subj) return;
+    subj.chapters = (subj.chapters || []).filter(c => c.path !== chapPath);
     await saveAdminCustomPracticeConfig();
-    showNotification("🗑️ Chapter removed.");
     renderAdminCpConfiguredList();
 }
 
 async function autoImportExamToCustomPractice() {
     if (!adminCpSelectedExam) return;
     if (window.customPracticeConfig.exams) delete window.customPracticeConfig.exams[adminCpSelectedExam];
-    let scanned = typeof buildCwCatalogForExam === 'function' ? buildCwCatalogForExam(adminCpSelectedExam, true) : [];
+    const scanned = typeof buildCwCatalogForExam === 'function' ? buildCwCatalogForExam(adminCpSelectedExam, true) : [];
     window.customPracticeConfig.exams = window.customPracticeConfig.exams || {};
     window.customPracticeConfig.exams[adminCpSelectedExam] = {
         subjects: scanned.map(s => ({
@@ -1678,271 +1449,181 @@ async function autoImportExamToCustomPractice() {
         }))
     };
     await saveAdminCustomPracticeConfig();
-    showNotification(`✅ Imported ${scanned.length} subject(s) for ${adminCpSelectedExam}!`);
+    showNotification(`✅ Imported ${scanned.length} subject(s)!`);
     _syncAdminCpTargetSubjectDropdown();
     _buildAdminCpChapterPickSelectors();
     renderAdminCpConfiguredList();
 }
 
 async function clearExamCustomPracticeConfig() {
-    if (!adminCpSelectedExam) return;
-    if (!confirm(`Delete ALL configured subjects & chapters for ${adminCpSelectedExam} in Custom Practice?`)) return;
+    if (!adminCpSelectedExam || !confirm(`Clear all Custom Practice subjects for ${adminCpSelectedExam}?`)) return;
     window.customPracticeConfig.exams = window.customPracticeConfig.exams || {};
     window.customPracticeConfig.exams[adminCpSelectedExam] = { subjects: [] };
     await saveAdminCustomPracticeConfig();
-    showNotification(`🗑️ Cleared Custom Practice subjects & chapters for ${adminCpSelectedExam}.`);
-    _syncAdminCpTargetSubjectDropdown();
-    _buildAdminCpChapterPickSelectors();
     renderAdminCpConfiguredList();
 }
 
 function renderAdminCpConfiguredList() {
-    const container = document.getElementById('admin-cp-configured-list');
-    if (!container) return;
-
-    let examCfg = window.customPracticeConfig.exams?.[adminCpSelectedExam];
-    if (!examCfg || !Array.isArray(examCfg.subjects) || examCfg.subjects.length === 0) {
-        container.innerHTML = `
-        <div class="admin-panel-card" style="text-align:center; color:#888; padding:30px;">
-            No manual Subjects configured for <b>${adminCpSelectedExam}</b> yet.<br>
-            <span style="font-size:12px;">Use <b>2A</b> or <b>2B</b> above to add existing subjects/chapters manually, or click <b>⚡ Auto-Import Existing Subjects & Chapters</b>.</span>
-        </div>`;
+    const box = document.getElementById('admin-cp-configured-list');
+    if (!box) return;
+    const subjects = window.customPracticeConfig.exams?.[adminCpSelectedExam]?.subjects || [];
+    if (!subjects.length) {
+        box.innerHTML = `<div class="admin-panel-card" style="text-align:center; color:#888; padding:30px;">No manual Subjects configured for <b>${adminCpSelectedExam}</b> yet.</div>`;
         return;
     }
-
-    let usedColors = new Set();
-    container.innerHTML = examCfg.subjects.map((subj, idx) => {
-        let theme = typeof getAutoTopicTheme === 'function' ? getAutoTopicTheme(subj.label, null, idx, usedColors) : { i: '📘', c: '#fdb813' };
-        let safeSubjPath = subj.path.replace(/'/g, "\\'");
-        let chapters = subj.chapters || [];
-
-        let chipsHtml = chapters.length > 0
-            ? chapters.map(ch => {
-                let safeChapPath = ch.path.replace(/'/g, "\\'");
-                let chapIcon = typeof getAutomaticIconForName === 'function' ? getAutomaticIconForName(ch.label) : '📘';
-                return `
-                <div class="admin-chap-chip">
-                    <span>${chapIcon} ${ch.label}</span>
-                    <button title="Remove Chapter" onclick="removeChapterFromCustomPractice('${safeSubjPath}', '${safeChapPath}')">✕</button>
-                </div>`;
-            }).join('')
-            : `<span style="color:#777; font-size:12px;">No specific chapters added yet (uses all questions under ${subj.label}).</span>`;
-
-        return `
-        <div class="admin-panel-card" style="border-left:4px solid ${theme.c}; padding:20px; margin-bottom:16px;">
+    box.innerHTML = subjects.map((s, i) => {
+        const th = typeof getAutoTopicTheme === 'function' ? getAutoTopicTheme(s.label, null, i) : { i: '📘', c: '#fdb813' };
+        const escS = s.path.replace(/'/g, "\\'");
+        const chaps = s.chapters || [];
+        const chips = chaps.length
+            ? chaps.map(c => `<div class="admin-chap-chip"><span>${c.label}</span><button onclick="removeChapterFromCustomPractice('${escS}', '${c.path.replace(/'/g, "\\'")}')">✕</button></div>`).join('')
+            : `<span style="color:#777; font-size:12px;">Uses all questions under ${s.label}.</span>`;
+        return `<div class="admin-panel-card" style="border-left:4px solid ${th.c}; padding:20px; margin-bottom:16px;">
             <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; border-bottom:1px solid #2b2b36; padding-bottom:12px;">
-                <div>
-                    <b style="font-size:17px; color:#fff;">${theme.i} ${subj.label}</b>
-                    <span style="font-size:11px; color:var(--text-muted); margin-left:10px;">(${chapters.length} Chapter${chapters.length === 1 ? '' : 's'})</span>
-                    <div style="font-size:11px; color:#777; margin-top:3px;">Path: ${subj.path}</div>
-                </div>
+                <div><b style="font-size:17px; color:#fff;">${th.i} ${s.label}</b> <span style="font-size:11px; color:#888;">(${chaps.length} Chapters)</span></div>
                 <div style="display:flex; gap:8px;">
-                    <button class="btn-exam" onclick="addAllChaptersForConfiguredSubject('${safeSubjPath}')" style="background:rgba(56,189,248,0.12); color:#38bdf8; border:1px solid rgba(56,189,248,0.35); padding:6px 12px; font-size:11.5px;">+ Import All Sub-Chapters</button>
-                    <button class="btn-exam" onclick="removeSubjectFromCustomPractice('${safeSubjPath}')" style="background:rgba(239,68,68,0.15); color:var(--wrong-red); border:1px solid rgba(239,68,68,0.35); padding:6px 12px; font-size:11.5px;">🗑️ Delete Subject</button>
+                    <button class="btn-exam" onclick="addAllChaptersForConfiguredSubject('${escS}')" style="background:rgba(56,189,248,0.12); color:#38bdf8; border:1px solid rgba(56,189,248,0.35); padding:6px 12px; font-size:11.5px;">+ Import Chapters</button>
+                    <button class="btn-exam" onclick="removeSubjectFromCustomPractice('${escS}')" style="background:rgba(239,68,68,0.15); color:var(--wrong-red); border:1px solid rgba(239,68,68,0.35); padding:6px 12px; font-size:11.5px;">🗑️ Delete</button>
                 </div>
             </div>
-            <div class="admin-chip-list">${chipsHtml}</div>
+            <div class="admin-chip-list">${chips}</div>
         </div>`;
     }).join('');
 }
 
 // ==========================================
-// SMART MULTI-TARGET & BATCH CREATE TOPIC ENGINE
+// MULTI-TARGET CREATE TOPIC & RAPID UPLOAD ENGINE
 // ==========================================
 function _buildAdminNewTopicSelectors() {
-    const container = document.getElementById('dynamic-new-path-selectors'); 
-    if (!container) return;
-    
-    let html = ''; 
+    const box = document.getElementById('dynamic-new-path-selectors');
+    if (!box) return;
+    let html = '';
     for (let i = 0; i <= adminNewTopicPath.length; i++) {
-        let parentSlice = adminNewTopicPath.slice(0, i);
-        let keys = getMergedChildKeysAtPath(parentSlice);
-        if (keys.length === 0) break;
-        
+        const keys = getMergedChildKeysAtPath(adminNewTopicPath.slice(0, i));
+        if (!keys.length) break;
         html += `<select class="input-field" style="flex:1; min-width:160px; margin-bottom:0;" onchange="handleAdminNewTopicPathChange(event, ${i})">`;
         html += `<option value="">-- Stop Here / Select Child --</option>`;
-        
-        keys.forEach(key => { 
-            let selected = (adminNewTopicPath[i] === key) ? 'selected' : '';
-            html += `<option value="${key.replace(/"/g, '&quot;')}" ${selected}>${key}</option>`; 
+        keys.forEach(k => {
+            html += `<option value="${k.replace(/"/g, '&quot;')}" ${adminNewTopicPath[i] === k ? 'selected' : ''}>${k}</option>`;
         });
         html += `</select>`;
-        
         if (!adminNewTopicPath[i]) break;
     }
-    container.innerHTML = html;
-    
+    box.innerHTML = html;
     renderAdminMultiTargetSelector();
     updateAdminDestinationSummaryText();
 }
 
 function renderAdminMultiTargetSelector() {
-    const multiContainer = document.getElementById('admin-multi-target-container');
-    if (!multiContainer) return;
+    const box = document.getElementById('admin-multi-target-container');
+    if (!box) return;
+    const children = getMergedChildKeysAtPath(adminNewTopicPath);
+    adminMultiTargetChildren = adminMultiTargetChildren.filter(c => children.includes(c));
+    if (!children.length) { box.innerHTML = ''; return; }
 
-    let childrenAtLevel = getMergedChildKeysAtPath(adminNewTopicPath);
-    adminMultiTargetChildren = adminMultiTargetChildren.filter(c => childrenAtLevel.includes(c));
-
-    if (childrenAtLevel.length === 0) {
-        multiContainer.innerHTML = '';
-        return;
-    }
-
-    let parentLabel = adminNewTopicPath.length > 0
-        ? adminNewTopicPath[adminNewTopicPath.length - 1].replace(/^\d+\.\s*/, '')
-        : 'Root (Main Menu)';
-
-    let itemsHtml = childrenAtLevel.map((childKey, idx) => {
-        let isChecked = adminMultiTargetChildren.includes(childKey);
-        let safeKey = childKey.replace(/'/g, "\\'");
-        let iconChar = typeof getAutomaticIconForName === 'function' ? getAutomaticIconForName(childKey) : '📁';
-        return `
-        <label class="admin-target-item ${isChecked ? 'checked' : ''}" id="admTargetItem_${idx}">
-            <input type="checkbox" ${isChecked ? 'checked' : ''} onchange="toggleAdminMultiTargetChild('${safeKey}', this.checked, ${idx})">
-            <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${iconChar} ${childKey.replace(/^\d+\.\s*/, '')}</span>
+    const parentName = adminNewTopicPath.length ? adminNewTopicPath[adminNewTopicPath.length - 1].replace(/^\d+\.\s*/, '') : 'Root';
+    const grid = children.map((c, idx) => {
+        const ck = adminMultiTargetChildren.includes(c);
+        const ic = typeof getAutomaticIconForName === 'function' ? getAutomaticIconForName(c) : '📁';
+        return `<label class="admin-target-item ${ck ? 'checked' : ''}" id="admTargetItem_${idx}">
+            <input type="checkbox" ${ck ? 'checked' : ''} onchange="toggleAdminMultiTargetChild('${c.replace(/'/g, "\\'")}', this.checked, ${idx})">
+            <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${ic} ${c.replace(/^\d+\.\s*/, '')}</span>
         </label>`;
     }).join('');
 
-    multiContainer.innerHTML = `
-    <div class="admin-multi-target-box">
+    box.innerHTML = `<div class="admin-multi-target-box">
         <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:6px;">
-            <div>
-                <span style="font-size:12px; font-weight:800; color:#38bdf8; text-transform:uppercase;">🎯 1B. Multi-Target Batch Selector — Inside "${parentLabel}" (Optional)</span>
-                <div style="font-size:11.5px; color:var(--text-muted);">Check multiple folders below to add the same subtopic(s) (like Easy, Medium, Hard) into all of them at once!</div>
-            </div>
+            <span style="font-size:12px; font-weight:800; color:#38bdf8;">🎯 1B. Multi-Target Batch Selector Inside "${parentName}" (Optional)</span>
             <div style="display:flex; gap:8px;">
-                <button type="button" onclick="selectAllAdminMultiTargetChildren(true)" style="background:rgba(56,189,248,0.15); color:#38bdf8; border:1px solid rgba(56,189,248,0.4); border-radius:6px; padding:4px 10px; font-size:11px; font-weight:700; cursor:pointer;">☑️ Select All (${childrenAtLevel.length})</button>
+                <button type="button" onclick="selectAllAdminMultiTargetChildren(true)" style="background:rgba(56,189,248,0.15); color:#38bdf8; border:1px solid rgba(56,189,248,0.4); border-radius:6px; padding:4px 10px; font-size:11px; font-weight:700; cursor:pointer;">☑️ Select All (${children.length})</button>
                 <button type="button" onclick="selectAllAdminMultiTargetChildren(false)" style="background:rgba(255,255,255,0.06); color:#aaa; border:1px solid #333; border-radius:6px; padding:4px 10px; font-size:11px; font-weight:700; cursor:pointer;">Clear</button>
             </div>
         </div>
-        <div class="admin-multi-target-grid">${itemsHtml}</div>
+        <div class="admin-multi-target-grid">${grid}</div>
     </div>`;
 }
 
-function toggleAdminMultiTargetChild(childKey, isChecked, idx) {
-    if (isChecked) {
-        if (!adminMultiTargetChildren.includes(childKey)) adminMultiTargetChildren.push(childKey);
-    } else {
-        adminMultiTargetChildren = adminMultiTargetChildren.filter(c => c !== childKey);
-    }
-    const card = document.getElementById('admTargetItem_' + idx);
-    if (card) card.classList.toggle('checked', isChecked);
+function toggleAdminMultiTargetChild(key, checked, idx) {
+    if (checked && !adminMultiTargetChildren.includes(key)) adminMultiTargetChildren.push(key);
+    else if (!checked) adminMultiTargetChildren = adminMultiTargetChildren.filter(c => c !== key);
+    const el = document.getElementById('admTargetItem_' + idx);
+    if (el) el.classList.toggle('checked', checked);
     updateAdminDestinationSummaryText();
 }
 
-function selectAllAdminMultiTargetChildren(selectAll) {
-    let childrenAtLevel = getMergedChildKeysAtPath(adminNewTopicPath);
-    adminMultiTargetChildren = selectAll ? [...childrenAtLevel] : [];
+function selectAllAdminMultiTargetChildren(all) {
+    adminMultiTargetChildren = all ? [...getMergedChildKeysAtPath(adminNewTopicPath)] : [];
     renderAdminMultiTargetSelector();
     updateAdminDestinationSummaryText();
 }
 
 function updateAdminDestinationSummaryText() {
-    let pathTextSpan = document.getElementById('new-topic-path-text');
-    if (!pathTextSpan) return;
-    let baseStr = adminNewTopicPath.length > 0 ? adminNewTopicPath.join(' > ') : 'Root (Main Menu)';
-    if (adminMultiTargetChildren.length === 0) {
-        pathTextSpan.innerHTML = `<span style="color:#fff;">${baseStr}</span>`;
-    } else {
-        pathTextSpan.innerHTML = `<span style="color:#38bdf8; font-weight:800;">${adminMultiTargetChildren.length} Selected Folders under ${baseStr}</span> <span style="color:#aaa; font-size:12px;">(${adminMultiTargetChildren.slice(0, 4).map(c => c.replace(/^\d+\.\s*/, '')).join(', ')}${adminMultiTargetChildren.length > 4 ? '...' : ''})</span>`;
-    }
+    const el = document.getElementById('new-topic-path-text');
+    if (!el) return;
+    const base = adminNewTopicPath.length ? adminNewTopicPath.join(' > ') : 'Root (Main Menu)';
+    el.innerHTML = adminMultiTargetChildren.length
+        ? `<span style="color:#38bdf8; font-weight:800;">${adminMultiTargetChildren.length} Selected Folders under ${base}</span>`
+        : `<span style="color:#fff;">${base}</span>`;
 }
 
 function handleAdminNewTopicPathChange(event, depth) {
-    const val = event.target.value;
-    if (val === "") {
-        adminNewTopicPath = adminNewTopicPath.slice(0, depth);
-    } else {
-        adminNewTopicPath = adminNewTopicPath.slice(0, depth);
-        adminNewTopicPath.push(val);
-    }
+    adminNewTopicPath = adminNewTopicPath.slice(0, depth);
+    if (event.target.value !== '') adminNewTopicPath.push(event.target.value);
     adminMultiTargetChildren = [];
-    _buildAdminNewTopicSelectors(); 
+    _buildAdminNewTopicSelectors();
 }
-        
+
 async function createCustomTopic() {
-    const folderNameInput = document.getElementById('newFolderName');
-    const rawFolderNames = folderNameInput ? folderNameInput.value.trim() : "";
-    const folderNamesList = parseFolderNamesList(rawFolderNames);
+    const input = document.getElementById('newFolderName');
+    const names = parseFolderNamesList(input ? input.value.trim() : '');
+    if (!names.length) return showNotification('⚠️ Enter at least one folder name.');
 
-    if (folderNamesList.length === 0) {
-        showNotification("⚠️ Please enter at least one folder name.");
-        return;
-    }
-
-    const folderType = document.getElementById('newFolderType').value;
-    const manualIcon = document.getElementById('newFolderIcon') ? document.getElementById('newFolderIcon').value.trim() : "";
-    const autoAddDiffInside = document.getElementById('autoAddDiffInsideToggle') ? document.getElementById('autoAddDiffInsideToggle').checked : false;
-
+    const fType = document.getElementById('newFolderType').value;
+    const customIc = document.getElementById('newFolderIcon')?.value.trim() || '';
+    const autoDiff = document.getElementById('autoAddDiffInsideToggle')?.checked || false;
     const btn = document.getElementById('createFolderBtn');
-    if (btn) { btn.innerText = "Creating Folder(s)..."; btn.disabled = true; }
+    if (btn) { btn.innerText = 'Creating...'; btn.disabled = true; }
 
     try {
-        let basePath = adminNewTopicPath.length > 0 ? adminNewTopicPath.join(' > ') : "";
-        let targetParentPaths = [];
+        const base = adminNewTopicPath.join(' > ');
+        const parents = adminMultiTargetChildren.length
+            ? adminMultiTargetChildren.map(c => base ? `${base} > ${c}` : c)
+            : [base];
 
-        if (adminMultiTargetChildren.length > 0) {
-            targetParentPaths = adminMultiTargetChildren.map(child => basePath ? `${basePath} > ${child}` : child);
-        } else {
-            targetParentPaths = [basePath];
-        }
+        const queue = [];
+        const restorePaths = [];
 
-        let docsToCreate = [];
-        let unDeletePaths = [];
+        parents.forEach(pStr => {
+            names.forEach(n => {
+                const full = pStr ? `${pStr} > ${n}` : n;
+                restorePaths.push(full);
+                const effType = autoDiff ? 'both' : fType;
+                const ic = customIc || (typeof getAutomaticIconForName === 'function' ? getAutomaticIconForName(n, effType) : '📘');
+                if (!doesTopicPathExist(full)) queue.push({ parentPath: pStr, name: n, type: effType, icon: ic });
 
-        targetParentPaths.forEach(parentPathStr => {
-            folderNamesList.forEach(fName => {
-                let fullKey = parentPathStr ? `${parentPathStr} > ${fName}` : fName;
-                unDeletePaths.push(fullKey);
-
-                let effectiveType = autoAddDiffInside ? 'both' : folderType;
-                let assignedIcon = manualIcon || (typeof getAutomaticIconForName === 'function' ? getAutomaticIconForName(fName, effectiveType) : "📘");
-
-                if (!doesTopicPathExist(fullKey)) {
-                    docsToCreate.push({
-                        parentPath: parentPathStr,
-                        name: fName,
-                        type: effectiveType,
-                        icon: assignedIcon
-                    });
-                }
-
-                // If "Auto-create Easy, Medium, Hard, Mixed inside each new folder" is checked:
-                if (autoAddDiffInside) {
-                    ["Easy", "Medium", "Hard", "Mixed"].forEach(diffName => {
-                        let diffFullKey = `${fullKey} > ${diffName}`;
-                        unDeletePaths.push(diffFullKey);
-                        if (!doesTopicPathExist(diffFullKey)) {
-                            let diffIcon = typeof getAutomaticIconForName === 'function' ? getAutomaticIconForName(diffName, 'mcq') : "📝";
-                            docsToCreate.push({
-                                parentPath: fullKey,
-                                name: diffName,
-                                type: 'mcq',
-                                icon: diffIcon
-                            });
+                if (autoDiff) {
+                    ['Easy', 'Medium', 'Hard', 'Mixed'].forEach(d => {
+                        const df = `${full} > ${d}`;
+                        restorePaths.push(df);
+                        if (!doesTopicPathExist(df)) {
+                            const dic = typeof getAutomaticIconForName === 'function' ? getAutomaticIconForName(d, 'mcq') : '📝';
+                            queue.push({ parentPath: full, name: d, type: 'mcq', icon: dic });
                         }
                     });
                 }
             });
         });
 
-        // Un-delete any paths that were previously in topicOverrides.deletedPaths
         if (topicOverrides && Array.isArray(topicOverrides.deletedPaths)) {
-            let unDelSet = new Set(unDeletePaths);
-            let prevLen = topicOverrides.deletedPaths.length;
-            topicOverrides.deletedPaths = topicOverrides.deletedPaths.filter(p => !unDelSet.has(p));
-            if (topicOverrides.deletedPaths.length !== prevLen) {
-                await db.collection("settings").doc("topic_overrides").set(topicOverrides, { merge: true });
-            }
+            const rSet = new Set(restorePaths);
+            topicOverrides.deletedPaths = topicOverrides.deletedPaths.filter(p => !rSet.has(p));
+            await db.collection('settings').doc('topic_overrides').set(topicOverrides, { merge: true });
         }
 
-        // Commit in Firestore batches of up to 400 docs
-        for (let i = 0; i < docsToCreate.length; i += 400) {
-            let chunk = docsToCreate.slice(i, i + 400);
-            let batch = db.batch();
-            chunk.forEach(item => {
-                let ref = db.collection("custom_topics").doc();
-                batch.set(ref, {
+        for (let i = 0; i < queue.length; i += 400) {
+            const batch = db.batch();
+            queue.slice(i, i + 400).forEach(item => {
+                batch.set(db.collection('custom_topics').doc(), {
                     ...item,
                     timestamp: firebase.firestore.FieldValue.serverTimestamp()
                 });
@@ -1950,398 +1631,450 @@ async function createCustomTopic() {
             await batch.commit();
         }
 
-        if (docsToCreate.length === 0) {
-            showNotification("ℹ️ All specified folder(s) already exist at the selected path(s)!");
-        } else {
-            showNotification(`✅ Created ${docsToCreate.length} folder(s) across ${targetParentPaths.length} target path(s)!`);
-        }
-
-        if (folderNameInput) folderNameInput.value = "";
-        if (document.getElementById('newFolderIcon')) document.getElementById('newFolderIcon').value = "";
-        if (document.getElementById('autoAddDiffInsideToggle')) document.getElementById('autoAddDiffInsideToggle').checked = false;
+        showNotification(`✅ Created ${queue.length} folder(s)!`);
+        if (input) input.value = '';
         adminMultiTargetChildren = [];
-
         await loadCustomTopics();
         _buildAdminNewTopicSelectors();
         updateLiveAutoIconPreview();
-    } catch(error) {
-        showNotification("❌ Error creating folder: " + error.message);
+    } catch (e) {
+        showNotification('❌ Error: ' + e.message);
     }
-    if (btn) { btn.innerText = "+ Create Folder(s)"; btn.disabled = false; }
+    if (btn) { btn.innerText = '+ Create Folder(s)'; btn.disabled = false; }
 }
 
 function _buildAdminSelectors() {
-    const container = document.getElementById('dynamic-path-selectors'); if(!container) return;
+    const box = document.getElementById('dynamic-path-selectors');
+    if (!box) return;
     let html = '';
     for (let i = 0; i <= adminSelectedPath.length; i++) {
-        let parentSlice = adminSelectedPath.slice(0, i);
-        let keys = getMergedChildKeysAtPath(parentSlice);
-        if (keys.length === 0) break;
-
+        const keys = getMergedChildKeysAtPath(adminSelectedPath.slice(0, i));
+        if (!keys.length) break;
         html += `<select class="input-field" style="flex:1; min-width:160px; margin-bottom:0;" onchange="handleAdminPathChange(event, ${i})"><option value="" ${!adminSelectedPath[i] ? 'selected' : ''}>-- Upload Here / Select Child --</option>`;
-        keys.forEach(key => {
-            html += `<option value="${key.replace(/"/g, '&quot;')}" ${adminSelectedPath[i] === key ? 'selected' : ''}>${key}</option>`;
+        keys.forEach(k => {
+            html += `<option value="${k.replace(/"/g, '&quot;')}" ${adminSelectedPath[i] === k ? 'selected' : ''}>${k}</option>`;
         });
         html += `</select>`;
         if (!adminSelectedPath[i]) break;
     }
-    container.innerHTML = html;
-    const formArea = document.getElementById('upload-form-area'); if(formArea) formArea.style.display = (adminSelectedPath.length > 0) ? 'block' : 'none';
-    
-    let uploadTextSpan = document.getElementById('upload-path-text');
-    if (uploadTextSpan) {
-        uploadTextSpan.innerText = adminSelectedPath.length > 0 ? adminSelectedPath.join(' > ') : 'Please select a destination above';
+    box.innerHTML = html;
+
+    const area = document.getElementById('upload-form-area');
+    if (area) area.style.display = adminSelectedPath.length ? 'block' : 'none';
+
+    const fullStr = adminSelectedPath.join(' > ');
+    const txt = document.getElementById('upload-path-text');
+    if (txt) txt.innerText = fullStr || 'Please select a destination above';
+
+    // Smart Auto-Switch to PDF Format when selecting NCERT Book, PYQs, or PDF folders
+    const typeSel = document.getElementById('admResourceType');
+    if (typeSel && fullStr) {
+        const lower = fullStr.toLowerCase();
+        const metaType = customTopicTypes[fullStr]?.type;
+        if (metaType === 'pdf' || lower.includes('ncert book') || lower.includes('pyq') || lower.includes('pdf')) {
+            typeSel.value = 'pdf';
+        } else {
+            typeSel.value = 'mcq';
+        }
+        toggleAdminFormType();
     }
 }
 
-function handleAdminPathChange(event, depth) { 
-    if (event.target.value === "") adminSelectedPath = adminSelectedPath.slice(0, depth);
-    else { adminSelectedPath = adminSelectedPath.slice(0, depth); adminSelectedPath.push(event.target.value); }
-    _buildAdminSelectors(); 
+function handleAdminPathChange(event, depth) {
+    adminSelectedPath = adminSelectedPath.slice(0, depth);
+    if (event.target.value !== '') adminSelectedPath.push(event.target.value);
+    _buildAdminSelectors();
 }
 
 // ==========================================
-// MANAGE CONTENT TAB
+// MANAGE CONTENT, CLOUDINARY & PDF UPLOADER
 // ==========================================
 function _buildManageSelectors() {
-    const container = document.getElementById('manage-path-selectors'); if(!container) return;
+    const box = document.getElementById('manage-path-selectors');
+    if (!box) return;
     let html = '';
     for (let i = 0; i <= adminManageSelectedPath.length; i++) {
-        let parentSlice = adminManageSelectedPath.slice(0, i);
-        let keys = getMergedChildKeysAtPath(parentSlice);
-        if (keys.length === 0) break;
-
+        const keys = getMergedChildKeysAtPath(adminManageSelectedPath.slice(0, i));
+        if (!keys.length) break;
         html += `<select class="input-field" style="flex:1; min-width:160px; margin-bottom:0;" onchange="handleManagePathChange(event, ${i})"><option value="" ${!adminManageSelectedPath[i] ? 'selected' : ''}>-- All Folders --</option>`;
-        keys.forEach(key => {
-            html += `<option value="${key.replace(/"/g, '&quot;')}" ${adminManageSelectedPath[i] === key ? 'selected' : ''}>${key}</option>`;
+        keys.forEach(k => {
+            html += `<option value="${k.replace(/"/g, '&quot;')}" ${adminManageSelectedPath[i] === k ? 'selected' : ''}>${k}</option>`;
         });
         html += `</select>`;
         if (!adminManageSelectedPath[i]) break;
     }
-    container.innerHTML = html;
+    box.innerHTML = html;
 }
 
 function handleManagePathChange(event, depth) {
-    if(event.target.value === "") adminManageSelectedPath = adminManageSelectedPath.slice(0, depth);
-    else { adminManageSelectedPath = adminManageSelectedPath.slice(0, depth); adminManageSelectedPath.push(event.target.value); }
+    adminManageSelectedPath = adminManageSelectedPath.slice(0, depth);
+    if (event.target.value !== '') adminManageSelectedPath.push(event.target.value);
     _buildManageSelectors();
 }
 
 async function uploadFileToCloudinary(file) {
-    const formData = new FormData(); formData.append('file', file); formData.append('upload_preset', CLOUDINARY_PRESET);
-    const response = await fetch(CLOUDINARY_URL, { method: 'POST', body: formData });
-    const data = await response.json();
-    if (!response.ok) throw new Error(data.error?.message || 'File upload failed');
+    const fd = new FormData();
+    fd.append('file', file);
+    fd.append('upload_preset', CLOUDINARY_PRESET);
+    const res = await fetch(CLOUDINARY_URL, { method: 'POST', body: fd });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error?.message || 'File upload failed');
     return data.secure_url;
 }
 
 async function processAdminUpload() {
-    const type = document.getElementById('admResourceType').value; 
-    const targetPathString = adminSelectedPath.join(' > '); 
-    const btn = document.getElementById('uploadBtn'); 
-    btn.innerText = "Uploading... Please wait"; btn.disabled = true;
+    const type = document.getElementById('admResourceType').value;
+    const targetPath = adminSelectedPath.join(' > ');
+    const btn = document.getElementById('uploadBtn');
+    btn.innerText = 'Uploading... Please wait';
+    btn.disabled = true;
 
     try {
         if (type === 'mcq') {
             const question = document.getElementById('admQuestion').value.trim();
-            const options = { A: document.getElementById('admOptA').value.trim(), B: document.getElementById('admOptB').value.trim(), C: document.getElementById('admOptC').value.trim(), D: document.getElementById('admOptD').value.trim() };
-            const correctCbs = document.querySelectorAll('.admCorrectCb:checked'); let correctAnswers = Array.from(correctCbs).map(cb => cb.value);
-            const explanation = document.getElementById('admExplanation').value.trim(); const imageFile = document.getElementById('admQImage').files[0];
+            const options = {
+                A: document.getElementById('admOptA').value.trim(),
+                B: document.getElementById('admOptB').value.trim(),
+                C: document.getElementById('admOptC').value.trim(),
+                D: document.getElementById('admOptD').value.trim()
+            };
+            const correctAnswers = Array.from(document.querySelectorAll('.admCorrectCb:checked')).map(cb => cb.value);
+            const explanation = document.getElementById('admExplanation').value.trim();
+            const imgFile = document.getElementById('admQImage').files[0];
             let level = document.getElementById('admDifficulty').value;
 
-            // Smart Auto-Difficulty Detection: If uploading into an Easy/Medium/Hard folder, auto-sync the difficulty level!
-            let leafFolder = (adminSelectedPath[adminSelectedPath.length - 1] || "").replace(/^\d+\.\s*/, '').trim();
-            if (["Easy", "Medium", "Hard", "Mixed"].includes(leafFolder) && level === "Mixed") {
-                level = leafFolder;
+            const leaf = (adminSelectedPath[adminSelectedPath.length - 1] || '').replace(/^\d+\.\s*/, '').trim();
+            if (['Easy', 'Medium', 'Hard', 'Mixed'].includes(leaf) && level === 'Mixed') level = leaf;
+
+            if (!question || !options.A || !options.B || !correctAnswers.length) {
+                throw new Error('Question, Option A, Option B, and Correct Answer are required.');
             }
+            const imageUrl = imgFile ? await uploadFileToCloudinary(imgFile) : null;
 
-            if (!question || !options.A || !options.B || correctAnswers.length === 0) throw new Error("Question, Option A, Option B, and Correct Answer are required.");
-            let imageUrl = null; if (imageFile) imageUrl = await uploadFileToCloudinary(imageFile); 
-            
-            let randomKey = Math.random();
-
-            await db.collection("content").add({ 
-                type: 'mcq', 
-                path: targetPathString, 
-                level: level, 
-                question: question, 
-                options: options, 
-                correctAnswers: correctAnswers, 
-                explanation: explanation, 
-                imageUrl: imageUrl, 
-                randomKey: randomKey,
-                timestamp: firebase.firestore.FieldValue.serverTimestamp() 
+            await db.collection('content').add({
+                type: 'mcq',
+                path: targetPath,
+                level,
+                question,
+                options,
+                correctAnswers,
+                explanation,
+                imageUrl,
+                randomKey: Math.random(),
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
             });
             clearAdminUploadForm(true);
-        } else if (type === 'pdf') {
-            const title = document.getElementById('admPdfTitle').value.trim(); const file = document.getElementById('admPdfFile').files[0];
-            if (!title || !file) throw new Error("Title and File are required for Study Materials.");
-            const fileUrl = await uploadFileToCloudinary(file);
-            await db.collection("content").add({ type: 'material', path: targetPathString, title: title, fileUrl: fileUrl, timestamp: firebase.firestore.FieldValue.serverTimestamp() });
-            document.getElementById('admPdfTitle').value = ""; document.getElementById('admPdfFile').value = "";
+            showNotification('✅ MCQ Uploaded Successfully!');
+        } else {
+            const customTitle = document.getElementById('admPdfTitle').value.trim();
+            const files = document.getElementById('admPdfFile').files;
+            const directUrl = document.getElementById('admPdfDirectUrl')?.value.trim() || '';
+
+            if ((!files || files.length === 0) && !directUrl) {
+                throw new Error('Please select at least one PDF/Image file OR paste a direct link.');
+            }
+
+            if (files && files.length > 0) {
+                for (let i = 0; i < files.length; i++) {
+                    const f = files[i];
+                    btn.innerText = `Uploading file ${i + 1} of ${files.length}...`;
+                    const uploadedUrl = await uploadFileToCloudinary(f);
+                    const docTitle = (files.length === 1 && customTitle) ? customTitle : f.name.replace(/\.[^/.]+$/, '');
+                    await db.collection('content').add({
+                        type: 'material',
+                        path: targetPath,
+                        title: docTitle,
+                        fileUrl: uploadedUrl,
+                        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                }
+            } else if (directUrl) {
+                const docTitle = customTitle || 'Study Material PDF';
+                await db.collection('content').add({
+                    type: 'material',
+                    path: targetPath,
+                    title: docTitle,
+                    fileUrl: directUrl,
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                });
+            }
+
+            // If this leaf folder has no subfolders, mark its type as 'pdf' so native views recognize it immediately
+            if (getMergedChildKeysAtPath(adminSelectedPath).length === 0) {
+                topicOverrides.editedPaths = topicOverrides.editedPaths || {};
+                topicOverrides.editedPaths[targetPath] = {
+                    ...(topicOverrides.editedPaths[targetPath] || {}),
+                    displayName: adminSelectedPath[adminSelectedPath.length - 1],
+                    type: 'pdf'
+                };
+                customTopicTypes[targetPath] = { ...(customTopicTypes[targetPath] || {}), type: 'pdf' };
+                await db.collection('settings').doc('topic_overrides').set(topicOverrides, { merge: true });
+            }
+
+            clearAdminUploadForm(true);
+            showNotification('✅ PDF Material Uploaded & Live!');
         }
-        showNotification("✅ Upload Successful!");
-    } catch(error) { alert("⚠️ ERROR: " + error.message); }
-    btn.innerText = "☁️ Upload & Save"; btn.disabled = false;
+    } catch (err) {
+        alert('⚠️ ERROR: ' + err.message);
+    }
+    btn.innerText = '☁️ Upload & Save';
+    btn.disabled = false;
 }
 
 let loadedItemsCache = {};
 async function loadContentForManagement(isNextPage = false) {
     if (isFetchingManageContent) return;
-    const listEl = document.getElementById('manage-content-list'); 
+    const listEl = document.getElementById('manage-content-list');
     if (!listEl) return;
 
     if (!isNextPage) {
-        listEl.innerHTML = `<p style="color:var(--primary-yellow); padding: 20px; text-align: center;">Fetching items from database...</p>`;
+        listEl.innerHTML = `<p style="color:var(--primary-yellow); padding:20px; text-align:center;">Fetching items...</p>`;
         loadedItemsCache = {};
         lastManageDoc = null;
-    } else {
-        const loadMoreBtn = document.getElementById('btn-load-more-manage');
-        if (loadMoreBtn) { loadMoreBtn.innerText = "Loading more..."; loadMoreBtn.disabled = true; }
     }
     isFetchingManageContent = true;
 
     try {
-        let query = db.collection("content");
-        if (adminManageSelectedPath.length > 0) { 
-            const prefixPath = adminManageSelectedPath.join(' > '); 
-            query = query.where("path", ">=", prefixPath).where("path", "<=", prefixPath + "\uf8ff"); 
-        } else { 
-            query = query.orderBy("timestamp", "desc"); 
+        let q = db.collection('content');
+        if (adminManageSelectedPath.length > 0) {
+            const p = adminManageSelectedPath.join(' > ');
+            q = q.where('path', '>=', p).where('path', '<=', p + '\uf8ff');
+        } else {
+            q = q.orderBy('timestamp', 'desc');
         }
+        if (isNextPage && lastManageDoc) q = q.startAfter(lastManageDoc);
+        const snap = await q.limit(30).get();
 
-        if (isNextPage && lastManageDoc) {
-            query = query.startAfter(lastManageDoc);
-        }
-
-        query = query.limit(20);
-        const snapshot = await query.get();
-
-        if (snapshot.empty) {
-            if (!isNextPage) {
-                listEl.innerHTML = `<p style="color:var(--text-muted); text-align: center; padding: 40px; border: 1px dashed #333; border-radius: 12px;">No items found in this folder.</p>`;
-            } else {
-                const loadMoreBtn = document.getElementById('btn-load-more-manage');
-                if (loadMoreBtn) { loadMoreBtn.innerText = "No more items to load"; loadMoreBtn.disabled = true; }
-            }
+        if (snap.empty) {
+            if (!isNextPage) listEl.innerHTML = `<p style="color:#888; text-align:center; padding:40px; border:1px dashed #333; border-radius:12px;">No items found in this folder.</p>`;
             isFetchingManageContent = false;
             return;
         }
-
-        lastManageDoc = snapshot.docs[snapshot.docs.length - 1];
+        lastManageDoc = snap.docs[snap.docs.length - 1];
 
         let html = '';
-        snapshot.forEach(doc => {
-            const data = doc.data(); 
-            loadedItemsCache[doc.id] = data;
-            if (data.type === 'mcq' || !data.type) {
-                let answersStr = (data.correctAnswers || []).join(', ');
-                let lvlBadge = data.level ? `<span style="margin-left:10px; background:#444; color:white; padding:3px 8px; border-radius:6px; font-size:11px; text-transform:uppercase;">${data.level}</span>` : '';
-                html += `<div class="content-item-card" id="item_${doc.id}" style="background:#1c1c24; border:1px solid #2b2b36; border-radius:12px; padding:20px; margin-bottom:15px;"><div class="content-item-header" style="display:flex; justify-content:space-between; margin-bottom:15px; border-bottom: 1px solid #333; padding-bottom: 12px; flex-wrap:wrap; gap:8px;"><div><span class="badge-path">${data.path || 'Uncategorized'}</span>${lvlBadge}</div><div style="display:flex; gap:10px;"><button class="btn-exam" onclick="openEditModal('${doc.id}')" style="padding:6px 12px; font-size:13px; background:rgba(33, 150, 243, 0.15); color:#2196F3; border:1px solid rgba(33,150,243,0.3);">✏️ Edit</button><button class="btn-exam" onclick="deleteContentItem('${doc.id}')" style="padding:6px 12px; font-size:13px; background:rgba(244, 67, 54, 0.15); color:var(--wrong-red); border:1px solid rgba(244,67,54,0.3);">🗑️ Delete</button></div></div><div style="font-weight:bold; margin-bottom:12px; font-size: 15px;">${data.question}</div>${data.imageUrl ? `<img src="${data.imageUrl}" style="max-height:100px; border-radius:6px; margin-bottom:12px; display:block;">` : ''}<div style="font-size:13px; color:var(--text-muted); line-height:1.6; background: #131318; padding: 12px; border-radius: 8px;"><b>A:</b> ${data.options?.A || '-'}<br><b>B:</b> ${data.options?.B || '-'}<br><b>C:</b> ${data.options?.C || '-'}<br><b>D:</b> ${data.options?.D || '-'}</div><div style="margin-top:12px; font-size:14px; color:var(--correct-green); font-weight: bold;">✅ Correct: ${answersStr}</div></div>`;
+        snap.forEach(doc => {
+            const d = doc.data();
+            loadedItemsCache[doc.id] = d;
+            const isPdf = d.type === 'material' || d.type === 'pdf' || Boolean(d.fileUrl);
+            if (adminManageContentTypeFilter === 'mcq' && isPdf) return;
+            if (adminManageContentTypeFilter === 'material' && !isPdf) return;
+
+            if (!isPdf) {
+                const ans = (d.correctAnswers || []).join(', ');
+                html += `<div class="content-item-card" id="item_${doc.id}" style="background:#1c1c24; border:1px solid #2b2b36; border-radius:12px; padding:20px; margin-bottom:15px;">
+                    <div style="display:flex; justify-content:space-between; margin-bottom:12px; border-bottom:1px solid #333; padding-bottom:10px; flex-wrap:wrap; gap:8px;">
+                        <span class="badge-path">${d.path || 'Uncategorized'}</span>
+                        <div style="display:flex; gap:10px;">
+                            <button class="btn-exam" onclick="openEditModal('${doc.id}')" style="padding:6px 12px; font-size:13px; background:rgba(33,150,243,0.15); color:#38bdf8; border:1px solid rgba(33,150,243,0.3);">✏️ Edit</button>
+                            <button class="btn-exam" onclick="deleteContentItem('${doc.id}')" style="padding:6px 12px; font-size:13px; background:rgba(244,67,54,0.15); color:var(--wrong-red); border:1px solid rgba(244,67,54,0.3);">🗑️ Delete</button>
+                        </div>
+                    </div>
+                    <div style="font-weight:bold; margin-bottom:10px;">${d.question}</div>
+                    <div style="font-size:13px; color:var(--correct-green); font-weight:bold;">✅ Correct: ${ans}</div>
+                </div>`;
             } else {
-                html += `<div class="content-item-card" id="item_${doc.id}" style="background:#1c1c24; border:1px solid #2b2b36; border-radius:12px; padding:20px; margin-bottom:15px;"><div class="content-item-header" style="display:flex; justify-content:space-between; margin-bottom:15px; border-bottom: 1px solid #333; padding-bottom: 12px;"><span class="badge-path">${data.path || 'Uncategorized'}</span><button class="btn-exam" onclick="deleteContentItem('${doc.id}')" style="padding:6px 12px; font-size:13px; background:rgba(244, 67, 54, 0.15); color:var(--wrong-red); border:1px solid rgba(244,67,54,0.3);">🗑️ Delete</button></div><div style="font-weight:bold; margin-bottom:10px; font-size: 16px;">📄 ${data.title}</div><a href="${data.fileUrl}" target="_blank" style="color:var(--primary-yellow); font-size:14px; text-decoration: none; font-weight: bold;">View Document &rarr;</a></div>`;
+                html += `<div class="content-item-card" id="item_${doc.id}" style="background:#1c1c24; border:1px solid rgba(253,184,19,0.4); border-left:4px solid #fdb813; border-radius:12px; padding:20px; margin-bottom:15px;">
+                    <div style="display:flex; justify-content:space-between; margin-bottom:12px; border-bottom:1px solid #333; padding-bottom:10px; flex-wrap:wrap; gap:8px;">
+                        <span class="badge-path">${d.path || 'Uncategorized'}</span>
+                        <div style="display:flex; gap:10px;">
+                            <button class="btn-exam" onclick="promptEditPdfMaterial('${doc.id}')" style="padding:6px 12px; font-size:13px; background:rgba(33,150,243,0.15); color:#38bdf8; border:1px solid rgba(33,150,243,0.3);">✏️ Rename / Edit Link</button>
+                            <button class="btn-exam" onclick="deleteContentItem('${doc.id}')" style="padding:6px 12px; font-size:13px; background:rgba(244,67,54,0.15); color:var(--wrong-red); border:1px solid rgba(244,67,54,0.3);">🗑️ Delete</button>
+                        </div>
+                    </div>
+                    <div style="font-weight:bold; margin-bottom:10px; font-size:16px; color:#fff;">📄 ${d.title || 'Study Material'}</div>
+                    <a href="${d.fileUrl}" target="_blank" style="color:var(--primary-yellow); font-size:13.5px; font-weight:bold; text-decoration:none;">📖 Open PDF / File &rarr;</a>
+                </div>`;
             }
         });
 
-        const oldLoadBtn = document.getElementById('load-more-manage-container');
-        if (oldLoadBtn) oldLoadBtn.remove();
-
-        const loadMoreHtml = snapshot.docs.length >= 20 ? `
-            <div id="load-more-manage-container" style="text-align:center; margin-top:25px; margin-bottom:15px;">
-                <button id="btn-load-more-manage" class="btn-exam" onclick="loadContentForManagement(true)" style="background:#2a2a35; border:1px solid #444; padding: 12px 30px; font-size:15px;">📄 Load More Items</button>
-            </div>` : '';
-
-        if (!isNextPage) {
-            let titleMsg = adminManageSelectedPath.length > 0 ? `<p style="color:white; font-size:14px; margin-bottom:15px; padding-left: 5px;">Showing results for: <b>${adminManageSelectedPath.join(' > ')}</b></p>` : `<p style="color:white; font-size:14px; margin-bottom:15px; padding-left: 5px;">Showing recent uploads:</p>`;
-            listEl.innerHTML = titleMsg + `<div id="manage-items-list-body">${html}</div>` + loadMoreHtml;
-        } else {
-            document.getElementById('manage-items-list-body').insertAdjacentHTML('beforeend', html);
-            listEl.insertAdjacentHTML('beforeend', loadMoreHtml);
-        }
-    } catch(e) { listEl.innerHTML = `<p style="color:var(--wrong-red); padding: 20px;">Error loading items: ${e.message}</p>`; }
+        listEl.innerHTML = html || `<p style="color:#888; text-align:center; padding:30px;">No matching items in this view.</p>`;
+    } catch (e) {
+        listEl.innerHTML = `<p style="color:var(--wrong-red); padding:20px;">Error: ${e.message}</p>`;
+    }
     isFetchingManageContent = false;
 }
 
-async function runRandomKeyMigration() {
-    if(!confirm("This will scan un-indexed MCQs in the database and assign a randomKey so the quiz engine can perform random selections at scale. Proceed?")) return;
-    const btn = document.getElementById('btnMigrateKeys');
-    if (btn) { btn.innerText = "Indexing in progress..."; btn.disabled = true; }
+async function promptEditPdfMaterial(docId) {
+    const d = loadedItemsCache[docId];
+    if (!d) return;
+    const newTitle = prompt('Edit Document Title:', d.title || '');
+    if (newTitle === null) return;
+    const newUrl = prompt('Edit Document URL:', d.fileUrl || '');
+    if (newUrl === null) return;
     try {
-        let snap = await db.collection("content").limit(400).get();
-        let batch = db.batch();
+        await db.collection('content').doc(docId).update({
+            title: newTitle.trim() || d.title,
+            fileUrl: newUrl.trim() || d.fileUrl
+        });
+        showNotification('✅ PDF Material updated!');
+        loadContentForManagement(false);
+    } catch (e) {
+        showNotification('❌ Failed: ' + e.message);
+    }
+}
+
+async function runRandomKeyMigration() {
+    if (!confirm('Index MCQs with randomKey for fast selection?')) return;
+    const btn = document.getElementById('btnMigrateKeys');
+    if (btn) { btn.innerText = 'Indexing...'; btn.disabled = true; }
+    try {
+        const snap = await db.collection('content').limit(400).get();
+        const batch = db.batch();
         let count = 0;
         snap.forEach(doc => {
-            let d = doc.data();
-            if ((!d.type || d.type === "mcq") && d.randomKey === undefined) {
+            const d = doc.data();
+            if ((!d.type || d.type === 'mcq') && d.randomKey === undefined) {
                 batch.update(doc.ref, { randomKey: Math.random() });
                 count++;
             }
         });
-        if (count > 0) {
-            await batch.commit();
-            showNotification(`✅ Successfully indexed ${count} MCQs with random keys!`);
-        } else {
-            showNotification("✅ All scanned MCQs are already indexed!");
-        }
-    } catch(e) {
-        showNotification("❌ Migration error: " + e.message);
+        if (count > 0) await batch.commit();
+        showNotification(`✅ Indexed ${count} MCQs!`);
+    } catch (e) {
+        showNotification('❌ Error: ' + e.message);
     }
-    if (btn) { btn.innerText = "Run Index Migration"; btn.disabled = false; }
+    if (btn) { btn.innerText = 'Run Index Migration'; btn.disabled = false; }
 }
 
 async function deleteContentItem(docId) {
-    if(!confirm("Are you sure you want to permanently delete this item?")) return;
+    if (!confirm('Permanently delete this item?')) return;
     try {
-        await db.collection("content").doc(docId).delete();
-        const el = document.getElementById("item_" + docId);
-        if (el) el.remove();
-        showNotification("🗑️ Item deleted successfully!");
-    } catch(e) { showNotification("❌ Delete failed: " + e.message); }
+        await db.collection('content').doc(docId).delete();
+        document.getElementById('item_' + docId)?.remove();
+        showNotification('🗑️ Deleted!');
+    } catch (e) {
+        showNotification('❌ Error: ' + e.message);
+    }
 }
 
 function openEditModal(docId) {
-    const data = loadedItemsCache[docId]; if(!data) return;
-    document.getElementById('editDocId').value = docId; document.getElementById('editQuestion').value = data.question || '';
-    document.getElementById('editOptA').value = data.options?.A || ''; document.getElementById('editOptB').value = data.options?.B || '';
-    document.getElementById('editOptC').value = data.options?.C || ''; document.getElementById('editOptD').value = data.options?.D || '';
-    document.getElementById('editExplanation').value = data.explanation || '';
-    if(data.level) document.getElementById('editDifficulty').value = data.level; else document.getElementById('editDifficulty').value = 'Mixed';
-    const correct = data.correctAnswers || [];
-    document.querySelectorAll('.editCorrectCb').forEach(cb => { cb.checked = correct.includes(cb.value); });
+    const d = loadedItemsCache[docId];
+    if (!d) return;
+    document.getElementById('editDocId').value = docId;
+    document.getElementById('editQuestion').value = d.question || '';
+    document.getElementById('editOptA').value = d.options?.A || '';
+    document.getElementById('editOptB').value = d.options?.B || '';
+    document.getElementById('editOptC').value = d.options?.C || '';
+    document.getElementById('editOptD').value = d.options?.D || '';
+    document.getElementById('editExplanation').value = d.explanation || '';
+    document.getElementById('editDifficulty').value = d.level || 'Mixed';
+    const corr = d.correctAnswers || [];
+    document.querySelectorAll('.editCorrectCb').forEach(cb => { cb.checked = corr.includes(cb.value); });
     document.getElementById('editModal').style.display = 'flex';
 }
 
-function closeEditModal() { document.getElementById('editModal').style.display = 'none'; }
+function closeEditModal() {
+    document.getElementById('editModal').style.display = 'none';
+}
 
 async function saveEditedMCQ() {
     const docId = document.getElementById('editDocId').value;
     const question = document.getElementById('editQuestion').value.trim();
-    const options = { A: document.getElementById('editOptA').value.trim(), B: document.getElementById('editOptB').value.trim(), C: document.getElementById('editOptC').value.trim(), D: document.getElementById('editOptD').value.trim() };
+    const options = {
+        A: document.getElementById('editOptA').value.trim(),
+        B: document.getElementById('editOptB').value.trim(),
+        C: document.getElementById('editOptC').value.trim(),
+        D: document.getElementById('editOptD').value.trim()
+    };
     const correctAnswers = Array.from(document.querySelectorAll('.editCorrectCb:checked')).map(cb => cb.value);
     const explanation = document.getElementById('editExplanation').value.trim();
     const level = document.getElementById('editDifficulty').value;
+    if (!question || !options.A || !options.B || !correctAnswers.length) return alert('Fill required fields.');
 
-    if(!question || !options.A || !options.B || correctAnswers.length === 0) { alert("Question, Options A/B, and Correct Answer required."); return; }
-    try {
-        let updatePayload = { question: question, options: options, correctAnswers: correctAnswers, explanation: explanation, level: level };
-        if (loadedItemsCache[docId] && loadedItemsCache[docId].randomKey === undefined) {
-            updatePayload.randomKey = Math.random();
-        }
-        await db.collection("content").doc(docId).update(updatePayload);
-        closeEditModal(); showNotification("✅ Changes saved!");
-        if (adminCurrentTab === 'manage') loadContentForManagement(false);
-    } catch(e) { showNotification("❌ Update failed: " + e.message); }
+    await db.collection('content').doc(docId).update({ question, options, correctAnswers, explanation, level });
+    closeEditModal();
+    showNotification('✅ Saved!');
+    if (adminCurrentTab === 'manage') loadContentForManagement(false);
 }
 
 async function changeAdminPassword() {
-    const p1 = document.getElementById('newAdminPass').value; const p2 = document.getElementById('confirmAdminPass').value;
-    if(p1.length < 6) { showNotification("⚠️ Password must be at least 6 characters."); return; }
-    if(p1 !== p2) { showNotification("❌ Passwords do not match!"); return; }
-    try { await db.collection("settings").doc("admin_auth").set({ password: p1 }); document.getElementById('newAdminPass').value = ""; document.getElementById('confirmAdminPass').value = ""; showNotification("✅ Password changed successfully!"); } 
-    catch(e) { showNotification("❌ Error updating password: " + e.message); }
+    const p1 = document.getElementById('newAdminPass').value;
+    const p2 = document.getElementById('confirmAdminPass').value;
+    if (p1.length < 6 || p1 !== p2) return showNotification('⚠️ Check password requirements.');
+    await db.collection('settings').doc('admin_auth').set({ password: p1 });
+    showNotification('✅ Password updated!');
 }
 
 async function loadAdminReports() {
-    const container = document.getElementById('reports-list-container');
-    if (!container) return;
-    container.innerHTML = `<p style="color:var(--primary-yellow); padding: 20px;">Fetching reported mistakes...</p>`;
+    const box = document.getElementById('reports-list-container');
+    if (!box) return;
+    box.innerHTML = `<p style="color:var(--primary-yellow); padding:20px;">Loading reports...</p>`;
     try {
-        const snapshot = await db.collection("reported_mistakes").orderBy("timestamp", "desc").limit(50).get();
-        let items = [];
-        snapshot.forEach(doc => items.push({ id: doc.id, ...doc.data() }));
-
-        if(items.length === 0) { container.innerHTML = "<div class='admin-panel-card'><p style='color:var(--correct-green); text-align:center; font-size: 16px;'>✅ No mistakes reported! Everything is clean.</p></div>"; return; }
-        
+        const snap = await db.collection('reported_mistakes').orderBy('timestamp', 'desc').limit(50).get();
+        if (snap.empty) { box.innerHTML = `<div class="admin-panel-card"><p style="color:var(--correct-green); text-align:center;">✅ No mistakes reported!</p></div>`; return; }
         let html = '';
-        items.forEach(data => {
-            let stat = data.status === 'resolved' ? `<span style="background:rgba(76, 175, 80, 0.15); color:#4CAF50; border: 1px solid rgba(76,175,80,0.3); padding:4px 10px; border-radius:12px; font-size:12px; font-weight:bold;">✅ Resolved</span>` : `<span style="background:rgba(255, 255, 255, 0.1); color:white; border: 1px solid rgba(255,255,255,0.2); padding:4px 10px; border-radius:12px; font-size:12px; font-weight:bold;">⏳ Pending</span>`;
-            html += `<div class="admin-panel-card" style="border-left: 4px solid var(--wrong-red); padding: 20px;"><div class="content-item-header" style="border-bottom: 1px solid #2b2b36; padding-bottom: 12px; margin-bottom: 15px;"><span class="badge-path">${data.path || 'Unknown Path'}</span><span style="font-size:12px; color:var(--text-muted); float:right;">${data.timestamp ? new Date(data.timestamp.toMillis()).toLocaleString() : ""}</span></div><div style="margin: 10px 0; padding: 15px; background: rgba(244, 67, 54, 0.05); border: 1px solid rgba(244,67,54,0.2); border-radius: 8px; display:flex; justify-content:space-between; align-items: flex-start;"><div><p style="color:var(--wrong-red); margin:0 0 8px 0; font-size: 15px;"><b>Issue:</b> ${data.reason || 'Reported Issue'}</p><p style="margin:0; font-size:14px; color: #ccc;"><b>Details:</b> ${data.description || 'No description provided.'}</p></div><div>${stat}</div></div><p style="margin:12px 0; font-size:13px; color:var(--primary-yellow);"><b>Reported by:</b> ${data.studentName || 'Student'}</p><div style="background:#131318; padding:15px; border-radius:8px; font-size:14px; margin:15px 0; border: 1px solid #2b2b36;"><b>Question Content:</b><br><br>${data.questionText || ''}</div><div style="display:flex; gap:12px; flex-wrap:wrap; margin-top: 20px;"><button onclick="openEditModalFromReport('${data.questionId}')" style="padding:10px 16px; background:rgba(33, 150, 243, 0.15); border:1px solid rgba(33,150,243,0.3); border-radius:8px; color:#2196F3; cursor:pointer; font-weight:bold;">✏️ Edit MCQ in Database</button><button onclick="resolveReport('${data.id}')" style="padding:10px 16px; background:rgba(76, 175, 80, 0.15); border:1px solid rgba(76,175,80,0.3); border-radius:8px; color:var(--correct-green); cursor:pointer; font-weight:bold;" ${data.status==='resolved'?'disabled style="opacity:0.5; cursor:not-allowed;"':''}>✅ Mark Resolved (Notifies User)</button></div></div>`;
+        snap.forEach(doc => {
+            const d = doc.data();
+            html += `<div class="admin-panel-card" style="border-left:4px solid var(--wrong-red); padding:20px;">
+                <span class="badge-path">${d.path || 'Unknown'}</span>
+                <p style="color:var(--wrong-red); font-weight:bold;">Issue: ${d.reason || 'Reported'}</p>
+                <p style="color:#ccc; font-size:13.5px;">${d.description || ''}</p>
+                <div style="background:#131318; padding:12px; border-radius:8px; margin:10px 0;">${d.questionText || ''}</div>
+                <div style="display:flex; gap:10px;">
+                    <button class="btn-exam" onclick="openEditModalFromReport('${d.questionId}')" style="background:rgba(33,150,243,0.15); color:#38bdf8; padding:8px 14px;">✏️ Edit MCQ</button>
+                    <button class="btn-exam" onclick="resolveReport('${doc.id}')" style="background:rgba(76,175,80,0.15); color:var(--correct-green); padding:8px 14px;" ${d.status === 'resolved' ? 'disabled' : ''}>✅ Resolve</button>
+                </div>
+            </div>`;
         });
-        container.innerHTML = html;
-    } catch(e) { container.innerHTML = `<p style="color:red; padding: 20px;">Error: ${e.message}</p>`; }
+        box.innerHTML = html;
+    } catch (e) { box.innerHTML = `<p style="color:red;">${e.message}</p>`; }
 }
 
-async function resolveReport(reportDocId) {
-    if(confirm("Mark this report as resolved? The student will be notified.")) { 
-        await db.collection("reported_mistakes").doc(reportDocId).update({status: 'resolved', seenByStudent: false}); 
-        loadAdminReports(); showNotification("✅ Report marked as resolved."); 
-    }
+async function resolveReport(id) {
+    await db.collection('reported_mistakes').doc(id).update({ status: 'resolved', seenByStudent: false });
+    loadAdminReports();
+    showNotification('✅ Resolved!');
 }
 
-async function openEditModalFromReport(questionId) {
-    try {
-        let doc = await db.collection("content").doc(questionId).get();
-        if (doc.exists) { loadedItemsCache[questionId] = doc.data(); openEditModal(questionId); } 
-        else { showNotification("❌ This question no longer exists in the database."); }
-    } catch (e) { showNotification("❌ Error fetching question: " + e.message); }
+async function openEditModalFromReport(qId) {
+    const doc = await db.collection('content').doc(qId).get();
+    if (doc.exists) { loadedItemsCache[qId] = doc.data(); openEditModal(qId); }
+    else showNotification('❌ Question not found.');
 }
 
 async function loadAdminUsers() {
-    const container = document.getElementById('users-table-container'); 
-    if (!container) return;
-    container.innerHTML = `<p style="color:var(--primary-yellow); padding: 20px;">Fetching students and feedback...</p>`;
-    try {
-        let feedbacks = {};
-        try {
-            const feedbackSnap = await db.collection("platform_feedback").limit(100).get();
-            feedbackSnap.forEach(doc => {
-                let d = doc.data();
-                let uid = d.studentId || d.userId || doc.id;
-                if (uid) feedbacks[uid] = { rating: d.rating, feedback: d.feedback || d.text || '-' };
-            });
-        } catch (fbErr) {}
-
-        const snapshot = await db.collection("users").orderBy("lastLogin", "desc").limit(100).get();
-        let html = `<table style="width:100%; text-align:left; border-collapse: collapse;">
-            <tr style="background: #131318; border-bottom: 1px solid #2b2b36;">
-                <th style="padding: 15px;">Name</th>
-                <th style="padding: 15px;">Email</th>
-                <th style="padding: 15px;">Last Login</th>
-                <th style="padding: 15px;">Rating</th>
-                <th style="padding: 15px;">Feedback</th>
-            </tr>`;
-            
-        snapshot.forEach(doc => { 
-            let d = doc.data();
-            let uid = doc.id;
-            let ratingVal = d.rating || feedbacks[uid]?.rating || '-';
-            let feedbackVal = d.feedback || feedbacks[uid]?.feedback || '-';
-            let stars = ratingVal !== '-' ? '⭐'.repeat(Number(ratingVal) || 0) : '-';
-            html += `<tr style="border-bottom: 1px solid #2b2b36;">
-                <td style="padding: 15px; font-weight:bold;">${d.displayName || 'Unknown'}</td>
-                <td style="padding: 15px; color:#aaa;">${d.email || '-'}</td>
-                <td style="padding: 15px; color:#aaa; font-size: 13px;">${d.lastLogin ? d.lastLogin.toDate().toLocaleString() : "Unknown"}</td>
-                <td style="padding: 15px; color:var(--primary-yellow);">${stars}</td>
-                <td style="padding: 15px; max-width:250px; font-size:13px; color:var(--text-muted); line-height:1.4;">${feedbackVal}</td>
-            </tr>`; 
-        });
-        container.innerHTML = html + `</table>`;
-    } catch(e) { container.innerHTML = `<p style="color:red; padding: 20px;">Error: ${e.message}</p>`; }
+    const box = document.getElementById('users-table-container');
+    if (!box) return;
+    const snap = await db.collection('users').orderBy('lastLogin', 'desc').limit(100).get();
+    let rows = `<table style="width:100%; text-align:left; border-collapse:collapse;"><tr style="background:#131318; border-bottom:1px solid #2b2b36;"><th style="padding:14px;">Name</th><th style="padding:14px;">Email</th><th style="padding:14px;">Last Login</th></tr>`;
+    snap.forEach(doc => {
+        const d = doc.data();
+        rows += `<tr style="border-bottom:1px solid #2b2b36;"><td style="padding:14px; font-weight:bold;">${d.displayName || 'User'}</td><td style="padding:14px; color:#aaa;">${d.email || '-'}</td><td style="padding:14px; color:#aaa; font-size:12.5px;">${d.lastLogin ? d.lastLogin.toDate().toLocaleString() : '-'}</td></tr>`;
+    });
+    box.innerHTML = rows + `</table>`;
 }
 
 async function loadAdminDoubts() {
-    const container = document.getElementById('doubts-list-container');
-    if (!container) return;
-    container.innerHTML = `<p style="color:var(--primary-yellow); padding: 20px;">Fetching doubts...</p>`;
-    try {
-        const snapshot = await db.collection("flagged_doubts").orderBy("timestamp", "desc").limit(50).get();
-        let items = [];
-        snapshot.forEach(doc => items.push({ id: doc.id, ...doc.data() }));
-
-        if(items.length === 0) { container.innerHTML = "<div class='admin-panel-card'><p style='color:var(--correct-green); text-align:center;'>✅ No flagged questions found!</p></div>"; return; }
-        
-        let html = '';
-        items.forEach(data => { 
-            let stat = data.status === 'resolved' ? `<span style="background:rgba(76, 175, 80, 0.15); color:#4CAF50; border: 1px solid rgba(76,175,80,0.3); padding:4px 10px; border-radius:12px; font-size:12px; font-weight:bold;">✅ Reviewed</span>` : `<span style="background:rgba(255, 255, 255, 0.1); color:white; border: 1px solid rgba(255,255,255,0.2); padding:4px 10px; border-radius:12px; font-size:12px; font-weight:bold;">⏳ Pending</span>`;
-            html += `<div class="admin-panel-card" style="padding: 20px;"><div class="content-item-header" style="border-bottom: 1px solid #2b2b36; padding-bottom: 12px; margin-bottom: 15px;"><span class="badge-path">${data.path || 'General'}</span><span style="font-size:12px; color:var(--text-muted); float:right;">${data.timestamp ? new Date(data.timestamp.toMillis()).toLocaleString() : ""}</span></div><div style="display:flex; justify-content:space-between; margin-top:10px;"><p style="color:var(--primary-yellow); margin:5px 0; font-size: 15px;"><b>Flagged by:</b> ${data.studentName || 'Student'}</p>${stat}</div><div style="background:#131318; border: 1px solid #2b2b36; padding:15px; border-radius:8px; font-size:14px; margin:15px 0; line-height: 1.5;">${data.questionText || ''}</div><div style="display:flex; gap:12px; flex-wrap:wrap;"><button onclick="openEditModalFromReport('${data.questionId}')" style="margin-top:10px; padding:10px 16px; background:rgba(33, 150, 243, 0.15); border:1px solid rgba(33,150,243,0.3); border-radius:8px; color:#2196F3; cursor:pointer; font-weight:bold;">✏️ Edit Question</button><button onclick="resolveDoubt('${data.id}')" style="margin-top:10px; padding:10px 16px; background:rgba(76, 175, 80, 0.15); border:1px solid rgba(76,175,80,0.3); border-radius:8px; color:var(--correct-green); cursor:pointer; font-weight: bold;" ${data.status==='resolved'?'disabled style="opacity:0.5; cursor:not-allowed;"':''}>✅ Mark Reviewed</button></div></div>`; 
-        });
-        container.innerHTML = html;
-    } catch(e) { container.innerHTML = `<p style="color:red; padding: 20px;">Error: ${e.message}</p>`; }
+    const box = document.getElementById('doubts-list-container');
+    if (!box) return;
+    const snap = await db.collection('flagged_doubts').orderBy('timestamp', 'desc').limit(50).get();
+    if (snap.empty) { box.innerHTML = `<div class="admin-panel-card"><p style="color:var(--correct-green); text-align:center;">✅ No flagged doubts!</p></div>`; return; }
+    let html = '';
+    snap.forEach(doc => {
+        const d = doc.data();
+        html += `<div class="admin-panel-card" style="padding:20px;">
+            <span class="badge-path">${d.path || 'General'}</span>
+            <p style="color:var(--primary-yellow);"><b>Student:</b> ${d.studentName || 'Student'}</p>
+            <div style="background:#131318; padding:12px; border-radius:8px; margin:10px 0;">${d.questionText || ''}</div>
+            <button class="btn-exam" onclick="resolveDoubt('${doc.id}')" style="background:rgba(76,175,80,0.15); color:var(--correct-green); padding:8px 14px;" ${d.status === 'resolved' ? 'disabled' : ''}>✅ Mark Reviewed</button>
+        </div>`;
+    });
+    box.innerHTML = html;
 }
 
-async function resolveDoubt(docId) { 
-    if(confirm("Mark this doubt as reviewed? Student will be notified.")) { 
-        await db.collection("flagged_doubts").doc(docId).update({status: 'resolved', seenByStudent: false}); 
-        loadAdminDoubts(); 
-    } 
+async function resolveDoubt(id) {
+    await db.collection('flagged_doubts').doc(id).update({ status: 'resolved', seenByStudent: false });
+    loadAdminDoubts();
+}
+
+// ==========================================
+// AUTOMATIC LIVE PDF DISPLAY PATCH (Fixes NCERT Book & PYQ PDF visibility on Website & App)
+// ==========================================
+if (typeof ensureUploadedPdfsVisible === 'function') {
+    window.addEventListener('hashchange', () => {
+        if (window.location.hash.startsWith('#/path/') && Array.isArray(currentPath) && currentPath.length > 0) {
+            setTimeout(() => ensureUploadedPdfsVisible(currentPath), 120);
+        }
+    });
 }
