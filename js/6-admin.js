@@ -8,6 +8,9 @@ let adminSelectedPath = [];
 let adminManageSelectedPath = [];
 let adminManageContentTypeFilter = 'ALL'; // 'ALL' | 'mcq' | 'material'
 
+// Folder Split Mode: 'LINE' (Default: keeps commas inside single topic names like "Art, Culture & Heritage") | 'COMMA'
+let adminFolderSplitMode = 'LINE';
+
 // State for Edit / Delete Topics Filter & Bulk Actions
 let adminTopicFilterPath = [];
 let adminTopicScopeFilter = 'ALL'; // 'ALL' | 'MAIN' | 'SUB'
@@ -27,6 +30,21 @@ let adminCpChapterPickPath = [];
 let lastManageDoc = null;
 let isFetchingManageContent = false;
 
+// Patch STUDY_ICON_RULES so "Art", "Art, Culture & Heritage", and "Art, Heritage & Culture" get 🎭 instead of 🏥
+(function patchArtAndCultureIconRule() {
+    if (typeof STUDY_ICON_RULES === 'undefined' || !Array.isArray(STUDY_ICON_RULES)) return;
+    STUDY_ICON_RULES.forEach(rule => {
+        if (rule.i === "🏥" && Array.isArray(rule.keys)) {
+            rule.keys = rule.keys.map(k => k === "art" ? "assisted reproductive technology" : k);
+        }
+        if (rule.i === "🎭" && Array.isArray(rule.keys)) {
+            ["art", "culture", "heritage", "art culture", "art heritage", "culture heritage"].forEach(k => {
+                if (!rule.keys.includes(k)) rule.keys.unshift(k);
+            });
+        }
+    });
+})();
+
 const adminStyles = `
 <style>
     .admin-nav-pills {
@@ -45,7 +63,7 @@ const adminStyles = `
 
     .admin-pill { background: #1c1c24; border: 1px solid #2b2b36; color: #9e9ea7; padding: 10px 18px; border-radius: 30px; cursor: pointer; white-space: nowrap; font-size: 13.5px; font-weight: 600; transition: all 0.2s ease; display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
     .admin-pill:hover { background: #252530; color: #fff; border-color: #444; }
-    .admin-pill.active { background: rgba(253, 184, 19, 0.15); border-color: #fdb813; color: #fdb813; box-shadow: 0 0 12px rgba(253,184,19,0.2); }
+    .admin-pill.active { background: rgba(253, 184, 19, 0.15); border: 1px solid #fdb813; color: #fdb813; box-shadow: 0 0 12px rgba(253,184,19,0.2); }
     
     .admin-panel-card { background: #17171e; border: 1px solid #2b2b36; border-radius: 16px; padding: 25px; margin-bottom: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
     .admin-section-header { font-size: 18px; color: #fff; margin-top: 0; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #2b2b36; padding-bottom: 15px; font-weight: 600; }
@@ -62,6 +80,10 @@ const adminStyles = `
     .admin-preset-bar { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
     .admin-preset-chip { background: rgba(253, 184, 19, 0.1); border: 1px solid rgba(253, 184, 19, 0.35); color: #fdb813; padding: 6px 12px; border-radius: 20px; font-size: 11.5px; font-weight: 700; cursor: pointer; transition: 0.2s; display: inline-flex; align-items: center; gap: 5px; }
     .admin-preset-chip:hover { background: rgba(253, 184, 19, 0.22); transform: translateY(-1px); box-shadow: 0 2px 10px rgba(253,184,19,0.2); }
+
+    .admin-split-mode-toggle { display: inline-flex; background: #111420; border: 1px solid #2b354f; border-radius: 8px; padding: 3px; gap: 4px; }
+    .admin-split-mode-btn { border: none; background: transparent; color: #94a3b8; padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 700; cursor: pointer; transition: 0.15s; }
+    .admin-split-mode-btn.active { background: rgba(253, 184, 19, 0.2); color: #fdb813; border: 1px solid rgba(253, 184, 19, 0.45); }
 
     .admin-multi-target-box { background: #111420; border: 1px solid #2b354f; border-radius: 12px; padding: 14px 16px; margin-top: 14px; margin-bottom: 18px; }
     .admin-multi-target-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px; max-height: 210px; overflow-y: auto; padding-top: 8px; }
@@ -129,9 +151,39 @@ function logoutAdmin() {
     goHome();
 }
 
+function setAdminFolderSplitMode(mode) {
+    adminFolderSplitMode = (mode === 'COMMA') ? 'COMMA' : 'LINE';
+    const btnLine = document.getElementById('splitModeBtnLine');
+    const btnComma = document.getElementById('splitModeBtnComma');
+    const tipEl = document.getElementById('folderSplitModeTip');
+    if (btnLine) btnLine.classList.toggle('active', adminFolderSplitMode === 'LINE');
+    if (btnComma) btnComma.classList.toggle('active', adminFolderSplitMode === 'COMMA');
+    if (tipEl) {
+        tipEl.innerText = adminFolderSplitMode === 'LINE'
+            ? '*Commas stay inside your topic name (e.g. "Art, Culture & Heritage" stays 1 folder). Press Enter (new line) or use ; to add multiple folders!'
+            : '*Comma Batch Mode: Splits on commas, while still keeping "X, Y & Z" titles (like "Art, Culture & Heritage") together!';
+    }
+    updateLiveAutoIconPreview();
+}
+
+// Smart Folder Name Parser: Never splits "Art, Culture & Heritage" or "X, Y & Z" titles into separate folders!
 function parseFolderNamesList(rawInput) {
     if (!rawInput) return [];
-    return rawInput.split(/[\n,]+/).map(s => s.trim()).filter(Boolean);
+    let lines = rawInput.split(/[\r\n;]+/).map(s => s.trim()).filter(Boolean);
+    if (adminFolderSplitMode !== 'COMMA') {
+        return lines;
+    }
+
+    let finalNames = [];
+    lines.forEach(line => {
+        // Protect compound titles like "Art, Culture & Heritage" or "Alcohols, Phenols and Ethers"
+        if (/,\s*[^,]+(?:\s+and\s+|\s*&\s*)/i.test(line)) {
+            finalNames.push(line);
+        } else {
+            line.split(',').map(s => s.trim()).filter(Boolean).forEach(part => finalNames.push(part));
+        }
+    });
+    return finalNames;
 }
 
 function updateLiveAutoIconPreview() {
@@ -149,8 +201,9 @@ function updateLiveAutoIconPreview() {
 
     let sampleName = namesArr[0] || "New Study Topic";
     let fallbackIcon = folderType === 'pdf' ? '📄' : (folderType === 'mcq' ? '📝' : '📘');
+    let parentCtx = adminNewTopicPath.join(' > ');
     let theme = typeof getAutoTopicTheme === 'function'
-        ? getAutoTopicTheme(sampleName, manualEmoji || null, 0, null, fallbackIcon)
+        ? getAutoTopicTheme(sampleName, manualEmoji || null, 0, null, fallbackIcon, null, parentCtx)
         : { i: manualEmoji || fallbackIcon, c: '#fdb813', bg: 'rgba(253,184,19,0.16)', border: 'rgba(253,184,19,0.6)', glow: 'rgba(253,184,19,0.28)' };
 
     previewBox.style.background = theme.bg;
@@ -163,10 +216,14 @@ function updateLiveAutoIconPreview() {
         if (namesArr.length === 0) {
             previewText.innerHTML = `<span style="color:#aaa;">Type folder name(s) or click a preset chip — icons & colors assign automatically!</span>`;
         } else if (namesArr.length === 1) {
-            previewText.innerHTML = `<b style="color:${theme.c};">${theme.i} ${namesArr[0].replace(/^\d+\.\s*/, '')}</b> <span style="color:#888; font-size:11px;">(Auto-assigned)</span>`;
+            previewText.innerHTML = `<b style="color:${theme.c};">${theme.i} ${namesArr[0].replace(/^\d+\.\s*/, '')}</b> <span style="color:#888; font-size:11px;">(1 Folder • Auto-assigned)</span>`;
         } else {
+            let usedIcons = new Set();
+            let usedColors = new Set();
             let previewChips = namesArr.slice(0, 6).map((n, idx) => {
-                let t = typeof getAutoTopicTheme === 'function' ? getAutoTopicTheme(n, manualEmoji || null, idx, null, fallbackIcon) : theme;
+                let t = typeof getAutoTopicTheme === 'function'
+                    ? getAutoTopicTheme(n, manualEmoji || null, idx, usedColors, fallbackIcon, usedIcons, parentCtx)
+                    : theme;
                 return `<span style="display:inline-flex; align-items:center; gap:4px; background:${t.bg}; color:${t.c}; border:1px solid ${t.border}; padding:2px 8px; border-radius:6px; font-size:11.5px; font-weight:700; margin:2px;">${t.i} ${n.replace(/^\d+\.\s*/, '')}</span>`;
             }).join('');
             let extra = namesArr.length > 6 ? `<span style="font-size:11px; color:#aaa; margin-left:4px;">+${namesArr.length - 6} more</span>` : '';
@@ -181,30 +238,30 @@ function applyFolderPreset(presetType) {
     if (!nameInput) return;
 
     if (presetType === 'DIFF_4') {
-        nameInput.value = "Easy, Medium, Hard, Mixed";
+        nameInput.value = ["Easy", "Medium", "Hard", "Mixed"].join('\n');
         if (typeSelect) typeSelect.value = "mcq";
     } else if (presetType === 'DIFF_3') {
-        nameInput.value = "Easy, Medium, Hard";
+        nameInput.value = ["Easy", "Medium", "Hard"].join('\n');
         if (typeSelect) typeSelect.value = "mcq";
     } else if (presetType === 'NEET_SUBJ') {
-        nameInput.value = "Botany, Zoology, Physics, Organic Chemistry, Physical Chemistry, Inorganic Chemistry";
+        nameInput.value = ["Botany", "Zoology", "Physics", "Organic Chemistry", "Physical Chemistry", "Inorganic Chemistry"].join('\n');
         if (typeSelect) typeSelect.value = "both";
     } else if (presetType === 'JEE_SUBJ') {
-        nameInput.value = "Physics, Mathematics, Organic Chemistry, Physical Chemistry, Inorganic Chemistry";
+        nameInput.value = ["Physics", "Mathematics", "Organic Chemistry", "Physical Chemistry", "Inorganic Chemistry"].join('\n');
         if (typeSelect) typeSelect.value = "both";
     } else if (presetType === 'EXAM_SECTIONS') {
-        nameInput.value = "NCERT Book, PYQs, Practice Paper, MCQs Practice, Mock Test";
+        nameInput.value = ["NCERT Book", "PYQs", "Practice Paper", "MCQs Practice", "Mock Test"].join('\n');
         if (typeSelect) typeSelect.value = "both";
     } else if (presetType === 'AUTO_NUM') {
         let list = parseFolderNamesList(nameInput.value);
         if (list.length === 0) {
-            showNotification("⚠️ Type or paste folder names separated by commas first.");
+            showNotification("⚠️ Type or paste folder names (one per line) first.");
             return;
         }
         nameInput.value = list.map((name, i) => {
             let clean = name.replace(/^\d+\.\s*/, '');
             return `${String(i + 1).padStart(2, '0')}. ${clean}`;
-        }).join(', ');
+        }).join('\n');
     }
     updateLiveAutoIconPreview();
 }
@@ -351,7 +408,6 @@ async function _renderAdminPanel() {
                             <textarea id="admExplanation" class="input-field" style="min-height: 80px;" placeholder="Explain why the answer is correct..."></textarea>
                         </div>
                         
-                        <!-- UPGRADED PDF / STUDY MATERIAL UPLOAD FORM (Supports Multi-File Upload + Direct URL / Drive Link) -->
                         <div id="admin-pdf-form" style="display:none;">
                             <div style="background:rgba(56,189,248,0.08); border:1px solid rgba(56,189,248,0.3); border-radius:10px; padding:12px 15px; margin-bottom:18px; font-size:12.5px; color:#cbd5e1;">
                                 💡 <b>Smart PDF Uploader:</b> Upload one or multiple PDF/Image files from your device, <b>OR</b> paste a direct PDF / Google Drive link below. Uploaded PDFs appear immediately inside this folder on both Website & App!
@@ -388,7 +444,7 @@ async function _renderAdminPanel() {
                     <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; border-bottom: 1px solid rgba(253, 184, 19, 0.2); padding-bottom: 15px; margin-bottom: 20px;">
                         <div>
                             <h3 style="color:var(--primary-yellow); margin:0; font-size:18px; display:flex; align-items:center; gap:10px;">📁 Smart Batch Topic & Subtopic Creator</h3>
-                            <span style="font-size:12px; color:var(--text-muted);">Create single or multiple folders across one or many chapters/topics in a single click.</span>
+                            <span style="font-size:12px; color:var(--text-muted);">Create single topics (even with commas like "Art, Culture & Heritage") or multiple folders in a single click.</span>
                         </div>
                         <button class="btn-exam" onclick="switchAdminTab('edit-topics')" style="background:#1c1c24; border:1px solid var(--primary-yellow); color:var(--primary-yellow); padding:7px 14px; font-size:12px;">🗂️ Manage Existing Topics &rarr;</button>
                     </div>
@@ -403,7 +459,13 @@ async function _renderAdminPanel() {
                     
                     <div class="admin-grid-2">
                         <div>
-                            <label class="admin-label">2. Folder Name(s) — Comma or Line Separated for Batch Creation</label>
+                            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px; margin-bottom:8px;">
+                                <label class="admin-label" style="margin-bottom:0;">2. Folder Name(s)</label>
+                                <div class="admin-split-mode-toggle">
+                                    <button type="button" id="splitModeBtnLine" class="admin-split-mode-btn ${adminFolderSplitMode === 'LINE' ? 'active' : ''}" onclick="setAdminFolderSplitMode('LINE')">↵ 1 Topic Per Line (Commas Kept)</button>
+                                    <button type="button" id="splitModeBtnComma" class="admin-split-mode-btn ${adminFolderSplitMode === 'COMMA' ? 'active' : ''}" onclick="setAdminFolderSplitMode('COMMA')">➗ Split by Comma</button>
+                                </div>
+                            </div>
                             <div class="admin-preset-bar">
                                 <button type="button" class="admin-preset-chip" onclick="applyFolderPreset('DIFF_4')">🟢🟡🔴⚡ + Difficulty Set (4)</button>
                                 <button type="button" class="admin-preset-chip" onclick="applyFolderPreset('DIFF_3')">🟢🟡🔴 + Easy/Med/Hard</button>
@@ -412,8 +474,8 @@ async function _renderAdminPanel() {
                                 <button type="button" class="admin-preset-chip" onclick="applyFolderPreset('EXAM_SECTIONS')">📂 + Exam Sections</button>
                                 <button type="button" class="admin-preset-chip" style="color:#38bdf8; border-color:rgba(56,189,248,0.4); background:rgba(56,189,248,0.1);" onclick="applyFolderPreset('AUTO_NUM')">🔢 Auto-Number List</button>
                             </div>
-                            <textarea id="newFolderName" class="input-field" style="min-height:76px; font-size:14px; margin-bottom:4px;" placeholder="Type 1 folder name (e.g. Class 11 Biology) OR multiple separated by commas (e.g. Easy, Medium, Hard, Mixed)..." oninput="updateLiveAutoIconPreview()"></textarea>
-                            <span style="font-size: 11px; color: #888;">*Tip: Separate multiple names with commas (,) or new lines to create them all at once!</span>
+                            <textarea id="newFolderName" class="input-field" style="min-height:76px; font-size:14px; margin-bottom:4px;" placeholder="Type a folder name (e.g. Art, Culture & Heritage). Press Enter (new line) to add multiple folders at once..." oninput="updateLiveAutoIconPreview()"></textarea>
+                            <span id="folderSplitModeTip" style="font-size: 11px; color: #38bdf8;">*Commas stay inside your topic name (e.g. "Art, Culture & Heritage" stays 1 folder). Press Enter (new line) or use ; to add multiple folders!</span>
                         </div>
                         <div>
                             <label class="admin-label">3. Automatic Study Icon & Glow Preview (No Typing Needed!)</label>
@@ -606,7 +668,7 @@ async function _renderAdminPanel() {
                 <div id="admin-cp-configured-list"></div>
             </div>
 
-            <!-- 6. MANAGE CONTENT TAB (WITH ALL / MCQs / PDFs FILTER & PDF EDITING) -->
+            <!-- 6. MANAGE CONTENT TAB -->
             <div id="admin-manage-view" style="display:${adminCurrentTab === 'manage' ? 'block' : 'none'};">
                 <div class="admin-panel-card">
                     <h3 class="admin-section-header">🔍 Filter & Fetch MCQs / PDFs</h3>
@@ -757,7 +819,7 @@ function getMergedChildKeysAtPath(pathArr) {
         }
     });
 
-    return Array.from(keys).sort((a, b) => a.localeCompare(b));
+    return Array.from(keys).sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }));
 }
 
 function doesTopicPathExist(fullPathStr) {
@@ -772,8 +834,6 @@ function doesTopicPathExist(fullPathStr) {
     }
     return true;
 }
-
-// === PASTE CHUNK B IMMEDIATELY BELOW THIS LINE ===
 // ==========================================
 // UNIFIED TOPIC & SUBTOPIC FILTER, EDIT, DELETE & BULK ACTIONS
 // ==========================================
@@ -906,8 +966,8 @@ async function loadAdminTopicsList() {
         });
 
         unifiedAdminTopics = Array.from(topicMap.values()).sort((a, b) => {
-            const cmp = (a.parentPath || '').localeCompare(b.parentPath || '');
-            return cmp !== 0 ? cmp : (a.name || '').localeCompare(b.name || '');
+            const cmp = (a.parentPath || '').localeCompare(b.parentPath || '', undefined, { numeric: true, sensitivity: 'base' });
+            return cmp !== 0 ? cmp : (a.name || '').localeCompare(b.name || '', undefined, { numeric: true, sensitivity: 'base' });
         });
 
         _buildAdminTopicFilterSelectors();
@@ -967,7 +1027,7 @@ async function bulkInjectDifficultyToSelectedTopics() {
             levels.forEach(lvl => {
                 const combined = `${pPath} > ${lvl}`;
                 if (!doesTopicPathExist(combined)) {
-                    const ic = typeof getAutomaticIconForName === 'function' ? getAutomaticIconForName(lvl, 'mcq') : '📝';
+                    const ic = typeof getAutomaticIconForName === 'function' ? getAutomaticIconForName(lvl, 'mcq', pPath) : '📝';
                     pending.push({ parentPath: pPath, name: lvl, type: 'mcq', icon: ic });
                 }
             });
@@ -1032,7 +1092,9 @@ function buildAdminTopicCardHtml(item, idx) {
     const badge = item.type === 'both' ? 'PARENT CATEGORY' : (item.type || 'mcq').toUpperCase();
     const pText = item.parentPath || 'Root (Main Menu)';
     const checked = adminBulkSelectedPaths.has(item.fullPath);
-    const th = typeof getAutoTopicTheme === 'function' ? getAutoTopicTheme(item.name || '', item.icon, idx) : { i: item.icon || '📁', c: '#fdb813' };
+    const th = typeof getAutoTopicTheme === 'function'
+        ? getAutoTopicTheme(item.name || '', item.icon, idx, null, '📁', null, item.fullPath)
+        : { i: item.icon || '📁', c: '#fdb813' };
 
     return `
     <div style="background:#1c1c24; border:1px solid ${checked ? '#fdb813' : '#2b2b36'}; border-left:4px solid ${th.c}; border-radius:12px; padding:14px 18px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:15px;">
@@ -1096,7 +1158,7 @@ async function saveEditedTopic() {
     const type = document.getElementById('editTopicType').value;
     let icon = document.getElementById('editTopicIcon').value.trim();
     if (!name) return alert('Folder name is required.');
-    if (!icon && typeof getAutomaticIconForName === 'function') icon = getAutomaticIconForName(name, type);
+    if (!icon && typeof getAutomaticIconForName === 'function') icon = getAutomaticIconForName(name, type, activeEditFullPath);
 
     try {
         if (idToken.startsWith('doc:')) {
@@ -1224,7 +1286,7 @@ function renderAdminSidebarConfigLists() {
     const draw = (arr, sec, col) => {
         if (!arr || !arr.length) return `<p style="color:#777; font-size:13px; text-align:center; padding:18px; border:1px dashed #2b2b36; border-radius:10px; margin:0;">No manual links added.</p>`;
         return arr.map((it, idx) => {
-            const th = typeof getAutoTopicTheme === 'function' ? getAutoTopicTheme(it.title, null, idx) : { i: '📂', c: col };
+            const th = typeof getAutoTopicTheme === 'function' ? getAutoTopicTheme(it.title, null, idx, null, '📂', null, it.path) : { i: '📂', c: col };
             return `<div style="background:#1c1c24; border:1px solid #2b2b36; border-left:4px solid ${th.c}; border-radius:10px; padding:12px 15px; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center;">
                 <div><div style="font-weight:700; color:#fff; font-size:14px;">${th.i} ${it.title}</div><div style="font-size:11px; color:var(--text-muted);">${it.path}</div></div>
                 <button onclick="removeSidebarConfigItem('${sec}', '${it.id}')" style="background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.4); color:var(--wrong-red); padding:6px 12px; border-radius:6px; cursor:pointer; font-weight:bold;">Delete</button>
@@ -1472,7 +1534,7 @@ function renderAdminCpConfiguredList() {
         return;
     }
     box.innerHTML = subjects.map((s, i) => {
-        const th = typeof getAutoTopicTheme === 'function' ? getAutoTopicTheme(s.label, null, i) : { i: '📘', c: '#fdb813' };
+        const th = typeof getAutoTopicTheme === 'function' ? getAutoTopicTheme(s.label, null, i, null, '📘', null, s.path) : { i: '📘', c: '#fdb813' };
         const escS = s.path.replace(/'/g, "\\'");
         const chaps = s.chapters || [];
         const chips = chaps.length
@@ -1490,7 +1552,6 @@ function renderAdminCpConfiguredList() {
         </div>`;
     }).join('');
 }
-
 // ==========================================
 // MULTI-TARGET CREATE TOPIC & RAPID UPLOAD ENGINE
 // ==========================================
@@ -1512,6 +1573,7 @@ function _buildAdminNewTopicSelectors() {
     box.innerHTML = html;
     renderAdminMultiTargetSelector();
     updateAdminDestinationSummaryText();
+    updateLiveAutoIconPreview();
 }
 
 function renderAdminMultiTargetSelector() {
@@ -1521,10 +1583,12 @@ function renderAdminMultiTargetSelector() {
     adminMultiTargetChildren = adminMultiTargetChildren.filter(c => children.includes(c));
     if (!children.length) { box.innerHTML = ''; return; }
 
+    const parentPathStr = adminNewTopicPath.join(' > ');
     const parentName = adminNewTopicPath.length ? adminNewTopicPath[adminNewTopicPath.length - 1].replace(/^\d+\.\s*/, '') : 'Root';
     const grid = children.map((c, idx) => {
         const ck = adminMultiTargetChildren.includes(c);
-        const ic = typeof getAutomaticIconForName === 'function' ? getAutomaticIconForName(c) : '📁';
+        const childFull = parentPathStr ? `${parentPathStr} > ${c}` : c;
+        const ic = typeof getAutomaticIconForName === 'function' ? getAutomaticIconForName(c, null, childFull) : '📁';
         return `<label class="admin-target-item ${ck ? 'checked' : ''}" id="admTargetItem_${idx}">
             <input type="checkbox" ${ck ? 'checked' : ''} onchange="toggleAdminMultiTargetChild('${c.replace(/'/g, "\\'")}', this.checked, ${idx})">
             <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${ic} ${c.replace(/^\d+\.\s*/, '')}</span>
@@ -1598,7 +1662,7 @@ async function createCustomTopic() {
                 const full = pStr ? `${pStr} > ${n}` : n;
                 restorePaths.push(full);
                 const effType = autoDiff ? 'both' : fType;
-                const ic = customIc || (typeof getAutomaticIconForName === 'function' ? getAutomaticIconForName(n, effType) : '📘');
+                const ic = customIc || (typeof getAutomaticIconForName === 'function' ? getAutomaticIconForName(n, effType, pStr) : '📘');
                 if (!doesTopicPathExist(full)) queue.push({ parentPath: pStr, name: n, type: effType, icon: ic });
 
                 if (autoDiff) {
@@ -1606,7 +1670,7 @@ async function createCustomTopic() {
                         const df = `${full} > ${d}`;
                         restorePaths.push(df);
                         if (!doesTopicPathExist(df)) {
-                            const dic = typeof getAutomaticIconForName === 'function' ? getAutomaticIconForName(d, 'mcq') : '📝';
+                            const dic = typeof getAutomaticIconForName === 'function' ? getAutomaticIconForName(d, 'mcq', full) : '📝';
                             queue.push({ parentPath: full, name: d, type: 'mcq', icon: dic });
                         }
                     });
@@ -1666,7 +1730,6 @@ function _buildAdminSelectors() {
     const txt = document.getElementById('upload-path-text');
     if (txt) txt.innerText = fullStr || 'Please select a destination above';
 
-    // Smart Auto-Switch to PDF Format when selecting NCERT Book, PYQs, or PDF folders
     const typeSel = document.getElementById('admResourceType');
     if (typeSel && fullStr) {
         const lower = fullStr.toLowerCase();
@@ -1801,7 +1864,6 @@ async function processAdminUpload() {
                 });
             }
 
-            // If this leaf folder has no subfolders, mark its type as 'pdf' so native views recognize it immediately
             if (getMergedChildKeysAtPath(adminSelectedPath).length === 0) {
                 topicOverrides.editedPaths = topicOverrides.editedPaths || {};
                 topicOverrides.editedPaths[targetPath] = {
@@ -2071,7 +2133,7 @@ async function resolveDoubt(id) {
 }
 
 // ==========================================
-// AUTOMATIC LIVE PDF DISPLAY PATCH (Fixes NCERT Book & PYQ PDF visibility on Website & App)
+// AUTOMATIC LIVE PDF DISPLAY PATCH
 // ==========================================
 if (typeof ensureUploadedPdfsVisible === 'function') {
     window.addEventListener('hashchange', () => {
