@@ -28,146 +28,137 @@ function isPdfSectionPath(fullPathStr) {
 
 async function loadCustomTopics() {
     try {
-        if (typeof window.updateSplashProgress === 'function') {
-            window.updateSplashProgress(45, 'LOADING TOPICS & SYLLABUS...');
-        }
-
-        let freshAppData = JSON.parse(JSON.stringify(DEFAULT_APP_DATA));
-        let freshTopicTypes = {};
-        let freshOverrides = { deletedPaths: [], editedPaths: {} };
-
-        const [ovResult, topicsResult, sbResult, cpResult] = await Promise.allSettled([
-            db.collection("settings").doc("topic_overrides").get(),
-            db.collection("custom_topics").get(),
-            db.collection("settings").doc("sidebar_config").get(),
-            db.collection("settings").doc("custom_practice_config").get()
-        ]);
-
-        // 1. Process Topic Overrides
-        if (ovResult.status === 'fulfilled' && ovResult.value.exists) {
-            let ovData = ovResult.value.data();
-            freshOverrides.deletedPaths = Array.isArray(ovData.deletedPaths) ? ovData.deletedPaths : [];
-            freshOverrides.editedPaths = ovData.editedPaths || {};
-        }
-        topicOverrides = freshOverrides;
-
-        Object.keys(topicOverrides.editedPaths || {}).forEach(fullKey => {
-            freshTopicTypes[fullKey] = topicOverrides.editedPaths[fullKey];
-        });
-
-        // 2. Process Custom Topics
-        if (topicsResult.status === 'fulfilled') {
-            const snapshot = topicsResult.value;
-            let gkCleanupPromises = [];
-            let shouldCleanGK = !localStorage.getItem('gk_subtopics_purged_v39');
-
-            snapshot.forEach(doc => {
-                let data = doc.data();
-                let parentPath = (data.parentPath || "").trim();
-
-                if (shouldCleanGK && (parentPath === "General Knowledge" || parentPath.startsWith("General Knowledge > "))) {
-                    gkCleanupPromises.push(db.collection("custom_topics").doc(doc.id).delete());
-                    return;
-                }
-
-                let pathArr = parentPath.split(' > ').filter(Boolean);
-                let current = freshAppData;
-                for (let p of pathArr) {
-                    if (!current[p]) current[p] = {};
-                    current = current[p];
-                }
-                if (typeof current === 'object' && !Array.isArray(current) && data.name) {
-                    if (!current[data.name]) current[data.name] = {};
-                    let fullKey = pathArr.length > 0 ? (pathArr.join(" > ") + " > " + data.name) : data.name;
-                    let autoIcon = data.icon || (typeof getAutomaticIconForName === 'function' ? getAutomaticIconForName(data.name, data.type) : null);
-                    freshTopicTypes[fullKey] = { type: data.type || 'both', icon: autoIcon, docId: doc.id };
-                }
-            });
-
-            if (shouldCleanGK) {
-                if (gkCleanupPromises.length > 0) Promise.allSettled(gkCleanupPromises);
-                localStorage.setItem('gk_subtopics_purged_v39', 'true');
-            }
-        }
-
-        appData = freshAppData;
-        customTopicTypes = freshTopicTypes;
-        (topicOverrides.deletedPaths || []).forEach(delPath => {
-            removePathFromAppData(delPath);
-        });
-
-        // Smart Auto-Correction: If any leaf folder (0 subfolders) is inside "NCERT Book" and was left as "both", mark it as "pdf"
-        function autoFixPdfLeafTypes(obj, pathArr = []) {
-            if (!obj || typeof obj !== 'object') return;
-            Object.keys(obj).forEach(k => {
-                let nextPath = [...pathArr, k];
-                let fullStr = nextPath.join(' > ');
-                let children = obj[k] && typeof obj[k] === 'object' ? Object.keys(obj[k]) : [];
-                if (children.length === 0 && isPdfSectionPath(fullStr)) {
-                    if (!customTopicTypes[fullStr] || customTopicTypes[fullStr].type === 'both') {
-                        customTopicTypes[fullStr] = {
-                            ...(customTopicTypes[fullStr] || {}),
-                            type: 'pdf'
-                        };
-                    }
-                } else if (children.length > 0) {
-                    autoFixPdfLeafTypes(obj[k], nextPath);
-                }
-            });
-        }
-        autoFixPdfLeafTypes(appData, []);
-
-        // 3. Automatic Daily Quiz Challenge Engine
-        appData["Daily Quiz Challenge"] = {};
-        let deletedSet = new Set((topicOverrides && topicOverrides.deletedPaths) || []);
-        let rootExams = Object.keys(appData).filter(k => k !== "Daily Quiz Challenge" && !deletedSet.has(k));
-
-        Object.keys(customTopicTypes).forEach(key => {
-            let root = key.split(' > ')[0];
-            if (root && root !== "Daily Quiz Challenge" && !deletedSet.has(root) && !rootExams.includes(root)) {
-                rootExams.push(root);
-                appData[root] = appData[root] || {};
-            }
-        });
-
-        rootExams.forEach(examKey => {
-            appData["Daily Quiz Challenge"][examKey] = {};
-            let rootMeta = customTopicTypes[examKey];
-            let rootIcon = rootMeta ? rootMeta.icon : null;
-            customTopicTypes["Daily Quiz Challenge > " + examKey] = { type: "mcq", icon: rootIcon };
-        });
-
-        // 4. Process Manual Sidebar Config
-        if (sbResult.status === 'fulfilled' && sbResult.value.exists) {
-            let sbData = sbResult.value.data();
-            window.sidebarConfig.quickLinks = Array.isArray(sbData.quickLinks) ? sbData.quickLinks : [];
-            window.sidebarConfig.essentialPractice = Array.isArray(sbData.essentialPractice) ? sbData.essentialPractice : [];
-        } else {
-            window.sidebarConfig = { quickLinks: [], essentialPractice: [] };
-        }
-
-        // 5. Process Manual Custom Practice Config
-        if (cpResult.status === 'fulfilled' && cpResult.value.exists && cpResult.value.data().exams) {
-            window.customPracticeConfig.exams = cpResult.value.data().exams;
-        } else {
-            window.customPracticeConfig = { exams: {} };
-        }
-
+        // 1. Load Topic Overrides (Deleted & Edited Paths)
         try {
-            localStorage.setItem('mcqs_boot_cache_v1', JSON.stringify({
-                appData: appData,
-                customTopicTypes: customTopicTypes,
-                topicOverrides: topicOverrides,
-                sidebarConfig: window.sidebarConfig,
-                customPracticeConfig: window.customPracticeConfig
-            }));
+            const overrideDoc = await db.collection("settings").doc("topic_overrides").get();
+            if (overrideDoc.exists) {
+                topicOverrides = overrideDoc.data() || { deletedPaths: [], editedPaths: {} };
+                topicOverrides.deletedPaths = Array.isArray(topicOverrides.deletedPaths) ? topicOverrides.deletedPaths : [];
+                topicOverrides.editedPaths = topicOverrides.editedPaths || {};
+            }
+        } catch (e) {
+            console.warn("Could not load topic_overrides:", e);
+        }
+
+        // 2. Load Sidebar & Custom Practice Configurations
+        try {
+            const sbDoc = await db.collection("settings").doc("sidebar_config").get();
+            if (sbDoc.exists && sbDoc.data()) {
+                window.sidebarConfig = {
+                    quickLinks: Array.isArray(sbDoc.data().quickLinks) ? sbDoc.data().quickLinks : [],
+                    essentialPractice: Array.isArray(sbDoc.data().essentialPractice) ? sbDoc.data().essentialPractice : []
+                };
+            }
         } catch (e) {}
 
-        if (typeof window.updateSplashProgress === 'function') {
-            window.updateSplashProgress(82, 'BUILDING DASHBOARD...');
+        try {
+            const cpDoc = await db.collection("settings").doc("custom_practice_config").get();
+            if (cpDoc.exists && cpDoc.data()) {
+                window.customPracticeConfig = cpDoc.data();
+            }
+        } catch (e) {}
+
+        try {
+            const ssDoc = await db.collection("settings").doc("subtopic_search_config").get();
+            if (ssDoc.exists && ssDoc.data()) {
+                window.subtopicSearchConfig = {
+                    enabledPaths: ssDoc.data().enabledPaths || {},
+                    autoThreshold: ssDoc.data().autoThreshold !== undefined ? Number(ssDoc.data().autoThreshold) : 8
+                };
+                localStorage.setItem('mcqs_subtopic_search_cfg_v1', JSON.stringify(window.subtopicSearchConfig));
+            }
+        } catch (e) {}
+
+        // 3. Reset customTopicTypes and apply Edited Paths
+        customTopicTypes = {};
+        if (topicOverrides && topicOverrides.editedPaths) {
+            Object.keys(topicOverrides.editedPaths).forEach(pathKey => {
+                customTopicTypes[pathKey] = {
+                    ...topicOverrides.editedPaths[pathKey]
+                };
+            });
         }
 
-    } catch(e) { console.error("Custom topics loading error:", e); }
+        const deletedSet = new Set((topicOverrides && topicOverrides.deletedPaths) || []);
+
+        // 4. Remove any deleted built-in paths from appData
+        deletedSet.forEach(delPath => {
+            let parts = delPath.split(" > ").filter(Boolean);
+            if (parts.length === 1) {
+                if (appData[parts[0]]) delete appData[parts[0]];
+            } else if (parts.length > 1) {
+                let curr = appData;
+                for (let i = 0; i < parts.length - 1; i++) {
+                    if (curr && typeof curr === 'object') curr = curr[parts[i]];
+                }
+                if (curr && typeof curr === 'object' && curr[parts[parts.length - 1]] !== undefined) {
+                    delete curr[parts[parts.length - 1]];
+                }
+            }
+        });
+
+        // 5. Fetch all Custom Topics from Firestore (NO auto-deletion of General Knowledge!)
+        const snapshot = await db.collection("custom_topics").orderBy("timestamp", "asc").get();
+        let rawTopics = [];
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            if (data && data.name) {
+                rawTopics.push({ id: doc.id, ...data });
+            }
+        });
+
+        // Sort by depth so parent folders are always built before child subtopics
+        rawTopics.sort((a, b) => {
+            let dA = a.parentPath ? a.parentPath.split(" > ").length : 0;
+            let dB = b.parentPath ? b.parentPath.split(" > ").length : 0;
+            return dA - dB;
+        });
+
+        rawTopics.forEach(item => {
+            let pPath = (item.parentPath || "").trim();
+            let fullPath = pPath ? `${pPath} > ${item.name}` : item.name;
+            if (deletedSet.has(fullPath)) return;
+
+            let editedMeta = (topicOverrides.editedPaths && topicOverrides.editedPaths[fullPath]) || {};
+            customTopicTypes[fullPath] = {
+                type: editedMeta.type || item.type || "both",
+                icon: editedMeta.icon || item.icon || null,
+                displayName: editedMeta.displayName || item.name,
+                docId: item.id
+            };
+
+            // Inject into appData tree
+            let allSegments = fullPath.split(" > ").filter(Boolean);
+            let curr = appData;
+            for (let idx = 0; idx < allSegments.length; idx++) {
+                let seg = allSegments[idx];
+                let partialPath = allSegments.slice(0, idx + 1).join(" > ");
+                if (deletedSet.has(partialPath)) break;
+                if (curr[seg] === undefined || typeof curr[seg] !== "object" || Array.isArray(curr[seg])) {
+                    curr[seg] = {};
+                }
+                curr = curr[seg];
+            }
+        });
+
+        // 6. Dynamically sync Daily Quiz Challenge with all active Root Exam Categories
+        appData["Daily Quiz Challenge"] = {};
+        Object.keys(appData).forEach(rootExam => {
+            if (rootExam === "Daily Quiz Challenge" || deletedSet.has(rootExam)) return;
+            appData["Daily Quiz Challenge"][rootExam] = {
+                "Easy": [],
+                "Medium": [],
+                "Hard": [],
+                "Mixed": []
+            };
+        });
+
+        if (typeof updateSidebarLinks === "function") {
+            updateSidebarLinks();
+        }
+    } catch (error) {
+        console.error("Error loading custom topics:", error);
+    }
 }
 
 // ==========================================
