@@ -63,7 +63,7 @@ const adminStyles = `
 
     .admin-pill { background: #1c1c24; border: 1px solid #2b2b36; color: #9e9ea7; padding: 10px 18px; border-radius: 30px; cursor: pointer; white-space: nowrap; font-size: 13.5px; font-weight: 600; transition: all 0.2s ease; display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
     .admin-pill:hover { background: #252530; color: #fff; border-color: #444; }
-    .admin-pill.active { background: rgba(253, 184, 19, 0.15); border: 1px solid #fdb813; color: #fdb813; box-shadow: 0 0 12px rgba(253,184,19,0.2); }
+    .admin-pill.active { background: rgba(253, 184, 19, 0.15); border-color: #fdb813; color: #fdb813; box-shadow: 0 0 12px rgba(253,184,19,0.2); }
     
     .admin-panel-card { background: #17171e; border: 1px solid #2b2b36; border-radius: 16px; padding: 25px; margin-bottom: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
     .admin-section-header { font-size: 18px; color: #fff; margin-top: 0; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #2b2b36; padding-bottom: 15px; font-weight: 600; }
@@ -166,7 +166,6 @@ function setAdminFolderSplitMode(mode) {
     updateLiveAutoIconPreview();
 }
 
-// Smart Folder Name Parser: Never splits "Art, Culture & Heritage" or "X, Y & Z" titles into separate folders!
 function parseFolderNamesList(rawInput) {
     if (!rawInput) return [];
     let lines = rawInput.split(/[\r\n;]+/).map(s => s.trim()).filter(Boolean);
@@ -176,7 +175,6 @@ function parseFolderNamesList(rawInput) {
 
     let finalNames = [];
     lines.forEach(line => {
-        // Protect compound titles like "Art, Culture & Heritage" or "Alcohols, Phenols and Ethers"
         if (/,\s*[^,]+(?:\s+and\s+|\s*&\s*)/i.test(line)) {
             finalNames.push(line);
         } else {
@@ -330,6 +328,7 @@ async function _renderAdminPanel() {
                 <div class="admin-pill ${adminCurrentTab === 'upload' ? 'active' : ''}" onclick="switchAdminTab('upload')">➕ Rapid Upload</div>
                 <div class="admin-pill ${adminCurrentTab === 'topics' ? 'active' : ''}" onclick="switchAdminTab('topics')">📁 Create Topic</div>
                 <div class="admin-pill ${adminCurrentTab === 'edit-topics' ? 'active' : ''}" onclick="switchAdminTab('edit-topics')">🗂️ Edit / Delete Topics</div>
+                <div class="admin-pill ${adminCurrentTab === 'subtopic-search' ? 'active' : ''}" onclick="switchAdminTab('subtopic-search')">🔍 Subtopic Search Bars</div>
                 <div class="admin-pill ${adminCurrentTab === 'sidebar-links' ? 'active' : ''}" onclick="switchAdminTab('sidebar-links')">🔗 Quick Links & Essential</div>
                 <div class="admin-pill ${adminCurrentTab === 'custom-practice' ? 'active' : ''}" onclick="switchAdminTab('custom-practice')">🎯 Custom Practice</div>
                 <div class="admin-pill ${adminCurrentTab === 'manage' ? 'active' : ''}" onclick="switchAdminTab('manage')">📋 Edit MCQs / PDFs</div>
@@ -569,7 +568,55 @@ async function _renderAdminPanel() {
                 <div id="admin-topic-list-container"></div>
             </div>
 
-            <!-- 4. MANUAL QUICK LINKS & ESSENTIAL PRACTICE MANAGER TAB -->
+            <!-- 4. SUBTOPIC SEARCH BARS MANAGER TAB -->
+            <div id="admin-subtopic-search-view" style="display:${adminCurrentTab === 'subtopic-search' ? 'block' : 'none'};">
+                <div class="admin-panel-card" style="border-color: rgba(56, 189, 248, 0.4); background: rgba(56, 189, 248, 0.02);">
+                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; border-bottom: 1px solid rgba(56, 189, 248, 0.2); padding-bottom: 15px; margin-bottom: 20px;">
+                        <div>
+                            <h3 style="color:#38bdf8; margin:0; font-size:18px; display:flex; align-items:center; gap:10px;">🔍 Subtopic Search Bars Manager</h3>
+                            <span style="font-size:12px; color:var(--text-muted);">Enable secondary search bars inside large folders (like Class 9–12 State/Board lists) so students can instantly find their state or board.</span>
+                        </div>
+                    </div>
+
+                    <div class="admin-grid-2" style="margin-bottom: 20px;">
+                        <div>
+                            <label class="admin-label">1. Select Folder to Configure Search Bar</label>
+                            <div id="admin-subsearch-pick-selectors" style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:12px;"></div>
+                            <div style="font-size:13px; color:#38bdf8; background:rgba(56,189,248,0.08); border:1px solid rgba(56,189,248,0.25); padding:10px 14px; border-radius:8px;">
+                                <b>Selected Folder Path:</b> <span id="admin-subsearch-pick-text" style="color:#fff;">None selected</span>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="admin-label">2. Search Bar Settings</label>
+                            <div style="background:#121218; border:1px solid #2b2b36; padding:15px; border-radius:12px; display:flex; flex-direction:column; gap:12px;">
+                                <label style="display:flex; align-items:center; gap:10px; cursor:pointer; font-size:13.5px; color:#fff; font-weight:600;">
+                                    <input type="checkbox" id="subSearchToggleState" style="accent-color:#38bdf8; width:18px; height:18px; cursor:pointer;">
+                                    <span>Enable Secondary Search Bar on this Folder</span>
+                                </label>
+                                <label style="display:flex; align-items:center; gap:10px; cursor:pointer; font-size:13px; color:#cbd5e1;">
+                                    <input type="checkbox" id="subSearchIncludeChildrenToggle" style="accent-color:#38bdf8; width:16px; height:16px; cursor:pointer;">
+                                    <span>Apply automatically to all subfolders inside this path</span>
+                                </label>
+                                <div>
+                                    <label class="admin-label" style="font-size:11px; margin-bottom:4px;">Custom Placeholder Text (Optional)</label>
+                                    <input type="text" id="subSearchPlaceholderInput" class="input-field" placeholder="e.g. Search State or Board (Assam, CBSE)..." style="margin-bottom:0; font-size:13px; padding:9px 12px;">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="display:flex; gap:15px; align-items:center; flex-wrap:wrap;">
+                        <button class="btn-exam btn-yellow-glow" onclick="saveSubtopicSearchConfigForSelectedPath()" style="background:#38bdf8 !important; color:#000 !important; border:none; padding:12px 24px; font-size:14px; font-weight:800;">💾 Save Search Bar Config</button>
+                        <button class="btn-exam" onclick="disableSubtopicSearchForSelectedPath()" style="background:rgba(239,68,68,0.15); color:var(--wrong-red); border:1px solid rgba(239,68,68,0.35); padding:12px 20px; font-size:14px;">🚫 Disable on Folder</button>
+                    </div>
+                </div>
+
+                <div class="admin-panel-card">
+                    <h3 class="admin-section-header">📋 Currently Active Subtopic Search Bars</h3>
+                    <div id="admin-active-subsearch-list"></div>
+                </div>
+            </div>
+            <!-- 5. MANUAL QUICK LINKS & ESSENTIAL PRACTICE MANAGER TAB -->
             <div id="admin-sidebar-links-view" style="display:${adminCurrentTab === 'sidebar-links' ? 'block' : 'none'};">
                 <div class="admin-panel-card" style="border-color:rgba(168,85,247,0.4);">
                     <h3 class="admin-section-header" style="color:#c084fc;">🔗 Add Existing Topic / Subtopic to Home Sidebar</h3>
@@ -622,7 +669,7 @@ async function _renderAdminPanel() {
                 </div>
             </div>
 
-            <!-- 5. MANUAL CUSTOM PRACTICE MANAGER TAB -->
+            <!-- 6. MANUAL CUSTOM PRACTICE MANAGER TAB -->
             <div id="admin-custom-practice-view" style="display:${adminCurrentTab === 'custom-practice' ? 'block' : 'none'};">
                 <div class="admin-panel-card" style="border-color:rgba(253,184,19,0.4);">
                     <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; border-bottom:1px solid #2b2b36; padding-bottom:15px; margin-bottom:20px;">
@@ -668,7 +715,7 @@ async function _renderAdminPanel() {
                 <div id="admin-cp-configured-list"></div>
             </div>
 
-            <!-- 6. MANAGE CONTENT TAB -->
+            <!-- 7. MANAGE CONTENT TAB -->
             <div id="admin-manage-view" style="display:${adminCurrentTab === 'manage' ? 'block' : 'none'};">
                 <div class="admin-panel-card">
                     <h3 class="admin-section-header">🔍 Filter & Fetch MCQs / PDFs</h3>
@@ -687,25 +734,25 @@ async function _renderAdminPanel() {
                 </div>
             </div>
 
-            <!-- 7. REPORTS TAB -->
+            <!-- 8. REPORTS TAB -->
             <div id="admin-reports-view" style="display:${adminCurrentTab === 'reports' ? 'block' : 'none'};">
                 <button class="btn-exam btn-yellow-glow" onclick="loadAdminReports()" style="margin-bottom:20px;">🔄 Refresh Reports</button>
                 <div id="reports-list-container"></div>
             </div>
 
-            <!-- 8. USERS TAB -->
+            <!-- 9. USERS TAB -->
             <div id="admin-users-view" style="display:${adminCurrentTab === 'users' ? 'block' : 'none'};">
                 <button class="btn-exam btn-yellow-glow" onclick="loadAdminUsers()" style="margin-bottom:20px;">🔄 Refresh Students List</button>
                 <div id="users-table-container" class="admin-panel-card" style="overflow-x:auto; padding: 0;"></div>
             </div>
 
-            <!-- 9. DOUBTS TAB -->
+            <!-- 10. DOUBTS TAB -->
             <div id="admin-doubts-view" style="display:${adminCurrentTab === 'doubts' ? 'block' : 'none'};">
                 <button class="btn-exam btn-yellow-glow" onclick="loadAdminDoubts()" style="margin-bottom:20px;">🔄 Refresh Flagged Doubts</button>
                 <div id="doubts-list-container"></div>
             </div>
 
-            <!-- 10. SETTINGS TAB -->
+            <!-- 11. SETTINGS TAB -->
             <div id="admin-settings-view" style="display:${adminCurrentTab === 'settings' ? 'block' : 'none'};">
                 <div class="admin-grid-2">
                     <div class="admin-panel-card" style="margin-bottom: 0;">
@@ -731,6 +778,7 @@ async function _renderAdminPanel() {
     if (adminCurrentTab === 'upload') { _buildAdminSelectors(); }
     else if (adminCurrentTab === 'topics') { _buildAdminNewTopicSelectors(); updateLiveAutoIconPreview(); }
     else if (adminCurrentTab === 'edit-topics') { _buildAdminTopicFilterSelectors(); loadAdminTopicsList(); }
+    else if (adminCurrentTab === 'subtopic-search') { initAdminSubtopicSearchTab(); }
     else if (adminCurrentTab === 'sidebar-links') { initAdminSidebarLinksTab(); }
     else if (adminCurrentTab === 'custom-practice') { initAdminCustomPracticeTab(); }
     else if (adminCurrentTab === 'manage') { _buildManageSelectors(); loadContentForManagement(false); }
@@ -834,6 +882,7 @@ function doesTopicPathExist(fullPathStr) {
     }
     return true;
 }
+
 // ==========================================
 // UNIFIED TOPIC & SUBTOPIC FILTER, EDIT, DELETE & BULK ACTIONS
 // ==========================================
@@ -1083,7 +1132,7 @@ async function bulkDeleteSelectedTopics() {
     }
 }
 
-function buildAdminTopicCardHtml(item, idx) {
+function buildAdminTopicCardHtml(item, idx, usedIconsSet = null, usedColorsSet = null) {
     const idToken = item.docId ? `doc:${item.docId}` : `builtin:${item.fullPath}`;
     const escId = idToken.replace(/'/g, "\\'");
     const escPath = item.fullPath.replace(/'/g, "\\'");
@@ -1093,8 +1142,12 @@ function buildAdminTopicCardHtml(item, idx) {
     const pText = item.parentPath || 'Root (Main Menu)';
     const checked = adminBulkSelectedPaths.has(item.fullPath);
     const th = typeof getAutoTopicTheme === 'function'
-        ? getAutoTopicTheme(item.name || '', item.icon, idx, null, '📁', null, item.fullPath)
+        ? getAutoTopicTheme(item.name || '', item.icon, idx, usedColorsSet, '📁', usedIconsSet, item.fullPath)
         : { i: item.icon || '📁', c: '#fdb813' };
+
+    const cfgMap = (window.subtopicSearchConfig && window.subtopicSearchConfig.enabledPaths) || {};
+    const searchEntry = cfgMap[item.fullPath];
+    const isSearchOn = searchEntry && (searchEntry === true || searchEntry.enabled !== false);
 
     return `
     <div style="background:#1c1c24; border:1px solid ${checked ? '#fdb813' : '#2b2b36'}; border-left:4px solid ${th.c}; border-radius:12px; padding:14px 18px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:15px;">
@@ -1108,7 +1161,8 @@ function buildAdminTopicCardHtml(item, idx) {
                 </div>
             </div>
         </div>
-        <div style="display:flex; gap:10px;">
+        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+            <button onclick="quickToggleSubtopicSearchOnCard('${escPath}')" style="background:${isSearchOn ? 'rgba(16,185,129,0.18)' : 'rgba(255,255,255,0.06)'}; border:1px solid ${isSearchOn ? '#10b981' : '#3b3b48'}; color:${isSearchOn ? '#10b981' : '#94a3b8'}; padding:8px 13px; border-radius:8px; cursor:pointer; font-weight:bold; font-size:12px;" title="Toggle Secondary Search Bar inside this folder">🔍 Search: ${isSearchOn ? 'ON' : 'OFF'}</button>
             <button onclick="openEditTopicModal('${escId}', '${escName}', '${item.type}', '${escIcon}', '${escPath}')" style="background:rgba(33,150,243,0.15); border:1px solid rgba(33,150,243,0.4); color:#38bdf8; padding:8px 16px; border-radius:8px; cursor:pointer; font-weight:bold;">Edit</button>
             <button onclick="deleteUnifiedTopic('${escId}', '${escPath}')" style="background:rgba(244,67,54,0.15); border:1px solid rgba(244,67,54,0.4); color:var(--wrong-red); padding:8px 16px; border-radius:8px; cursor:pointer; font-weight:bold;">Delete</button>
         </div>
@@ -1128,12 +1182,24 @@ function renderAdminTopicsList(list) {
     let out = '';
 
     if (adminTopicScopeFilter !== 'SUB' && mains.length) {
+        let usedMainIcons = new Set();
+        let usedMainColors = new Set();
         out += `<div class="admin-topic-group-header"><span>🌟 Main Topics</span><span class="admin-topic-group-count">${mains.length}</span></div>`;
-        mains.forEach((d, i) => { out += buildAdminTopicCardHtml(d, i); });
+        mains.forEach((d, i) => { out += buildAdminTopicCardHtml(d, i, usedMainIcons, usedMainColors); });
     }
     if (adminTopicScopeFilter !== 'MAIN' && subs.length) {
+        let lastParent = null;
+        let usedSubIcons = new Set();
+        let usedSubColors = new Set();
         out += `<div class="admin-topic-group-header" style="border-left-color:#38bdf8; background:rgba(56,189,248,0.08); border-color:rgba(56,189,248,0.25);"><span>📂 Subtopics & Chapters</span><span class="admin-topic-group-count" style="color:#38bdf8;">${subs.length}</span></div>`;
-        subs.forEach((d, i) => { out += buildAdminTopicCardHtml(d, i + 4); });
+        subs.forEach((d, i) => {
+            if (d.parentPath !== lastParent) {
+                usedSubIcons = new Set();
+                usedSubColors = new Set();
+                lastParent = d.parentPath;
+            }
+            out += buildAdminTopicCardHtml(d, i + 4, usedSubIcons, usedSubColors);
+        });
     }
     holder.innerHTML = out;
 }
@@ -1285,8 +1351,10 @@ function renderAdminSidebarConfigLists() {
 
     const draw = (arr, sec, col) => {
         if (!arr || !arr.length) return `<p style="color:#777; font-size:13px; text-align:center; padding:18px; border:1px dashed #2b2b36; border-radius:10px; margin:0;">No manual links added.</p>`;
+        let usedIcons = new Set();
+        let usedColors = new Set();
         return arr.map((it, idx) => {
-            const th = typeof getAutoTopicTheme === 'function' ? getAutoTopicTheme(it.title, null, idx, null, '📂', null, it.path) : { i: '📂', c: col };
+            const th = typeof getAutoTopicTheme === 'function' ? getAutoTopicTheme(it.title, null, idx, usedColors, '📂', usedIcons, it.path) : { i: '📂', c: col };
             return `<div style="background:#1c1c24; border:1px solid #2b2b36; border-left:4px solid ${th.c}; border-radius:10px; padding:12px 15px; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center;">
                 <div><div style="font-weight:700; color:#fff; font-size:14px;">${th.i} ${it.title}</div><div style="font-size:11px; color:var(--text-muted);">${it.path}</div></div>
                 <button onclick="removeSidebarConfigItem('${sec}', '${it.id}')" style="background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.4); color:var(--wrong-red); padding:6px 12px; border-radius:6px; cursor:pointer; font-weight:bold;">Delete</button>
@@ -1533,8 +1601,10 @@ function renderAdminCpConfiguredList() {
         box.innerHTML = `<div class="admin-panel-card" style="text-align:center; color:#888; padding:30px;">No manual Subjects configured for <b>${adminCpSelectedExam}</b> yet.</div>`;
         return;
     }
+    let usedSubjIcons = new Set();
+    let usedSubjColors = new Set();
     box.innerHTML = subjects.map((s, i) => {
-        const th = typeof getAutoTopicTheme === 'function' ? getAutoTopicTheme(s.label, null, i, null, '📘', null, s.path) : { i: '📘', c: '#fdb813' };
+        const th = typeof getAutoTopicTheme === 'function' ? getAutoTopicTheme(s.label, null, i, usedSubjColors, '📘', usedSubjIcons, s.path) : { i: '📘', c: '#fdb813' };
         const escS = s.path.replace(/'/g, "\\'");
         const chaps = s.chapters || [];
         const chips = chaps.length
@@ -1552,6 +1622,214 @@ function renderAdminCpConfiguredList() {
         </div>`;
     }).join('');
 }
+// ==========================================
+// SUBTOPIC SEARCH BARS MANAGER (SCOPED SECONDARY SEARCH)
+// ==========================================
+let adminSubSearchPickPath = [];
+
+async function initAdminSubtopicSearchTab() {
+    try {
+        const doc = await db.collection('settings').doc('subtopic_search_config').get();
+        if (doc.exists && doc.data()) {
+            window.subtopicSearchConfig = {
+                enabledPaths: doc.data().enabledPaths || {},
+                autoThreshold: doc.data().autoThreshold !== undefined ? Number(doc.data().autoThreshold) : 8
+            };
+            localStorage.setItem('mcqs_subtopic_search_cfg_v1', JSON.stringify(window.subtopicSearchConfig));
+        }
+    } catch (e) {}
+    _buildAdminSubSearchPickSelectors();
+    renderAdminActiveSubSearchList();
+}
+
+function _buildAdminSubSearchPickSelectors() {
+    const box = document.getElementById('admin-subsearch-pick-selectors');
+    if (!box) return;
+    let html = '';
+    for (let i = 0; i <= adminSubSearchPickPath.length; i++) {
+        const keys = getMergedChildKeysAtPath(adminSubSearchPickPath.slice(0, i));
+        if (!keys.length) break;
+        html += `<select class="input-field" style="flex:1; min-width:170px; margin-bottom:0;" onchange="handleAdminSubSearchPickChange(event, ${i})">`;
+        html += `<option value="" ${!adminSubSearchPickPath[i] ? 'selected' : ''}>${i === 0 ? '-- Select Main Exam / Category --' : '-- Stop Here / Select Subtopic --'}</option>`;
+        keys.forEach(k => {
+            html += `<option value="${k.replace(/"/g, '&quot;')}" ${adminSubSearchPickPath[i] === k ? 'selected' : ''}>${k}</option>`;
+        });
+        html += `</select>`;
+        if (!adminSubSearchPickPath[i]) break;
+    }
+    box.innerHTML = html;
+
+    const fullPath = adminSubSearchPickPath.join(' > ');
+    const txt = document.getElementById('admin-subsearch-pick-text');
+    if (txt) txt.innerText = fullPath || 'None selected';
+
+    syncSubSearchFormInputsForSelectedPath();
+}
+
+function handleAdminSubSearchPickChange(event, depth) {
+    adminSubSearchPickPath = adminSubSearchPickPath.slice(0, depth);
+    if (event.target.value !== '') adminSubSearchPickPath.push(event.target.value);
+    _buildAdminSubSearchPickSelectors();
+}
+
+function syncSubSearchFormInputsForSelectedPath() {
+    const fullPath = adminSubSearchPickPath.join(' > ');
+    const enableCb = document.getElementById('subSearchToggleState');
+    const childrenCb = document.getElementById('subSearchIncludeChildrenToggle');
+    const phInput = document.getElementById('subSearchPlaceholderInput');
+    if (!enableCb || !childrenCb || !phInput) return;
+
+    const map = (window.subtopicSearchConfig && window.subtopicSearchConfig.enabledPaths) || {};
+    const entry = map[fullPath];
+
+    if (entry && typeof entry === 'object') {
+        enableCb.checked = entry.enabled !== false;
+        childrenCb.checked = Boolean(entry.includeChildren);
+        phInput.value = entry.placeholder || '';
+    } else if (typeof entry === 'boolean') {
+        enableCb.checked = entry;
+        childrenCb.checked = false;
+        phInput.value = '';
+    } else {
+        enableCb.checked = true;
+        childrenCb.checked = false;
+        phInput.value = '';
+    }
+}
+
+async function saveSubtopicSearchConfigToFirestore() {
+    window.subtopicSearchConfig = window.subtopicSearchConfig || { enabledPaths: {}, autoThreshold: 8 };
+    await db.collection('settings').doc('subtopic_search_config').set(window.subtopicSearchConfig, { merge: true });
+    try {
+        localStorage.setItem('mcqs_subtopic_search_cfg_v1', JSON.stringify(window.subtopicSearchConfig));
+    } catch (e) {}
+}
+
+async function saveSubtopicSearchConfigForSelectedPath() {
+    if (!adminSubSearchPickPath.length) {
+        return showNotification('⚠️ Select a folder path first.');
+    }
+    const fullPath = adminSubSearchPickPath.join(' > ');
+    const enabled = document.getElementById('subSearchToggleState')?.checked ?? true;
+    const includeChildren = document.getElementById('subSearchIncludeChildrenToggle')?.checked ?? false;
+    const placeholder = (document.getElementById('subSearchPlaceholderInput')?.value || '').trim();
+
+    window.subtopicSearchConfig = window.subtopicSearchConfig || { enabledPaths: {}, autoThreshold: 8 };
+    window.subtopicSearchConfig.enabledPaths = window.subtopicSearchConfig.enabledPaths || {};
+    window.subtopicSearchConfig.enabledPaths[fullPath] = {
+        enabled: enabled,
+        includeChildren: includeChildren,
+        placeholder: placeholder,
+        updatedAt: Date.now()
+    };
+
+    try {
+        await saveSubtopicSearchConfigToFirestore();
+        showNotification(`✅ Secondary Search Bar ${enabled ? 'enabled' : 'updated'} for "${fullPath}"!`);
+        renderAdminActiveSubSearchList();
+    } catch (e) {
+        showNotification('❌ Error saving search bar config: ' + e.message);
+    }
+}
+
+async function disableSubtopicSearchForSelectedPath() {
+    if (!adminSubSearchPickPath.length) {
+        return showNotification('⚠️ Select a folder path first.');
+    }
+    const fullPath = adminSubSearchPickPath.join(' > ');
+    window.subtopicSearchConfig = window.subtopicSearchConfig || { enabledPaths: {}, autoThreshold: 8 };
+    window.subtopicSearchConfig.enabledPaths = window.subtopicSearchConfig.enabledPaths || {};
+    window.subtopicSearchConfig.enabledPaths[fullPath] = {
+        enabled: false,
+        includeChildren: false,
+        placeholder: '',
+        updatedAt: Date.now()
+    };
+
+    try {
+        await saveSubtopicSearchConfigToFirestore();
+        syncSubSearchFormInputsForSelectedPath();
+        showNotification(`🚫 Search bar disabled on "${fullPath}".`);
+        renderAdminActiveSubSearchList();
+    } catch (e) {
+        showNotification('❌ Error: ' + e.message);
+    }
+}
+
+async function removeSubtopicSearchRule(fullPath) {
+    if (!window.subtopicSearchConfig || !window.subtopicSearchConfig.enabledPaths) return;
+    delete window.subtopicSearchConfig.enabledPaths[fullPath];
+    try {
+        await saveSubtopicSearchConfigToFirestore();
+        showNotification('🗑️ Search bar rule removed.');
+        renderAdminActiveSubSearchList();
+    } catch (e) {
+        showNotification('❌ Error: ' + e.message);
+    }
+}
+
+async function quickToggleSubtopicSearchOnCard(fullPath) {
+    window.subtopicSearchConfig = window.subtopicSearchConfig || { enabledPaths: {}, autoThreshold: 8 };
+    window.subtopicSearchConfig.enabledPaths = window.subtopicSearchConfig.enabledPaths || {};
+    const current = window.subtopicSearchConfig.enabledPaths[fullPath];
+    const currentlyOn = current && (current === true || current.enabled !== false);
+
+    if (currentlyOn) {
+        window.subtopicSearchConfig.enabledPaths[fullPath] = { enabled: false, includeChildren: false, placeholder: '' };
+    } else {
+        window.subtopicSearchConfig.enabledPaths[fullPath] = { enabled: true, includeChildren: true, placeholder: '' };
+    }
+
+    try {
+        await saveSubtopicSearchConfigToFirestore();
+        showNotification(`🔍 Secondary Search Bar ${!currentlyOn ? 'ENABLED' : 'DISABLED'} on "${fullPath}"!`);
+        renderAdminTopicsList(currentFilteredAdminTopics);
+    } catch (e) {
+        showNotification('❌ Error toggling search bar: ' + e.message);
+    }
+}
+
+function renderAdminActiveSubSearchList() {
+    const listEl = document.getElementById('admin-active-subsearch-list');
+    if (!listEl) return;
+
+    const map = (window.subtopicSearchConfig && window.subtopicSearchConfig.enabledPaths) || {};
+    const keys = Object.keys(map);
+
+    if (keys.length === 0) {
+        listEl.innerHTML = `<p style="color:#888; font-size:13px; text-align:center; padding:22px; border:1px dashed #2b2b36; border-radius:10px; margin:0;">No custom folder search rules saved yet. Note: <b>Board &gt; Class 9–12</b> folders automatically display a search bar once 4+ states/boards are added inside them!</p>`;
+        return;
+    }
+
+    let usedIcons = new Set();
+    let usedColors = new Set();
+    listEl.innerHTML = keys.map((pathStr, idx) => {
+        const cfg = map[pathStr];
+        const isEnabled = cfg === true || (cfg && cfg.enabled !== false);
+        const incChildren = cfg && cfg.includeChildren;
+        const leaf = pathStr.split(' > ').pop() || pathStr;
+        const th = typeof getAutoTopicTheme === 'function'
+            ? getAutoTopicTheme(leaf, null, idx, usedColors, '🔍', usedIcons, pathStr)
+            : { i: '🔍', c: '#38bdf8' };
+        const escPath = pathStr.replace(/'/g, "\\'");
+
+        return `
+        <div style="background:#1c1c24; border:1px solid #2b2b36; border-left:4px solid ${isEnabled ? th.c : '#ef4444'}; border-radius:10px; padding:14px 18px; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+            <div>
+                <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                    <b style="color:#fff; font-size:15px;">${th.i} ${pathStr}</b>
+                    <span style="font-size:10.5px; padding:3px 9px; border-radius:20px; font-weight:800; background:${isEnabled ? 'rgba(16,185,129,0.18)' : 'rgba(239,68,68,0.18)'}; color:${isEnabled ? '#10b981' : '#ef4444'};">${isEnabled ? 'SEARCH BAR ON' : 'DISABLED'}</span>
+                    ${incChildren ? `<span style="font-size:10.5px; padding:3px 9px; border-radius:20px; font-weight:700; background:rgba(56,189,248,0.15); color:#38bdf8;">+ Includes Subfolders</span>` : ''}
+                </div>
+                ${cfg && cfg.placeholder ? `<div style="font-size:12px; color:#94a3b8; margin-top:4px;">Placeholder: "${cfg.placeholder}"</div>` : ''}
+            </div>
+            <div style="display:flex; gap:8px;">
+                <button onclick="removeSubtopicSearchRule('${escPath}')" style="background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.4); color:var(--wrong-red); padding:7px 14px; border-radius:8px; cursor:pointer; font-weight:bold; font-size:12px;">Delete Rule</button>
+            </div>
+        </div>`;
+    }).join('');
+}
+
 // ==========================================
 // MULTI-TARGET CREATE TOPIC & RAPID UPLOAD ENGINE
 // ==========================================
@@ -1585,13 +1863,17 @@ function renderAdminMultiTargetSelector() {
 
     const parentPathStr = adminNewTopicPath.join(' > ');
     const parentName = adminNewTopicPath.length ? adminNewTopicPath[adminNewTopicPath.length - 1].replace(/^\d+\.\s*/, '') : 'Root';
+    let usedIcons = new Set();
+    let usedColors = new Set();
     const grid = children.map((c, idx) => {
         const ck = adminMultiTargetChildren.includes(c);
         const childFull = parentPathStr ? `${parentPathStr} > ${c}` : c;
-        const ic = typeof getAutomaticIconForName === 'function' ? getAutomaticIconForName(c, null, childFull) : '📁';
+        const th = typeof getAutoTopicTheme === 'function'
+            ? getAutoTopicTheme(c, null, idx, usedColors, '📁', usedIcons, childFull)
+            : { i: '📁' };
         return `<label class="admin-target-item ${ck ? 'checked' : ''}" id="admTargetItem_${idx}">
             <input type="checkbox" ${ck ? 'checked' : ''} onchange="toggleAdminMultiTargetChild('${c.replace(/'/g, "\\'")}', this.checked, ${idx})">
-            <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${ic} ${c.replace(/^\d+\.\s*/, '')}</span>
+            <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${th.i} ${c.replace(/^\d+\.\s*/, '')}</span>
         </label>`;
     }).join('');
 
@@ -1658,11 +1940,22 @@ async function createCustomTopic() {
         const restorePaths = [];
 
         parents.forEach(pStr => {
-            names.forEach(n => {
+            let siblingIcons = new Set();
+            let siblingColors = new Set();
+            names.forEach((n, idx) => {
                 const full = pStr ? `${pStr} > ${n}` : n;
                 restorePaths.push(full);
                 const effType = autoDiff ? 'both' : fType;
-                const ic = customIc || (typeof getAutomaticIconForName === 'function' ? getAutomaticIconForName(n, effType, pStr) : '📘');
+                let ic = customIc;
+                if (!ic) {
+                    if (typeof getAutoTopicTheme === 'function') {
+                        ic = getAutoTopicTheme(n, null, idx, siblingColors, '📘', siblingIcons, full).i;
+                    } else if (typeof getAutomaticIconForName === 'function') {
+                        ic = getAutomaticIconForName(n, effType, pStr);
+                    } else {
+                        ic = '📘';
+                    }
+                }
                 if (!doesTopicPathExist(full)) queue.push({ parentPath: pStr, name: n, type: effType, icon: ic });
 
                 if (autoDiff) {
