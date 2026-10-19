@@ -389,6 +389,45 @@ async function _renderAdminPanel() {
                 </div>
                 
                 <div id="upload-form-area" style="display:none;">
+                    <!-- 🎲 AUTO-GENERATE MIXED LEVEL QUESTIONS PANEL -->
+                    <div class="admin-panel-card" style="border-color:rgba(168,85,247,0.45); background:linear-gradient(145deg, rgba(168,85,247,0.06), rgba(23,23,30,0.98));">
+                        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; border-bottom:1px solid rgba(168,85,247,0.25); padding-bottom:12px; margin-bottom:16px;">
+                            <div>
+                                <h3 style="margin:0; font-size:17px; color:#c084fc; display:flex; align-items:center; gap:8px;">🎲 Auto-Generate "Mixed" Level Questions (Randomly Shuffled)</h3>
+                                <span style="font-size:12px; color:var(--text-muted);">Automatically pull questions from <b>Easy</b>, <b>Medium</b> &amp; <b>Hard</b> of this subtopic and combine them in true random order (never serially arranged).</span>
+                            </div>
+                            <button type="button" class="btn-exam" onclick="refreshAutoMixAvailableCounts()" style="background:#1c1c24; border:1px solid #c084fc; color:#c084fc; padding:6px 12px; font-size:11.5px;">🔄 Check Available Counts</button>
+                        </div>
+
+                        <div id="autoMixSubtopicStatusBar" style="background:#111522; border:1px solid #2b354f; border-radius:10px; padding:10px 14px; margin-bottom:14px; font-size:12.5px; color:#cbd5e1; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+                            <div><b>Target Subtopic:</b> <span id="autoMixDetectedSubtopicText" style="color:var(--primary-yellow);">Detecting...</span></div>
+                            <div id="autoMixLiveCountsBadges" style="display:flex; gap:8px; flex-wrap:wrap;"></div>
+                        </div>
+
+                        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(170px, 1fr)); gap:12px; margin-bottom:14px;">
+                            <div style="background:#121624; border:1px solid rgba(16,185,129,0.35); border-left:4px solid #10b981; padding:10px 12px; border-radius:10px;">
+                                <label class="admin-label" style="color:#10b981; margin-bottom:6px;">🟢 From Easy Level</label>
+                                <input type="number" id="autoMixEasyCount" class="input-field" value="10" min="0" max="200" style="margin-bottom:0; padding:8px 10px; font-size:14px; font-weight:700;">
+                            </div>
+                            <div style="background:#121624; border:1px solid rgba(234,179,8,0.35); border-left:4px solid #eab308; padding:10px 12px; border-radius:10px;">
+                                <label class="admin-label" style="color:#eab308; margin-bottom:6px;">🟡 From Medium Level</label>
+                                <input type="number" id="autoMixMediumCount" class="input-field" value="10" min="0" max="200" style="margin-bottom:0; padding:8px 10px; font-size:14px; font-weight:700;">
+                            </div>
+                            <div style="background:#121624; border:1px solid rgba(244,63,94,0.35); border-left:4px solid #f43f5e; padding:10px 12px; border-radius:10px;">
+                                <label class="admin-label" style="color:#f43f5e; margin-bottom:6px;">🔴 From Hard Level</label>
+                                <input type="number" id="autoMixHardCount" class="input-field" value="10" min="0" max="200" style="margin-bottom:0; padding:8px 10px; font-size:14px; font-weight:700;">
+                            </div>
+                        </div>
+
+                        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+                            <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:12.5px; color:#cbd5e1; user-select:none;">
+                                <input type="checkbox" id="autoMixReplaceExisting" checked style="accent-color:#c084fc; width:16px; height:16px; cursor:pointer;">
+                                <span>Replace previous Mixed questions in this subtopic (prevents duplicates)</span>
+                            </label>
+                            <button type="button" id="btnRunAutoMix" class="btn-exam btn-yellow-glow" onclick="generateAutoMixedQuestionsForSubtopic()" style="background:linear-gradient(135deg, #a855f7, #ec4899) !important; color:#fff !important; border:none !important; padding:10px 20px; font-size:13.5px; font-weight:800;">🎲 Auto-Combine &amp; Shuffle into Mixed Level</button>
+                        </div>
+                    </div>
+
                     <div class="admin-panel-card">
                         <h3 class="admin-section-header" style="justify-content: space-between; flex-wrap:wrap; gap:10px;">
                             <div style="display:flex; align-items:center; gap:10px;"><span>📝</span> 2. Draft Content</div>
@@ -407,13 +446,85 @@ async function _renderAdminPanel() {
                                 <textarea id="admSmartPasteInput" class="input-field" style="min-height:58px; margin-bottom:0; font-size:12.5px;" placeholder="Paste full MCQ block here (e.g. Q. Question text... A) Opt1 B) Opt2 C) Opt3 D) Opt4 Ans: B Exp: Explanation...) and click Auto-Fill!"></textarea>
                             </div>
 
-                            <label class="admin-label">Question Text</label>
-                            <textarea id="admQuestion" class="input-field" style="min-height: 100px; font-size: 15px;" placeholder="Type or paste the question here..."></textarea>
-                            
+                            <!-- 🧪 1-CLICK CHEMICAL REACTION & MATH FORMULA BAR -->
+                            <div style="background:#101626; border:1px solid #2b3954; border-radius:12px; padding:12px 14px; margin-bottom:16px;">
+                                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:8px;">
+                                    <span style="font-size:11.5px; font-weight:800; color:#38bdf8; text-transform:uppercase;">🧪 Complex Chemical Reactions &amp; Math Formula Toolbar (Click any box below, then click symbol to insert)</span>
+                                    <button type="button" onclick="formatPlainChemistryToLatex()" style="background:rgba(16,185,129,0.15); color:#10b981; border:1px solid rgba(16,185,129,0.4); border-radius:6px; padding:4px 10px; font-size:11px; font-weight:700; cursor:pointer;" title="Automatically converts H2SO4, ->, <=>, ^2+ in active box into clean formulas">🪄 Auto-Format Plain Reaction / Formula</button>
+                                </div>
+                                <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:6px;">
+                                    <button type="button" class="admin-preset-chip" onclick="insertAdminFormulaAtCursor('$\\rightarrow$')">→ Reaction</button>
+                                    <button type="button" class="admin-preset-chip" onclick="insertAdminFormulaAtCursor('$\\rightleftharpoons$')">⇌ Equilibrium</button>
+                                    <button type="button" class="admin-preset-chip" onclick="insertAdminFormulaAtCursor('$\\xrightarrow{\\Delta}$')">—Δ→ Heat</button>
+                                    <button type="button" class="admin-preset-chip" onclick="insertAdminFormulaAtCursor('$\\xrightarrow{\\text{cat.}}$')">—cat→ Catalyst</button>
+                                    <button type="button" class="admin-preset-chip" onclick="insertAdminFormulaAtCursor('$\\xrightarrow[\\text{temp}]{\\text{reagent}}$')">—[Reagent]→</button>
+                                    <button type="button" class="admin-preset-chip" onclick="insertAdminFormulaAtCursor('$_2$')">X₂ Subscript</button>
+                                    <button type="button" class="admin-preset-chip" onclick="insertAdminFormulaAtCursor('$^{2+}$')">X²⁺ Ion/Power</button>
+                                    <button type="button" class="admin-preset-chip" onclick="insertAdminFormulaAtCursor('$\\uparrow$')">↑ Gas</button>
+                                    <button type="button" class="admin-preset-chip" onclick="insertAdminFormulaAtCursor('$\\downarrow$')">↓ Precipitate</button>
+                                    <button type="button" class="admin-preset-chip" onclick="insertAdminFormulaAtCursor('$\\Delta H^\\circ$')">ΔH°</button>
+                                    <button type="button" class="admin-preset-chip" onclick="insertAdminFormulaAtCursor('$\\Delta G^\\circ$')">ΔG°</button>
+                                    <button type="button" class="admin-preset-chip" onclick="insertAdminFormulaAtCursor('⌬')">⌬ Benzene</button>
+                                </div>
+                                <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                                    <button type="button" class="admin-preset-chip" style="color:#38bdf8; border-color:rgba(56,189,248,0.35); background:rgba(56,189,248,0.08);" onclick="insertAdminFormulaAtCursor('$\\frac{a}{b}$')">a/b Fraction</button>
+                                    <button type="button" class="admin-preset-chip" style="color:#38bdf8; border-color:rgba(56,189,248,0.35); background:rgba(56,189,248,0.08);" onclick="insertAdminFormulaAtCursor('$\\sqrt{x}$')">√x Root</button>
+                                    <button type="button" class="admin-preset-chip" style="color:#38bdf8; border-color:rgba(56,189,248,0.35); background:rgba(56,189,248,0.08);" onclick="insertAdminFormulaAtCursor('$\\int_{a}^{b}$')">∫ Integral</button>
+                                    <button type="button" class="admin-preset-chip" style="color:#38bdf8; border-color:rgba(56,189,248,0.35); background:rgba(56,189,248,0.08);" onclick="insertAdminFormulaAtCursor('$\\sum$')">∑ Sum</button>
+                                    <button type="button" class="admin-preset-chip" style="color:#38bdf8; border-color:rgba(56,189,248,0.35); background:rgba(56,189,248,0.08);" onclick="insertAdminFormulaAtCursor('$\\vec{A}$')">vec(A)</button>
+                                    <button type="button" class="admin-preset-chip" style="color:#38bdf8; border-color:rgba(56,189,248,0.35); background:rgba(56,189,248,0.08);" onclick="insertAdminFormulaAtCursor('$\\times 10^{-6}$')">×10⁻ⁿ</button>
+                                    <button type="button" class="admin-preset-chip" style="color:#38bdf8; border-color:rgba(56,189,248,0.35); background:rgba(56,189,248,0.08);" onclick="insertAdminFormulaAtCursor('$\\theta$')">θ</button>
+                                    <button type="button" class="admin-preset-chip" style="color:#38bdf8; border-color:rgba(56,189,248,0.35); background:rgba(56,189,248,0.08);" onclick="insertAdminFormulaAtCursor('$\\lambda$')">λ</button>
+                                    <button type="button" class="admin-preset-chip" style="color:#38bdf8; border-color:rgba(56,189,248,0.35); background:rgba(56,189,248,0.08);" onclick="insertAdminFormulaAtCursor('$\\mu$')">μ</button>
+                                    <button type="button" class="admin-preset-chip" style="color:#38bdf8; border-color:rgba(56,189,248,0.35); background:rgba(56,189,248,0.08);" onclick="insertAdminFormulaAtCursor('$\\Omega$')">Ω</button>
+                                    <button type="button" class="admin-preset-chip" style="color:#38bdf8; border-color:rgba(56,189,248,0.35); background:rgba(56,189,248,0.08);" onclick="insertAdminFormulaAtCursor('$\\pi$')">π</button>
+                                    <button type="button" class="admin-preset-chip" style="color:#38bdf8; border-color:rgba(56,189,248,0.35); background:rgba(56,189,248,0.08);" onclick="insertAdminFormulaAtCursor('$\\pm$')">±</button>
+                                </div>
+                            </div>
+
+                            <!-- QUESTION TEXT OR QUESTION IMAGE SECTION -->
+                            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:6px;">
+                                <label class="admin-label" style="margin-bottom:0;">Question Text (Optional if you upload/paste Question Image below)</label>
+                                <span style="font-size:11px; color:#10b981;">💡 Supports $LaTeX$, chemical reactions &amp; Ctrl+V image paste!</span>
+                            </div>
+                            <textarea id="admQuestion" class="input-field" style="min-height: 100px; font-size: 15px; margin-bottom:10px;" placeholder="Type question or chemical reaction here... OR leave blank and upload/paste an image of the typed question below!" onfocus="setLastFocusedFormulaInput(this)" oninput="updateAdminLiveFormulaPreview()" onpaste="handleAdminQuestionPasteImage(event, 'QUESTION_IMG')"></textarea>
+
+                            <!-- 📸 PLACE IMAGE OF TYPED QUESTION (NO TYPING NEEDED) -->
+                            <div style="background:#111522; border:1px solid rgba(56,189,248,0.35); border-left:4px solid #38bdf8; border-radius:10px; padding:12px 14px; margin-bottom:18px;">
+                                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+                                    <div>
+                                        <div style="font-size:12.5px; font-weight:800; color:#38bdf8;">📸 Don't Want to Type the Question? Place Image of Typed Question Here</div>
+                                        <div style="font-size:11.5px; color:#94a3b8; margin-top:2px;">Upload a screenshot/photo of the typed question, or click inside Question Text and press <b>Ctrl+V</b> to paste!</div>
+                                    </div>
+                                    <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+                                        <input type="file" id="admQTextImageFile" accept="image/*" style="display:none;" onchange="handleAdminQuestionImgSelect(this)">
+                                        <button type="button" class="btn-exam" onclick="document.getElementById('admQTextImageFile').click()" style="background:rgba(56,189,248,0.15); color:#38bdf8; border:1px solid rgba(56,189,248,0.4); padding:7px 13px; font-size:12px;">📁 Choose Question Image</button>
+                                        <button type="button" class="btn-exam" onclick="clearAdminQuestionTextImage()" id="btnClearQTextImg" style="display:none; background:rgba(239,68,68,0.15); color:#ef4444; border:1px solid rgba(239,68,68,0.4); padding:7px 12px; font-size:12px;">✕ Remove</button>
+                                    </div>
+                                </div>
+                                <div id="admQTextImgPreviewWrap" style="display:none; margin-top:12px; background:#fff; padding:10px; border-radius:8px; text-align:center; max-width:100%; overflow:hidden;">
+                                    <img id="admQTextImgPreview" src="" style="max-height:170px; max-width:100%; object-fit:contain; display:block; margin:0 auto; border-radius:4px;">
+                                </div>
+                            </div>
+
+                            <!-- 📐 DEDICATED DIAGRAM SECTION (NEAT & CLEAR FOR STUDENTS) -->
                             <div class="admin-grid-2" style="margin-bottom: 15px;">
-                                <div>
-                                    <label class="admin-label">Attach Image (Optional)</label>
-                                    <input type="file" id="admQImage" class="input-field" accept="image/*" style="padding: 9px 14px;">
+                                <div style="background:#111522; border:1px solid rgba(253,184,19,0.4); border-left:4px solid #fdb813; border-radius:10px; padding:12px 14px;">
+                                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:8px;">
+                                        <label class="admin-label" style="color:var(--primary-yellow); margin-bottom:0;">📐 Dedicated Diagram / Figure / Circuit (Optional)</label>
+                                        <button type="button" onclick="clearAdminDiagramImage()" id="btnClearDiagramImg" style="display:none; background:rgba(239,68,68,0.15); color:#ef4444; border:1px solid rgba(239,68,68,0.4); border-radius:6px; padding:3px 9px; font-size:11px; font-weight:700; cursor:pointer;">✕ Remove Diagram</button>
+                                    </div>
+                                    <input type="file" id="admQImage" class="input-field" accept="image/*" style="padding: 8px 12px; margin-bottom:8px;" onchange="handleAdminDiagramImgSelect(this)">
+                                    <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                                        <input type="text" id="admDiagramCaption" class="input-field" placeholder="Diagram Label/Caption (Optional, e.g. Fig 1: Circuit)" style="flex:2; min-width:140px; margin-bottom:0; padding:8px 10px; font-size:12px;">
+                                        <select id="admDiagramBgMode" class="input-field" style="flex:1; min-width:130px; margin-bottom:0; padding:8px 10px; font-size:12px;" onchange="updateAdminDiagramPreviewBg()">
+                                            <option value="light">☀️ Crisp White Backing (Best for Black-Line Diagrams)</option>
+                                            <option value="dark">🌙 Dark Backing (For Colored Photos)</option>
+                                        </select>
+                                    </div>
+                                    <div id="admDiagramPreviewWrap" style="display:none; margin-top:10px; background:#ffffff; padding:10px; border-radius:8px; text-align:center; border:1px solid #334155;">
+                                        <img id="admDiagramPreviewImg" src="" style="max-height:160px; max-width:100%; object-fit:contain; display:block; margin:0 auto;">
+                                    </div>
                                 </div>
                                 <div>
                                     <label class="admin-label">Difficulty Level</label>
@@ -423,15 +534,18 @@ async function _renderAdminPanel() {
                                         <option value="Medium">Medium</option>
                                         <option value="Hard">Hard</option>
                                     </select>
+                                    <div style="background:#111522; border:1px solid #2b2b36; border-radius:10px; padding:10px 12px; font-size:12px; color:#94a3b8; line-height:1.5;">
+                                        💡 <b>Tip:</b> Upload your questions into <b>Easy</b>, <b>Medium</b>, and <b>Hard</b> folders, then use the <b>🎲 Auto-Generate Mixed Level</b> box above to build your <b>Mixed</b> set automatically!
+                                    </div>
                                 </div>
                             </div>
                             
-                            <label class="admin-label" style="margin-top: 25px;">Multiple Choice Options</label>
+                            <label class="admin-label" style="margin-top: 20px;">Multiple Choice Options (Supports Formulas &amp; Reactions)</label>
                             <div class="admin-grid-2">
-                                <input type="text" id="admOptA" class="input-field" placeholder="Option A">
-                                <input type="text" id="admOptB" class="input-field" placeholder="Option B">
-                                <input type="text" id="admOptC" class="input-field" placeholder="Option C">
-                                <input type="text" id="admOptD" class="input-field" placeholder="Option D">
+                                <input type="text" id="admOptA" class="input-field" placeholder="Option A" onfocus="setLastFocusedFormulaInput(this)" oninput="updateAdminLiveFormulaPreview()">
+                                <input type="text" id="admOptB" class="input-field" placeholder="Option B" onfocus="setLastFocusedFormulaInput(this)" oninput="updateAdminLiveFormulaPreview()">
+                                <input type="text" id="admOptC" class="input-field" placeholder="Option C" onfocus="setLastFocusedFormulaInput(this)" oninput="updateAdminLiveFormulaPreview()">
+                                <input type="text" id="admOptD" class="input-field" placeholder="Option D" onfocus="setLastFocusedFormulaInput(this)" oninput="updateAdminLiveFormulaPreview()">
                             </div>
                             
                             <label class="admin-label" style="margin-top: 15px;">Select Correct Answer(s)</label>
@@ -442,13 +556,19 @@ async function _renderAdminPanel() {
                                 <label class="admin-cb-label"><input type="checkbox" value="D" class="admCorrectCb"> D</label>
                             </div>
                             
-                            <label class="admin-label">Explanation (Optional)</label>
-                            <textarea id="admExplanation" class="input-field" style="min-height: 80px;" placeholder="Explain why the answer is correct..."></textarea>
+                            <label class="admin-label">Explanation (Optional — Supports Step-by-Step Reactions &amp; Formulas)</label>
+                            <textarea id="admExplanation" class="input-field" style="min-height: 80px;" placeholder="Explain why the answer is correct..." onfocus="setLastFocusedFormulaInput(this)" oninput="updateAdminLiveFormulaPreview()"></textarea>
+
+                            <!-- 👁️ LIVE STUDENT VIEW & FORMULA / REACTION PREVIEW -->
+                            <div id="admLiveFormulaPreviewCard" style="display:none; background:#090e1a; border:1px solid rgba(253,184,19,0.35); border-radius:12px; padding:14px 16px; margin-top:14px;">
+                                <div style="font-size:11px; font-weight:800; color:var(--primary-yellow); text-transform:uppercase; margin-bottom:8px;">👁️ Live Student Formula &amp; Reaction Preview</div>
+                                <div id="admLiveFormulaPreviewContent" style="font-size:14.5px; color:#fff; line-height:1.6;"></div>
+                            </div>
                         </div>
                         
                         <div id="admin-pdf-form" style="display:none;">
                             <div style="background:rgba(56,189,248,0.08); border:1px solid rgba(56,189,248,0.3); border-radius:10px; padding:12px 15px; margin-bottom:18px; font-size:12.5px; color:#cbd5e1;">
-                                💡 <b>Smart PDF Uploader:</b> Upload one or multiple PDF/Image files from your device, <b>OR</b> paste a direct PDF / Google Drive link below. Uploaded PDFs appear immediately inside this folder on both Website & App!
+                                💡 <b>Smart PDF Uploader:</b> Upload one or multiple PDF/Image files from your device, <b>OR</b> paste a direct PDF / Google Drive link below. Uploaded PDFs appear immediately inside this folder on both Website &amp; App!
                             </div>
 
                             <label class="admin-label">Document Title (Optional if uploading multiple files — uses file names automatically)</label>
@@ -463,13 +583,13 @@ async function _renderAdminPanel() {
                                 <div>
                                     <label class="admin-label">Option B: Or Paste Direct PDF / Google Drive Link</label>
                                     <input type="url" id="admPdfDirectUrl" class="input-field" placeholder="https://drive.google.com/... or direct .pdf link">
-                                    <span style="font-size:11px; color:#888;">*Great for large NCERT books (>10 MB) hosted on Google Drive!</span>
+                                    <span style="font-size:11px; color:#888;">*Great for large NCERT books (&gt;10 MB) hosted on Google Drive!</span>
                                 </div>
                             </div>
                         </div>
                         
                         <div style="display: flex; gap: 15px; margin-top: 30px; border-top: 1px solid #2b2b36; padding-top: 20px;">
-                            <button id="uploadBtn" class="btn-exam btn-green-glow" onclick="processAdminUpload()" style="flex: 2; font-size: 16px;">☁️ Upload & Save</button>
+                            <button id="uploadBtn" class="btn-exam btn-green-glow" onclick="processAdminUpload()" style="flex: 2; font-size: 16px;">☁️ Upload &amp; Save</button>
                             <button class="btn-exam" onclick="clearAdminUploadForm(false)" style="background-color: transparent; color: var(--wrong-red); border: 1px solid var(--wrong-red); flex: 1;">Clear Fields</button>
                         </div>
                     </div>
@@ -2298,6 +2418,428 @@ async function uploadFileToCloudinary(file) {
     return data.secure_url;
 }
 
+// ==========================================
+// FORMULA TOOLBAR, QUESTION IMAGE, DIAGRAM & AUTO-MIXED LEVEL ENGINE
+// ==========================================
+(function injectStudentDiagramAndQuestionImgStyles() {
+    if (document.getElementById('mcqs-diagram-qimg-styles')) return;
+    const st = document.createElement('style');
+    st.id = 'mcqs-diagram-qimg-styles';
+    st.textContent = `
+        .mcq-question-text-img-wrap {
+            margin: 10px 0 14px 0;
+            background: #ffffff;
+            border: 1.5px solid rgba(56, 189, 248, 0.45);
+            border-radius: 12px;
+            padding: 10px 14px;
+            text-align: center;
+            max-width: 100%;
+            box-sizing: border-box;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+        }
+        .mcq-question-text-img-wrap img {
+            max-width: 100%;
+            max-height: 240px;
+            width: auto;
+            height: auto;
+            object-fit: contain;
+            display: block;
+            margin: 0 auto;
+            border-radius: 6px;
+            cursor: zoom-in;
+        }
+        .mcq-diagram-card {
+            margin: 14px auto 16px auto;
+            border: 1.5px solid rgba(253, 184, 19, 0.45);
+            border-radius: 12px;
+            padding: 12px 14px;
+            text-align: center;
+            max-width: 540px;
+            width: 100%;
+            box-sizing: border-box;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+            overflow: hidden;
+        }
+        .mcq-diagram-card.bg-light {
+            background: #ffffff;
+            color: #0f172a;
+        }
+        .mcq-diagram-card.bg-dark {
+            background: #0d1527;
+            color: #f8fafc;
+        }
+        .mcq-diagram-card img {
+            max-width: 100%;
+            max-height: 230px;
+            width: auto;
+            height: auto;
+            object-fit: contain;
+            display: block;
+            margin: 0 auto;
+            border-radius: 6px;
+            cursor: zoom-in;
+        }
+        .mcq-diagram-caption {
+            margin-top: 8px;
+            font-size: 12px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            opacity: 0.88;
+        }
+    `;
+    document.head.appendChild(st);
+})();
+
+let lastFocusedFormulaInput = null;
+let pendingAdminQuestionPastedBlob = null;
+
+function setLastFocusedFormulaInput(el) {
+    if (el) lastFocusedFormulaInput = el;
+}
+
+function insertAdminFormulaAtCursor(snippet) {
+    let target = lastFocusedFormulaInput || document.getElementById('admQuestion');
+    if (!target) return;
+    target.focus();
+    const start = target.selectionStart !== undefined ? target.selectionStart : target.value.length;
+    const end = target.selectionEnd !== undefined ? target.selectionEnd : target.value.length;
+    const text = target.value;
+    target.value = text.substring(0, start) + snippet + text.substring(end);
+    const nextPos = start + snippet.length;
+    target.selectionStart = target.selectionEnd = nextPos;
+    updateAdminLiveFormulaPreview();
+}
+
+function formatPlainChemistryToLatex() {
+    let target = lastFocusedFormulaInput || document.getElementById('admQuestion');
+    if (!target || !target.value.trim()) {
+        return showNotification('⚠️ Click inside Question, Option, or Explanation with text first.');
+    }
+    let s = target.value;
+    s = s.replace(/<=>|<-->/g, '$\\rightleftharpoons$');
+    s = s.replace(/-->|->/g, '$\\rightarrow$');
+    s = s.replace(/\b([A-Z][a-z]?)(\d+)\b/g, '$1$_$2$');
+    s = s.replace(/\^(\d+[+\-]|[+\-]\d*)/g, '$^{$1}$');
+    target.value = s;
+    updateAdminLiveFormulaPreview();
+    showNotification('✨ Reactions & subscripts formatted!');
+}
+
+function updateAdminLiveFormulaPreview() {
+    const card = document.getElementById('admLiveFormulaPreviewCard');
+    const content = document.getElementById('admLiveFormulaPreviewContent');
+    if (!card || !content) return;
+
+    const q = document.getElementById('admQuestion')?.value.trim() || '';
+    const a = document.getElementById('admOptA')?.value.trim() || '';
+    const b = document.getElementById('admOptB')?.value.trim() || '';
+    const c = document.getElementById('admOptC')?.value.trim() || '';
+    const d = document.getElementById('admOptD')?.value.trim() || '';
+    const exp = document.getElementById('admExplanation')?.value.trim() || '';
+
+    if (!q && !a && !b && !c && !d && !exp) {
+        card.style.display = 'none';
+        return;
+    }
+    card.style.display = 'block';
+    content.innerHTML = `
+        ${q ? `<div style="margin-bottom:8px;"><b>Q:</b> ${q}</div>` : ''}
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; font-size:13px; color:#cbd5e1;">
+            ${a ? `<div><b>A)</b> ${a}</div>` : ''}
+            ${b ? `<div><b>B)</b> ${b}</div>` : ''}
+            ${c ? `<div><b>C)</b> ${c}</div>` : ''}
+            ${d ? `<div><b>D)</b> ${d}</div>` : ''}
+        </div>
+        ${exp ? `<div style="margin-top:8px; font-size:12.5px; color:#94a3b8; border-top:1px solid #1e293b; padding-top:6px;"><b>Exp:</b> ${exp}</div>` : ''}
+    `;
+
+    if (typeof renderMathInElement === 'function') {
+        renderMathInElement(content, {
+            delimiters: [
+                { left: '$$', right: '$$', display: true },
+                { left: '$', right: '$', display: false },
+                { left: '\\(', right: '\\)', display: false },
+                { left: '[', right: ']', display: true }
+            ],
+            throwOnError: false
+        });
+    }
+}
+
+function handleAdminQuestionImgSelect(inputEl) {
+    if (!inputEl || !inputEl.files || !inputEl.files[0]) return;
+    pendingAdminQuestionPastedBlob = null;
+    const file = inputEl.files[0];
+    const url = URL.createObjectURL(file);
+    const wrap = document.getElementById('admQTextImgPreviewWrap');
+    const img = document.getElementById('admQTextImgPreview');
+    const clr = document.getElementById('btnClearQTextImg');
+    if (img) img.src = url;
+    if (wrap) wrap.style.display = 'block';
+    if (clr) clr.style.display = 'inline-block';
+}
+
+function handleAdminQuestionPasteImage(event) {
+    const items = event.clipboardData?.items;
+    if (!items) return;
+    for (let item of items) {
+        if (item.type.indexOf('image') !== -1) {
+            event.preventDefault();
+            const blob = item.getAsFile();
+            pendingAdminQuestionPastedBlob = blob;
+            const url = URL.createObjectURL(blob);
+            const wrap = document.getElementById('admQTextImgPreviewWrap');
+            const img = document.getElementById('admQTextImgPreview');
+            const clr = document.getElementById('btnClearQTextImg');
+            if (img) img.src = url;
+            if (wrap) wrap.style.display = 'block';
+            if (clr) clr.style.display = 'inline-block';
+            showNotification('📸 Question image pasted from clipboard!');
+            break;
+        }
+    }
+}
+
+function clearAdminQuestionTextImage() {
+    pendingAdminQuestionPastedBlob = null;
+    const f = document.getElementById('admQTextImageFile');
+    const wrap = document.getElementById('admQTextImgPreviewWrap');
+    const img = document.getElementById('admQTextImgPreview');
+    const clr = document.getElementById('btnClearQTextImg');
+    if (f) f.value = '';
+    if (img) img.src = '';
+    if (wrap) wrap.style.display = 'none';
+    if (clr) clr.style.display = 'none';
+}
+
+function handleAdminDiagramImgSelect(inputEl) {
+    if (!inputEl || !inputEl.files || !inputEl.files[0]) return;
+    const url = URL.createObjectURL(inputEl.files[0]);
+    const wrap = document.getElementById('admDiagramPreviewWrap');
+    const img = document.getElementById('admDiagramPreviewImg');
+    const clr = document.getElementById('btnClearDiagramImg');
+    if (img) img.src = url;
+    if (wrap) wrap.style.display = 'block';
+    if (clr) clr.style.display = 'inline-block';
+    updateAdminDiagramPreviewBg();
+}
+
+function updateAdminDiagramPreviewBg() {
+    const mode = document.getElementById('admDiagramBgMode')?.value || 'light';
+    const wrap = document.getElementById('admDiagramPreviewWrap');
+    if (wrap) wrap.style.background = mode === 'dark' ? '#0d1527' : '#ffffff';
+}
+
+function clearAdminDiagramImage() {
+    const f = document.getElementById('admQImage');
+    const cap = document.getElementById('admDiagramCaption');
+    const wrap = document.getElementById('admDiagramPreviewWrap');
+    const img = document.getElementById('admDiagramPreviewImg');
+    const clr = document.getElementById('btnClearDiagramImg');
+    if (f) f.value = '';
+    if (cap) cap.value = '';
+    if (img) img.src = '';
+    if (wrap) wrap.style.display = 'none';
+    if (clr) clr.style.display = 'none';
+}
+
+function openStudentDiagramLightbox(imgSrc, captionText = '') {
+    if (!imgSrc) return;
+    let modal = document.getElementById('studentDiagramZoomModal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'studentDiagramZoomModal';
+        modal.style.cssText = 'position:fixed; inset:0; background:rgba(5,8,17,0.94); z-index:99999; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:20px;';
+        modal.onclick = () => { modal.style.display = 'none'; };
+        document.body.appendChild(modal);
+    }
+    modal.innerHTML = `
+        <div style="max-width:95vw; max-height:85vh; background:#ffffff; padding:14px; border-radius:14px; box-shadow:0 15px 45px rgba(0,0,0,0.85); text-align:center;" onclick="event.stopPropagation()">
+            <img src="${imgSrc}" style="max-width:88vw; max-height:74vh; object-fit:contain; display:block; margin:0 auto; border-radius:6px;">
+            ${captionText ? `<div style="color:#0f172a; font-weight:800; font-size:14px; margin-top:10px;">${captionText}</div>` : ''}
+        </div>
+        <button type="button" style="margin-top:16px; background:#ef4444; color:#fff; border:none; padding:9px 22px; border-radius:30px; font-weight:800; cursor:pointer;">✕ Close Zoom</button>
+    `;
+    modal.style.display = 'flex';
+}
+
+function getBaseSubtopicPathForMixed() {
+    if (!Array.isArray(adminSelectedPath) || adminSelectedPath.length === 0) return '';
+    const last = adminSelectedPath[adminSelectedPath.length - 1].replace(/^\d+\.\s*/, '').trim().toLowerCase();
+    if (['easy', 'medium', 'hard', 'mixed'].includes(last) && adminSelectedPath.length > 1) {
+        return adminSelectedPath.slice(0, -1).join(' > ');
+    }
+    return adminSelectedPath.join(' > ');
+}
+
+async function fetchSubtopicDifficultyPools(baseSubtopicPath) {
+    const snap = await db.collection('content')
+        .where('path', '>=', baseSubtopicPath)
+        .where('path', '<=', baseSubtopicPath + '\uf8ff')
+        .get();
+
+    const pools = { Easy: [], Medium: [], Hard: [], MixedDocs: [] };
+    const seenSig = { Easy: new Set(), Medium: new Set(), Hard: new Set() };
+
+    snap.forEach(doc => {
+        const d = doc.data();
+        if (d.type && d.type !== 'mcq') return;
+        const p = (d.path || '').trim();
+        const leaf = p.split(' > ').pop().replace(/^\d+\.\s*/, '').trim().toLowerCase();
+        const lvl = (d.level || '').trim().toLowerCase();
+
+        if (p === `${baseSubtopicPath} > Mixed` || leaf === 'mixed') {
+            pools.MixedDocs.push({ id: doc.id, ref: doc.ref, data: d });
+            return;
+        }
+
+        let targetBucket = null;
+        if (leaf === 'easy' || lvl === 'easy') targetBucket = 'Easy';
+        else if (leaf === 'medium' || lvl === 'medium') targetBucket = 'Medium';
+        else if (leaf === 'hard' || lvl === 'hard') targetBucket = 'Hard';
+
+        if (targetBucket) {
+            const sig = `${d.question || ''}_${d.options?.A || ''}`;
+            if (!seenSig[targetBucket].has(sig)) {
+                seenSig[targetBucket].add(sig);
+                pools[targetBucket].push({ id: doc.id, ...d, sourceLevel: targetBucket });
+            }
+        }
+    });
+    return pools;
+}
+
+async function refreshAutoMixAvailableCounts() {
+    const baseSub = getBaseSubtopicPathForMixed();
+    const txtEl = document.getElementById('autoMixDetectedSubtopicText');
+    const badgesEl = document.getElementById('autoMixLiveCountsBadges');
+    if (txtEl) txtEl.innerText = baseSub || 'Select a Subtopic above';
+    if (!baseSub || !badgesEl) return;
+
+    badgesEl.innerHTML = `<span style="color:#94a3b8; font-size:11.5px;">Checking...</span>`;
+    try {
+        const pools = await fetchSubtopicDifficultyPools(baseSub);
+        badgesEl.innerHTML = `
+            <span style="background:rgba(16,185,129,0.15); color:#10b981; border:1px solid rgba(16,185,129,0.4); padding:3px 9px; border-radius:20px; font-size:11px; font-weight:800;">🟢 Easy: ${pools.Easy.length}</span>
+            <span style="background:rgba(234,179,8,0.15); color:#eab308; border:1px solid rgba(234,179,8,0.4); padding:3px 9px; border-radius:20px; font-size:11px; font-weight:800;">🟡 Medium: ${pools.Medium.length}</span>
+            <span style="background:rgba(244,63,94,0.15); color:#f43f5e; border:1px solid rgba(244,63,94,0.4); padding:3px 9px; border-radius:20px; font-size:11px; font-weight:800;">🔴 Hard: ${pools.Hard.length}</span>
+            <span style="background:rgba(168,85,247,0.18); color:#c084fc; border:1px solid rgba(168,85,247,0.4); padding:3px 9px; border-radius:20px; font-size:11px; font-weight:800;">⚡ In Mixed: ${pools.MixedDocs.length}</span>
+        `;
+    } catch (e) {
+        badgesEl.innerHTML = `<span style="color:#ef4444; font-size:11px;">Could not load counts</span>`;
+    }
+}
+
+function shuffleArrayNonSerial(arr) {
+    const copy = [...arr];
+    for (let pass = 0; pass < 3; pass++) {
+        for (let i = copy.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [copy[i], copy[j]] = [copy[j], copy[i]];
+        }
+    }
+    return copy;
+}
+
+async function generateAutoMixedQuestionsForSubtopic() {
+    const baseSub = getBaseSubtopicPathForMixed();
+    if (!baseSub) return showNotification('⚠️ Select a subtopic folder in Step 1 first.');
+
+    const nEasy = Math.max(0, parseInt(document.getElementById('autoMixEasyCount')?.value || '0', 10));
+    const nMed = Math.max(0, parseInt(document.getElementById('autoMixMediumCount')?.value || '0', 10));
+    const nHard = Math.max(0, parseInt(document.getElementById('autoMixHardCount')?.value || '0', 10));
+    const replaceExisting = document.getElementById('autoMixReplaceExisting')?.checked ?? true;
+
+    if (nEasy + nMed + nHard === 0) {
+        return showNotification('⚠️ Enter at least 1 question count for Easy, Medium, or Hard.');
+    }
+
+    const btn = document.getElementById('btnRunAutoMix');
+    if (btn) { btn.innerText = '🎲 Shuffling & Building Mixed Set...'; btn.disabled = true; }
+
+    try {
+        const pools = await fetchSubtopicDifficultyPools(baseSub);
+        const pickedEasy = shuffleArrayNonSerial(pools.Easy).slice(0, nEasy);
+        const pickedMed = shuffleArrayNonSerial(pools.Medium).slice(0, nMed);
+        const pickedHard = shuffleArrayNonSerial(pools.Hard).slice(0, nHard);
+
+        const combined = shuffleArrayNonSerial([...pickedEasy, ...pickedMed, ...pickedHard]);
+        if (combined.length === 0) {
+            throw new Error(`No Easy, Medium, or Hard questions found under "${baseSub}" yet. Upload questions to Easy, Medium, or Hard first!`);
+        }
+
+        const mixedPath = `${baseSub} > Mixed`;
+        if (!doesTopicPathExist(mixedPath)) {
+            await db.collection('custom_topics').add({
+                parentPath: baseSub,
+                name: 'Mixed',
+                type: 'mcq',
+                icon: '⚡',
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            await loadCustomTopics();
+        }
+
+        if (replaceExisting && pools.MixedDocs.length > 0) {
+            for (let i = 0; i < pools.MixedDocs.length; i += 400) {
+                const delBatch = db.batch();
+                pools.MixedDocs.slice(i, i + 400).forEach(m => delBatch.delete(m.ref));
+                await delBatch.commit();
+            }
+        }
+
+        const nowMs = Date.now();
+        for (let i = 0; i < combined.length; i += 400) {
+            const addBatch = db.batch();
+            combined.slice(i, i + 400).forEach((q, idx) => {
+                const newDocRef = db.collection('content').doc();
+                addBatch.set(newDocRef, {
+                    type: 'mcq',
+                    path: mixedPath,
+                    level: 'Mixed',
+                    sourceDifficulty: q.sourceLevel || q.level || 'Mixed',
+                    question: q.question || '',
+                    options: q.options || {},
+                    correctAnswers: q.correctAnswers || [],
+                    explanation: q.explanation || '',
+                    imageUrl: q.imageUrl || null,
+                    questionImageUrl: q.questionImageUrl || null,
+                    diagramUrl: q.diagramUrl || null,
+                    diagramCaption: q.diagramCaption || '',
+                    randomKey: Math.random(),
+                    timestamp: firebase.firestore.Timestamp.fromMillis(nowMs - (i + idx) * 1000)
+                });
+            });
+            await addBatch.commit();
+        }
+
+        showNotification(`✅ Created ${combined.length} randomly shuffled Mixed questions (${pickedEasy.length} Easy, ${pickedMed.length} Medium, ${pickedHard.length} Hard)!`);
+        await refreshAutoMixAvailableCounts();
+    } catch (err) {
+        alert('⚠️ Auto-Mix Error: ' + err.message);
+    }
+    if (btn) { btn.innerText = '🎲 Auto-Combine & Shuffle into Mixed Level'; btn.disabled = false; }
+}
+
+// Automatically refresh Mixed counts when admin changes upload folder path
+const _origHandleAdminPathChange = handleAdminPathChange;
+handleAdminPathChange = function(event, depth) {
+    _origHandleAdminPathChange(event, depth);
+    setTimeout(refreshAutoMixAvailableCounts, 80);
+};
+
+// Automatically clear new Question Image, Diagram & Formula Preview when clearing form
+const _origClearAdminUploadForm = clearAdminUploadForm;
+clearAdminUploadForm = function(isSmartClear = false) {
+    _origClearAdminUploadForm(isSmartClear);
+    clearAdminQuestionTextImage();
+    clearAdminDiagramImage();
+    updateAdminLiveFormulaPreview();
+};
+
 async function processAdminUpload() {
     const type = document.getElementById('admResourceType').value;
     const targetPath = adminSelectedPath.join(' > ');
@@ -2307,7 +2849,7 @@ async function processAdminUpload() {
 
     try {
         if (type === 'mcq') {
-            const question = document.getElementById('admQuestion').value.trim();
+            let questionText = document.getElementById('admQuestion').value.trim();
             const options = {
                 A: document.getElementById('admOptA').value.trim(),
                 B: document.getElementById('admOptB').value.trim(),
@@ -2316,31 +2858,69 @@ async function processAdminUpload() {
             };
             const correctAnswers = Array.from(document.querySelectorAll('.admCorrectCb:checked')).map(cb => cb.value);
             const explanation = document.getElementById('admExplanation').value.trim();
-            const imgFile = document.getElementById('admQImage').files[0];
-            let level = document.getElementById('admDifficulty').value;
 
+            const qTextImgFile = pendingAdminQuestionPastedBlob || document.getElementById('admQTextImageFile')?.files?.[0] || null;
+            const diagramFile = document.getElementById('admQImage')?.files?.[0] || null;
+            const diagramCaption = document.getElementById('admDiagramCaption')?.value.trim() || '';
+            const diagramBgMode = document.getElementById('admDiagramBgMode')?.value || 'light';
+
+            let level = document.getElementById('admDifficulty').value;
             const leaf = (adminSelectedPath[adminSelectedPath.length - 1] || '').replace(/^\d+\.\s*/, '').trim();
             if (['Easy', 'Medium', 'Hard', 'Mixed'].includes(leaf) && level === 'Mixed') level = leaf;
 
-            if (!question || !options.A || !options.B || !correctAnswers.length) {
-                throw new Error('Question, Option A, Option B, and Correct Answer are required.');
+            if ((!questionText && !qTextImgFile) || !options.A || !options.B || !correctAnswers.length) {
+                throw new Error('Provide either Question Text OR a Question Image, plus Option A, Option B, and Correct Answer.');
             }
-            const imageUrl = imgFile ? await uploadFileToCloudinary(imgFile) : null;
+
+            let questionImageUrl = null;
+            if (qTextImgFile) {
+                btn.innerText = 'Uploading Question Image...';
+                questionImageUrl = await uploadFileToCloudinary(qTextImgFile);
+            }
+
+            let diagramUrl = null;
+            if (diagramFile) {
+                btn.innerText = 'Uploading Diagram...';
+                diagramUrl = await uploadFileToCloudinary(diagramFile);
+            }
+
+            // Build clean, self-contained HTML for Question Image and Diagram so it displays neatly everywhere without disturbing Options or Explanation
+            let finalQuestionHtml = questionText;
+            if (questionImageUrl) {
+                const safeQUrl = questionImageUrl.replace(/'/g, "\\'");
+                const qImgBlock = `<div class="mcq-question-text-img-wrap"><img src="${questionImageUrl}" alt="Question" onclick="openStudentDiagramLightbox('${safeQUrl}', 'Question Image')" title="Click to zoom"></div>`;
+                finalQuestionHtml = finalQuestionHtml ? `${finalQuestionHtml}${qImgBlock}` : qImgBlock;
+            }
+            if (diagramUrl) {
+                const safeDUrl = diagramUrl.replace(/'/g, "\\'");
+                const safeCap = diagramCaption.replace(/'/g, "\\'");
+                const bgClass = diagramBgMode === 'dark' ? 'bg-dark' : 'bg-light';
+                const capHtml = diagramCaption
+                    ? `<div class="mcq-diagram-caption">📐 ${diagramCaption} <span style="font-size:10.5px; opacity:0.7;">(Tap to zoom)</span></div>`
+                    : `<div class="mcq-diagram-caption" style="font-size:11px; opacity:0.7;">🔍 Tap diagram to zoom</div>`;
+                const diagBlock = `<div class="mcq-diagram-card ${bgClass}"><img src="${diagramUrl}" alt="Diagram" onclick="openStudentDiagramLightbox('${safeDUrl}', '${safeCap}')">${capHtml}</div>`;
+                finalQuestionHtml = `${finalQuestionHtml}${diagBlock}`;
+            }
 
             await db.collection('content').add({
                 type: 'mcq',
                 path: targetPath,
                 level,
-                question,
+                question: finalQuestionHtml,
+                rawQuestionText: questionText,
                 options,
                 correctAnswers,
                 explanation,
-                imageUrl,
+                imageUrl: null,
+                questionImageUrl,
+                diagramUrl,
+                diagramCaption,
                 randomKey: Math.random(),
                 timestamp: firebase.firestore.FieldValue.serverTimestamp()
             });
             clearAdminUploadForm(true);
             showNotification('✅ MCQ Uploaded Successfully!');
+            refreshAutoMixAvailableCounts();
         } else {
             const customTitle = document.getElementById('admPdfTitle').value.trim();
             const files = document.getElementById('admPdfFile').files;
