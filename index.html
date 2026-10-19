@@ -5,11 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
     <!-- 🔍 PRIMARY SEO TITLE & SITE NAME SIGNALS FOR GOOGLE SEARCH -->
-    <title>MCQsPrep — Free NEET, JEE & Competitive Exam MCQ Practice Platform</title>
+    <title>MCQsPrep — Free NEET, JEE, Boards & GK Mock Test Platform</title>
     <meta name="application-name" content="MCQsPrep">
     <meta name="apple-mobile-web-app-title" content="MCQsPrep">
-    <meta name="description" content="Practice smarter on MCQsPrep — the free competitive exam platform for NEET, JEE, Boards & GK. Build custom mock tests, solve chapter-wise MCQs & PYQs, access NCERT study materials, track your accuracy, and clear doubts 24/7 with our built-in AI Tutor.">
-    <meta name="keywords" content="MCQsPrep, mcqsprep, NEET MCQ practice, JEE mock test, NCERT MCQs, PYQs, daily quiz challenge, competitive exam preparation">
+    <meta name="description" content="MCQsPrep is India’s free exam preparation platform for NEET-UG, JEE Main, Boards (Class 9–12) & GK. Practice chapter-wise MCQs, full-length custom mock tests, NCERT PDFs, PYQs, deep subject-wise analytics, All-India leaderboards, and 24/7 AI Tutor.">
+    <meta name="keywords" content="MCQsPrep, mcqsprep, NEET MCQ practice, JEE mock test, Class 9 10 11 12 Board MCQs, NCERT MCQs, PYQs, All India Leaderboard, competitive exam preparation">
     <meta name="author" content="MCQsPrep">
     <meta name="robots" content="index, follow">
     <link rel="canonical" href="https://mcqsprep.github.io/">
@@ -17,8 +17,8 @@
     <!-- 🌐 OPEN GRAPH / SOCIAL & SEARCH ENGINE PREVIEW TAGS -->
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="MCQsPrep">
-    <meta property="og:title" content="MCQsPrep — Smart Competitive Exam MCQ Practice">
-    <meta property="og:description" content="Practice smarter on MCQsPrep — the free competitive exam platform for NEET, JEE, Boards & GK. Build custom mock tests, solve chapter-wise MCQs & PYQs, access NCERT study materials, track your accuracy, and clear doubts 24/7 with our built-in AI Tutor.">
+    <meta property="og:title" content="MCQsPrep — Free NEET, JEE, Boards & GK Mock Test Platform">
+    <meta property="og:description" content="Master NEET-UG, JEE Main, Board Exams & GK with full-length custom mock tests (up to 250 MCQs), deep subject-wise weak-spot & time-to-accuracy analytics, All-India leaderboards, NCERT PDFs, PYQs, and instant AI doubt solving.">
     <meta property="og:url" content="https://mcqsprep.github.io/">
     <meta property="og:image" content="https://mcqsprep.github.io/icon-512.png">
 
@@ -34,14 +34,48 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="preload" as="image" href="icon-192.png">
 
-    <!-- 🏆 STRICT GOOGLE SITE NAME STRUCTURED DATA (Replaces "GitHub" with "MCQsPrep") -->
+    <!-- 🏆 STRICT GOOGLE SITE NAME + AI OVERVIEW STRUCTURED DATA (Replaces "GitHub" with "MCQsPrep") -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
-      "@type": "WebSite",
-      "name": "MCQsPrep",
-      "alternateName": ["MCQs Prep", "mcqsprep", "MCQsPrep Web App"],
-      "url": "https://mcqsprep.github.io/"
+      "@graph": [
+        {
+          "@type": "WebSite",
+          "@id": "https://mcqsprep.github.io/#website",
+          "name": "MCQsPrep",
+          "alternateName": ["MCQs Prep", "mcqsprep", "MCQsPrep India", "MCQsPrep Exam Platform"],
+          "url": "https://mcqsprep.github.io/"
+        },
+        {
+          "@type": "EducationalOrganization",
+          "@id": "https://mcqsprep.github.io/#organization",
+          "name": "MCQsPrep",
+          "url": "https://mcqsprep.github.io/",
+          "logo": "https://mcqsprep.github.io/icon-512.png",
+          "description": "Comprehensive Indian competitive and board examination preparation platform offering full-length NEET-UG, JEE Main, Class 9-12 State/Central Board, and General Knowledge test series, line-by-line NCERT question banks, previous year question papers (PYQs), All-India live leaderboards, and deep diagnostic performance analytics."
+        },
+        {
+          "@type": "WebApplication",
+          "name": "MCQsPrep Complete Exam & Mock Test Suite",
+          "url": "https://mcqsprep.github.io/",
+          "applicationCategory": "EducationalApplication",
+          "operatingSystem": "All",
+          "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "INR"
+          },
+          "featureList": [
+            "Comprehensive NEET-UG, JEE Main, Class 9-12 Boards (CBSE, ICSE, AHSEC, SEBA & State Boards) and General Knowledge Question Bank",
+            "Full-Length Custom Mock Test Simulator (20 to 250 MCQs) with Multi-Subject & Multi-Chapter Mixing and Real-Exam Difficulty Balancing (Easy, Medium, Hard, Mixed)",
+            "Deep Diagnostic Performance Analytics: Subject-Wise Mastery Breakdown, Automated Weak-Spot Detection (<50% Accuracy Alerts), Time-to-Accuracy Insights (Average Time on Correct vs. Wrong Answers), and Accuracy Trajectory Graphing",
+            "Live All-India Global Leaderboards with a strict 100-MCQ qualification benchmark for authentic national rank simulation",
+            "Complete NCERT Books, Chapter-wise PDFs, Solved Previous Year Question Papers (PYQs), and Model Practice Papers with In-App PDF Reader",
+            "24/7 NCERT-Aligned AI Tutor with Image Recognition for instant step-by-step Physics, Chemistry, Biology, and Mathematics doubt resolution",
+            "Personal Doubt Diary, Question Bookmarking with LaTeX/KaTeX Mathematical Rendering, and Daily Quiz Challenge Streaks"
+          ]
+        }
+      ]
     }
     </script>
 
@@ -471,7 +505,7 @@
     <div id="reportModal" class="modal-overlay"><div class="modal-content" style="max-width: 450px;"><button class="close-modal" onclick="closeReportModal()">✕</button><h2 style="color: var(--wrong-red); margin-top:0;">🚨 Report Mistake</h2><select id="reportReason" class="input-field"><option value="Wrong Option Provided">Wrong Option</option><option value="Typo">Typo</option><option value="Other">Other</option></select><textarea id="reportDescription" class="input-field" placeholder="Details..."></textarea><button class="btn-exam" onclick="submitReport()" style="width:100%; background:var(--wrong-red); color:white; border:none;">Submit</button></div></div>
     <div id="feedbackModal" class="modal-overlay"><div class="modal-content" style="text-align: center;"><button class="close-modal" onclick="closeFeedbackModal()">✕</button><h2 style="color: var(--primary-yellow); margin-top:0;">⭐ Feedback</h2><div style="background: #090e1a; padding: 22px; border-radius: 8px; border:1px solid var(--border-color);"><div style="margin-bottom: 20px;"><button id="star-1" class="star-btn" onclick="updateStarUI(1)">★</button><button id="star-2" class="star-btn" onclick="updateStarUI(2)">★</button><button id="star-3" class="star-btn" onclick="updateStarUI(3)">★</button><button id="star-4" class="star-btn" onclick="updateStarUI(4)">★</button><button id="star-5" class="star-btn" onclick="updateStarUI(5)">★</button></div><textarea id="platformFeedbackText" class="input-field" placeholder="Tell us what you like..."></textarea><button id="submitFeedbackBtn" class="btn-exam btn-yellow-glow" onclick="submitPlatformFeedback()" style="width: 100%; background: var(--primary-yellow); color: black;">Submit</button></div></div></div>
     
-    <div id="editTopicModal" class="modal-overlay"><div class="modal-content" style="max-width: 450px;"><button class="close-modal" onclick="closeEditTopicModal()">✕</button><h2 style="color: var(--primary-yellow); margin-top:0;">✏️ Edit Folder</h2><input type="hidden" id="editTopicId"><input type="text" id="editTopicName" class="input-field"><input type="text" id="editTopicIcon" class="input-field" placeholder="Custom Icon (Optional, e.g. 🧬)" maxlength="2"><select id="editTopicType" class="input-field"><option value="both">📂 Parent Category</option><option value="mcq">📝 MCQs Practice</option><option value="pdf">📄 PDF Material</option></select><button class="btn-exam btn-green-glow" onclick="saveEditedTopic()" style="width:100%; background:var(--correct-green);">Save Changes</button></div></div>
+    <div id="editTopicModal" class="modal-overlay"><div class="modal-content" style="max-width: 450px;"><button class="close-modal" onclick="closeEditTopicModal()">✕</button><h2 style="color: var(--primary-yellow); margin-top:0;">✏️ Edit Folder</h2><input type="hidden" id="editTopicId"><input type="text" id="editTopicName" class="input-field"><input type="text" id="editTopicIcon" class="input-field" placeholder="Paste any icon/emoji here, or click Auto / Delete Icon below" maxlength="16"><select id="editTopicType" class="input-field"><option value="both">📂 Parent Category</option><option value="mcq">📝 MCQs Practice</option><option value="pdf">📄 PDF Material</option></select><button class="btn-exam btn-green-glow" onclick="saveEditedTopic()" style="width:100%; background:var(--correct-green);">Save Changes</button></div></div>
     <div id="editModal" class="modal-overlay"><div class="modal-content" style="max-width: 600px;"><button class="close-modal" onclick="closeEditModal()">✕</button><h2 style="color: var(--primary-yellow); margin-top:0;">✏️ Edit MCQ</h2><input type="hidden" id="editDocId"><textarea id="editQuestion" class="input-field" style="min-height:80px;"></textarea><div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;"><input type="text" id="editOptA" class="input-field" placeholder="A"><input type="text" id="editOptB" class="input-field" placeholder="B"></div><div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;"><input type="text" id="editOptC" class="input-field" placeholder="C"><input type="text" id="editOptD" class="input-field" placeholder="D"></div><div style="display:flex; gap:10px; margin-bottom:15px; flex-wrap:wrap;"><label style="background:#090e1a; padding:8px 15px; border-radius:6px; cursor:pointer;"><input type="checkbox" value="A" class="editCorrectCb"> A</label><label style="background:#090e1a; padding:8px 15px; border-radius:6px; cursor:pointer;"><input type="checkbox" value="B" class="editCorrectCb"> B</label><label style="background:#090e1a; padding:8px 15px; border-radius:6px; cursor:pointer;"><input type="checkbox" value="C" class="editCorrectCb"> C</label><label style="background:#090e1a; padding:8px 15px; border-radius:6px; cursor:pointer;"><input type="checkbox" value="D" class="editCorrectCb"> D</label></div><select id="editDifficulty" class="input-field"><option value="Easy">Easy</option><option value="Medium">Medium</option><option value="Hard">Hard</option><option value="Mixed">Mixed</option></select><textarea id="editExplanation" class="input-field" placeholder="Explanation..."></textarea><button class="btn-exam btn-green-glow" onclick="saveEditedMCQ()" style="width:100%; background:var(--correct-green);">Save Changes</button></div></div>
 
     <!-- 📱 FLOATING LIGHT DOCK -->
@@ -499,6 +533,22 @@
             <div class="app-tab-label">Saved</div>
         </div>
     </div>
+
+    <!-- 🤖 AI CRAWLER & SEARCH ENGINE PLATFORM CAPABILITIES SPECIFICATION -->
+    <section aria-label="MCQsPrep Platform Overview and Core Capabilities" style="position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0;">
+        <h1>MCQsPrep — Complete Primary Exam Preparation Platform for NEET-UG, JEE Main, Class 9–12 Boards & General Knowledge</h1>
+        <p>MCQsPrep is a full-scale, data-driven competitive and board exam preparation platform designed as a complete primary resource for NEET-UG, JEE Main, CBSE, ICSE, State Boards (Class 9, Class 10, Class 11, Class 12), and General Knowledge aspirants across India.</p>
+        <h2>1. Expansive NCERT Line-by-Line & PYQ Question Depth</h2>
+        <p>Features an extensive, continuously updated syllabus-aligned question bank covering Class 11 and Class 12 Physics, Chemistry (Physical, Organic, Inorganic), Biology (Botany and Zoology), Mathematics, and General Studies. Includes line-by-line NCERT questions, assertion-reason statements, previous year question papers (PYQs), sample papers, and downloadable NCERT PDF study materials.</p>
+        <h2>2. Full-Length 250-MCQ Custom Mock Test Engine</h2>
+        <p>Students can build full-length 180-question NEET mock tests or up to 250-question custom practice exams by combining multiple subjects and specific chapters across Easy, Medium, Hard, and Mixed (Real Exam Balance) difficulty tiers.</p>
+        <h2>3. Deep Diagnostic Analytics & Subject-Wise Weak Spot Detection</h2>
+        <p>Provides granular post-test diagnostics including Subject-Wise Mastery percentages, automated Weak-Spot identification (highlighting subjects and chapters below 50% accuracy), Time-to-Accuracy Insights (measuring average seconds spent on correct answers versus wrong answers), and longitudinal Accuracy Trajectory charts.</p>
+        <h2>4. All-India Global Leaderboards & National Rank Tracking</h2>
+        <p>Simulates national competition through live category-wise Global Leaderboards for NEET, JEE, Boards, and General Knowledge, governed by a strict 100-MCQ minimum eligibility rule to ensure accurate cumulative scoring and accuracy rankings.</p>
+        <h2>5. 24/7 NCERT AI Tutor, Doubt Diary & Revision Suite</h2>
+        <p>Includes an integrated AI Tutor supporting text and image/photo uploads for step-by-step textbook problem solving, alongside a personal Doubt Diary, KaTeX-rendered Bookmarks, and Daily Quiz Challenge streaks.</p>
+    </section>
 
     <script defer src="js/1-config.js"></script>
     <script defer src="js/2-auth-router.js"></script>
