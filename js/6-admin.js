@@ -446,19 +446,30 @@ async function _renderAdminPanel() {
                                 <textarea id="admSmartPasteInput" class="input-field" style="min-height:58px; margin-bottom:0; font-size:12.5px;" placeholder="Paste full MCQ block here (e.g. Q. Question text... A) Opt1 B) Opt2 C) Opt3 D) Opt4 Ans: B Exp: Explanation...) and click Auto-Fill!"></textarea>
                             </div>
 
-                            <!-- 🧪 1-CLICK CHEMICAL REACTION & MATH FORMULA BAR -->
+                            <!-- 🧪 1-CLICK TEXT STYLE, CHEMICAL REACTION & MATH FORMULA BAR -->
                             <div style="background:#101626; border:1px solid #2b3954; border-radius:12px; padding:12px 14px; margin-bottom:16px;">
                                 <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:8px;">
-                                    <span style="font-size:11.5px; font-weight:800; color:#38bdf8; text-transform:uppercase;">🧪 Complex Chemical Reactions &amp; Math Formula Toolbar (Click any box/table cell below, then click symbol)</span>
+                                    <span style="font-size:11.5px; font-weight:800; color:#38bdf8; text-transform:uppercase;">✍️ Text Styles, Chemical Reactions &amp; Math Toolbar (Select text or click any box below)</span>
                                     <button type="button" onclick="formatPlainChemistryToLatex()" style="background:rgba(16,185,129,0.15); color:#10b981; border:1px solid rgba(16,185,129,0.4); border-radius:6px; padding:4px 10px; font-size:11px; font-weight:700; cursor:pointer;" title="Automatically converts H2SO4, ->, <=>, ^2+ in active box into clean formulas">🪄 Auto-Format Plain Reaction / Formula</button>
                                 </div>
+                                <!-- Row 1: Text Styling (Italic, Bold, Underline, Subscript, Superscript, Clear Style) -->
+                                <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:8px; padding-bottom:8px; border-bottom:1px solid rgba(255,255,255,0.08);">
+                                    <button type="button" class="admin-preset-chip" style="color:#f472b6; border-color:rgba(244,114,182,0.45); background:rgba(244,114,182,0.12);" onclick="applyAdminTextStyleTag('i')" title="Shortcut: Ctrl+I"><i>𝐼 Italic</i></button>
+                                    <button type="button" class="admin-preset-chip" style="color:#f472b6; border-color:rgba(244,114,182,0.45); background:rgba(244,114,182,0.12);" onclick="applyAdminTextStyleTag('b')" title="Shortcut: Ctrl+B"><b>𝐁 Bold</b></button>
+                                    <button type="button" class="admin-preset-chip" style="color:#f472b6; border-color:rgba(244,114,182,0.45); background:rgba(244,114,182,0.12);" onclick="applyAdminTextStyleTag('u')" title="Shortcut: Ctrl+U"><u>U Underline</u></button>
+                                    <button type="button" class="admin-preset-chip" style="color:#f472b6; border-color:rgba(244,114,182,0.45); background:rgba(244,114,182,0.12);" onclick="applyAdminTextStyleTag('sub')">X<sub>2</sub> Subscript</button>
+                                    <button type="button" class="admin-preset-chip" style="color:#f472b6; border-color:rgba(244,114,182,0.45); background:rgba(244,114,182,0.12);" onclick="applyAdminTextStyleTag('sup')">X<sup>2</sup> Superscript</button>
+                                    <button type="button" class="admin-preset-chip" style="color:#94a3b8; border-color:rgba(148,163,184,0.35); background:rgba(148,163,184,0.1);" onclick="stripHtmlStyleTagsFromActiveInput()" title="Remove style tags from selected text">🧹 Clear Style Tags</button>
+                                    <span style="font-size:11px; color:#f472b6; align-self:center; margin-left:4px;">✨ Pasting italic/bold text preserves exact styles automatically!</span>
+                                </div>
+                                <!-- Row 2: Chemistry Reactions -->
                                 <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:6px;">
                                     <button type="button" class="admin-preset-chip" onclick="insertAdminFormulaAtCursor('$\\rightarrow$')">→ Reaction</button>
                                     <button type="button" class="admin-preset-chip" onclick="insertAdminFormulaAtCursor('$\\rightleftharpoons$')">⇌ Equilibrium</button>
                                     <button type="button" class="admin-preset-chip" onclick="insertAdminFormulaAtCursor('$\\xrightarrow{\\Delta}$')">—Δ→ Heat</button>
                                     <button type="button" class="admin-preset-chip" onclick="insertAdminFormulaAtCursor('$\\xrightarrow{\\text{cat.}}$')">—cat→ Catalyst</button>
                                     <button type="button" class="admin-preset-chip" onclick="insertAdminFormulaAtCursor('$\\xrightarrow[\\text{temp}]{\\text{reagent}}$')">—[Reagent]→</button>
-                                    <button type="button" class="admin-preset-chip" onclick="insertAdminFormulaAtCursor('$_2$')">X₂ Subscript</button>
+                                    <button type="button" class="admin-preset-chip" onclick="insertAdminFormulaAtCursor('$_2$')">X₂ Math Sub</button>
                                     <button type="button" class="admin-preset-chip" onclick="insertAdminFormulaAtCursor('$^{2+}$')">X²⁺ Ion/Power</button>
                                     <button type="button" class="admin-preset-chip" onclick="insertAdminFormulaAtCursor('$\\uparrow$')">↑ Gas</button>
                                     <button type="button" class="admin-preset-chip" onclick="insertAdminFormulaAtCursor('$\\downarrow$')">↓ Precipitate</button>
@@ -466,6 +477,7 @@ async function _renderAdminPanel() {
                                     <button type="button" class="admin-preset-chip" onclick="insertAdminFormulaAtCursor('$\\Delta G^\\circ$')">ΔG°</button>
                                     <button type="button" class="admin-preset-chip" onclick="insertAdminFormulaAtCursor('⌬')">⌬ Benzene</button>
                                 </div>
+                                <!-- Row 3: Physics & Math Symbols -->
                                 <div style="display:flex; gap:6px; flex-wrap:wrap;">
                                     <button type="button" class="admin-preset-chip" style="color:#38bdf8; border-color:rgba(56,189,248,0.35); background:rgba(56,189,248,0.08);" onclick="insertAdminFormulaAtCursor('$\\frac{a}{b}$')">a/b Fraction</button>
                                     <button type="button" class="admin-preset-chip" style="color:#38bdf8; border-color:rgba(56,189,248,0.35); background:rgba(56,189,248,0.08);" onclick="insertAdminFormulaAtCursor('$\\sqrt{x}$')">√x Root</button>
@@ -2632,6 +2644,296 @@ function setLastFocusedFormulaInput(el) {
     if (el) lastFocusedFormulaInput = el;
 }
 
+// Wrap or unwrap selected text with <i>, <b>, <u>, <sub>, <sup>
+function applyAdminTextStyleTag(tag) {
+    let target = lastFocusedFormulaInput || document.getElementById('admQuestion');
+    if (!target) return;
+    target.focus();
+
+    const start = target.selectionStart !== undefined ? target.selectionStart : target.value.length;
+    const end = target.selectionEnd !== undefined ? target.selectionEnd : target.value.length;
+    const text = target.value;
+    const selected = text.substring(start, end);
+    const openTag = `<${tag}>`;
+    const closeTag = `</${tag}>`;
+
+    if (selected.startsWith(openTag) && selected.endsWith(closeTag)) {
+        const unwrapped = selected.slice(openTag.length, selected.length - closeTag.length);
+        target.value = text.substring(0, start) + unwrapped + text.substring(end);
+        target.selectionStart = start;
+        target.selectionEnd = start + unwrapped.length;
+    } else {
+        const replacement = `${openTag}${selected}${closeTag}`;
+        target.value = text.substring(0, start) + replacement + text.substring(end);
+        if (selected.length > 0) {
+            target.selectionStart = start;
+            target.selectionEnd = start + replacement.length;
+        } else {
+            target.selectionStart = target.selectionEnd = start + openTag.length;
+        }
+    }
+    target.dispatchEvent(new Event('input', { bubbles: true }));
+    updateAdminLiveFormulaPreview();
+}
+
+function stripHtmlStyleTagsFromActiveInput() {
+    let target = lastFocusedFormulaInput || document.getElementById('admQuestion');
+    if (!target || !target.value) return;
+    const start = target.selectionStart || 0;
+    const end = target.selectionEnd || 0;
+    if (start !== end) {
+        const cleaned = target.value.substring(start, end).replace(/<\/?(?:i|em|b|strong|u|sub|sup|s)>/gi, '');
+        target.value = target.value.substring(0, start) + cleaned + target.value.substring(end);
+    } else {
+        target.value = target.value.replace(/<\/?(?:i|em|b|strong|u|sub|sup|s)>/gi, '');
+    }
+    target.dispatchEvent(new Event('input', { bubbles: true }));
+    updateAdminLiveFormulaPreview();
+    showNotification('🧹 Style tags cleared!');
+}
+
+// Convert Unicode Mathematical Italic/Bold characters into clean <i>...</i> / <b>...</b> HTML tags
+function convertUnicodeMathStylesToHtml(str) {
+    if (!str) return '';
+    let out = '';
+    let currentMode = null; // 'i' | 'b' | null
+
+    for (const ch of str) {
+        const cp = ch.codePointAt(0);
+        let mappedChar = null;
+        let mode = null;
+
+        // Mathematical Italic & Sans-Serif Italic (A-Z, a-z)
+        if (cp >= 0x1D434 && cp <= 0x1D44D) { mappedChar = String.fromCharCode(65 + (cp - 0x1D434)); mode = 'i'; }
+        else if (cp === 0x210E) { mappedChar = 'h'; mode = 'i'; }
+        else if (cp >= 0x1D44E && cp <= 0x1D467) { mappedChar = String.fromCharCode(97 + (cp - 0x1D44E)); mode = 'i'; }
+        else if (cp >= 0x1D608 && cp <= 0x1D621) { mappedChar = String.fromCharCode(65 + (cp - 0x1D608)); mode = 'i'; }
+        else if (cp >= 0x1D622 && cp <= 0x1D63B) { mappedChar = String.fromCharCode(97 + (cp - 0x1D622)); mode = 'i'; }
+        // Mathematical Bold Italic & Sans-Serif Bold Italic
+        else if (cp >= 0x1D468 && cp <= 0x1D481) { mappedChar = String.fromCharCode(65 + (cp - 0x1D468)); mode = 'i'; }
+        else if (cp >= 0x1D482 && cp <= 0x1D49B) { mappedChar = String.fromCharCode(97 + (cp - 0x1D482)); mode = 'i'; }
+        else if (cp >= 0x1D63C && cp <= 0x1D655) { mappedChar = String.fromCharCode(65 + (cp - 0x1D63C)); mode = 'i'; }
+        else if (cp >= 0x1D656 && cp <= 0x1D66F) { mappedChar = String.fromCharCode(97 + (cp - 0x1D656)); mode = 'i'; }
+
+        if (mode !== currentMode) {
+            if (currentMode) out += `</${currentMode}>`;
+            if (mode) out += `<${mode}>`;
+            currentMode = mode;
+        }
+        out += mappedChar !== null ? mappedChar : ch;
+    }
+    if (currentMode) out += `</${currentMode}>`;
+    return out;
+}
+
+// Extract exact Italic (<i>), Bold (<b>), Underline (<u>), Subscript (<sub>), Superscript (<sup>) from Clipboard HTML
+function extractStyledTextFromClipboardHtml(htmlStr, plainFallback, preserveLineBreaks = true) {
+    if (!htmlStr || typeof DOMParser === 'undefined') {
+        return convertUnicodeMathStylesToHtml(plainFallback || '');
+    }
+
+    try {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(htmlStr, 'text/html');
+
+        // Remove scripts, styles, buttons, and AI citation chips like "PDF + 1" or "PDF"
+        doc.querySelectorAll('script, style, button, svg, sup.citation, a[href*="pdf"]').forEach(el => el.remove());
+
+        function serializeNode(node) {
+            if (node.nodeType === Node.TEXT_NODE) {
+                return convertUnicodeMathStylesToHtml(node.nodeValue || '');
+            }
+            if (node.nodeType !== Node.ELEMENT_NODE) return '';
+
+            const tag = node.tagName.toUpperCase();
+            const rawText = (node.textContent || '').trim();
+
+            // Strip standalone AI source badges like "PDF + 1" or "PDF"
+            if (/^PDF(?:\s*\+\s*\d+)?$/i.test(rawText) && rawText.length <= 12) {
+                return '';
+            }
+
+            if (tag === 'BR') return preserveLineBreaks ? '\n' : ' ';
+
+            const styleAttr = (node.getAttribute('style') || '').toLowerCase();
+            const isItalic = tag === 'I' || tag === 'EM' || /font-style\s*:\s*italic/.test(styleAttr);
+            const isUnderline = tag === 'U' || /text-decoration[^;]*underline/.test(styleAttr);
+            const isSub = tag === 'SUB' || /vertical-align\s*:\s*sub/.test(styleAttr);
+            const isSup = tag === 'SUP' || /vertical-align\s*:\s*super/.test(styleAttr);
+            const isBold = (tag === 'B' || tag === 'STRONG' || /font-weight\s*:\s*(bold|[6789]00)/.test(styleAttr)) &&
+                           !/^(?:Q\d*|(?:Correct\s*)?(?:Option|Answer|Ans)|(?:NCERT\s*)?(?:Explanation|Exp|Solution)|[\(\[]?[A-D][\)\]\.])\b/i.test(rawText);
+
+            let inner = '';
+            node.childNodes.forEach(child => {
+                inner += serializeNode(child);
+            });
+
+            if (!inner.trim()) return inner;
+
+            if (isSub) inner = `<sub>${inner}</sub>`;
+            if (isSup) inner = `<sup>${inner}</sup>`;
+            if (isUnderline) inner = `<u>${inner}</u>`;
+            if (isItalic) inner = `<i>${inner}</i>`;
+            if (isBold && inner.length < 120) inner = `<b>${inner}</b>`;
+
+            const blockTags = new Set(['P', 'DIV', 'LI', 'TR', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'BLOCKQUOTE']);
+            if (preserveLineBreaks && blockTags.has(tag)) {
+                return inner + '\n';
+            }
+            return inner;
+        }
+
+        let result = serializeNode(doc.body);
+        // Clean up duplicate nested tags & stray AI "PDF + 1" badges
+        result = result
+            .replace(/\s*\bPDF(?:\s*\+\s*\d+)?\b/g, '')
+            .replace(/<i>\s*<i>/g, '<i>').replace(/<\/i>\s*<\/i>/g, '</i>')
+            .replace(/<b>\s*<b>/g, '<b>').replace(/<\/b>\s*<\/b>/g, '</b>')
+            .replace(/<\/i>(\s*)<i>/g, '$1')
+            .replace(/<\/b>(\s*)<b>/g, '$1');
+
+        if (preserveLineBreaks) {
+            result = result.replace(/\n{3,}/g, '\n\n').trim();
+        } else {
+            result = result.replace(/\s+/g, ' ').trim();
+        }
+
+        return result || convertUnicodeMathStylesToHtml(plainFallback || '');
+    } catch (e) {
+        return convertUnicodeMathStylesToHtml(plainFallback || '');
+    }
+}
+
+// Global Paste & Shortcut Interceptor for Admin MCQ Fields (Preserves Italics, Bold, Underline, Sub, Sup)
+(function attachAdminRichStylePasteAndShortcuts() {
+    if (window._adminRichStylePasteAttached) return;
+    window._adminRichStylePasteAttached = true;
+
+    const richFieldIds = new Set([
+        'admSmartPasteInput', 'admQuestion', 'admOptA', 'admOptB', 'admOptC', 'admOptD', 'admExplanation',
+        'editQuestion', 'editOptA', 'editOptB', 'editOptC', 'editOptD', 'editExplanation'
+    ]);
+
+    function isRichAdminField(el) {
+        if (!el || (el.tagName !== 'TEXTAREA' && el.tagName !== 'INPUT')) return false;
+        if (richFieldIds.has(el.id)) return true;
+        if (el.closest && el.closest('#admMatchTableInputsContainer')) return true;
+        return false;
+    }
+
+    document.addEventListener('paste', function(event) {
+        const target = event.target;
+        if (!isRichAdminField(target)) return;
+
+        const cb = event.clipboardData;
+        if (!cb) return;
+
+        // If pasting a screenshot/image, let the image paste handler handle it
+        if (cb.items) {
+            for (let item of cb.items) {
+                if (item.type && item.type.indexOf('image') !== -1) return;
+            }
+        }
+
+        const htmlData = cb.getData('text/html');
+        const plainData = cb.getData('text/plain');
+
+        const hasRichTags = htmlData && /<(?:i|em|b|strong|u|sub|sup)\b|font-style\s*:\s*italic|text-decoration[^;]*underline|vertical-align\s*:\s*(?:sub|super)/i.test(htmlData);
+        const hasUnicodeMath = plainData && /[\u{1D400}-\u{1D7FF}\u210E]/u.test(plainData);
+        const hasPdfBadge = plainData && /\bPDF(?:\s*\+\s*\d+)?\b/.test(plainData);
+
+        if (!hasRichTags && !hasUnicodeMath && !hasPdfBadge) return;
+
+        event.preventDefault();
+        const isMultiline = target.tagName === 'TEXTAREA';
+        const styledText = extractStyledTextFromClipboardHtml(htmlData, plainData, isMultiline);
+
+        const start = target.selectionStart !== undefined ? target.selectionStart : target.value.length;
+        const end = target.selectionEnd !== undefined ? target.selectionEnd : target.value.length;
+        target.value = target.value.substring(0, start) + styledText + target.value.substring(end);
+        const nextCursor = start + styledText.length;
+        target.selectionStart = target.selectionEnd = nextCursor;
+
+        target.dispatchEvent(new Event('input', { bubbles: true }));
+        updateAdminLiveFormulaPreview();
+    }, true);
+
+    // Keyboard shortcuts: Ctrl+I (Italic), Ctrl+B (Bold), Ctrl+U (Underline)
+    document.addEventListener('keydown', function(event) {
+        const target = event.target;
+        if (!isRichAdminField(target)) return;
+        if (!(event.ctrlKey || event.metaKey) || event.altKey) return;
+
+        const key = (event.key || '').toLowerCase();
+        if (key === 'i' || key === 'b' || key === 'u') {
+            event.preventDefault();
+            lastFocusedFormulaInput = target;
+            applyAdminTextStyleTag(key);
+        }
+    });
+})();
+
+// Upgraded Smart Quick-Paste Auto-Filler: Preserves <i>, <b>, <u>, <sub>, <sup> & parses "Correct Option: (C)" + "NCERT Explanation:"
+parseQuickPasteMCQ = function() {
+    const rawEl = document.getElementById('admSmartPasteInput');
+    if (!rawEl || !rawEl.value.trim()) {
+        showNotification('⚠️ Paste a question with options first.');
+        return;
+    }
+
+    let text = rawEl.value
+        .replace(/\s*\bPDF(?:\s*\+\s*\d+)?\b/g, '')
+        .trim();
+
+    // 1. Extract Explanation (Matches "NCERT Explanation:", "Explanation:", "Exp:", "Solution:", even with bullets • / o or <b> tags)
+    const expRegex = /(?:^|\n)\s*(?:[•○◦o\-\*]\s*)?(?:<[bBiI]>\s*)?(?:NCERT\s+)?(?:Explanation|Exp|Solution|Sol)\s*[:\-]\s*(?:<\/[bBiI]>\s*)?([\s\S]+)$/i;
+    const expMatch = text.match(expRegex);
+    if (expMatch) {
+        const expClean = expMatch[1].replace(/^\s*<\/(?:b|strong|i|em)>\s*/i, '').trim();
+        document.getElementById('admExplanation').value = expClean;
+        text = text.slice(0, expMatch.index).trim();
+    }
+
+    // 2. Extract Correct Answer (Matches "Correct Option: (C)", "Correct Answer: C", "Ans: (A), (B)", etc.)
+    const ansRegex = /(?:^|\n)\s*(?:[•○◦o\-\*]\s*)?(?:<[bBiI]>\s*)?(?:Correct\s*(?:Option|Answer|Ans)?|Answer|Ans)\s*[:\-]\s*(?:<\/[bBiI]>\s*)?\(?([A-Da-d])\)?(?:\s*[,&\/]\s*\(?([A-Da-d])\)?)*(?:<\/[bBiI]>)?/i;
+    const ansMatch = text.match(ansRegex);
+    if (ansMatch) {
+        const fullAnsLine = ansMatch[0];
+        const letters = [...fullAnsLine.replace(/^[\s\S]*?[:\-]/, '').matchAll(/[A-Da-d]/g)].map(m => m[0].toUpperCase());
+        if (letters.length > 0) {
+            document.querySelectorAll('.admCorrectCb').forEach(cb => {
+                cb.checked = letters.includes(cb.value);
+            });
+        }
+        text = text.slice(0, ansMatch.index).trim();
+    }
+
+    // 3. Extract Question & Options A, B, C, D while preserving <i>, <b>, <u>, <sub>, <sup>
+    const optRegex = /(?:^|\n|\s{2,})\(?([A-D])[\)\.\:]\s*([\s\S]*?)(?=(?:\n|\s{2,})\(?[B-D][\)\.\:]|\s*$)/gi;
+    const matches = [...text.matchAll(optRegex)];
+    if (matches.length >= 2) {
+        const firstOptIndex = matches[0].index;
+        const qRaw = text
+            .slice(0, firstOptIndex)
+            .replace(/^\s*(?:<[bBiI]>\s*)?(?:Q(?:uestion)?\s*\d*[\.\:\)]\s*)(?:<\/[bBiI]>\s*)?/i, '')
+            .trim();
+        if (qRaw) document.getElementById('admQuestion').value = qRaw;
+
+        matches.forEach(m => {
+            const letter = m[1].toUpperCase();
+            const val = m[2].replace(/\s*\bPDF(?:\s*\+\s*\d+)?\b/g, '').trim();
+            const inputEl = document.getElementById('admOpt' + letter);
+            if (inputEl) inputEl.value = val;
+        });
+        updateAdminLiveFormulaPreview();
+        showNotification('✨ Question, Styled Options & Explanation auto-filled!');
+    } else {
+        document.getElementById('admQuestion').value = text;
+        updateAdminLiveFormulaPreview();
+        showNotification('📝 Question text filled!');
+    }
+};
+
 function insertAdminFormulaAtCursor(snippet) {
     let target = lastFocusedFormulaInput || document.getElementById('admQuestion');
     if (!target) return;
@@ -2661,7 +2963,6 @@ function formatPlainChemistryToLatex() {
     updateAdminLiveFormulaPreview();
     showNotification('✨ Reactions & subscripts formatted!');
 }
-
 // ==========================================
 // 📊 MATCH-THE-COLUMN / CUSTOM TABLE BUILDER FUNCTIONS
 // ==========================================
