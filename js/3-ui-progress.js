@@ -217,11 +217,9 @@ function isValidCustomEmojiIcon(customIcon, displayKey = "") {
     if (!customIcon || typeof customIcon !== "string") return false;
     let trimmed = customIcon.trim();
     if (!trimmed) return false;
-    if (/^[a-zA-Z0-9\s\.\-\_]+$/.test(trimmed)) return false;
-    let lower = String(displayKey || "").toLowerCase();
-    if (/\b(class|grade|std|board)\b/.test(lower) && (trimmed === "🌍" || trimmed === "🏛️")) {
-        return false;
-    }
+    if (trimmed.toUpperCase() === "NONE") return true; // Explicit "No Icon" marker
+    // Reject only legacy single-letter/number auto-initials like "B", "9", "10", "11", "12"
+    if (/^[a-zA-Z0-9]{1,3}$/.test(trimmed)) return false;
     return true;
 }
 
@@ -548,6 +546,13 @@ function getAutomaticIconForName(name, folderType = null, contextPathStr = "") {
 
 function getSmartIcon(text, customIcon = null) {
     let cleanText = formatCleanTopicTitle(text);
+    let validCustom = isValidCustomEmojiIcon(customIcon, cleanText) ? String(customIcon).trim() : null;
+
+    // If user explicitly deleted the icon ("NONE"), return "NONE"
+    if (validCustom && validCustom.toUpperCase() === "NONE") {
+        return makeTopicTheme("NONE", getPaletteColorForText(cleanText));
+    }
+
     let primaryPart = cleanText.split('(')[0].trim();
     let paddedPrimary = normalizeStudyTextForMatch(primaryPart);
     let paddedFull = normalizeStudyTextForMatch(cleanText);
@@ -568,8 +573,8 @@ function getSmartIcon(text, customIcon = null) {
         }
     }
 
-    let validCustom = isValidCustomEmojiIcon(customIcon, cleanText) ? String(customIcon).trim() : null;
-    let finalIcon = matchedRule ? matchedRule.i : validCustom;
+    // Manual customIcon ALWAYS overrides automatic STUDY_ICON_RULES!
+    let finalIcon = validCustom ? validCustom : (matchedRule ? matchedRule.i : null);
     let finalColor = matchedRule ? matchedRule.c : getPaletteColorForText(cleanText);
 
     if (finalIcon) {
@@ -578,16 +583,29 @@ function getSmartIcon(text, customIcon = null) {
     return null;
 }
 
-// Strict Sibling Deduplication: Guarantees no two tiles on the same screen EVER share the same icon or color!
 function getAutoTopicTheme(displayKey, customIcon = null, index = 0, usedColorsSet = null, fallbackIcon = null, usedIconsSet = null, contextPathStr = "") {
     let cleanTitle = formatCleanTopicTitle(displayKey);
     let validCustom = isValidCustomEmojiIcon(customIcon, cleanTitle) ? String(customIcon).trim() : null;
+
+    if (validCustom && validCustom.toUpperCase() === "NONE") {
+        let noIconColor = getPaletteColorForText(cleanTitle, index);
+        if (usedColorsSet && usedColorsSet.has(noIconColor) && usedColorsSet.size < TOPIC_COLOR_PALETTE.length) {
+            for (let step = 0; step < TOPIC_COLOR_PALETTE.length; step++) {
+                let candidate = TOPIC_COLOR_PALETTE[(index + step) % TOPIC_COLOR_PALETTE.length];
+                if (!usedColorsSet.has(candidate)) { noIconColor = candidate; break; }
+            }
+        }
+        if (usedColorsSet) usedColorsSet.add(noIconColor);
+        return makeTopicTheme("NONE", noIconColor);
+    }
+
     let baseTheme = getSmartIcon(cleanTitle, validCustom);
+    let chosenIcon = validCustom
+        ? validCustom
+        : (baseTheme ? baseTheme.i : getAutomaticIconForName(cleanTitle, null, contextPathStr));
 
-    let chosenIcon = baseTheme ? baseTheme.i : (validCustom || getAutomaticIconForName(cleanTitle, null, contextPathStr));
-
-    // STRICT SIBLING ICON DEDUPLICATION (Applies even if two sibling folders matched the same rule or had the same saved icon!)
-    if (usedIconsSet && usedIconsSet instanceof Set) {
+    // Sibling deduplication only for auto-assigned icons (never overrides a manual customIcon!)
+    if (!validCustom && usedIconsSet && usedIconsSet instanceof Set) {
         if (usedIconsSet.has(chosenIcon)) {
             let subjectPool = getContextPoolForPath(cleanTitle, null, contextPathStr);
             let combinedPool = [...subjectPool, ...FALLBACK_TOPIC_ICONS];
@@ -601,6 +619,8 @@ function getAutoTopicTheme(displayKey, customIcon = null, index = 0, usedColorsS
                 }
             }
         }
+        usedIconsSet.add(chosenIcon);
+    } else if (validCustom && usedIconsSet && usedIconsSet instanceof Set) {
         usedIconsSet.add(chosenIcon);
     }
 
@@ -1098,12 +1118,16 @@ function _renderView() {
             let safeAttrTitle = displayKey.replace(/"/g, '&quot;');
             let fallbackIcon = typeLabel === '📄' ? "📄" : (typeLabel === '📝' ? "📝" : null);
 
-            let resolvedIcon = getSmartIcon(displayKey) ? null : customIcon;
-            let iconData = getAutoTopicTheme(displayKey, resolvedIcon, colorIdx, usedColors, fallbackIcon, usedIcons, fullCheckPath);
+            // Always pass customIcon so manual icons and "NONE" (no icon) are respected!
+            let iconData = getAutoTopicTheme(displayKey, customIcon, colorIdx, usedColors, fallbackIcon, usedIcons, fullCheckPath);
             colorIdx++;
 
+            let iconBoxHtml = (iconData.i === "NONE")
+                ? ``
+                : `<div class="cat-icon">${iconData.i}</div>`;
+
             h += `<button class="category-tile colored-tile" data-tile-title="${safeAttrTitle}" style="--topic-color:${iconData.c}; --topic-bg:${iconData.bg}; --topic-border:${iconData.border}; --topic-glow:${iconData.glow};" onclick="navigateTo('${safeKey}')">
-                    <div class="cat-icon">${iconData.i}</div>
+                    ${iconBoxHtml}
                     <div class="cat-text">${displayKey}</div>
                   </button>`; 
         }
@@ -1608,7 +1632,9 @@ function cwStep1() {
 
     const mc = document.getElementById('dynamic-content');
     document.getElementById('breadcrumb-text').innerText = "Home / Custom Practice";
-    let rootKeys = Object.keys(appData).filter(k => k !== "Daily Quiz Challenge");
+    let excludedSet = new Set((window.customPracticeConfig && Array.isArray(window.customPracticeConfig.excludedExams)) ? window.customPracticeConfig.excludedExams : []);
+    let deletedSet = new Set((topicOverrides && topicOverrides.deletedPaths) || []);
+    let rootKeys = Object.keys(appData).filter(k => k !== "Daily Quiz Challenge" && !excludedSet.has(k) && !deletedSet.has(k));
     let usedColors = new Set();
     let usedIcons = new Set();
     
@@ -1625,10 +1651,11 @@ function cwStep1() {
             const topicType = customTopicTypes[k];
             const customIcon = topicType ? (typeof topicType === 'object' ? topicType.icon : null) : null;
             let smartData = getAutoTopicTheme(cleanKey, customIcon, idx, usedColors, "📁", usedIcons, k);
+            let iconHtml = smartData.i === "NONE" ? '' : `<div class="cat-icon">${smartData.i}</div>`;
 
             html += `
             <button class="category-tile colored-tile" style="width:100%; --topic-color:${smartData.c}; --topic-bg:${smartData.bg}; --topic-border:${smartData.border}; --topic-glow:${smartData.glow};" onclick="cwSetPath('${safeKey}')">
-                <div class="cat-icon">${smartData.i}</div>
+                ${iconHtml}
                 <div class="cat-text">${cleanKey}</div>
             </button>`;
         });
@@ -1645,7 +1672,7 @@ function cwSetPath(path) {
 }
 
 function buildCwCatalogForExam(examKey, ignoreManualOverride = false) {
-    if (!ignoreManualOverride && window.customPracticeConfig && window.customPracticeConfig.exams && window.customPracticeConfig.exams[examKey] && Array.isArray(window.customPracticeConfig.exams[examKey].subjects) && window.customPracticeConfig.exams[examKey].subjects.length > 0) {
+    if (!ignoreManualOverride && window.customPracticeConfig && window.customPracticeConfig.exams && window.customPracticeConfig.exams[examKey] && Array.isArray(window.customPracticeConfig.exams[examKey].subjects)) {
         let manualSubjects = window.customPracticeConfig.exams[examKey].subjects;
         return manualSubjects.map(s => ({
             label: formatCleanTopicTitle(s.label || s.path.split(' > ').pop() || ''),
