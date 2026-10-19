@@ -377,7 +377,7 @@ async function _renderAdminPanel() {
                 <div class="admin-pill ${adminCurrentTab === 'settings' ? 'active' : ''}" onclick="switchAdminTab('settings')">🛠️ Settings</div>
             </div>
             
-            <!-- 1. UPLOAD TAB -->
+           <!-- 1. UPLOAD TAB -->
             <div id="admin-upload-view" style="display:${adminCurrentTab === 'upload' ? 'block' : 'none'};">
                 <div class="admin-panel-card">
                     <h3 class="admin-section-header"><span>🎯</span> 1. Select Target Destination</h3>
@@ -449,7 +449,7 @@ async function _renderAdminPanel() {
                             <!-- 🧪 1-CLICK CHEMICAL REACTION & MATH FORMULA BAR -->
                             <div style="background:#101626; border:1px solid #2b3954; border-radius:12px; padding:12px 14px; margin-bottom:16px;">
                                 <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:8px;">
-                                    <span style="font-size:11.5px; font-weight:800; color:#38bdf8; text-transform:uppercase;">🧪 Complex Chemical Reactions &amp; Math Formula Toolbar (Click any box below, then click symbol to insert)</span>
+                                    <span style="font-size:11.5px; font-weight:800; color:#38bdf8; text-transform:uppercase;">🧪 Complex Chemical Reactions &amp; Math Formula Toolbar (Click any box/table cell below, then click symbol)</span>
                                     <button type="button" onclick="formatPlainChemistryToLatex()" style="background:rgba(16,185,129,0.15); color:#10b981; border:1px solid rgba(16,185,129,0.4); border-radius:6px; padding:4px 10px; font-size:11px; font-weight:700; cursor:pointer;" title="Automatically converts H2SO4, ->, <=>, ^2+ in active box into clean formulas">🪄 Auto-Format Plain Reaction / Formula</button>
                                 </div>
                                 <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:6px;">
@@ -482,24 +482,25 @@ async function _renderAdminPanel() {
                                 </div>
                             </div>
 
-                            <!-- QUESTION TEXT OR QUESTION IMAGE SECTION -->
+                            <!-- QUESTION TEXT + SCREENSHOT PASTE / FILE UPLOAD -->
                             <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:6px;">
-                                <label class="admin-label" style="margin-bottom:0;">Question Text (Optional if you upload/paste Question Image below)</label>
-                                <span style="font-size:11px; color:#10b981;">💡 Supports $LaTeX$, chemical reactions &amp; Ctrl+V image paste!</span>
+                                <label class="admin-label" style="margin-bottom:0;">Question Text (Optional if you upload/paste a Question Screenshot below)</label>
+                                <span style="font-size:11px; color:#10b981;">💡 Supports $LaTeX$, chemical reactions &amp; Ctrl+V screenshot paste!</span>
                             </div>
-                            <textarea id="admQuestion" class="input-field" style="min-height: 100px; font-size: 15px; margin-bottom:10px;" placeholder="Type question or chemical reaction here... OR leave blank and upload/paste an image of the typed question below!" onfocus="setLastFocusedFormulaInput(this)" oninput="updateAdminLiveFormulaPreview()" onpaste="handleAdminQuestionPasteImage(event, 'QUESTION_IMG')"></textarea>
+                            <textarea id="admQuestion" class="input-field" style="min-height: 95px; font-size: 15px; margin-bottom:10px;" placeholder="Type question or chemical reaction here... OR press Ctrl+V / click Paste Screenshot below!" onfocus="setLastFocusedFormulaInput(this)" oninput="updateAdminLiveFormulaPreview()" onpaste="handleUniversalImagePaste(event, 'QUESTION')"></textarea>
 
-                            <!-- 📸 PLACE IMAGE OF TYPED QUESTION (NO TYPING NEEDED) -->
-                            <div style="background:#111522; border:1px solid rgba(56,189,248,0.35); border-left:4px solid #38bdf8; border-radius:10px; padding:12px 14px; margin-bottom:18px;">
+                            <!-- 📸 QUESTION SCREENSHOT PASTE & UPLOAD BAR -->
+                            <div style="background:#111522; border:1px solid rgba(56,189,248,0.35); border-left:4px solid #38bdf8; border-radius:10px; padding:12px 14px; margin-bottom:16px;" onpaste="handleUniversalImagePaste(event, 'QUESTION')">
                                 <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
                                     <div>
-                                        <div style="font-size:12.5px; font-weight:800; color:#38bdf8;">📸 Don't Want to Type the Question? Place Image of Typed Question Here</div>
-                                        <div style="font-size:11.5px; color:#94a3b8; margin-top:2px;">Upload a screenshot/photo of the typed question, or click inside Question Text and press <b>Ctrl+V</b> to paste!</div>
+                                        <div style="font-size:12.5px; font-weight:800; color:#38bdf8;">📸 Question Image / Screenshot (Upload File OR Paste Screenshot)</div>
+                                        <div style="font-size:11.5px; color:#94a3b8; margin-top:2px;">Take a screenshot on desktop or mobile and click <b>📋 Paste Screenshot</b> (or press <b>Ctrl+V</b>), or upload from device.</div>
                                     </div>
                                     <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
-                                        <input type="file" id="admQTextImageFile" accept="image/*" style="display:none;" onchange="handleAdminQuestionImgSelect(this)">
-                                        <button type="button" class="btn-exam" onclick="document.getElementById('admQTextImageFile').click()" style="background:rgba(56,189,248,0.15); color:#38bdf8; border:1px solid rgba(56,189,248,0.4); padding:7px 13px; font-size:12px;">📁 Choose Question Image</button>
-                                        <button type="button" class="btn-exam" onclick="clearAdminQuestionTextImage()" id="btnClearQTextImg" style="display:none; background:rgba(239,68,68,0.15); color:#ef4444; border:1px solid rgba(239,68,68,0.4); padding:7px 12px; font-size:12px;">✕ Remove</button>
+                                        <input type="file" id="admQTextImageFile" accept="image/*" style="display:none;" onchange="handleUniversalFileSelect(this, 'QUESTION')">
+                                        <button type="button" class="btn-exam" onclick="triggerClipboardImagePaste('QUESTION')" style="background:rgba(16,185,129,0.16); color:#10b981; border:1px solid rgba(16,185,129,0.45); padding:7px 13px; font-size:12px; font-weight:800;">📋 Paste Screenshot</button>
+                                        <button type="button" class="btn-exam" onclick="document.getElementById('admQTextImageFile').click()" style="background:rgba(56,189,248,0.15); color:#38bdf8; border:1px solid rgba(56,189,248,0.4); padding:7px 13px; font-size:12px;">📁 Upload Image</button>
+                                        <button type="button" class="btn-exam" onclick="clearUniversalImageSlot('QUESTION')" id="btnClearQTextImg" style="display:none; background:rgba(239,68,68,0.15); color:#ef4444; border:1px solid rgba(239,68,68,0.4); padding:7px 12px; font-size:12px;">✕ Remove</button>
                                     </div>
                                 </div>
                                 <div id="admQTextImgPreviewWrap" style="display:none; margin-top:12px; background:#fff; padding:10px; border-radius:8px; text-align:center; max-width:100%; overflow:hidden;">
@@ -507,19 +508,59 @@ async function _renderAdminPanel() {
                                 </div>
                             </div>
 
-                            <!-- 📐 DEDICATED DIAGRAM SECTION (NEAT & CLEAR FOR STUDENTS) -->
+                            <!-- 📊 MATCH-THE-COLUMN / CUSTOM TABLE BUILDER (DISPLAYS JUST UNDER QUESTION) -->
+                            <div style="background:#111522; border:1px solid rgba(168,85,247,0.4); border-left:4px solid #a855f7; border-radius:10px; padding:12px 14px; margin-bottom:18px;">
+                                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+                                    <label style="display:flex; align-items:center; gap:10px; cursor:pointer; font-size:13px; font-weight:800; color:#c084fc; user-select:none;">
+                                        <input type="checkbox" id="admEnableMatchTable" onchange="toggleAdminMatchTableBuilder(this.checked)" style="accent-color:#a855f7; width:17px; height:17px; cursor:pointer;">
+                                        <span>📊 Add Match-the-Column / Custom Table (Displays Just Under Question)</span>
+                                    </label>
+                                    <span style="font-size:11px; color:#94a3b8;">Customize rows &amp; columns • Supports text, formulas &amp; reactions</span>
+                                </div>
+
+                                <div id="admMatchTableBuilderWrap" style="display:none; margin-top:14px; border-top:1px solid #2b354f; padding-top:14px;">
+                                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:12px;">
+                                        <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                                            <span style="font-size:11.5px; color:#cbd5e1; font-weight:700;">Rows:</span>
+                                            <button type="button" onclick="resizeAdminMatchTable(-1, 0)" style="background:#1e293b; color:#fff; border:1px solid #334155; border-radius:6px; width:28px; height:28px; cursor:pointer; font-weight:bold;">−</button>
+                                            <span id="admTableRowsBadge" style="font-size:13px; font-weight:800; color:#fdb813; min-width:20px; text-align:center;">4</span>
+                                            <button type="button" onclick="resizeAdminMatchTable(1, 0)" style="background:#1e293b; color:#fff; border:1px solid #334155; border-radius:6px; width:28px; height:28px; cursor:pointer; font-weight:bold;">+</button>
+
+                                            <span style="font-size:11.5px; color:#cbd5e1; font-weight:700; margin-left:10px;">Columns:</span>
+                                            <button type="button" onclick="resizeAdminMatchTable(0, -1)" style="background:#1e293b; color:#fff; border:1px solid #334155; border-radius:6px; width:28px; height:28px; cursor:pointer; font-weight:bold;">−</button>
+                                            <span id="admTableColsBadge" style="font-size:13px; font-weight:800; color:#38bdf8; min-width:20px; text-align:center;">2</span>
+                                            <button type="button" onclick="resizeAdminMatchTable(0, 1)" style="background:#1e293b; color:#fff; border:1px solid #334155; border-radius:6px; width:28px; height:28px; cursor:pointer; font-weight:bold;">+</button>
+                                        </div>
+
+                                        <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                                            <button type="button" class="admin-preset-chip" onclick="applyMatchTablePrefixPreset('abcd_roman')">🔤 a, b, c, d + i, ii, iii, iv</button>
+                                            <button type="button" class="admin-preset-chip" onclick="applyMatchTablePrefixPreset('ABCD_1234')">🔠 A, B, C, D + 1, 2, 3, 4</button>
+                                            <button type="button" class="admin-preset-chip" onclick="applyMatchTablePrefixPreset('PQRS_1234')">🔢 P, Q, R, S + 1, 2, 3, 4</button>
+                                            <button type="button" class="admin-preset-chip" style="color:#ef4444; border-color:rgba(239,68,68,0.35); background:rgba(239,68,68,0.1);" onclick="resetAdminMatchTableCells()">🧹 Clear Cells</button>
+                                        </div>
+                                    </div>
+
+                                    <div id="admMatchTableInputsContainer" style="overflow-x:auto;"></div>
+                                </div>
+                            </div>
+
+                            <!-- 📐 DEDICATED DIAGRAM SECTION (UPLOAD FILE + PASTE SCREENSHOT) -->
                             <div class="admin-grid-2" style="margin-bottom: 15px;">
-                                <div style="background:#111522; border:1px solid rgba(253,184,19,0.4); border-left:4px solid #fdb813; border-radius:10px; padding:12px 14px;">
+                                <div style="background:#111522; border:1px solid rgba(253,184,19,0.4); border-left:4px solid #fdb813; border-radius:10px; padding:12px 14px;" onpaste="handleUniversalImagePaste(event, 'DIAGRAM')">
                                     <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:8px;">
                                         <label class="admin-label" style="color:var(--primary-yellow); margin-bottom:0;">📐 Dedicated Diagram / Figure / Circuit (Optional)</label>
-                                        <button type="button" onclick="clearAdminDiagramImage()" id="btnClearDiagramImg" style="display:none; background:rgba(239,68,68,0.15); color:#ef4444; border:1px solid rgba(239,68,68,0.4); border-radius:6px; padding:3px 9px; font-size:11px; font-weight:700; cursor:pointer;">✕ Remove Diagram</button>
+                                        <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                                            <button type="button" onclick="triggerClipboardImagePaste('DIAGRAM')" style="background:rgba(16,185,129,0.16); color:#10b981; border:1px solid rgba(16,185,129,0.45); border-radius:6px; padding:4px 10px; font-size:11px; font-weight:800; cursor:pointer;">📋 Paste Screenshot</button>
+                                            <button type="button" onclick="document.getElementById('admQImage').click()" style="background:rgba(253,184,19,0.15); color:#fdb813; border:1px solid rgba(253,184,19,0.4); border-radius:6px; padding:4px 10px; font-size:11px; font-weight:700; cursor:pointer;">📁 Upload File</button>
+                                            <button type="button" onclick="clearUniversalImageSlot('DIAGRAM')" id="btnClearDiagramImg" style="display:none; background:rgba(239,68,68,0.15); color:#ef4444; border:1px solid rgba(239,68,68,0.4); border-radius:6px; padding:4px 9px; font-size:11px; font-weight:700; cursor:pointer;">✕ Remove</button>
+                                        </div>
                                     </div>
-                                    <input type="file" id="admQImage" class="input-field" accept="image/*" style="padding: 8px 12px; margin-bottom:8px;" onchange="handleAdminDiagramImgSelect(this)">
+                                    <input type="file" id="admQImage" class="input-field" accept="image/*" style="padding: 7px 10px; margin-bottom:8px; font-size:12px;" onchange="handleUniversalFileSelect(this, 'DIAGRAM')">
                                     <div style="display:flex; gap:8px; flex-wrap:wrap;">
-                                        <input type="text" id="admDiagramCaption" class="input-field" placeholder="Diagram Label/Caption (Optional, e.g. Fig 1: Circuit)" style="flex:2; min-width:140px; margin-bottom:0; padding:8px 10px; font-size:12px;">
+                                        <input type="text" id="admDiagramCaption" class="input-field" placeholder="Diagram Label/Caption (or click here & press Ctrl+V to paste diagram)" style="flex:2; min-width:140px; margin-bottom:0; padding:8px 10px; font-size:12px;" onpaste="handleUniversalImagePaste(event, 'DIAGRAM')">
                                         <select id="admDiagramBgMode" class="input-field" style="flex:1; min-width:130px; margin-bottom:0; padding:8px 10px; font-size:12px;" onchange="updateAdminDiagramPreviewBg()">
-                                            <option value="light">☀️ Crisp White Backing (Best for Black-Line Diagrams)</option>
-                                            <option value="dark">🌙 Dark Backing (For Colored Photos)</option>
+                                            <option value="light">☀️ Crisp White Backing</option>
+                                            <option value="dark">🌙 Dark Backing</option>
                                         </select>
                                     </div>
                                     <div id="admDiagramPreviewWrap" style="display:none; margin-top:10px; background:#ffffff; padding:10px; border-radius:8px; text-align:center; border:1px solid #334155;">
@@ -542,7 +583,7 @@ async function _renderAdminPanel() {
                             
                             <label class="admin-label" style="margin-top: 20px;">Multiple Choice Options (Supports Formulas &amp; Reactions)</label>
                             <div class="admin-grid-2">
-                                <input type="text" id="admOptA" class="input-field" placeholder="Option A" onfocus="setLastFocusedFormulaInput(this)" oninput="updateAdminLiveFormulaPreview()">
+                                <input type="text" id="admOptA" class="input-field" placeholder="Option A (e.g. a-iii, b-iv, c-i, d-ii)" onfocus="setLastFocusedFormulaInput(this)" oninput="updateAdminLiveFormulaPreview()">
                                 <input type="text" id="admOptB" class="input-field" placeholder="Option B" onfocus="setLastFocusedFormulaInput(this)" oninput="updateAdminLiveFormulaPreview()">
                                 <input type="text" id="admOptC" class="input-field" placeholder="Option C" onfocus="setLastFocusedFormulaInput(this)" oninput="updateAdminLiveFormulaPreview()">
                                 <input type="text" id="admOptD" class="input-field" placeholder="Option D" onfocus="setLastFocusedFormulaInput(this)" oninput="updateAdminLiveFormulaPreview()">
@@ -556,12 +597,35 @@ async function _renderAdminPanel() {
                                 <label class="admin-cb-label"><input type="checkbox" value="D" class="admCorrectCb"> D</label>
                             </div>
                             
-                            <label class="admin-label">Explanation (Optional — Supports Step-by-Step Reactions &amp; Formulas)</label>
-                            <textarea id="admExplanation" class="input-field" style="min-height: 80px;" placeholder="Explain why the answer is correct..." onfocus="setLastFocusedFormulaInput(this)" oninput="updateAdminLiveFormulaPreview()"></textarea>
+                            <!-- EXPLANATION TEXT + SCREENSHOT PASTE & UPLOAD -->
+                            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:6px;">
+                                <label class="admin-label" style="margin-bottom:0;">Explanation (Optional — Type Text/Formulas AND/OR Paste/Upload Solution Image)</label>
+                                <span style="font-size:11px; color:#10b981;">💡 Press Ctrl+V inside box or click Paste Screenshot to attach handwritten/printed solution!</span>
+                            </div>
+                            <textarea id="admExplanation" class="input-field" style="min-height: 80px; margin-bottom:10px;" placeholder="Explain why the answer is correct... OR press Ctrl+V / click Paste Screenshot below to attach a solution image!" onfocus="setLastFocusedFormulaInput(this)" oninput="updateAdminLiveFormulaPreview()" onpaste="handleUniversalImagePaste(event, 'EXPLANATION')"></textarea>
 
-                            <!-- 👁️ LIVE STUDENT VIEW & FORMULA / REACTION PREVIEW -->
+                            <!-- 📸 EXPLANATION SCREENSHOT PASTE & UPLOAD BAR -->
+                            <div style="background:#111522; border:1px solid rgba(16,185,129,0.35); border-left:4px solid #10b981; border-radius:10px; padding:12px 14px; margin-bottom:14px;" onpaste="handleUniversalImagePaste(event, 'EXPLANATION')">
+                                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+                                    <div>
+                                        <div style="font-size:12.5px; font-weight:800; color:#10b981;">🖼️ Explanation / Solution Image (Upload File OR Paste Screenshot)</div>
+                                        <div style="font-size:11.5px; color:#94a3b8; margin-top:2px;">Attach a screenshot of a step-by-step derivation, mechanism, or NCERT solution paragraph.</div>
+                                    </div>
+                                    <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+                                        <input type="file" id="admExpImageFile" accept="image/*" style="display:none;" onchange="handleUniversalFileSelect(this, 'EXPLANATION')">
+                                        <button type="button" class="btn-exam" onclick="triggerClipboardImagePaste('EXPLANATION')" style="background:rgba(16,185,129,0.16); color:#10b981; border:1px solid rgba(16,185,129,0.45); padding:7px 13px; font-size:12px; font-weight:800;">📋 Paste Screenshot</button>
+                                        <button type="button" class="btn-exam" onclick="document.getElementById('admExpImageFile').click()" style="background:rgba(56,189,248,0.15); color:#38bdf8; border:1px solid rgba(56,189,248,0.4); padding:7px 13px; font-size:12px;">📁 Upload Image</button>
+                                        <button type="button" class="btn-exam" onclick="clearUniversalImageSlot('EXPLANATION')" id="btnClearExpImg" style="display:none; background:rgba(239,68,68,0.15); color:#ef4444; border:1px solid rgba(239,68,68,0.4); padding:7px 12px; font-size:12px;">✕ Remove</button>
+                                    </div>
+                                </div>
+                                <div id="admExpImgPreviewWrap" style="display:none; margin-top:12px; background:#fff; padding:10px; border-radius:8px; text-align:center; max-width:100%; overflow:hidden;">
+                                    <img id="admExpImgPreview" src="" style="max-height:170px; max-width:100%; object-fit:contain; display:block; margin:0 auto; border-radius:4px;">
+                                </div>
+                            </div>
+
+                            <!-- 👁️ LIVE STUDENT VIEW & FORMULA / TABLE / REACTION PREVIEW -->
                             <div id="admLiveFormulaPreviewCard" style="display:none; background:#090e1a; border:1px solid rgba(253,184,19,0.35); border-radius:12px; padding:14px 16px; margin-top:14px;">
-                                <div style="font-size:11px; font-weight:800; color:var(--primary-yellow); text-transform:uppercase; margin-bottom:8px;">👁️ Live Student Formula &amp; Reaction Preview</div>
+                                <div style="font-size:11px; font-weight:800; color:var(--primary-yellow); text-transform:uppercase; margin-bottom:8px;">👁️ Live Student Preview (Question + Match Table + Options + Explanation)</div>
                                 <div id="admLiveFormulaPreviewContent" style="font-size:14.5px; color:#fff; line-height:1.6;"></div>
                             </div>
                         </div>
@@ -2419,14 +2483,14 @@ async function uploadFileToCloudinary(file) {
 }
 
 // ==========================================
-// FORMULA TOOLBAR, QUESTION IMAGE, DIAGRAM & AUTO-MIXED LEVEL ENGINE
+// FORMULA TOOLBAR, SCREENSHOT PASTE, MATCH TABLE, DIAGRAM & AUTO-MIXED ENGINE
 // ==========================================
-(function injectStudentDiagramAndQuestionImgStyles() {
+(function injectStudentDiagramTableAndQuestionImgStyles() {
     if (document.getElementById('mcqs-diagram-qimg-styles')) return;
     const st = document.createElement('style');
     st.id = 'mcqs-diagram-qimg-styles';
     st.textContent = `
-        .mcq-question-text-img-wrap {
+        .mcq-question-text-img-wrap, .mcq-explanation-img-wrap {
             margin: 10px 0 14px 0;
             background: #ffffff;
             border: 1.5px solid rgba(56, 189, 248, 0.45);
@@ -2437,9 +2501,9 @@ async function uploadFileToCloudinary(file) {
             box-sizing: border-box;
             box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
         }
-        .mcq-question-text-img-wrap img {
+        .mcq-question-text-img-wrap img, .mcq-explanation-img-wrap img {
             max-width: 100%;
-            max-height: 240px;
+            max-height: 250px;
             width: auto;
             height: auto;
             object-fit: contain;
@@ -2489,12 +2553,80 @@ async function uploadFileToCloudinary(file) {
             gap: 6px;
             opacity: 0.88;
         }
+        /* Match-the-Column Table Styling (Matches Dark Exam UI in Image 2) */
+        .mcq-match-table-wrap {
+            margin: 14px 0 16px 0;
+            width: 100%;
+            overflow-x: auto;
+            border-radius: 12px;
+            border: 1px solid #2b354f;
+            background: #141821;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+            box-sizing: border-box;
+        }
+        .mcq-match-table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 14.5px;
+            color: #f1f5f9;
+        }
+        .mcq-match-table th {
+            background: #1f2633;
+            color: #e2e8f0;
+            font-weight: 700;
+            padding: 12px 16px;
+            border-bottom: 1px solid #2e3846;
+            border-right: 1px solid rgba(255, 255, 255, 0.06);
+        }
+        .mcq-match-table th:last-child {
+            border-right: none;
+        }
+        .mcq-match-table td {
+            padding: 11px 16px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+            border-right: 1px solid rgba(255, 255, 255, 0.05);
+            vertical-align: top;
+            line-height: 1.5;
+        }
+        .mcq-match-table td:last-child {
+            border-right: none;
+        }
+        .mcq-match-table tr:last-child td {
+            border-bottom: none;
+        }
     `;
     document.head.appendChild(st);
 })();
 
 let lastFocusedFormulaInput = null;
-let pendingAdminQuestionPastedBlob = null;
+
+// Universal Pasted/Selected Image Blobs for Question, Diagram & Explanation
+let adminImageSlots = {
+    QUESTION: null,
+    DIAGRAM: null,
+    EXPLANATION: null
+};
+
+// State for Match-the-Column / Custom Table Builder
+let adminMatchTableState = {
+    enabled: false,
+    rows: 4,
+    cols: 2,
+    headers: ['Column I', 'Column II', 'Column III', 'Column IV', 'Column V'],
+    cells: [
+        ['a. ', 'i. ', '', '', ''],
+        ['b. ', 'ii. ', '', '', ''],
+        ['c. ', 'iii. ', '', '', ''],
+        ['d. ', 'iv. ', '', '', ''],
+        ['e. ', 'v. ', '', '', ''],
+        ['f. ', 'vi. ', '', '', ''],
+        ['g. ', 'vii. ', '', '', ''],
+        ['h. ', 'viii. ', '', '', ''],
+        ['i. ', 'ix. ', '', '', ''],
+        ['j. ', 'x. ', '', '', '']
+    ]
+};
 
 function setLastFocusedFormulaInput(el) {
     if (el) lastFocusedFormulaInput = el;
@@ -2510,13 +2642,14 @@ function insertAdminFormulaAtCursor(snippet) {
     target.value = text.substring(0, start) + snippet + text.substring(end);
     const nextPos = start + snippet.length;
     target.selectionStart = target.selectionEnd = nextPos;
+    target.dispatchEvent(new Event('input', { bubbles: true }));
     updateAdminLiveFormulaPreview();
 }
 
 function formatPlainChemistryToLatex() {
     let target = lastFocusedFormulaInput || document.getElementById('admQuestion');
     if (!target || !target.value.trim()) {
-        return showNotification('⚠️ Click inside Question, Option, or Explanation with text first.');
+        return showNotification('⚠️ Click inside Question, Table Cell, Option, or Explanation with text first.');
     }
     let s = target.value;
     s = s.replace(/<=>|<-->/g, '$\\rightleftharpoons$');
@@ -2524,8 +2657,241 @@ function formatPlainChemistryToLatex() {
     s = s.replace(/\b([A-Z][a-z]?)(\d+)\b/g, '$1$_$2$');
     s = s.replace(/\^(\d+[+\-]|[+\-]\d*)/g, '$^{$1}$');
     target.value = s;
+    target.dispatchEvent(new Event('input', { bubbles: true }));
     updateAdminLiveFormulaPreview();
     showNotification('✨ Reactions & subscripts formatted!');
+}
+
+// ==========================================
+// 📊 MATCH-THE-COLUMN / CUSTOM TABLE BUILDER FUNCTIONS
+// ==========================================
+function toggleAdminMatchTableBuilder(checked) {
+    adminMatchTableState.enabled = Boolean(checked);
+    const wrap = document.getElementById('admMatchTableBuilderWrap');
+    if (wrap) wrap.style.display = adminMatchTableState.enabled ? 'block' : 'none';
+    if (adminMatchTableState.enabled) {
+        renderAdminMatchTableInputs();
+    }
+    updateAdminLiveFormulaPreview();
+}
+
+function resizeAdminMatchTable(deltaRows, deltaCols) {
+    adminMatchTableState.rows = Math.min(10, Math.max(1, adminMatchTableState.rows + deltaRows));
+    adminMatchTableState.cols = Math.min(5, Math.max(1, adminMatchTableState.cols + deltaCols));
+    while (adminMatchTableState.cells.length < adminMatchTableState.rows) {
+        adminMatchTableState.cells.push(['', '', '', '', '']);
+    }
+    renderAdminMatchTableInputs();
+    updateAdminLiveFormulaPreview();
+}
+
+function updateAdminMatchTableHeader(colIdx, val) {
+    adminMatchTableState.headers[colIdx] = val;
+    updateAdminLiveFormulaPreview();
+}
+
+function updateAdminMatchTableCell(rowIdx, colIdx, val) {
+    if (!adminMatchTableState.cells[rowIdx]) adminMatchTableState.cells[rowIdx] = ['', '', '', '', ''];
+    adminMatchTableState.cells[rowIdx][colIdx] = val;
+    updateAdminLiveFormulaPreview();
+}
+
+function applyMatchTablePrefixPreset(preset) {
+    const roman = ['i', 'ii', 'iii', 'iv', 'v', 'vi', 'vii', 'viii', 'ix', 'x'];
+    const lower = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j'];
+    const upper = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'];
+    const pqrs  = ['P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y'];
+
+    for (let r = 0; r < adminMatchTableState.rows; r++) {
+        let c0 = (adminMatchTableState.cells[r][0] || '').replace(/^[a-zA-Z0-9\(\)\.\-]+\s*/, '');
+        let c1 = (adminMatchTableState.cells[r][1] || '').replace(/^[a-zA-Z0-9\(\)\.\-]+\s*/, '');
+        if (preset === 'abcd_roman') {
+            adminMatchTableState.cells[r][0] = `${lower[r]}. ${c0}`;
+            if (adminMatchTableState.cols >= 2) adminMatchTableState.cells[r][1] = `${roman[r]}. ${c1}`;
+        } else if (preset === 'ABCD_1234') {
+            adminMatchTableState.cells[r][0] = `${upper[r]}. ${c0}`;
+            if (adminMatchTableState.cols >= 2) adminMatchTableState.cells[r][1] = `${r + 1}. ${c1}`;
+        } else if (preset === 'PQRS_1234') {
+            adminMatchTableState.cells[r][0] = `${pqrs[r]}. ${c0}`;
+            if (adminMatchTableState.cols >= 2) adminMatchTableState.cells[r][1] = `${r + 1}. ${c1}`;
+        }
+    }
+    renderAdminMatchTableInputs();
+    updateAdminLiveFormulaPreview();
+}
+
+function resetAdminMatchTableCells() {
+    for (let r = 0; r < 10; r++) {
+        adminMatchTableState.cells[r] = ['', '', '', '', ''];
+    }
+    renderAdminMatchTableInputs();
+    updateAdminLiveFormulaPreview();
+}
+
+function renderAdminMatchTableInputs() {
+    const container = document.getElementById('admMatchTableInputsContainer');
+    const rBadge = document.getElementById('admTableRowsBadge');
+    const cBadge = document.getElementById('admTableColsBadge');
+    if (rBadge) rBadge.innerText = adminMatchTableState.rows;
+    if (cBadge) cBadge.innerText = adminMatchTableState.cols;
+    if (!container) return;
+
+    const cols = adminMatchTableState.cols;
+    const rows = adminMatchTableState.rows;
+
+    let html = `<table style="width:100%; border-collapse:collapse; min-width:420px;"><thead><tr>`;
+    for (let c = 0; c < cols; c++) {
+        const hVal = (adminMatchTableState.headers[c] || `Column ${c + 1}`).replace(/"/g, '&quot;');
+        html += `<th style="padding:6px; background:#1a2234; border:1px solid #2b3954;">
+            <input type="text" class="input-field" value="${hVal}" placeholder="Column Header ${c + 1} (e.g. Column I (Order))" onfocus="setLastFocusedFormulaInput(this)" oninput="updateAdminMatchTableHeader(${c}, this.value)" style="margin:0; padding:8px 10px; font-weight:800; font-size:13px; color:#fdb813; background:#0f1523; border-color:#334155;">
+        </th>`;
+    }
+    html += `</tr></thead><tbody>`;
+
+    for (let r = 0; r < rows; r++) {
+        html += `<tr>`;
+        for (let c = 0; c < cols; c++) {
+            const cVal = ((adminMatchTableState.cells[r] && adminMatchTableState.cells[r][c]) || '').replace(/"/g, '&quot;');
+            html += `<td style="padding:5px; background:#131824; border:1px solid #263147;">
+                <input type="text" class="input-field" value="${cVal}" placeholder="Row ${r + 1}, Col ${c + 1}" onfocus="setLastFocusedFormulaInput(this)" oninput="updateAdminMatchTableCell(${r}, ${c}, this.value)" style="margin:0; padding:8px 10px; font-size:13px; color:#fff; background:#0b0f19;">
+            </td>`;
+        }
+        html += `</tr>`;
+    }
+    html += `</tbody></table>`;
+    container.innerHTML = html;
+}
+
+function formatCellWithBoldPrefix(rawCell) {
+    let safe = String(rawCell || '').trim();
+    if (!safe) return '';
+    return safe.replace(/^([a-zA-Z0-9]{1,4}[\.\)])(\s+)/, '<b>$1</b>$2');
+}
+
+function buildMatchTableHtmlForQuestion() {
+    if (!adminMatchTableState.enabled) return '';
+    const cols = adminMatchTableState.cols;
+    const rows = adminMatchTableState.rows;
+
+    let hasAnyContent = false;
+    let theadHtml = '<tr>';
+    for (let c = 0; c < cols; c++) {
+        let hText = (adminMatchTableState.headers[c] || '').trim();
+        theadHtml += `<th>${hText || `Column ${c + 1}`}</th>`;
+    }
+    theadHtml += '</tr>';
+
+    let tbodyHtml = '';
+    for (let r = 0; r < rows; r++) {
+        let rowCells = [];
+        let rowHasText = false;
+        for (let c = 0; c < cols; c++) {
+            let val = (adminMatchTableState.cells[r] && adminMatchTableState.cells[r][c]) ? adminMatchTableState.cells[r][c].trim() : '';
+            if (val) rowHasText = true;
+            rowCells.push(`<td>${formatCellWithBoldPrefix(val)}</td>`);
+        }
+        if (rowHasText) {
+            hasAnyContent = true;
+            tbodyHtml += `<tr>${rowCells.join('')}</tr>`;
+        }
+    }
+
+    if (!hasAnyContent) return '';
+    return `<div class="mcq-match-table-wrap"><table class="mcq-match-table"><thead>${theadHtml}</thead><tbody>${tbodyHtml}</tbody></table></div>`;
+}
+
+// ==========================================
+// 📸 UNIVERSAL SCREENSHOT PASTE & FILE UPLOAD (QUESTION, DIAGRAM, EXPLANATION)
+// ==========================================
+function getSlotDomIds(slot) {
+    if (slot === 'QUESTION') {
+        return { fileId: 'admQTextImageFile', wrapId: 'admQTextImgPreviewWrap', imgId: 'admQTextImgPreview', clrId: 'btnClearQTextImg', label: 'Question Image' };
+    } else if (slot === 'DIAGRAM') {
+        return { fileId: 'admQImage', wrapId: 'admDiagramPreviewWrap', imgId: 'admDiagramPreviewImg', clrId: 'btnClearDiagramImg', label: 'Diagram Image' };
+    } else {
+        return { fileId: 'admExpImageFile', wrapId: 'admExpImgPreviewWrap', imgId: 'admExpImgPreview', clrId: 'btnClearExpImg', label: 'Explanation Image' };
+    }
+}
+
+function applyBlobOrFileToSlot(slot, blobOrFile) {
+    if (!blobOrFile) return;
+    adminImageSlots[slot] = blobOrFile;
+    const { wrapId, imgId, clrId, label } = getSlotDomIds(slot);
+    const url = URL.createObjectURL(blobOrFile);
+    const wrap = document.getElementById(wrapId);
+    const img = document.getElementById(imgId);
+    const clr = document.getElementById(clrId);
+    if (img) img.src = url;
+    if (wrap) wrap.style.display = 'block';
+    if (clr) clr.style.display = 'inline-block';
+    if (slot === 'DIAGRAM') updateAdminDiagramPreviewBg();
+    showNotification(`📸 ${label} attached!`);
+}
+
+function handleUniversalFileSelect(inputEl, slot) {
+    if (!inputEl || !inputEl.files || !inputEl.files[0]) return;
+    applyBlobOrFileToSlot(slot, inputEl.files[0]);
+}
+
+function handleUniversalImagePaste(event, slot) {
+    const items = event.clipboardData?.items;
+    if (!items) return;
+    for (let item of items) {
+        if (item.type && item.type.indexOf('image') !== -1) {
+            event.preventDefault();
+            event.stopPropagation();
+            const blob = item.getAsFile();
+            applyBlobOrFileToSlot(slot, blob);
+            return;
+        }
+    }
+}
+
+async function triggerClipboardImagePaste(slot) {
+    try {
+        if (navigator.clipboard && typeof navigator.clipboard.read === 'function') {
+            const clipboardItems = await navigator.clipboard.read();
+            for (const item of clipboardItems) {
+                const imgType = item.types.find(t => t.startsWith('image/'));
+                if (imgType) {
+                    const blob = await item.getType(imgType);
+                    applyBlobOrFileToSlot(slot, blob);
+                    return;
+                }
+            }
+            showNotification('⚠️ No screenshot found on clipboard. Take a screenshot first, then click Paste Screenshot!');
+        } else {
+            throw new Error('Clipboard read API not supported');
+        }
+    } catch (e) {
+        const focusId = slot === 'QUESTION' ? 'admQuestion' : (slot === 'DIAGRAM' ? 'admDiagramCaption' : 'admExplanation');
+        const el = document.getElementById(focusId);
+        if (el) el.focus();
+        showNotification('📋 Box focused! Now press Ctrl+V (Desktop) or Long-Press -> Paste (Mobile) to paste your screenshot.');
+    }
+}
+
+function clearUniversalImageSlot(slot) {
+    adminImageSlots[slot] = null;
+    const { fileId, wrapId, imgId, clrId } = getSlotDomIds(slot);
+    const f = document.getElementById(fileId);
+    const wrap = document.getElementById(wrapId);
+    const img = document.getElementById(imgId);
+    const clr = document.getElementById(clrId);
+    if (f) f.value = '';
+    if (img) img.src = '';
+    if (wrap) wrap.style.display = 'none';
+    if (clr) clr.style.display = 'none';
+    if (slot === 'DIAGRAM') {
+        const cap = document.getElementById('admDiagramCaption');
+        if (cap) cap.value = '';
+    }
+}
+
+function updateAdminDiagramPreviewBg() {
+    const mode = document.getElementById('admDiagramBgMode')?.value || 'light';
+    const wrap = document.getElementById('admDiagramPreviewWrap');
+    if (wrap) wrap.style.background = mode === 'dark' ? '#0d1527' : '#ffffff';
 }
 
 function updateAdminLiveFormulaPreview() {
@@ -2534,20 +2900,22 @@ function updateAdminLiveFormulaPreview() {
     if (!card || !content) return;
 
     const q = document.getElementById('admQuestion')?.value.trim() || '';
+    const tableHtml = buildMatchTableHtmlForQuestion();
     const a = document.getElementById('admOptA')?.value.trim() || '';
     const b = document.getElementById('admOptB')?.value.trim() || '';
     const c = document.getElementById('admOptC')?.value.trim() || '';
     const d = document.getElementById('admOptD')?.value.trim() || '';
     const exp = document.getElementById('admExplanation')?.value.trim() || '';
 
-    if (!q && !a && !b && !c && !d && !exp) {
+    if (!q && !tableHtml && !a && !b && !c && !d && !exp) {
         card.style.display = 'none';
         return;
     }
     card.style.display = 'block';
     content.innerHTML = `
         ${q ? `<div style="margin-bottom:8px;"><b>Q:</b> ${q}</div>` : ''}
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; font-size:13px; color:#cbd5e1;">
+        ${tableHtml}
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; font-size:13px; color:#cbd5e1; margin-top:8px;">
             ${a ? `<div><b>A)</b> ${a}</div>` : ''}
             ${b ? `<div><b>B)</b> ${b}</div>` : ''}
             ${c ? `<div><b>C)</b> ${c}</div>` : ''}
@@ -2567,83 +2935,6 @@ function updateAdminLiveFormulaPreview() {
             throwOnError: false
         });
     }
-}
-
-function handleAdminQuestionImgSelect(inputEl) {
-    if (!inputEl || !inputEl.files || !inputEl.files[0]) return;
-    pendingAdminQuestionPastedBlob = null;
-    const file = inputEl.files[0];
-    const url = URL.createObjectURL(file);
-    const wrap = document.getElementById('admQTextImgPreviewWrap');
-    const img = document.getElementById('admQTextImgPreview');
-    const clr = document.getElementById('btnClearQTextImg');
-    if (img) img.src = url;
-    if (wrap) wrap.style.display = 'block';
-    if (clr) clr.style.display = 'inline-block';
-}
-
-function handleAdminQuestionPasteImage(event) {
-    const items = event.clipboardData?.items;
-    if (!items) return;
-    for (let item of items) {
-        if (item.type.indexOf('image') !== -1) {
-            event.preventDefault();
-            const blob = item.getAsFile();
-            pendingAdminQuestionPastedBlob = blob;
-            const url = URL.createObjectURL(blob);
-            const wrap = document.getElementById('admQTextImgPreviewWrap');
-            const img = document.getElementById('admQTextImgPreview');
-            const clr = document.getElementById('btnClearQTextImg');
-            if (img) img.src = url;
-            if (wrap) wrap.style.display = 'block';
-            if (clr) clr.style.display = 'inline-block';
-            showNotification('📸 Question image pasted from clipboard!');
-            break;
-        }
-    }
-}
-
-function clearAdminQuestionTextImage() {
-    pendingAdminQuestionPastedBlob = null;
-    const f = document.getElementById('admQTextImageFile');
-    const wrap = document.getElementById('admQTextImgPreviewWrap');
-    const img = document.getElementById('admQTextImgPreview');
-    const clr = document.getElementById('btnClearQTextImg');
-    if (f) f.value = '';
-    if (img) img.src = '';
-    if (wrap) wrap.style.display = 'none';
-    if (clr) clr.style.display = 'none';
-}
-
-function handleAdminDiagramImgSelect(inputEl) {
-    if (!inputEl || !inputEl.files || !inputEl.files[0]) return;
-    const url = URL.createObjectURL(inputEl.files[0]);
-    const wrap = document.getElementById('admDiagramPreviewWrap');
-    const img = document.getElementById('admDiagramPreviewImg');
-    const clr = document.getElementById('btnClearDiagramImg');
-    if (img) img.src = url;
-    if (wrap) wrap.style.display = 'block';
-    if (clr) clr.style.display = 'inline-block';
-    updateAdminDiagramPreviewBg();
-}
-
-function updateAdminDiagramPreviewBg() {
-    const mode = document.getElementById('admDiagramBgMode')?.value || 'light';
-    const wrap = document.getElementById('admDiagramPreviewWrap');
-    if (wrap) wrap.style.background = mode === 'dark' ? '#0d1527' : '#ffffff';
-}
-
-function clearAdminDiagramImage() {
-    const f = document.getElementById('admQImage');
-    const cap = document.getElementById('admDiagramCaption');
-    const wrap = document.getElementById('admDiagramPreviewWrap');
-    const img = document.getElementById('admDiagramPreviewImg');
-    const clr = document.getElementById('btnClearDiagramImg');
-    if (f) f.value = '';
-    if (cap) cap.value = '';
-    if (img) img.src = '';
-    if (wrap) wrap.style.display = 'none';
-    if (clr) clr.style.display = 'none';
 }
 
 function openStudentDiagramLightbox(imgSrc, captionText = '') {
@@ -2809,6 +3100,7 @@ async function generateAutoMixedQuestionsForSubtopic() {
                     questionImageUrl: q.questionImageUrl || null,
                     diagramUrl: q.diagramUrl || null,
                     diagramCaption: q.diagramCaption || '',
+                    explanationImageUrl: q.explanationImageUrl || null,
                     randomKey: Math.random(),
                     timestamp: firebase.firestore.Timestamp.fromMillis(nowMs - (i + idx) * 1000)
                 });
@@ -2824,19 +3116,21 @@ async function generateAutoMixedQuestionsForSubtopic() {
     if (btn) { btn.innerText = '🎲 Auto-Combine & Shuffle into Mixed Level'; btn.disabled = false; }
 }
 
-// Automatically refresh Mixed counts when admin changes upload folder path
 const _origHandleAdminPathChange = handleAdminPathChange;
 handleAdminPathChange = function(event, depth) {
     _origHandleAdminPathChange(event, depth);
     setTimeout(refreshAutoMixAvailableCounts, 80);
 };
 
-// Automatically clear new Question Image, Diagram & Formula Preview when clearing form
 const _origClearAdminUploadForm = clearAdminUploadForm;
 clearAdminUploadForm = function(isSmartClear = false) {
     _origClearAdminUploadForm(isSmartClear);
-    clearAdminQuestionTextImage();
-    clearAdminDiagramImage();
+    clearUniversalImageSlot('QUESTION');
+    clearUniversalImageSlot('DIAGRAM');
+    clearUniversalImageSlot('EXPLANATION');
+    const tblCb = document.getElementById('admEnableMatchTable');
+    if (tblCb) tblCb.checked = false;
+    toggleAdminMatchTableBuilder(false);
     updateAdminLiveFormulaPreview();
 };
 
@@ -2850,6 +3144,7 @@ async function processAdminUpload() {
     try {
         if (type === 'mcq') {
             let questionText = document.getElementById('admQuestion').value.trim();
+            const matchTableHtml = buildMatchTableHtmlForQuestion();
             const options = {
                 A: document.getElementById('admOptA').value.trim(),
                 B: document.getElementById('admOptB').value.trim(),
@@ -2857,10 +3152,12 @@ async function processAdminUpload() {
                 D: document.getElementById('admOptD').value.trim()
             };
             const correctAnswers = Array.from(document.querySelectorAll('.admCorrectCb:checked')).map(cb => cb.value);
-            const explanation = document.getElementById('admExplanation').value.trim();
+            let explanationText = document.getElementById('admExplanation').value.trim();
 
-            const qTextImgFile = pendingAdminQuestionPastedBlob || document.getElementById('admQTextImageFile')?.files?.[0] || null;
-            const diagramFile = document.getElementById('admQImage')?.files?.[0] || null;
+            const qTextImgFile = adminImageSlots.QUESTION || document.getElementById('admQTextImageFile')?.files?.[0] || null;
+            const diagramFile = adminImageSlots.DIAGRAM || document.getElementById('admQImage')?.files?.[0] || null;
+            const expImgFile = adminImageSlots.EXPLANATION || document.getElementById('admExpImageFile')?.files?.[0] || null;
+
             const diagramCaption = document.getElementById('admDiagramCaption')?.value.trim() || '';
             const diagramBgMode = document.getElementById('admDiagramBgMode')?.value || 'light';
 
@@ -2868,8 +3165,8 @@ async function processAdminUpload() {
             const leaf = (adminSelectedPath[adminSelectedPath.length - 1] || '').replace(/^\d+\.\s*/, '').trim();
             if (['Easy', 'Medium', 'Hard', 'Mixed'].includes(leaf) && level === 'Mixed') level = leaf;
 
-            if ((!questionText && !qTextImgFile) || !options.A || !options.B || !correctAnswers.length) {
-                throw new Error('Provide either Question Text OR a Question Image, plus Option A, Option B, and Correct Answer.');
+            if ((!questionText && !qTextImgFile && !matchTableHtml) || !options.A || !options.B || !correctAnswers.length) {
+                throw new Error('Provide Question Text, Question Screenshot, or Match Table, plus Option A, Option B, and Correct Answer.');
             }
 
             let questionImageUrl = null;
@@ -2884,12 +3181,21 @@ async function processAdminUpload() {
                 diagramUrl = await uploadFileToCloudinary(diagramFile);
             }
 
-            // Build clean, self-contained HTML for Question Image and Diagram so it displays neatly everywhere without disturbing Options or Explanation
+            let explanationImageUrl = null;
+            if (expImgFile) {
+                btn.innerText = 'Uploading Explanation Image...';
+                explanationImageUrl = await uploadFileToCloudinary(expImgFile);
+            }
+
+            // Assemble Question HTML: Question Text -> Question Image -> Match-the-Column Table -> Dedicated Diagram
             let finalQuestionHtml = questionText;
             if (questionImageUrl) {
                 const safeQUrl = questionImageUrl.replace(/'/g, "\\'");
-                const qImgBlock = `<div class="mcq-question-text-img-wrap"><img src="${questionImageUrl}" alt="Question" onclick="openStudentDiagramLightbox('${safeQUrl}', 'Question Image')" title="Click to zoom"></div>`;
+                const qImgBlock = `<div class="mcq-question-text-img-wrap"><img src="${questionImageUrl}" alt="Question" onclick="openStudentDiagramLightbox('${safeQUrl}', 'Question Image')" title="Tap to zoom"></div>`;
                 finalQuestionHtml = finalQuestionHtml ? `${finalQuestionHtml}${qImgBlock}` : qImgBlock;
+            }
+            if (matchTableHtml) {
+                finalQuestionHtml = `${finalQuestionHtml}${matchTableHtml}`;
             }
             if (diagramUrl) {
                 const safeDUrl = diagramUrl.replace(/'/g, "\\'");
@@ -2902,6 +3208,14 @@ async function processAdminUpload() {
                 finalQuestionHtml = `${finalQuestionHtml}${diagBlock}`;
             }
 
+            // Assemble Explanation HTML: Explanation Text + Explanation Image/Screenshot
+            let finalExplanationHtml = explanationText;
+            if (explanationImageUrl) {
+                const safeEUrl = explanationImageUrl.replace(/'/g, "\\'");
+                const expImgBlock = `<div class="mcq-explanation-img-wrap"><img src="${explanationImageUrl}" alt="Explanation Solution" onclick="openStudentDiagramLightbox('${safeEUrl}', 'Solution / Explanation')" title="Tap to zoom"></div>`;
+                finalExplanationHtml = finalExplanationHtml ? `${finalExplanationHtml}${expImgBlock}` : expImgBlock;
+            }
+
             await db.collection('content').add({
                 type: 'mcq',
                 path: targetPath,
@@ -2910,11 +3224,12 @@ async function processAdminUpload() {
                 rawQuestionText: questionText,
                 options,
                 correctAnswers,
-                explanation,
+                explanation: finalExplanationHtml,
                 imageUrl: null,
                 questionImageUrl,
                 diagramUrl,
                 diagramCaption,
+                explanationImageUrl,
                 randomKey: Math.random(),
                 timestamp: firebase.firestore.FieldValue.serverTimestamp()
             });
