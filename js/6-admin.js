@@ -184,6 +184,17 @@ function parseFolderNamesList(rawInput) {
     return finalNames;
 }
 
+function setCreateTopicIconMode(mode) {
+    const customOverride = document.getElementById('newFolderIcon');
+    if (!customOverride) return;
+    if (mode === 'AUTO') {
+        customOverride.value = '';
+    } else if (mode === 'NONE') {
+        customOverride.value = 'NONE';
+    }
+    updateLiveAutoIconPreview();
+}
+
 function updateLiveAutoIconPreview() {
     const nameInput = document.getElementById('newFolderName');
     const typeSelect = document.getElementById('newFolderType');
@@ -192,10 +203,30 @@ function updateLiveAutoIconPreview() {
     const previewText = document.getElementById('autoIconPreviewName');
     if (!previewBox) return;
 
+    // Automatically upgrade the pink-circled #newFolderIcon input so it accepts any pasted multi-byte emoji/icon + adds Auto & No-Icon buttons
+    if (customOverride && !customOverride.dataset.upgraded) {
+        customOverride.dataset.upgraded = 'true';
+        customOverride.removeAttribute('maxlength');
+        customOverride.setAttribute('maxlength', '16');
+        customOverride.placeholder = 'Paste Icon';
+        customOverride.style.width = '92px';
+        customOverride.style.fontSize = '15px';
+        customOverride.style.borderColor = '#fdb813';
+
+        const btnWrap = document.createElement('div');
+        btnWrap.style.cssText = 'display:flex; flex-direction:column; gap:4px; flex-shrink:0;';
+        btnWrap.innerHTML = `
+            <button type="button" onclick="setCreateTopicIconMode('AUTO')" style="background:rgba(56,189,248,0.15); color:#38bdf8; border:1px solid rgba(56,189,248,0.4); border-radius:6px; padding:3px 8px; font-size:10.5px; font-weight:700; cursor:pointer;">✨ Auto</button>
+            <button type="button" onclick="setCreateTopicIconMode('NONE')" style="background:rgba(239,68,68,0.15); color:#ef4444; border:1px solid rgba(239,68,68,0.4); border-radius:6px; padding:3px 8px; font-size:10.5px; font-weight:700; cursor:pointer;">🚫 No Icon</button>
+        `;
+        customOverride.parentNode.appendChild(btnWrap);
+    }
+
     let rawName = nameInput ? nameInput.value.trim() : "";
     let namesArr = parseFolderNamesList(rawName);
     let folderType = typeSelect ? typeSelect.value : "both";
     let manualEmoji = customOverride ? customOverride.value.trim() : "";
+    let isNoIcon = manualEmoji.toUpperCase() === "NONE";
 
     let sampleName = namesArr[0] || "New Study Topic";
     let fallbackIcon = folderType === 'pdf' ? '📄' : (folderType === 'mcq' ? '📝' : '📘');
@@ -208,13 +239,20 @@ function updateLiveAutoIconPreview() {
     previewBox.style.color = theme.c;
     previewBox.style.borderColor = theme.border;
     previewBox.style.boxShadow = `0 0 14px ${theme.glow}`;
-    previewBox.innerText = theme.i;
+    previewBox.innerText = isNoIcon ? "🚫" : theme.i;
+
+    let modeLabel = isNoIcon
+        ? 'No Icon Mode'
+        : (manualEmoji ? 'Custom Pasted Icon' : 'Auto-assigned');
 
     if (previewText) {
         if (namesArr.length === 0) {
-            previewText.innerHTML = `<span style="color:#aaa;">Type folder name(s) or click a preset chip — icons & colors assign automatically!</span>`;
+            previewText.innerHTML = manualEmoji
+                ? `<b style="color:${theme.c};">${isNoIcon ? '🚫 No Icon' : manualEmoji}</b> <span style="color:#38bdf8; font-size:11px;">(${modeLabel} active — type folder name)</span>`
+                : `<span style="color:#aaa;">Type folder name(s) or paste any icon in the box on the right!</span>`;
         } else if (namesArr.length === 1) {
-            previewText.innerHTML = `<b style="color:${theme.c};">${theme.i} ${namesArr[0].replace(/^\d+\.\s*/, '')}</b> <span style="color:#888; font-size:11px;">(1 Folder • Auto-assigned)</span>`;
+            let shownIcon = isNoIcon ? '' : `${theme.i} `;
+            previewText.innerHTML = `<b style="color:${theme.c};">${shownIcon}${namesArr[0].replace(/^\d+\.\s*/, '')}</b> <span style="color:#888; font-size:11px;">(1 Folder • ${modeLabel})</span>`;
         } else {
             let usedIcons = new Set();
             let usedColors = new Set();
@@ -222,10 +260,11 @@ function updateLiveAutoIconPreview() {
                 let t = typeof getAutoTopicTheme === 'function'
                     ? getAutoTopicTheme(n, manualEmoji || null, idx, usedColors, fallbackIcon, usedIcons, parentCtx)
                     : theme;
-                return `<span style="display:inline-flex; align-items:center; gap:4px; background:${t.bg}; color:${t.c}; border:1px solid ${t.border}; padding:2px 8px; border-radius:6px; font-size:11.5px; font-weight:700; margin:2px;">${t.i} ${n.replace(/^\d+\.\s*/, '')}</span>`;
+                let chipIcon = t.i === "NONE" ? '' : `${t.i} `;
+                return `<span style="display:inline-flex; align-items:center; gap:4px; background:${t.bg}; color:${t.c}; border:1px solid ${t.border}; padding:2px 8px; border-radius:6px; font-size:11.5px; font-weight:700; margin:2px;">${chipIcon}${n.replace(/^\d+\.\s*/, '')}</span>`;
             }).join('');
             let extra = namesArr.length > 6 ? `<span style="font-size:11px; color:#aaa; margin-left:4px;">+${namesArr.length - 6} more</span>` : '';
-            previewText.innerHTML = `<div style="font-size:11px; color:var(--primary-yellow); font-weight:700; margin-bottom:4px;">⚡ Batch Mode: Creating ${namesArr.length} Folders</div><div>${previewChips}${extra}</div>`;
+            previewText.innerHTML = `<div style="font-size:11px; color:var(--primary-yellow); font-weight:700; margin-bottom:4px;">⚡ Batch Mode: Creating ${namesArr.length} Folders (${modeLabel})</div><div>${previewChips}${extra}</div>`;
         }
     }
 }
@@ -1205,12 +1244,98 @@ function renderAdminTopicsList(list) {
 }
 
 let activeEditFullPath = '';
+
+function updateEditModalIconHelperUI() {
+    const nameEl = document.getElementById('editTopicName');
+    const typeEl = document.getElementById('editTopicType');
+    const iconEl = document.getElementById('editTopicIcon');
+    const badgeEl = document.getElementById('editModalLiveIconBadge');
+    const statusEl = document.getElementById('editModalLiveIconStatus');
+    if (!iconEl || !badgeEl || !statusEl) return;
+
+    const folderName = (nameEl ? nameEl.value.trim() : '') || 'Folder';
+    const folderType = typeEl ? typeEl.value : 'both';
+    const rawIcon = iconEl.value.trim();
+
+    if (rawIcon.toUpperCase() === 'NONE') {
+        badgeEl.innerText = '🚫';
+        badgeEl.style.opacity = '0.5';
+        statusEl.innerHTML = `<span style="color:#ef4444; font-weight:700;">🚫 No Icon</span> (This folder will display without any icon)`;
+    } else if (rawIcon) {
+        badgeEl.innerText = rawIcon;
+        badgeEl.style.opacity = '1';
+        statusEl.innerHTML = `<span style="color:#10b981; font-weight:700;">✍️ Manual Icon: ${rawIcon}</span> (Overrides auto icon)`;
+    } else {
+        const autoIc = typeof getAutomaticIconForName === 'function'
+            ? getAutomaticIconForName(folderName, folderType, activeEditFullPath)
+            : '📘';
+        badgeEl.innerText = autoIc;
+        badgeEl.style.opacity = '1';
+        statusEl.innerHTML = `<span style="color:#38bdf8; font-weight:700;">✨ Auto Icon: ${autoIc}</span> (Matched from folder name)`;
+    }
+}
+
+function setEditModalIconAction(action) {
+    const nameEl = document.getElementById('editTopicName');
+    const typeEl = document.getElementById('editTopicType');
+    const iconEl = document.getElementById('editTopicIcon');
+    if (!iconEl) return;
+
+    if (action === 'AUTO') {
+        const folderName = (nameEl ? nameEl.value.trim() : '') || 'Folder';
+        const folderType = typeEl ? typeEl.value : 'both';
+        iconEl.value = typeof getAutomaticIconForName === 'function'
+            ? getAutomaticIconForName(folderName, folderType, activeEditFullPath)
+            : '📘';
+    } else if (action === 'NONE') {
+        iconEl.value = 'NONE';
+    }
+    updateEditModalIconHelperUI();
+}
+
 function openEditTopicModal(idToken, name, type, icon = '', fullPath = '') {
     activeEditFullPath = fullPath;
     document.getElementById('editTopicId').value = idToken;
-    document.getElementById('editTopicName').value = name;
-    document.getElementById('editTopicType').value = type || 'both';
-    document.getElementById('editTopicIcon').value = icon || '';
+    const nameEl = document.getElementById('editTopicName');
+    const typeEl = document.getElementById('editTopicType');
+    const iconEl = document.getElementById('editTopicIcon');
+
+    if (nameEl) {
+        nameEl.value = name;
+        nameEl.oninput = updateEditModalIconHelperUI;
+    }
+    if (typeEl) {
+        typeEl.value = type || 'both';
+        typeEl.onchange = updateEditModalIconHelperUI;
+    }
+    if (iconEl) {
+        iconEl.removeAttribute('maxlength');
+        iconEl.setAttribute('maxlength', '16');
+        iconEl.placeholder = 'Paste any icon/emoji here, or click Auto / Delete Icon below';
+        iconEl.value = icon || '';
+        iconEl.oninput = updateEditModalIconHelperUI;
+
+        if (!document.getElementById('editModalIconControlBar')) {
+            const bar = document.createElement('div');
+            bar.id = 'editModalIconControlBar';
+            bar.style.cssText = 'background:#111522; border:1px solid #2b354f; border-radius:10px; padding:10px 12px; margin-bottom:14px;';
+            bar.innerHTML = `
+                <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;">
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <div id="editModalLiveIconBadge" style="width:36px; height:36px; border-radius:8px; background:rgba(253,184,19,0.15); border:1px solid rgba(253,184,19,0.5); display:flex; align-items:center; justify-content:center; font-size:19px;">📘</div>
+                        <div id="editModalLiveIconStatus" style="font-size:12px; color:#cbd5e1;"></div>
+                    </div>
+                    <div style="display:flex; gap:6px;">
+                        <button type="button" onclick="setEditModalIconAction('AUTO')" style="background:rgba(56,189,248,0.15); color:#38bdf8; border:1px solid rgba(56,189,248,0.4); border-radius:6px; padding:6px 10px; font-size:11.5px; font-weight:700; cursor:pointer;">✨ Auto Icon</button>
+                        <button type="button" onclick="setEditModalIconAction('NONE')" style="background:rgba(239,68,68,0.15); color:#ef4444; border:1px solid rgba(239,68,68,0.4); border-radius:6px; padding:6px 10px; font-size:11.5px; font-weight:700; cursor:pointer;">🚫 Delete Icon (No Icon)</button>
+                    </div>
+                </div>
+            `;
+            iconEl.parentNode.insertBefore(bar, iconEl.nextSibling);
+        }
+    }
+
+    updateEditModalIconHelperUI();
     document.getElementById('editTopicModal').style.display = 'flex';
 }
 
@@ -1222,21 +1347,31 @@ async function saveEditedTopic() {
     const idToken = document.getElementById('editTopicId').value;
     const name = document.getElementById('editTopicName').value.trim();
     const type = document.getElementById('editTopicType').value;
-    let icon = document.getElementById('editTopicIcon').value.trim();
+    let rawIcon = document.getElementById('editTopicIcon').value.trim();
     if (!name) return alert('Folder name is required.');
-    if (!icon && typeof getAutomaticIconForName === 'function') icon = getAutomaticIconForName(name, type, activeEditFullPath);
+
+    let finalIcon;
+    if (rawIcon.toUpperCase() === 'NONE') {
+        finalIcon = 'NONE';
+    } else if (rawIcon) {
+        finalIcon = rawIcon;
+    } else {
+        finalIcon = typeof getAutomaticIconForName === 'function'
+            ? getAutomaticIconForName(name, type, activeEditFullPath)
+            : '📘';
+    }
 
     try {
         if (idToken.startsWith('doc:')) {
-            await db.collection('custom_topics').doc(idToken.slice(4)).update({ name, type, icon: icon || null });
+            await db.collection('custom_topics').doc(idToken.slice(4)).update({ name, type, icon: finalIcon });
         }
         if (activeEditFullPath) {
             topicOverrides.editedPaths = topicOverrides.editedPaths || {};
-            topicOverrides.editedPaths[activeEditFullPath] = { displayName: name, type, icon: icon || null };
+            topicOverrides.editedPaths[activeEditFullPath] = { displayName: name, type, icon: finalIcon };
             await db.collection('settings').doc('topic_overrides').set(topicOverrides, { merge: true });
         }
         closeEditTopicModal();
-        showNotification('✅ Folder updated!');
+        showNotification(finalIcon === 'NONE' ? '✅ Saved without icon!' : `✅ Folder updated (${finalIcon})!`);
         await loadAdminTopicsList();
     } catch (e) {
         alert('Error: ' + e.message);
@@ -1390,12 +1525,88 @@ function getAllCandidateSubjectsForExam(examKey) {
     return Array.from(map.values());
 }
 
+async function toggleExamInCustomPractice(examKey, removeExam) {
+    window.customPracticeConfig = window.customPracticeConfig || { exams: {}, excludedExams: [] };
+    let excluded = new Set(Array.isArray(window.customPracticeConfig.excludedExams) ? window.customPracticeConfig.excludedExams : []);
+    if (removeExam) {
+        if (!confirm(`Remove "${examKey.replace(/^\d+\.\s*/, '')}" from Custom Practice Setup? (It will stay on the Home page, just hidden from Custom Practice)`)) return;
+        excluded.add(examKey);
+    } else {
+        excluded.delete(examKey);
+    }
+    window.customPracticeConfig.excludedExams = Array.from(excluded);
+    await saveAdminCustomPracticeConfig();
+    showNotification(removeExam ? `🗑️ Removed "${examKey}" from Custom Practice!` : `✅ Restored "${examKey}" to Custom Practice!`);
+    initAdminCustomPracticeTab();
+}
+
 function initAdminCustomPracticeTab() {
     const sel = document.getElementById('adminCpExamSelect');
     if (!sel) return;
-    const exams = getMergedChildKeysAtPath([]);
-    if (!adminCpSelectedExam || !exams.includes(adminCpSelectedExam)) adminCpSelectedExam = exams[0] || '';
-    sel.innerHTML = exams.map(k => `<option value="${k.replace(/"/g, '&quot;')}" ${k === adminCpSelectedExam ? 'selected' : ''}>${k.replace(/^\d+\.\s*/, '')}</option>`).join('');
+    window.customPracticeConfig = window.customPracticeConfig || { exams: {}, excludedExams: [] };
+    const excludedSet = new Set(Array.isArray(window.customPracticeConfig.excludedExams) ? window.customPracticeConfig.excludedExams : []);
+    const allExams = getMergedChildKeysAtPath([]);
+    const activeExams = allExams.filter(k => !excludedSet.has(k));
+    const removedExams = allExams.filter(k => excludedSet.has(k));
+
+    if (!adminCpSelectedExam || !activeExams.includes(adminCpSelectedExam)) {
+        adminCpSelectedExam = activeExams[0] || '';
+    }
+
+    sel.innerHTML = activeExams.length
+        ? activeExams.map(k => `<option value="${k.replace(/"/g, '&quot;')}" ${k === adminCpSelectedExam ? 'selected' : ''}>${k.replace(/^\d+\.\s*/, '')}</option>`).join('')
+        : `<option value="">-- No Active Exams in Custom Practice --</option>`;
+
+    // Inject a clean Exam Category Manager Bar right next to the dropdown so Admin can delete "Board" (or any exam) from Custom Practice in 1 click!
+    let examMgrBar = document.getElementById('adminCpExamCategoryControlBar');
+    if (!examMgrBar) {
+        examMgrBar = document.createElement('div');
+        examMgrBar.id = 'adminCpExamCategoryControlBar';
+        examMgrBar.style.marginTop = '12px';
+        sel.parentNode.appendChild(examMgrBar);
+    }
+
+    let activeChips = activeExams.map(k => {
+        let esc = k.replace(/'/g, "\\'");
+        let clean = k.replace(/^\d+\.\s*/, '');
+        let isCur = k === adminCpSelectedExam;
+        return `<div style="display:inline-flex; align-items:center; gap:8px; background:${isCur ? 'rgba(253,184,19,0.16)' : '#181c2a'}; border:1px solid ${isCur ? '#fdb813' : '#2b354f'}; padding:6px 12px; border-radius:20px; font-size:12.5px; font-weight:700; color:#fff;">
+            <span style="cursor:pointer;" onclick="handleAdminCpExamChange('${esc}')">${clean}</span>
+            <button type="button" onclick="toggleExamInCustomPractice('${esc}', true)" title="Remove ${clean} from Custom Practice" style="background:rgba(239,68,68,0.2); border:none; color:#ef4444; border-radius:50%; width:20px; height:20px; cursor:pointer; font-weight:bold; font-size:11px;">✕</button>
+        </div>`;
+    }).join('');
+
+    let removedChips = removedExams.map(k => {
+        let esc = k.replace(/'/g, "\\'");
+        let clean = k.replace(/^\d+\.\s*/, '');
+        return `<button type="button" onclick="toggleExamInCustomPractice('${esc}', false)" style="background:rgba(16,185,129,0.12); border:1px dashed rgba(16,185,129,0.45); color:#10b981; padding:5px 11px; border-radius:20px; font-size:11.5px; font-weight:700; cursor:pointer;">+ Restore ${clean}</button>`;
+    }).join('');
+
+    examMgrBar.innerHTML = `
+        <div style="background:#111522; border:1px solid #2b354f; border-radius:12px; padding:12px 15px;">
+            <div style="font-size:11.5px; color:#94a3b8; font-weight:700; margin-bottom:8px; text-transform:uppercase;">Active Exam Categories in Custom Practice (Click ✕ to remove an exam like "Board"):</div>
+            <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+                ${activeChips || '<span style="color:#888; font-size:12px;">None active</span>'}
+                ${removedChips}
+            </div>
+        </div>
+    `;
+
+    // If current exam hasn't been saved in customPracticeConfig yet, auto-populate its subjects once so you can see & delete individual subjects immediately!
+    if (adminCpSelectedExam && (!window.customPracticeConfig.exams || !window.customPracticeConfig.exams[adminCpSelectedExam])) {
+        const scanned = typeof buildCwCatalogForExam === 'function' ? buildCwCatalogForExam(adminCpSelectedExam, true) : [];
+        if (scanned.length > 0) {
+            window.customPracticeConfig.exams = window.customPracticeConfig.exams || {};
+            window.customPracticeConfig.exams[adminCpSelectedExam] = {
+                subjects: scanned.map(s => ({
+                    path: s.fullPath,
+                    label: s.label,
+                    chapters: (s.chapters || []).map(c => ({ path: c.fullPath, label: c.label }))
+                }))
+            };
+        }
+    }
+
     adminCpSubjectPickPath = [];
     adminCpChapterPickPath = [];
     _buildAdminCpSubjectPickSelectors();
@@ -1406,19 +1617,19 @@ function initAdminCustomPracticeTab() {
 
 function handleAdminCpExamChange(examKey) {
     adminCpSelectedExam = examKey;
-    adminCpSubjectPickPath = [];
-    adminCpTargetSubjectPath = '';
-    adminCpChapterPickPath = [];
-    _buildAdminCpSubjectPickSelectors();
-    _syncAdminCpTargetSubjectDropdown();
-    _buildAdminCpChapterPickSelectors();
-    renderAdminCpConfiguredList();
+    const sel = document.getElementById('adminCpExamSelect');
+    if (sel) sel.value = examKey;
+    initAdminCustomPracticeTab();
 }
 
 function _buildAdminCpSubjectPickSelectors() {
     const box = document.getElementById('admin-cp-subj-selectors');
     const txt = document.getElementById('admin-cp-subj-path-text');
-    if (!box || !adminCpSelectedExam) return;
+    if (!box) return;
+    if (!adminCpSelectedExam) {
+        box.innerHTML = `<span style="color:#888; font-size:12px;">Select or restore an exam above first.</span>`;
+        return;
+    }
     let html = '';
     for (let i = 0; i <= adminCpSubjectPickPath.length; i++) {
         const keys = getMergedChildKeysAtPath([adminCpSelectedExam, ...adminCpSubjectPickPath.slice(0, i)]);
@@ -1444,7 +1655,8 @@ function handleAdminCpSubjPickChange(event, depth) {
 function _syncAdminCpTargetSubjectDropdown() {
     const sel = document.getElementById('adminCpTargetSubjSelect');
     if (!sel) return;
-    const cands = getAllCandidateSubjectsForExam(adminCpSelectedExam);
+    const configured = window.customPracticeConfig?.exams?.[adminCpSelectedExam]?.subjects || [];
+    const cands = configured.length > 0 ? configured : getAllCandidateSubjectsForExam(adminCpSelectedExam);
     if (!cands.length) {
         adminCpTargetSubjectPath = '';
         sel.innerHTML = `<option value="">-- No Subjects Yet --</option>`;
@@ -1555,6 +1767,7 @@ async function removeSubjectFromCustomPractice(subjPath) {
     const list = window.customPracticeConfig.exams?.[adminCpSelectedExam]?.subjects || [];
     window.customPracticeConfig.exams[adminCpSelectedExam].subjects = list.filter(s => s.path !== subjPath);
     await saveAdminCustomPracticeConfig();
+    _syncAdminCpTargetSubjectDropdown();
     renderAdminCpConfiguredList();
 }
 
@@ -1590,15 +1803,20 @@ async function clearExamCustomPracticeConfig() {
     window.customPracticeConfig.exams = window.customPracticeConfig.exams || {};
     window.customPracticeConfig.exams[adminCpSelectedExam] = { subjects: [] };
     await saveAdminCustomPracticeConfig();
+    _syncAdminCpTargetSubjectDropdown();
     renderAdminCpConfiguredList();
 }
 
 function renderAdminCpConfiguredList() {
     const box = document.getElementById('admin-cp-configured-list');
     if (!box) return;
+    if (!adminCpSelectedExam) {
+        box.innerHTML = `<div class="admin-panel-card" style="text-align:center; color:#888; padding:30px;">No Exam Category selected.</div>`;
+        return;
+    }
     const subjects = window.customPracticeConfig.exams?.[adminCpSelectedExam]?.subjects || [];
     if (!subjects.length) {
-        box.innerHTML = `<div class="admin-panel-card" style="text-align:center; color:#888; padding:30px;">No manual Subjects configured for <b>${adminCpSelectedExam}</b> yet.</div>`;
+        box.innerHTML = `<div class="admin-panel-card" style="text-align:center; color:#888; padding:30px;">No Subjects configured for <b>${adminCpSelectedExam}</b>. Click <b>⚡ Auto-Import</b> above or add a Subject folder.</div>`;
         return;
     }
     let usedSubjIcons = new Set();
@@ -1615,7 +1833,7 @@ function renderAdminCpConfiguredList() {
                 <div><b style="font-size:17px; color:#fff;">${th.i} ${s.label}</b> <span style="font-size:11px; color:#888;">(${chaps.length} Chapters)</span></div>
                 <div style="display:flex; gap:8px;">
                     <button class="btn-exam" onclick="addAllChaptersForConfiguredSubject('${escS}')" style="background:rgba(56,189,248,0.12); color:#38bdf8; border:1px solid rgba(56,189,248,0.35); padding:6px 12px; font-size:11.5px;">+ Import Chapters</button>
-                    <button class="btn-exam" onclick="removeSubjectFromCustomPractice('${escS}')" style="background:rgba(239,68,68,0.15); color:var(--wrong-red); border:1px solid rgba(239,68,68,0.35); padding:6px 12px; font-size:11.5px;">🗑️ Delete</button>
+                    <button class="btn-exam" onclick="removeSubjectFromCustomPractice('${escS}')" style="background:rgba(239,68,68,0.15); color:var(--wrong-red); border:1px solid rgba(239,68,68,0.35); padding:6px 12px; font-size:11.5px;">🗑️ Delete Subject</button>
                 </div>
             </div>
             <div class="admin-chip-list">${chips}</div>
