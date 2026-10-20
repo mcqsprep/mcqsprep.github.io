@@ -12,15 +12,22 @@
     <meta name="keywords" content="MCQsPrep, mcqsprep, NEET MCQ practice, JEE mock test, Class 9 10 11 12 Board MCQs, NCERT MCQs, PYQs, All India Leaderboard, competitive exam preparation">
     <meta name="author" content="MCQsPrep">
     <meta name="robots" content="index, follow">
-    <link rel="canonical" href="https://mcqsprep.github.io/">
+    <link rel="canonical" href="https://mcqsprep.web.app/">
+
+    <!-- 🔄 AUTO-REDIRECT OLD GITHUB.IO VISITORS TO OFFICIAL MCQSPREP.WEB.APP -->
+    <script>
+        if (window.location.hostname === 'mcqsprep.github.io') {
+            window.location.replace('https://mcqsprep.web.app' + window.location.pathname + window.location.search + window.location.hash);
+        }
+    </script>
 
     <!-- 🌐 OPEN GRAPH / SOCIAL & SEARCH ENGINE PREVIEW TAGS -->
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="MCQsPrep">
     <meta property="og:title" content="MCQsPrep — Free NEET, JEE, Boards & GK Mock Test Platform">
     <meta property="og:description" content="Master NEET-UG, JEE Main, Board Exams & GK with full-length custom mock tests (up to 250 MCQs), deep subject-wise weak-spot & time-to-accuracy analytics, All-India leaderboards, NCERT PDFs, PYQs, and instant AI doubt solving.">
-    <meta property="og:url" content="https://mcqsprep.github.io/">
-    <meta property="og:image" content="https://mcqsprep.github.io/icon-512.png">
+    <meta property="og:url" content="https://mcqsprep.web.app/">
+    <meta property="og:image" content="https://mcqsprep.web.app/icon-512.png">
 
     <!-- 🩺 REAL PNG FAVICONS FOR GOOGLE & BRAVE SEARCH RESULTS -->
     <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
@@ -34,30 +41,30 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="preload" as="image" href="icon-192.png">
 
-    <!-- 🏆 STRICT GOOGLE SITE NAME + AI OVERVIEW STRUCTURED DATA (Replaces "GitHub" with "MCQsPrep") -->
+    <!-- 🏆 STRICT GOOGLE SITE NAME + AI OVERVIEW STRUCTURED DATA -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
       "@graph": [
         {
           "@type": "WebSite",
-          "@id": "https://mcqsprep.github.io/#website",
+          "@id": "https://mcqsprep.web.app/#website",
           "name": "MCQsPrep",
           "alternateName": ["MCQs Prep", "mcqsprep", "MCQsPrep India", "MCQsPrep Exam Platform"],
-          "url": "https://mcqsprep.github.io/"
+          "url": "https://mcqsprep.web.app/"
         },
         {
           "@type": "EducationalOrganization",
-          "@id": "https://mcqsprep.github.io/#organization",
+          "@id": "https://mcqsprep.web.app/#organization",
           "name": "MCQsPrep",
-          "url": "https://mcqsprep.github.io/",
-          "logo": "https://mcqsprep.github.io/icon-512.png",
+          "url": "https://mcqsprep.web.app/",
+          "logo": "https://mcqsprep.web.app/icon-512.png",
           "description": "Comprehensive Indian competitive and board examination preparation platform offering full-length NEET-UG, JEE Main, Class 9-12 State/Central Board, and General Knowledge test series, line-by-line NCERT question banks, previous year question papers (PYQs), All-India live leaderboards, and deep diagnostic performance analytics."
         },
         {
           "@type": "WebApplication",
           "name": "MCQsPrep Complete Exam & Mock Test Suite",
-          "url": "https://mcqsprep.github.io/",
+          "url": "https://mcqsprep.web.app/",
           "applicationCategory": "EducationalApplication",
           "operatingSystem": "All",
           "offers": {
@@ -78,7 +85,6 @@
       ]
     }
     </script>
-
     <!-- ⚡ CRITICAL 0ms INLINE 3D SPLASH CSS (Renders on Frame 1 before any external JS/CSS loads) -->
     <style>
         #pwa-3d-splash-screen {
