@@ -14,11 +14,16 @@
     <meta name="robots" content="index, follow">
     <link rel="canonical" href="https://mcqsprep.web.app/">
 
-    <!-- 🔄 AUTO-REDIRECT OLD GITHUB.IO VISITORS TO OFFICIAL MCQSPREP.WEB.APP -->
+    <!-- 🔄 AUTO-REDIRECT BROWSER VISITORS TO MCQSPREP.WEB.APP (SKIPS OLD INSTALLED APPS SO NO URL BAR APPEARS) -->
     <script>
-        if (window.location.hostname === 'mcqsprep.github.io') {
-            window.location.replace('https://mcqsprep.web.app' + window.location.pathname + window.location.search + window.location.hash);
-        }
+        (function() {
+            var isInstalledApp = window.matchMedia('(display-mode: standalone)').matches ||
+                                 window.matchMedia('(display-mode: fullscreen)').matches ||
+                                 window.navigator.standalone === true;
+            if (window.location.hostname === 'mcqsprep.github.io' && !isInstalledApp) {
+                window.location.replace('https://mcqsprep.web.app' + window.location.pathname + window.location.search + window.location.hash);
+            }
+        })();
     </script>
 
     <!-- 🌐 OPEN GRAPH / SOCIAL & SEARCH ENGINE PREVIEW TAGS -->
