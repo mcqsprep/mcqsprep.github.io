@@ -438,12 +438,41 @@ async function _renderAdminPanel() {
                         </h3>
                         
                         <div id="admin-mcq-form">
-                            <div style="background:#111522; border:1px dashed rgba(253,184,19,0.4); border-radius:12px; padding:14px; margin-bottom:18px;">
-                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; flex-wrap:wrap; gap:8px;">
-                                    <span style="font-size:12px; font-weight:700; color:var(--primary-yellow);">⚡ SMART QUICK-PASTE AUTO-FILLER (OPTIONAL)</span>
-                                    <button type="button" class="btn-exam btn-yellow-glow" onclick="parseQuickPasteMCQ()" style="padding:5px 14px; font-size:11.5px;">✨ Auto-Fill Form</button>
+                            <!-- ⚡ SMART SINGLE & BULK MULTI-QUESTION AUTO-PARSER -->
+                            <div style="background:linear-gradient(145deg, #111522, #151a2e); border:1.5px dashed rgba(253,184,19,0.55); border-radius:12px; padding:15px; margin-bottom:18px;">
+                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:10px;">
+                                    <div>
+                                        <span style="font-size:13px; font-weight:800; color:var(--primary-yellow); display:flex; align-items:center; gap:6px;">⚡ 1-CLICK SINGLE &amp; BULK MULTI-QUESTION SMART PARSER</span>
+                                        <span style="font-size:11.5px; color:#94a3b8;">Paste <b>1 question</b> OR <b>10 to 100+ questions at once</b> (with Options, Correct Answer &amp; Explanation). Keeps <i>italics</i>, tables, line-breaks &amp; formulas!</span>
+                                    </div>
+                                    <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                                        <button type="button" class="btn-exam" onclick="parseQuickPasteMCQ('single')" style="background:rgba(56,189,248,0.15); color:#38bdf8; border:1px solid rgba(56,189,248,0.45); padding:7px 13px; font-size:12px; font-weight:700;">✨ Fill Single Form</button>
+                                        <button type="button" class="btn-exam btn-yellow-glow" onclick="parseQuickPasteMCQ('bulk')" style="padding:7px 16px; font-size:12.5px; font-weight:800;">📚 Read &amp; Place Multiple Questions (1-Click Queue)</button>
+                                        <button type="button" class="btn-exam" onclick="document.getElementById('admSmartPasteInput').value=''; clearBulkStagedQueue();" style="background:rgba(239,68,68,0.12); color:#ef4444; border:1px solid rgba(239,68,68,0.35); padding:7px 11px; font-size:11.5px;">✕ Clear</button>
+                                    </div>
                                 </div>
-                                <textarea id="admSmartPasteInput" class="input-field" style="min-height:58px; margin-bottom:0; font-size:12.5px;" placeholder="Paste full MCQ block here (e.g. Q. Question text... A) Opt1 B) Opt2 C) Opt3 D) Opt4 Ans: B Exp: Explanation...) and click Auto-Fill!"></textarea>
+                                <textarea id="admSmartPasteInput" class="input-field" style="min-height:95px; margin-bottom:0; font-size:13px; line-height:1.5;" placeholder="Paste 1 or multiple MCQs here! Example:&#10;Q1. Which of the following represents the scientific name of Mango?&#10;(A) Mangifera Indica Linn.&#10;(B) mangifera indica Linn.&#10;(C) Mangifera indica Linn.&#10;(D) Mangifera indica Linn.&#10;Correct Option: (C)&#10;NCERT Explanation: Genus starts with capital, species with small letter, both italicized...&#10;&#10;Q2. Next question..."></textarea>
+
+                                <!-- 📚 INTERACTIVE BULK STAGING & 1-CLICK UPLOAD QUEUE -->
+                                <div id="admBulkStagingPanel" style="display:none; margin-top:16px; border-top:1px solid #2b3954; padding-top:16px;">
+                                    <div style="background:#0b0f19; border:1px solid #2b3954; border-radius:10px; padding:12px 14px; margin-bottom:14px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; position:sticky; top:68px; z-index:40; box-shadow:0 10px 25px rgba(0,0,0,0.75);">
+                                        <div id="admBulkQueueSummaryBadges" style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;"></div>
+                                        <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                                            <select id="admBulkGlobalDifficulty" class="input-field" onchange="applyBulkGlobalDifficulty(this.value)" style="margin:0; width:auto; padding:6px 10px; font-size:12px; font-weight:700; border-color:#38bdf8;">
+                                                <option value="">🎯 Set All Difficulty...</option>
+                                                <option value="Easy">🟢 Set All: Easy</option>
+                                                <option value="Medium">🟡 Set All: Medium</option>
+                                                <option value="Hard">🔴 Set All: Hard</option>
+                                                <option value="Mixed">⚡ Set All: Mixed</option>
+                                            </select>
+                                            <button type="button" class="btn-exam" onclick="bulkAutoSplitAllStatements()" style="background:rgba(168,85,247,0.16); color:#c084fc; border:1px solid rgba(168,85,247,0.4); padding:6px 11px; font-size:11.5px; font-weight:700;">📑 Split All Statements</button>
+                                            <button type="button" class="btn-exam" onclick="bulkAutoFormatAllChemistry()" style="background:rgba(16,185,129,0.15); color:#10b981; border:1px solid rgba(16,185,129,0.4); padding:6px 11px; font-size:11.5px; font-weight:700;">🪄 Format All Reactions</button>
+                                            <button type="button" class="btn-exam" onclick="addBlankQuestionToBulkQueue()" style="background:#1e293b; color:#fff; border:1px solid #334155; padding:6px 11px; font-size:11.5px;">➕ Add Card</button>
+                                            <button type="button" id="btnUploadAllBulkMCQs" class="btn-exam btn-green-glow" onclick="uploadAllBulkStagedMCQs()" style="padding:8px 18px; font-size:13px; font-weight:800;">☁️ Upload All Questions Now</button>
+                                        </div>
+                                    </div>
+                                    <div id="admBulkCardsList" style="display:flex; flex-direction:column; gap:14px;"></div>
+                                </div>
                             </div>
 
                             <!-- 🧪 1-CLICK TEXT STYLE, LINE SPACING, CHEMICAL REACTION & MATH FORMULA BAR -->
@@ -2777,7 +2806,7 @@ function convertUnicodeMathStylesToHtml(str) {
     return out;
 }
 
-// Extract exact Italic (<i>), Bold (<b>), Underline (<u>), Subscript (<sub>), Superscript (<sup>) AND exact line breaks from Clipboard
+// Extract exact Italic (<i>), Bold (<b>), Underline (<u>), Subscript (<sub>), Superscript (<sup>), Tables, AND exact line breaks from Clipboard
 function extractStyledTextFromClipboardHtml(htmlStr, plainFallback, preserveLineBreaks = true) {
     const cleanPlain = convertUnicodeMathStylesToHtml(plainFallback || '').replace(/\r\n?/g, '\n').replace(/[ \t]*\bPDF(?:\s*\+\s*\d+)?\b/g, '');
     if (!htmlStr || typeof DOMParser === 'undefined') {
@@ -2790,6 +2819,27 @@ function extractStyledTextFromClipboardHtml(htmlStr, plainFallback, preserveLine
 
         doc.querySelectorAll('script, style, button, svg, sup.citation, a[href*="pdf"]').forEach(el => el.remove());
 
+        // Automatically convert any HTML <table> (like Match-the-Column from Gemini/ChatGPT/Word) into clean .mcq-match-table HTML!
+        doc.querySelectorAll('table').forEach(tbl => {
+            const rows = Array.from(tbl.querySelectorAll('tr'));
+            if (!rows.length) return;
+            let theadHtml = '';
+            let tbodyHtml = '';
+            rows.forEach((tr, rIdx) => {
+                const cells = Array.from(tr.querySelectorAll('th, td'));
+                if (!cells.length) return;
+                const isHeader = (rIdx === 0 && (tr.querySelector('th') || /column|list|group|item/i.test(tr.textContent || '')));
+                if (isHeader && !theadHtml) {
+                    theadHtml = `<tr>${cells.map(c => `<th>${(c.innerHTML || '').replace(/<\/?(?:p|div)[^>]*>/gi, ' ').trim()}</th>`).join('')}</tr>`;
+                } else {
+                    tbodyHtml += `<tr>${cells.map(c => `<td>${formatCellWithBoldPrefix((c.innerHTML || '').replace(/<\/?(?:p|div)[^>]*>/gi, ' ').trim())}</td>`).join('')}</tr>`;
+                }
+            });
+            const tableWrapperHtml = `\n<div class="mcq-match-table-wrap"><table class="mcq-match-table">${theadHtml ? `<thead>${theadHtml}</thead>` : ''}<tbody>${tbodyHtml}</tbody></table></div>\n`;
+            const textMarker = doc.createTextNode(tableWrapperHtml);
+            tbl.parentNode.replaceChild(textMarker, tbl);
+        });
+
         const blockTags = new Set(['P', 'DIV', 'LI', 'TR', 'UL', 'OL', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'BLOCKQUOTE', 'PRE']);
 
         function serializeNode(node) {
@@ -2798,7 +2848,6 @@ function extractStyledTextFromClipboardHtml(htmlStr, plainFallback, preserveLine
                 if (!preserveLineBreaks) {
                     return convertUnicodeMathStylesToHtml(txt.replace(/\s+/g, ' '));
                 }
-                // Collapse internal source indentation spaces, but keep explicit newlines if inside preformatted text
                 return convertUnicodeMathStylesToHtml(txt.replace(/\r\n?/g, '\n'));
             }
             if (node.nodeType !== Node.ELEMENT_NODE) return '';
@@ -2824,7 +2873,6 @@ function extractStyledTextFromClipboardHtml(htmlStr, plainFallback, preserveLine
                 inner += serializeNode(child);
             });
 
-            // Empty block element (e.g. <div><br></div> or <p>&nbsp;</p>) -> preserve as blank line
             if (!inner.trim()) {
                 return (preserveLineBreaks && blockTags.has(tag)) ? '\n' : inner;
             }
@@ -2850,9 +2898,7 @@ function extractStyledTextFromClipboardHtml(htmlStr, plainFallback, preserveLine
             .replace(/<\/b>([ \t]*)<b>/g, '$1');
 
         if (preserveLineBreaks) {
-            // Clean up spaces around newlines while keeping intentional blank lines (\n\n)
             result = result.replace(/[ \t]+\n/g, '\n').replace(/\n[ \t]+/g, '\n').trim();
-            // If plainFallback had multiple lines (\n) that the HTML wrapper flattened into 1 line, restore line breaks from plainFallback!
             const plainLines = cleanPlain.trim().split('\n').filter(Boolean);
             const htmlLines = result.split('\n').filter(Boolean);
             if (plainLines.length > 1 && htmlLines.length <= 1) {
@@ -2887,7 +2933,7 @@ function extractStyledTextFromClipboardHtml(htmlStr, plainFallback, preserveLine
     function isRichAdminField(el) {
         if (!el || (el.tagName !== 'TEXTAREA' && el.tagName !== 'INPUT')) return false;
         if (richFieldIds.has(el.id)) return true;
-        if (el.closest && el.closest('#admMatchTableInputsContainer')) return true;
+        if (el.closest && (el.closest('#admMatchTableInputsContainer') || el.closest('#admBulkCardsList'))) return true;
         return false;
     }
 
@@ -2907,7 +2953,7 @@ function extractStyledTextFromClipboardHtml(htmlStr, plainFallback, preserveLine
         const htmlData = cb.getData('text/html');
         const plainData = cb.getData('text/plain');
 
-        const hasRichTags = htmlData && /<(?:i|em|b|strong|u|sub|sup)\b|font-style\s*:\s*italic|text-decoration[^;]*underline|vertical-align\s*:\s*(?:sub|super)/i.test(htmlData);
+        const hasRichTags = htmlData && /<(?:i|em|b|strong|u|sub|sup|table)\b|font-style\s*:\s*italic|text-decoration[^;]*underline|vertical-align\s*:\s*(?:sub|super)/i.test(htmlData);
         const hasUnicodeMath = plainData && /[\u{1D400}-\u{1D7FF}\u210E]/u.test(plainData);
         const hasPdfBadge = plainData && /\bPDF(?:\s*\+\s*\d+)?\b/.test(plainData);
 
@@ -2944,63 +2990,814 @@ function extractStyledTextFromClipboardHtml(htmlStr, plainFallback, preserveLine
     });
 })();
 
-// Upgraded Smart Quick-Paste Auto-Filler: Preserves <i>, <b>, <u>, <sub>, <sup> AND multi-line statements
-parseQuickPasteMCQ = function() {
-    const rawEl = document.getElementById('admSmartPasteInput');
-    if (!rawEl || !rawEl.value.trim()) {
-        showNotification('⚠️ Paste a question with options first.');
-        return;
+// ==========================================
+// 📚 200% ACCURATE MULTI-QUESTION BULK PARSER & STAGING ENGINE
+// ==========================================
+let adminBulkStagedQuestions = [];
+
+// Converts Markdown pipe tables (| Col I | Col II |) into clean .mcq-match-table HTML
+function convertMarkdownPipeTablesInText(text) {
+    if (!text || !text.includes('|')) return text;
+    const lines = text.split('\n');
+    let out = [];
+    let i = 0;
+
+    while (i < lines.length) {
+        const line = lines[i].trim();
+        if (line.startsWith('|') && line.endsWith('|') && line.split('|').length >= 4) {
+            let tableLines = [];
+            while (i < lines.length && lines[i].trim().startsWith('|') && lines[i].trim().endsWith('|')) {
+                tableLines.push(lines[i].trim());
+                i++;
+            }
+            if (tableLines.length >= 2) {
+                const validRows = tableLines.filter(r => !/^\|[\s\-:|]+\|$/.test(r));
+                if (validRows.length >= 2) {
+                    const headerCells = validRows[0].slice(1, -1).split('|').map(c => c.trim());
+                    const theadHtml = `<tr>${headerCells.map(h => `<th>${h}</th>`).join('')}</tr>`;
+                    const tbodyHtml = validRows.slice(1).map(r => {
+                        const cells = r.slice(1, -1).split('|').map(c => formatCellWithBoldPrefix(c.trim()));
+                        return `<tr>${cells.map(c => `<td>${c}</td>`).join('')}</tr>`;
+                    }).join('');
+                    out.push(`<div class="mcq-match-table-wrap"><table class="mcq-match-table"><thead>${theadHtml}</thead><tbody>${tbodyHtml}</tbody></table></div>`);
+                    continue;
+                }
+            }
+            out.push(...tableLines);
+        } else {
+            out.push(lines[i]);
+            i++;
+        }
+    }
+    return out.join('\n');
+}
+
+// Splits raw text containing 1 to 200+ MCQs into individual question blocks without breaking numbered statements (1., 2., I., II.)
+function splitRawTextIntoMCQBlocks(rawText) {
+    let cleaned = convertMarkdownPipeTablesInText(
+        String(rawText || '')
+            .replace(/\r\n?/g, '\n')
+            .replace(/[ \t]*\bPDF(?:\s*\+\s*\d+)?\b/g, '')
+            .trim()
+    );
+    if (!cleaned) return [];
+
+    const lines = cleaned.split('\n');
+    const blocks = [];
+    let currentLines = [];
+    let hasSeenOptionsInCurrent = false;
+    let hasSeenAnswerOrExpInCurrent = false;
+
+    const explicitQHeaderRegex = /^\s*(?:<[bBiI]>\s*)?(?:Q(?:uestion|ue)?\s*\d+[\.\:\)\-]|Question\s*#\d+|\[\s*Q\d+\s*\])/i;
+    const numberedLineRegex = /^\s*(?:<[bBiI]>\s*)?(?:\d{1,3}[\.\)\:]|\(\d{1,3}\))\s+\S+/;
+    const dividerLineRegex = /^\s*(?:\-{3,}|={3,}|\*{3,})\s*$/;
+
+    const optionDetectionRegex = /(?:^|\s)(?:\([A-D]\)|[A-D][\)\.])\s+\S+/;
+    const ansDetectionRegex = /^\s*(?:[•○◦o\-\*]\s*)?(?:<[bBiI]>\s*)?(?:Correct\s*(?:Option|Answer|Ans|Choice)?|Answer|Ans)\s*[:\-]/i;
+    const expDetectionRegex = /^\s*(?:[•○◦o\-\*]\s*)?(?:<[bBiI]>\s*)?(?:NCERT\s+)?(?:Explanation|Exp|Solution|Sol|Hint)\s*[:\-]/i;
+
+    for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+        const trimmed = line.trim();
+
+        if (dividerLineRegex.test(trimmed)) {
+            if (currentLines.length > 0 && (hasSeenOptionsInCurrent || hasSeenAnswerOrExpInCurrent)) {
+                blocks.push(currentLines.join('\n').trim());
+                currentLines = [];
+                hasSeenOptionsInCurrent = false;
+                hasSeenAnswerOrExpInCurrent = false;
+                continue;
+            }
+        }
+
+        const isExplicitQ = explicitQHeaderRegex.test(trimmed);
+        const isNumberedStart = numberedLineRegex.test(trimmed);
+
+        // Start a new block if:
+        // 1. Explicit "Q1.", "Q2.", "Question 3:" header (and current block already has content)
+        // 2. Numbered line ("1.", "2.") AFTER we already saw Options A-D or Answer/Explanation in the current block
+        if (currentLines.length > 0 && (isExplicitQ || (isNumberedStart && (hasSeenAnswerOrExpInCurrent || hasSeenOptionsInCurrent)))) {
+            blocks.push(currentLines.join('\n').trim());
+            currentLines = [line];
+            hasSeenOptionsInCurrent = false;
+            hasSeenAnswerOrExpInCurrent = false;
+            continue;
+        }
+
+        currentLines.push(line);
+
+        if (optionDetectionRegex.test(trimmed) && !/Assertion\s*\(A\)|Statement\s*\(A\)/i.test(trimmed)) {
+            hasSeenOptionsInCurrent = true;
+        }
+        if (ansDetectionRegex.test(trimmed) || expDetectionRegex.test(trimmed)) {
+            hasSeenAnswerOrExpInCurrent = true;
+        }
     }
 
-    let text = rawEl.value
-        .replace(/[ \t]*\bPDF(?:\s*\+\s*\d+)?\b/g, '')
-        .trim();
+    if (currentLines.length > 0) {
+        blocks.push(currentLines.join('\n').trim());
+    }
 
-    const expRegex = /(?:^|\n)\s*(?:[•○◦o\-\*]\s*)?(?:<[bBiI]>\s*)?(?:NCERT\s+)?(?:Explanation|Exp|Solution|Sol)\s*[:\-]\s*(?:<\/[bBiI]>\s*)?([\s\S]+)$/i;
+    return blocks.filter(b => b.length > 5);
+}
+
+// Parses a single MCQ text block with 200% accuracy (protects Assertion(A), Match tables, statements, italics, and multi-line explanations)
+function parseSingleMCQBlockAccurate(rawBlock, defaultDifficulty = 'Mixed') {
+    let text = String(rawBlock || '').trim();
+
+    // Temporarily mask any embedded Match-the-Column HTML tables so table cells ("a. Primata") are never mistaken for options
+    const maskedTables = [];
+    text = text.replace(/<div class="mcq-match-table-wrap">[\s\S]*?<\/div>/gi, (match) => {
+        const token = `__MCQ_TABLE_TOKEN_${maskedTables.length}__`;
+        maskedTables.push(match);
+        return token;
+    });
+
+    let explanation = '';
+    let correctAnswers = [];
+    let options = { A: '', B: '', C: '', D: '' };
+
+    // 1. Extract Explanation (NCERT Explanation, Explanation, Exp, Solution, Sol, Hint)
+    const expRegex = /(?:^|\n)\s*(?:[•○◦o\-\*]\s*)?(?:<[bBiI]>\s*)?(?:NCERT\s+)?(?:Explanation|Exp|Solution|Sol|Hint)\s*[:\-]\s*(?:<\/[bBiI]>\s*)?([\s\S]+)$/i;
     const expMatch = text.match(expRegex);
     if (expMatch) {
-        const expClean = expMatch[1].replace(/^\s*<\/(?:b|strong|i|em)>\s*/i, '').trim();
-        document.getElementById('admExplanation').value = expClean;
+        explanation = expMatch[1]
+            .replace(/^\s*<\/(?:b|strong|i|em)>\s*/i, '')
+            .replace(/\s*<\/(?:b|strong)>\s*$/i, '')
+            .trim();
         text = text.slice(0, expMatch.index).trim();
     }
 
-    const ansRegex = /(?:^|\n)\s*(?:[•○◦o\-\*]\s*)?(?:<[bBiI]>\s*)?(?:Correct\s*(?:Option|Answer|Ans)?|Answer|Ans)\s*[:\-]\s*(?:<\/[bBiI]>\s*)?\(?([A-Da-d])\)?(?:\s*[,&\/]\s*\(?([A-Da-d])\)?)*(?:<\/[bBiI]>)?/i;
+    // 2. Extract Correct Answer(s) (Correct Option: (C), Answer: B, Ans: A, C, etc.)
+    const ansRegex = /(?:^|\n)\s*(?:[•○◦o\-\*]\s*)?(?:<[bBiI]>\s*)?(?:Correct\s*(?:Option|Options|Answer|Answers|Ans|Choice)?|Answer|Ans)\s*[:\-]\s*(?:<\/[bBiI]>\s*)?([^\n]+)$/i;
     const ansMatch = text.match(ansRegex);
     if (ansMatch) {
-        const fullAnsLine = ansMatch[0];
-        const letters = [...fullAnsLine.replace(/^[\s\S]*?[:\-]/, '').matchAll(/[A-Da-d]/g)].map(m => m[0].toUpperCase());
-        if (letters.length > 0) {
-            document.querySelectorAll('.admCorrectCb').forEach(cb => {
-                cb.checked = letters.includes(cb.value);
-            });
+        const ansLine = ansMatch[1].replace(/<\/?(?:b|strong|i|em)>/gi, '').trim();
+        // Match option letters (A, B, C, D) at start or inside parentheses
+        const letterMatches = [...ansLine.matchAll(/(?:^|[\(\[\s,&\/])([A-Da-d])(?=[\)\]\s,.&\/]\vert{}$)/g)].map(m => m[1].toUpperCase()); if (letterMatches.length > 0) { correctAnswers = [...new Set(letterMatches)]; } text = text.slice(0, ansMatch.index).trim(); }      // 3. Extract Options A, B, C, D safely (ignoring "Assertion (A)" or "Statement (A)" in the stem) // First try strict uppercase (A), (B), (C), (D) or A), B), C), D) or A., B., C., D. const optRegexUpper = /(?:^\vert{}\n\vert{}\s{2,})(?!(?:Assertion\vert{}Statement\vert{}Column\vert{}List\vert{}Part\vert{}Section\vert{}Group\vert{}Fig)\s*)\(?([A-D])[\)\.\:]\s+([\s\S]*?)(?=(?:\n\vert{}\s{2,})\(?[B-D][\)\.\:]\s+\vert{}\s*$)/g; let matches = [...text.matchAll(optRegexUpper)];      // Fallback to case-insensitive if options were typed in lowercase (a), (b), (c), (d) if (matches.length < 2) { const optRegexAny = /(?:^\vert{}\n\vert{}\s{2,})\(?([A-Da-d])[\)\.\:]\s+([\s\S]*?)(?=(?:\n\vert{}\s{2,})\(?[B-Db-d][\)\.\:]\s+\vert{}\s*$)/gi; const allCandidateMatches = [...text.matchAll(optRegexAny)]; // Take the last 4 matches if there were lowercase a,b,c,d items earlier in the question if (allCandidateMatches.length >= 4) { matches = allCandidateMatches.slice(-4); } else { matches = allCandidateMatches; } }      let questionStem = text; if (matches.length >= 2) { // Find where the real Option A starts let firstOptStartIdx = matches[0].index; questionStem = text.slice(0, firstOptStartIdx).trim();          matches.forEach(m => { const letter = m[1].toUpperCase(); if (['A', 'B', 'C', 'D'].includes(letter)) { let optVal = m[2].replace(/[ \t]*\bPDF(?:\s*\+\s*\d+)?\b/g, '').trim(); // Check if option has a checkmark ✅ or ✔ indicating it's the correct answer if (/[✅✔☑]/.test(optVal)) { optVal = optVal.replace(/[✅✔☑]/g, '').trim(); if (!correctAnswers.includes(letter)) correctAnswers.push(letter); } options[letter] = optVal; } }); }      // Strip leading "Q1.", "Q.12", "Question 5:", "1." from question stem while keeping internal statement numbers intact questionStem = questionStem .replace(/^\s*(?:<[bBiI]>\s*)?(?:Q(?:uestion\vert{}ue)?\s*\d*[\.\:\)\-]\s*|\d{1,3}[\.\)\:]\s+|\(\d{1,3}\)\s+)(?:<\/[bBiI]>\s*)?/i, '')
+        .trim();
+
+    // Restore any masked Match-the-Column HTML tables into the question stem and explanation
+    maskedTables.forEach((tblHtml, idx) => {
+        const token = `__MCQ_TABLE_TOKEN_${idx}__`;
+        questionStem = questionStem.replace(token, `\n${tblHtml}\n`);
+        explanation = explanation.replace(token, `\n${tblHtml}\n`);
+    });
+
+    return {
+        id: 'bulk_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
+        question: questionStem.trim(),
+        options,
+        correctAnswers,
+        explanation: explanation.trim(),
+        level: defaultDifficulty,
+        showTools: false,
+        questionImageBlob: null,
+        questionImagePreviewUrl: '',
+        diagramBlob: null,
+        diagramPreviewUrl: '',
+        diagramCaption: '',
+        diagramBgMode: 'light',
+        explanationImageBlob: null,
+        explanationImagePreviewUrl: '',
+        matchTable: {
+            enabled: false,
+            rows: 4,
+            cols: 2,
+            headers: ['Column I', 'Column II', 'Column III', 'Column IV'],
+            cells: [
+                ['a. ', 'i. ', '', ''],
+                ['b. ', 'ii. ', '', ''],
+                ['c. ', 'iii. ', '', ''],
+                ['d. ', 'iv. ', '', ''],
+                ['e. ', 'v. ', '', ''],
+                ['f. ', 'vi. ', '', '']
+            ]
         }
-        text = text.slice(0, ansMatch.index).trim();
+    };
+}
+
+// Upgraded Smart Quick-Paste Entrypoint: Supports Single Form Auto-Fill AND 1-Click Bulk Multi-Question Queue
+parseQuickPasteMCQ = function(mode = 'auto') {
+    const rawEl = document.getElementById('admSmartPasteInput');
+    if (!rawEl || !rawEl.value.trim()) {
+        showNotification('⚠️ Paste 1 or multiple questions with options first.');
+        return;
     }
 
-    const optRegex = /(?:^|\n|\s{2,})\(?([A-D])[\)\.\:]\s*([\s\S]*?)(?=(?:\n|\s{2,})\(?[B-D][\)\.\:]|\s*$)/gi;
-    const matches = [...text.matchAll(optRegex)];
-    if (matches.length >= 2) {
-        const firstOptIndex = matches[0].index;
-        const qRaw = text
-            .slice(0, firstOptIndex)
-            .replace(/^\s*(?:<[bBiI]>\s*)?(?:Q(?:uestion)?\s*\d*[\.\:\)]\s*)(?:<\/[bBiI]>\s*)?/i, '')
-            .trim();
-        if (qRaw) document.getElementById('admQuestion').value = qRaw;
+    const blocks = splitRawTextIntoMCQBlocks(rawEl.value);
+    const defaultDiff = document.getElementById('admDifficulty')?.value || 'Mixed';
 
-        matches.forEach(m => {
-            const letter = m[1].toUpperCase();
-            const val = m[2].replace(/[ \t]*\bPDF(?:\s*\+\s*\d+)?\b/g, '').trim();
-            const inputEl = document.getElementById('admOpt' + letter);
-            if (inputEl) inputEl.value = val;
+    // If user clicked "Fill Single Form" and there's only 1 question, fill the main single form below
+    if (mode === 'single' && blocks.length === 1) {
+        const parsed = parseSingleMCQBlockAccurate(blocks[0], defaultDiff);
+        document.getElementById('admQuestion').value = parsed.question;
+        document.getElementById('admOptA').value = parsed.options.A || '';
+        document.getElementById('admOptB').value = parsed.options.B || '';
+        document.getElementById('admOptC').value = parsed.options.C || '';
+        document.getElementById('admOptD').value = parsed.options.D || '';
+        document.getElementById('admExplanation').value = parsed.explanation || '';
+        document.querySelectorAll('.admCorrectCb').forEach(cb => {
+            cb.checked = parsed.correctAnswers.includes(cb.value);
         });
         updateAdminLiveFormulaPreview();
-        showNotification('✨ Question, Styled Options & Explanation auto-filled!');
-    } else {
-        document.getElementById('admQuestion').value = text;
-        updateAdminLiveFormulaPreview();
-        showNotification('📝 Question text filled!');
+        showNotification('✨ Single Question, Styled Options & Explanation auto-filled!');
+        return;
     }
+
+    // Otherwise (Bulk Mode OR multiple questions detected), populate the 1-Click Bulk Staging Queue!
+    adminBulkStagedQuestions = blocks.map(b => parseSingleMCQBlockAccurate(b, defaultDiff));
+    renderAdminBulkStagingQueue();
+    showNotification(`📚 Parsed & placed ${adminBulkStagedQuestions.length} question(s) with 100% style & formula preservation!`);
 };
+
+function clearBulkStagedQueue() {
+    adminBulkStagedQuestions = [];
+    const panel = document.getElementById('admBulkStagingPanel');
+    const list = document.getElementById('admBulkCardsList');
+    if (list) list.innerHTML = '';
+    if (panel) panel.style.display = 'none';
+}
+
+function buildBulkItemMatchTableHtml(item) {
+    if (!item || !item.matchTable || !item.matchTable.enabled) return '';
+    const mt = item.matchTable;
+    let hasContent = false;
+    let thead = '<tr>';
+    for (let c = 0; c < mt.cols; c++) {
+        thead += `<th>${(mt.headers[c] || `Column ${c + 1}`).trim()}</th>`;
+    }
+    thead += '</tr>';
+
+    let tbody = '';
+    for (let r = 0; r < mt.rows; r++) {
+        let rowCells = [];
+        let rowHas = false;
+        for (let c = 0; c < mt.cols; c++) {
+            const val = (mt.cells[r] && mt.cells[r][c]) ? mt.cells[r][c].trim() : '';
+            if (val) rowHas = true;
+            rowCells.push(`<td>${formatCellWithBoldPrefix(val)}</td>`);
+        }
+        if (rowHas) {
+            hasContent = true;
+            tbody += `<tr>${rowCells.join('')}</tr>`;
+        }
+    }
+    if (!hasContent) return '';
+    return `<div class="mcq-match-table-wrap"><table class="mcq-match-table"><thead>${thead}</thead><tbody>${tbody}</tbody></table></div>`;
+}
+
+function isBulkItemReady(item) {
+    const hasQ = Boolean(item.question.trim() || item.questionImageBlob || (item.matchTable && item.matchTable.enabled));
+    const hasOpts = Boolean(item.options.A.trim() && item.options.B.trim());
+    const hasAns = Array.isArray(item.correctAnswers) && item.correctAnswers.length > 0;
+    return hasQ && hasOpts && hasAns;
+}
+
+function updateBulkQueueSummaryHeader() {
+    const badgeWrap = document.getElementById('admBulkQueueSummaryBadges');
+    const uploadBtn = document.getElementById('btnUploadAllBulkMCQs');
+    if (!badgeWrap) return;
+
+    const total = adminBulkStagedQuestions.length;
+    const readyCount = adminBulkStagedQuestions.filter(isBulkItemReady).length;
+    const missingCount = total - readyCount;
+
+    badgeWrap.innerHTML = `
+        <span style="background:rgba(56,189,248,0.16); color:#38bdf8; border:1px solid rgba(56,189,248,0.4); padding:5px 12px; border-radius:20px; font-size:12px; font-weight:800;">📚 Total Staged: ${total} MCQs</span>
+        <span style="background:rgba(16,185,129,0.16); color:#10b981; border:1px solid rgba(16,185,129,0.4); padding:5px 12px; border-radius:20px; font-size:12px; font-weight:800;">🟢 Ready: ${readyCount}</span>
+        ${missingCount > 0 ? `<span style="background:rgba(239,68,68,0.18); color:#ef4444; border:1px solid rgba(239,68,68,0.45); padding:5px 12px; border-radius:20px; font-size:12px; font-weight:800;">⚠️ Needs Answer/Option: ${missingCount}</span>` : `<span style="background:rgba(168,85,247,0.18); color:#c084fc; border:1px solid rgba(168,85,247,0.45); padding:5px 12px; border-radius:20px; font-size:12px; font-weight:800;">✨ 100% Verified</span>`}
+    `;
+    if (uploadBtn) {
+        uploadBtn.innerText = `☁️ Upload All ${total} Question${total === 1 ? '' : 's'} Now (1-Click)`;
+    }
+}
+
+function refreshSingleBulkCardPreview(idx) {
+    const item = adminBulkStagedQuestions[idx];
+    if (!item) return;
+    const prevEl = document.getElementById(`bulkCardLivePreview_${idx}`);
+    const statusBadge = document.getElementById(`bulkCardStatusBadge_${idx}`);
+    const cardEl = document.getElementById(`bulkStagedCard_${idx}`);
+
+    const ready = isBulkItemReady(item);
+    if (statusBadge) {
+        statusBadge.style.background = ready ? 'rgba(16,185,129,0.16)' : 'rgba(239,68,68,0.18)';
+        statusBadge.style.color = ready ? '#10b981' : '#ef4444';
+        statusBadge.style.borderColor = ready ? 'rgba(16,185,129,0.4)' : 'rgba(239,68,68,0.45)';
+        statusBadge.innerHTML = ready ? '🟢 Verified &amp; Ready' : '⚠️ Select Correct Option / Fill Options';
+    }
+    if (cardEl) {
+        cardEl.style.borderColor = ready ? 'rgba(56,189,248,0.3)' : 'rgba(239,68,68,0.6)';
+    }
+
+    if (prevEl) {
+        const qHtml = formatMultilineTextToHtml(item.question);
+        const tblHtml = buildBulkItemMatchTableHtml(item);
+        const expHtml = formatMultilineTextToHtml(item.explanation);
+        prevEl.innerHTML = `
+            <div style="font-size:10.5px; font-weight:800; color:var(--primary-yellow); text-transform:uppercase; margin-bottom:6px;">👁️ Live Student Preview (#${idx + 1})</div>
+            ${qHtml ? `<div style="margin-bottom:8px; line-height:1.65; color:#fff;"><b>Q${idx + 1}:</b>${qHtml}</div>` : ''}
+            ${item.questionImagePreviewUrl ? `<div class="mcq-question-text-img-wrap"><img src="${item.questionImagePreviewUrl}" style="max-height:160px;"></div>` : ''}
+            ${tblHtml}
+            ${item.diagramPreviewUrl ? `<div class="mcq-diagram-card ${item.diagramBgMode === 'dark' ? 'bg-dark' : 'bg-light'}"><img src="${item.diagramPreviewUrl}" style="max-height:160px;">${item.diagramCaption ? `<div class="mcq-diagram-caption">📐 ${item.diagramCaption}</div>` : ''}</div>` : ''}
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; font-size:12.5px; color:#cbd5e1; margin-top:6px;">
+                <div style="${item.correctAnswers.includes('A') ? 'color:#10b981; font-weight:700;' : ''}"><b>A)</b> ${item.options.A || '-'} ${item.correctAnswers.includes('A') ? '✓' : ''}</div>
+                <div style="${item.correctAnswers.includes('B') ? 'color:#10b981; font-weight:700;' : ''}"><b>B)</b> ${item.options.B || '-'} ${item.correctAnswers.includes('B') ? '✓' : ''}</div>
+                <div style="${item.correctAnswers.includes('C') ? 'color:#10b981; font-weight:700;' : ''}"><b>C)</b> ${item.options.C || '-'} ${item.correctAnswers.includes('C') ? '✓' : ''}</div>
+                <div style="${item.correctAnswers.includes('D') ? 'color:#10b981; font-weight:700;' : ''}"><b>D)</b> ${item.options.D || '-'} ${item.correctAnswers.includes('D') ? '✓' : ''}</div>
+            </div>
+            ${(expHtml || item.explanationImagePreviewUrl) ? `<div style="margin-top:8px; font-size:12px; color:#94a3b8; border-top:1px solid #1e293b; padding-top:6px; line-height:1.6;"><b>Exp:</b> ${expHtml}${item.explanationImagePreviewUrl ? `<div class="mcq-explanation-img-wrap"><img src="${item.explanationImagePreviewUrl}" style="max-height:140px;"></div>` : ''}</div>` : ''}
+        `;
+        if (typeof renderMathInElement === 'function') {
+            renderMathInElement(prevEl, {
+                delimiters: [
+                    { left: '$$', right: '$$', display: true },
+                    { left: '$', right: '$', display: false },
+                    { left: '\\(', right: '\\)', display: false },
+                    { left: '[', right: ']', display: true }
+                ],
+                throwOnError: false
+            });
+        }
+    }
+    updateBulkQueueSummaryHeader();
+}
+
+function updateBulkItemField(idx, field, value) {
+    const item = adminBulkStagedQuestions[idx];
+    if (!item) return;
+    if (field === 'A' || field === 'B' || field === 'C' || field === 'D') {
+        item.options[field] = value;
+    } else {
+        item[field] = value;
+    }
+    refreshSingleBulkCardPreview(idx);
+}
+
+function toggleBulkItemCorrectAns(idx, letter, checked) {
+    const item = adminBulkStagedQuestions[idx];
+    if (!item) return;
+    if (checked && !item.correctAnswers.includes(letter)) {
+        item.correctAnswers.push(letter);
+    } else if (!checked) {
+        item.correctAnswers = item.correctAnswers.filter(x => x !== letter);
+    }
+    refreshSingleBulkCardPreview(idx);
+}
+
+function toggleBulkCardExtraTools(idx) {
+    const item = adminBulkStagedQuestions[idx];
+    if (!item) return;
+    item.showTools = !item.showTools;
+    const drawer = document.getElementById(`bulkCardToolsDrawer_${idx}`);
+    if (drawer) drawer.style.display = item.showTools ? 'block' : 'none';
+}
+
+function handleBulkCardImageBlob(idx, slot, blob) {
+    const item = adminBulkStagedQuestions[idx];
+    if (!item || !blob) return;
+    const url = URL.createObjectURL(blob);
+    if (slot === 'QUESTION') {
+        item.questionImageBlob = blob;
+        item.questionImagePreviewUrl = url;
+    } else if (slot === 'DIAGRAM') {
+        item.diagramBlob = blob;
+        item.diagramPreviewUrl = url;
+    } else if (slot === 'EXPLANATION') {
+        item.explanationImageBlob = blob;
+        item.explanationImagePreviewUrl = url;
+    }
+    renderAdminBulkStagingQueue();
+    showNotification(`📸 Attached ${slot.toLowerCase()} image to Question #${idx + 1}!`);
+}
+
+function handleBulkCardFileSelect(inputEl, idx, slot) {
+    if (!inputEl || !inputEl.files || !inputEl.files[0]) return;
+    handleBulkCardImageBlob(idx, slot, inputEl.files[0]);
+}
+
+function handleBulkCardPasteImage(event, idx, slot) {
+    const items = event.clipboardData?.items;
+    if (!items) return;
+    for (let it of items) {
+        if (it.type && it.type.indexOf('image') !== -1) {
+            event.preventDefault();
+            event.stopPropagation();
+            handleBulkCardImageBlob(idx, slot, it.getAsFile());
+            return;
+        }
+    }
+}
+
+async function triggerBulkCardClipboardPaste(idx, slot) {
+    try {
+        if (navigator.clipboard && typeof navigator.clipboard.read === 'function') {
+            const clipItems = await navigator.clipboard.read();
+            for (const clipItem of clipItems) {
+                const imgType = clipItem.types.find(t => t.startsWith('image/'));
+                if (imgType) {
+                    const blob = await clipItem.getType(imgType);
+                    handleBulkCardImageBlob(idx, slot, blob);
+                    return;
+                }
+            }
+            showNotification('⚠️ No screenshot found on clipboard. Take a screenshot first!');
+        } else {
+            throw new Error('Clipboard read unsupported');
+        }
+    } catch (e) {
+        showNotification('📋 Click inside the Question/Explanation box on this card and press Ctrl+V to paste screenshot!');
+    }
+}
+
+function clearBulkCardImageSlot(idx, slot) {
+    const item = adminBulkStagedQuestions[idx];
+    if (!item) return;
+    if (slot === 'QUESTION') {
+        item.questionImageBlob = null;
+        item.questionImagePreviewUrl = '';
+    } else if (slot === 'DIAGRAM') {
+        item.diagramBlob = null;
+        item.diagramPreviewUrl = '';
+        item.diagramCaption = '';
+    } else if (slot === 'EXPLANATION') {
+        item.explanationImageBlob = null;
+        item.explanationImagePreviewUrl = '';
+    }
+    renderAdminBulkStagingQueue();
+}
+
+function toggleBulkCardMatchTable(idx, enabled) {
+    const item = adminBulkStagedQuestions[idx];
+    if (!item) return;
+    item.matchTable.enabled = Boolean(enabled);
+    renderAdminBulkStagingQueue();
+}
+
+function resizeBulkCardMatchTable(idx, dRows, dCols) {
+    const item = adminBulkStagedQuestions[idx];
+    if (!item) return;
+    item.matchTable.rows = Math.min(8, Math.max(1, item.matchTable.rows + dRows));
+    item.matchTable.cols = Math.min(4, Math.max(1, item.matchTable.cols + dCols));
+    while (item.matchTable.cells.length < item.matchTable.rows) {
+        item.matchTable.cells.push(['', '', '', '']);
+    }
+    renderAdminBulkStagingQueue();
+}
+
+function updateBulkCardMatchHeader(idx, colIdx, val) {
+    const item = adminBulkStagedQuestions[idx];
+    if (!item) return;
+    item.matchTable.headers[colIdx] = val;
+    refreshSingleBulkCardPreview(idx);
+}
+
+function updateBulkCardMatchCell(idx, rowIdx, colIdx, val) {
+    const item = adminBulkStagedQuestions[idx];
+    if (!item) return;
+    if (!item.matchTable.cells[rowIdx]) item.matchTable.cells[rowIdx] = ['', '', '', ''];
+    item.matchTable.cells[rowIdx][colIdx] = val;
+    refreshSingleBulkCardPreview(idx);
+}
+
+function removeBulkStagedCard(idx) {
+    adminBulkStagedQuestions.splice(idx, 1);
+    if (adminBulkStagedQuestions.length === 0) {
+        clearBulkStagedQueue();
+    } else {
+        renderAdminBulkStagingQueue();
+    }
+}
+
+function addBlankQuestionToBulkQueue() {
+    const defaultDiff = document.getElementById('admDifficulty')?.value || 'Mixed';
+    adminBulkStagedQuestions.push(parseSingleMCQBlockAccurate('', defaultDiff));
+    renderAdminBulkStagingQueue();
+}
+
+function applyBulkGlobalDifficulty(level) {
+    if (!level) return;
+    adminBulkStagedQuestions.forEach(q => { q.level = level; });
+    renderAdminBulkStagingQueue();
+    showNotification(`🎯 Set difficulty of all ${adminBulkStagedQuestions.length} questions to ${level}!`);
+}
+
+function bulkAutoSplitAllStatements() {
+    adminBulkStagedQuestions.forEach(item => {
+        let s = item.question || '';
+        s = s.replace(/([^\n])\s+(\b(?:I|II|III|IV|V|VI|VII)\.\s+)/g, '$1\n$2');
+        s = s.replace(/([^\n])\s+(\((?:i|ii|iii|iv|v|vi|I|II|III|IV|V|VI)\)\s+)/g, '$1\n$2');
+        s = s.replace(/([^\n])\s+(\b(?:Statement\s*(?:I|II|III|IV|1|2|3|4)|Assertion\s*\(?A\)?|Reason\s*\(?R\)?)\s*[:\-])/gi, '$1\n$2');
+        s = s.replace(/([^\n])\s+((?:Which\s+of\s+the\s+(?:above|following)|Select\s+the\s+correct|Choose\s+the\s+correct|In\s+the\s+light\s+of|How\s+many\s+of\s+the\s+above)\b)/gi, '$1\n\n$2');
+        item.question = s;
+    });
+    renderAdminBulkStagingQueue();
+    showNotification('📑 Statements separated onto clean lines across all staged questions!');
+}
+
+function bulkAutoFormatAllChemistry() {
+    const fmt = (str) => {
+        if (!str) return '';
+        return str
+            .replace(/<=>|<-->/g, '$\\rightleftharpoons$')
+            .replace(/-->|->/g, '$\\rightarrow$')
+            .replace(/\b([A-Z][a-z]?)(\d+)\b/g, '$1$_$2$')
+            .replace(/\^(\d+[+\-]|[+\-]\d*)/g, '$^{$1}$');
+    };
+    adminBulkStagedQuestions.forEach(item => {
+        item.question = fmt(item.question);
+        item.options.A = fmt(item.options.A);
+        item.options.B = fmt(item.options.B);
+        item.options.C = fmt(item.options.C);
+        item.options.D = fmt(item.options.D);
+        item.explanation = fmt(item.explanation);
+    });
+    renderAdminBulkStagingQueue();
+    showNotification('🪄 Formatted chemical reactions & subscripts across all staged questions!');
+}
+
+function renderAdminBulkStagingQueue() {
+    const panel = document.getElementById('admBulkStagingPanel');
+    const list = document.getElementById('admBulkCardsList');
+    if (!panel || !list) return;
+
+    if (!adminBulkStagedQuestions.length) {
+        panel.style.display = 'none';
+        list.innerHTML = '';
+        return;
+    }
+
+    panel.style.display = 'block';
+    updateBulkQueueSummaryHeader();
+
+    const escAttr = (s) => String(s || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+
+    list.innerHTML = adminBulkStagedQuestions.map((item, idx) => {
+        const ready = isBulkItemReady(item);
+        const mt = item.matchTable;
+        let matchTableGridHtml = '';
+        if (mt.enabled) {
+            let ths = '';
+            for (let c = 0; c < mt.cols; c++) {
+                ths += `<th style="padding:4px;"><input type="text" class="input-field" value="${escAttr(mt.headers[c] || `Column ${c + 1}`)}" onfocus="setLastFocusedFormulaInput(this)" oninput="updateBulkCardMatchHeader(${idx}, ${c}, this.value)" style="margin:0; padding:6px 8px; font-size:12px; font-weight:800; color:#fdb813; background:#0f1523;"></th>`;
+            }
+            let trs = '';
+            for (let r = 0; r < mt.rows; r++) {
+                let tds = '';
+                for (let c = 0; c < mt.cols; c++) {
+                    const cellVal = (mt.cells[r] && mt.cells[r][c]) || '';
+                    tds += `<td style="padding:4px;"><input type="text" class="input-field" value="${escAttr(cellVal)}" onfocus="setLastFocusedFormulaInput(this)" oninput="updateBulkCardMatchCell(${idx}, ${r}, ${c}, this.value)" style="margin:0; padding:6px 8px; font-size:12px;"></td>`;
+                }
+                trs += `<tr>${tds}</tr>`;
+            }
+            matchTableGridHtml = `
+                <div style="margin-top:8px; background:#0d1322; border:1px solid #2b3954; border-radius:8px; padding:10px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; flex-wrap:wrap; gap:8px;">
+                        <span style="font-size:11.5px; color:#c084fc; font-weight:800;">📊 Match-the-Column Table (#${idx + 1})</span>
+                        <div style="display:flex; gap:6px; align-items:center;">
+                            <span style="font-size:11px; color:#94a3b8;">Rows: ${mt.rows}</span>
+                            <button type="button" onclick="resizeBulkCardMatchTable(${idx}, -1, 0)" style="background:#1e293b; color:#fff; border:1px solid #334155; border-radius:4px; padding:2px 7px; cursor:pointer;">−</button>
+                            <button type="button" onclick="resizeBulkCardMatchTable(${idx}, 1, 0)" style="background:#1e293b; color:#fff; border:1px solid #334155; border-radius:4px; padding:2px 7px; cursor:pointer;">+</button>
+                            <span style="font-size:11px; color:#94a3b8; margin-left:6px;">Cols: ${mt.cols}</span>
+                            <button type="button" onclick="resizeBulkCardMatchTable(${idx}, 0, -1)" style="background:#1e293b; color:#fff; border:1px solid #334155; border-radius:4px; padding:2px 7px; cursor:pointer;">−</button>
+                            <button type="button" onclick="resizeBulkCardMatchTable(${idx}, 0, 1)" style="background:#1e293b; color:#fff; border:1px solid #334155; border-radius:4px; padding:2px 7px; cursor:pointer;">+</button>
+                        </div>
+                    </div>
+                    <div style="overflow-x:auto;"><table style="width:100%; border-collapse:collapse;"><thead><tr>${ths}</tr></thead><tbody>${trs}</tbody></table></div>
+                </div>
+            `;
+        }
+
+        return `
+            <div id="bulkStagedCard_${idx}" style="background:#0d121f; border:1.5px solid ${ready ? 'rgba(56,189,248,0.3)' : 'rgba(239,68,68,0.6)'}; border-radius:12px; padding:14px; transition:0.2s;">
+                <!-- Card Header -->
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:10px; padding-bottom:8px; border-bottom:1px solid #1e293b;">
+                    <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+                        <span style="background:var(--primary-yellow); color:#000; font-weight:900; font-size:12px; padding:3px 10px; border-radius:6px;">Q #${idx + 1}</span>
+                        <span id="bulkCardStatusBadge_${idx}" style="background:${ready ? 'rgba(16,185,129,0.16)' : 'rgba(239,68,68,0.18)'}; color:${ready ? '#10b981' : '#ef4444'}; border:1px solid ${ready ? 'rgba(16,185,129,0.4)' : 'rgba(239,68,68,0.45)'}; padding:3px 10px; border-radius:20px; font-size:11px; font-weight:800;">
+                            ${ready ? '🟢 Verified &amp; Ready' : '⚠️ Select Correct Option / Fill Options'}
+                        </span>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                        <button type="button" onclick="toggleBulkCardExtraTools(${idx})" style="background:rgba(168,85,247,0.15); color:#c084fc; border:1px solid rgba(168,85,247,0.4); border-radius:6px; padding:5px 10px; font-size:11px; font-weight:700; cursor:pointer;">
+                            🖼️ + Image / Diagram / Match Table ${(item.questionImageBlob || item.diagramBlob || item.explanationImageBlob || mt.enabled) ? '●' : ''}
+                        </button>
+                        <select class="input-field" onchange="updateBulkItemField(${idx}, 'level', this.value)" style="margin:0; width:auto; padding:4px 9px; font-size:11.5px; font-weight:700;">
+                            <option value="Mixed" ${item.level === 'Mixed' ? 'selected' : ''}>Mixed</option>
+                            <option value="Easy" ${item.level === 'Easy' ? 'selected' : ''}>Easy</option>
+                            <option value="Medium" ${item.level === 'Medium' ? 'selected' : ''}>Medium</option>
+                            <option value="Hard" ${item.level === 'Hard' ? 'selected' : ''}>Hard</option>
+                        </select>
+                        <button type="button" onclick="removeBulkStagedCard(${idx})" style="background:rgba(239,68,68,0.15); color:#ef4444; border:1px solid rgba(239,68,68,0.35); border-radius:6px; padding:4px 9px; font-size:11px; font-weight:700; cursor:pointer;">🗑️ Remove</button>
+                    </div>
+                </div>
+
+                <!-- Question Text -->
+                <textarea class="input-field" style="min-height:68px; font-size:13.5px; margin-bottom:8px;" placeholder="Question #${idx + 1} text (or paste screenshot with Ctrl+V)..." onfocus="setLastFocusedFormulaInput(this)" oninput="updateBulkItemField(${idx}, 'question', this.value)" onpaste="handleBulkCardPasteImage(event, ${idx}, 'QUESTION')">${item.question}</textarea>
+
+                <!-- Expandable Media & Match Table Drawer per Question -->
+                <div id="bulkCardToolsDrawer_${idx}" style="display:${item.showTools ? 'block' : 'none'}; background:#111729; border:1px dashed #334155; border-radius:10px; padding:12px; margin-bottom:10px;">
+                    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(210px, 1fr)); gap:10px;">
+                        <!-- Question Image Slot -->
+                        <div style="background:#0b0f19; border:1px solid rgba(56,189,248,0.35); border-radius:8px; padding:9px;" onpaste="handleBulkCardPasteImage(event, ${idx}, 'QUESTION')">
+                            <div style="font-size:11.5px; font-weight:800; color:#38bdf8; margin-bottom:6px;">📸 Question Image / Screenshot</div>
+                            <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                                <input type="file" id="bulkQImgFile_${idx}" accept="image/*" style="display:none;" onchange="handleBulkCardFileSelect(this, ${idx}, 'QUESTION')">
+                                <button type="button" onclick="triggerBulkCardClipboardPaste(${idx}, 'QUESTION')" style="background:rgba(16,185,129,0.15); color:#10b981; border:1px solid rgba(16,185,129,0.4); border-radius:5px; padding:4px 8px; font-size:11px; font-weight:700; cursor:pointer;">📋 Paste</button>
+                                <button type="button" onclick="document.getElementById('bulkQImgFile_${idx}').click()" style="background:rgba(56,189,248,0.15); color:#38bdf8; border:1px solid rgba(56,189,248,0.4); border-radius:5px; padding:4px 8px; font-size:11px; cursor:pointer;">📁 Upload</button>
+                                ${item.questionImagePreviewUrl ? `<button type="button" onclick="clearBulkCardImageSlot(${idx}, 'QUESTION')" style="background:rgba(239,68,68,0.15); color:#ef4444; border:none; border-radius:5px; padding:4px 8px; font-size:11px; cursor:pointer;">✕</button>` : ''}
+                            </div>
+                        </div>
+
+                        <!-- Dedicated Diagram Slot -->
+                        <div style="background:#0b0f19; border:1px solid rgba(253,184,19,0.35); border-radius:8px; padding:9px;" onpaste="handleBulkCardPasteImage(event, ${idx}, 'DIAGRAM')">
+                            <div style="font-size:11.5px; font-weight:800; color:#fdb813; margin-bottom:6px;">📐 Dedicated Diagram / Circuit</div>
+                            <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:6px;">
+                                <input type="file" id="bulkDiagFile_${idx}" accept="image/*" style="display:none;" onchange="handleBulkCardFileSelect(this, ${idx}, 'DIAGRAM')">
+                                <button type="button" onclick="triggerBulkCardClipboardPaste(${idx}, 'DIAGRAM')" style="background:rgba(16,185,129,0.15); color:#10b981; border:1px solid rgba(16,185,129,0.4); border-radius:5px; padding:4px 8px; font-size:11px; font-weight:700; cursor:pointer;">📋 Paste</button>
+                                <button type="button" onclick="document.getElementById('bulkDiagFile_${idx}').click()" style="background:rgba(253,184,19,0.15); color:#fdb813; border:1px solid rgba(253,184,19,0.4); border-radius:5px; padding:4px 8px; font-size:11px; cursor:pointer;">📁 Upload</button>
+                                ${item.diagramPreviewUrl ? `<button type="button" onclick="clearBulkCardImageSlot(${idx}, 'DIAGRAM')" style="background:rgba(239,68,68,0.15); color:#ef4444; border:none; border-radius:5px; padding:4px 8px; font-size:11px; cursor:pointer;">✕</button>` : ''}
+                            </div>
+                            <div style="display:flex; gap:5px;">
+                                <input type="text" class="input-field" placeholder="Caption (e.g. Fig 1)" value="${escAttr(item.diagramCaption)}" oninput="updateBulkItemField(${idx}, 'diagramCaption', this.value)" style="margin:0; padding:4px 7px; font-size:11px; flex:1;">
+                                <select class="input-field" onchange="updateBulkItemField(${idx}, 'diagramBgMode', this.value)" style="margin:0; padding:4px 6px; font-size:11px; width:auto;">
+                                    <option value="light" ${item.diagramBgMode === 'light' ? 'selected' : ''}>☀️ White</option>
+                                    <option value="dark" ${item.diagramBgMode === 'dark' ? 'selected' : ''}>🌙 Dark</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Explanation Image Slot -->
+                        <div style="background:#0b0f19; border:1px solid rgba(16,185,129,0.35); border-radius:8px; padding:9px;" onpaste="handleBulkCardPasteImage(event, ${idx}, 'EXPLANATION')">
+                            <div style="font-size:11.5px; font-weight:800; color:#10b981; margin-bottom:6px;">🖼️ Explanation Solution Image</div>
+                            <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                                <input type="file" id="bulkExpFile_${idx}" accept="image/*" style="display:none;" onchange="handleBulkCardFileSelect(this, ${idx}, 'EXPLANATION')">
+                                <button type="button" onclick="triggerBulkCardClipboardPaste(${idx}, 'EXPLANATION')" style="background:rgba(16,185,129,0.15); color:#10b981; border:1px solid rgba(16,185,129,0.4); border-radius:5px; padding:4px 8px; font-size:11px; font-weight:700; cursor:pointer;">📋 Paste</button>
+                                <button type="button" onclick="document.getElementById('bulkExpFile_${idx}').click()" style="background:rgba(56,189,248,0.15); color:#38bdf8; border:1px solid rgba(56,189,248,0.4); border-radius:5px; padding:4px 8px; font-size:11px; cursor:pointer;">📁 Upload</button>
+                                ${item.explanationImagePreviewUrl ? `<button type="button" onclick="clearBulkCardImageSlot(${idx}, 'EXPLANATION')" style="background:rgba(239,68,68,0.15); color:#ef4444; border:none; border-radius:5px; padding:4px 8px; font-size:11px; cursor:pointer;">✕</button>` : ''}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="margin-top:8px;">
+                        <label style="display:inline-flex; align-items:center; gap:7px; font-size:12px; color:#c084fc; font-weight:700; cursor:pointer;">
+                            <input type="checkbox" ${mt.enabled ? 'checked' : ''} onchange="toggleBulkCardMatchTable(${idx}, this.checked)" style="accent-color:#a855f7;">
+                            <span>📊 Enable Custom Match-the-Column Table for Q #${idx + 1}</span>
+                        </label>
+                        ${matchTableGridHtml}
+                    </div>
+                </div>
+
+                <!-- Options A, B, C, D + Correct Answer Checkboxes -->
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:8px;">
+                    ${['A', 'B', 'C', 'D'].map(letter => `
+                        <div style="display:flex; align-items:center; gap:6px; background:#13192a; border:1px solid ${item.correctAnswers.includes(letter) ? '#10b981' : '#263147'}; border-radius:8px; padding:4px 8px;">
+                            <label style="display:flex; align-items:center; gap:4px; cursor:pointer; font-weight:800; font-size:12.5px; color:${item.correctAnswers.includes(letter) ? '#10b981' : '#94a3b8'}; user-select:none;" title="Mark ${letter} as Correct Answer">
+                                <input type="checkbox" ${item.correctAnswers.includes(letter) ? 'checked' : ''} onchange="toggleBulkItemCorrectAns(${idx}, '${letter}', this.checked)" style="accent-color:#10b981; width:15px; height:15px; cursor:pointer;">
+                                ${letter}
+                            </label>
+                            <input type="text" class="input-field" value="${escAttr(item.options[letter])}" placeholder="Option ${letter}" onfocus="setLastFocusedFormulaInput(this)" oninput="updateBulkItemField(${idx}, '${letter}', this.value)" style="margin:0; border:none; background:transparent; padding:5px 4px; font-size:13px;">
+                        </div>
+                    `).join('')}
+                </div>
+
+                <!-- Explanation -->
+                <textarea class="input-field" style="min-height:48px; font-size:12.5px; margin-bottom:8px;" placeholder="Explanation (Optional — or press Ctrl+V to paste solution screenshot)..." onfocus="setLastFocusedFormulaInput(this)" oninput="updateBulkItemField(${idx}, 'explanation', this.value)" onpaste="handleBulkCardPasteImage(event, ${idx}, 'EXPLANATION')">${item.explanation}</textarea>
+
+                <!-- Live Student Preview per Card -->
+                <div id="bulkCardLivePreview_${idx}" style="background:#080c15; border:1px solid rgba(253,184,19,0.28); border-radius:8px; padding:10px 12px; font-size:13px;"></div>
+            </div>
+        `;
+    }).join('');
+
+    adminBulkStagedQuestions.forEach((_, idx) => refreshSingleBulkCardPreview(idx));
+}
+
+// 1-Click Batch Uploader: Uploads all staged questions (including any attached images/diagrams/tables) to Firestore
+async function uploadAllBulkStagedMCQs() {
+    if (!adminBulkStagedQuestions.length) return showNotification('⚠️ No questions in the bulk queue.');
+    const targetPath = adminSelectedPath.join(' > ');
+    if (!targetPath) return showNotification('⚠️ Select a Target Destination folder in Step 1 first.');
+
+    const incompleteIdx = adminBulkStagedQuestions.findIndex(q => !isBulkItemReady(q));
+    if (incompleteIdx !== -1) {
+        const card = document.getElementById(`bulkStagedCard_${incompleteIdx}`);
+        if (card) card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return alert(`⚠️ Question #${incompleteIdx + 1} is missing a Correct Answer or Option A/B. Please check the highlighted card (#${incompleteIdx + 1}) before uploading!`);
+    }
+
+    const btn = document.getElementById('btnUploadAllBulkMCQs');
+    if (btn) { btn.disabled = true; btn.innerText = '⏳ Uploading Batch...'; }
+
+    try {
+        const leaf = (adminSelectedPath[adminSelectedPath.length - 1] || '').replace(/^\d+\.\s*/, '').trim();
+        const total = adminBulkStagedQuestions.length;
+        const preparedDocs = [];
+
+        for (let i = 0; i < total; i++) {
+            const item = adminBulkStagedQuestions[i];
+            if (btn) btn.innerText = `⏳ Processing Q ${i + 1} of ${total}...`;
+
+            let questionImageUrl = null;
+            if (item.questionImageBlob) {
+                if (btn) btn.innerText = `☁️ Uploading Q#${i + 1} Image...`;
+                questionImageUrl = await uploadFileToCloudinary(item.questionImageBlob);
+            }
+
+            let diagramUrl = null;
+            if (item.diagramBlob) {
+                if (btn) btn.innerText = `☁️ Uploading Q#${i + 1} Diagram...`;
+                diagramUrl = await uploadFileToCloudinary(item.diagramBlob);
+            }
+
+            let explanationImageUrl = null;
+            if (item.explanationImageBlob) {
+                if (btn) btn.innerText = `☁️ Uploading Q#${i + 1} Solution Image...`;
+                explanationImageUrl = await uploadFileToCloudinary(item.explanationImageBlob);
+            }
+
+            let finalQuestionHtml = formatMultilineTextToHtml(item.question.trim());
+            const matchTableHtml = buildBulkItemMatchTableHtml(item);
+
+            if (questionImageUrl) {
+                const safeQUrl = questionImageUrl.replace(/'/g, "\\'");
+                const qImgBlock = `<div class="mcq-question-text-img-wrap"><img src="${questionImageUrl}" alt="Question" onclick="openStudentDiagramLightbox('${safeQUrl}', 'Question Image')" title="Tap to zoom"></div>`;
+                finalQuestionHtml = finalQuestionHtml ? `${finalQuestionHtml}${qImgBlock}` : qImgBlock;
+            }
+            if (matchTableHtml) {
+                finalQuestionHtml = `${finalQuestionHtml}${matchTableHtml}`;
+            }
+            if (diagramUrl) {
+                const safeDUrl = diagramUrl.replace(/'/g, "\\'");
+                const safeCap = (item.diagramCaption || '').replace(/'/g, "\\'");
+                const bgClass = item.diagramBgMode === 'dark' ? 'bg-dark' : 'bg-light';
+                const capHtml = item.diagramCaption
+                    ? `<div class="mcq-diagram-caption">📐 ${item.diagramCaption} <span style="font-size:10.5px; opacity:0.7;">(Tap to zoom)</span></div>`
+                    : `<div class="mcq-diagram-caption" style="font-size:11px; opacity:0.7;">🔍 Tap diagram to zoom</div>`;
+                const diagBlock = `<div class="mcq-diagram-card ${bgClass}"><img src="${diagramUrl}" alt="Diagram" onclick="openStudentDiagramLightbox('${safeDUrl}', '${safeCap}')">${capHtml}</div>`;
+                finalQuestionHtml = `${finalQuestionHtml}${diagBlock}`;
+            }
+
+            let finalExplanationHtml = formatMultilineTextToHtml(item.explanation.trim());
+            if (explanationImageUrl) {
+                const safeEUrl = explanationImageUrl.replace(/'/g, "\\'");
+                const expImgBlock = `<div class="mcq-explanation-img-wrap"><img src="${explanationImageUrl}" alt="Explanation Solution" onclick="openStudentDiagramLightbox('${safeEUrl}', 'Solution / Explanation')" title="Tap to zoom"></div>`;
+                finalExplanationHtml = finalExplanationHtml ? `${finalExplanationHtml}${expImgBlock}` : expImgBlock;
+            }
+
+            let level = item.level || 'Mixed';
+            if (['Easy', 'Medium', 'Hard', 'Mixed'].includes(leaf) && level === 'Mixed') level = leaf;
+
+            preparedDocs.push({
+                type: 'mcq',
+                path: targetPath,
+                level,
+                question: finalQuestionHtml,
+                rawQuestionText: item.question.trim(),
+                options: {
+                    A: item.options.A.trim(),
+                    B: item.options.B.trim(),
+                    C: item.options.C.trim(),
+                    D: item.options.D.trim()
+                },
+                correctAnswers: item.correctAnswers,
+                explanation: finalExplanationHtml,
+                imageUrl: null,
+                questionImageUrl,
+                diagramUrl,
+                diagramCaption: item.diagramCaption || '',
+                explanationImageUrl,
+                randomKey: Math.random()
+            });
+        }
+
+        // Save all prepared MCQs in atomic Firestore batches (preserves exact order)
+        const nowMs = Date.now();
+        for (let i = 0; i < preparedDocs.length; i += 400) {
+            const batch = db.batch();
+            preparedDocs.slice(i, i + 400).forEach((docData, idx) => {
+                const ref = db.collection('content').doc();
+                batch.set(ref, {
+                    ...docData,
+                    timestamp: firebase.firestore.Timestamp.fromMillis(nowMs - (i + idx) * 1000)
+                });
+            });
+            await batch.commit();
+        }
+
+        document.getElementById('admSmartPasteInput').value = '';
+        clearBulkStagedQueue();
+        showNotification(`🎉 Successfully uploaded all ${preparedDocs.length} questions in 1 click!`);
+        refreshAutoMixAvailableCounts();
+    } catch (err) {
+        alert('⚠️ Bulk Upload Error: ' + err.message);
+    }
+    if (btn) {
+        btn.disabled = false;
+        btn.innerText = '☁️ Upload All Questions Now';
+    }
+}
 
 function insertAdminFormulaAtCursor(snippet) {
     let target = lastFocusedFormulaInput || document.getElementById('admQuestion');
