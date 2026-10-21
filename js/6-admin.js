@@ -443,17 +443,17 @@ async function _renderAdminPanel() {
                                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:10px;">
                                     <div>
                                         <span style="font-size:13px; font-weight:800; color:var(--primary-yellow); display:flex; align-items:center; gap:6px;">⚡ 1-CLICK SINGLE &amp; BULK MULTI-QUESTION SMART PARSER</span>
-                                        <span style="font-size:11.5px; color:#94a3b8;">Paste <b>1 question</b> OR <b>10 to 100+ questions at once</b> (with Options, Correct Answer &amp; Explanation). Keeps <i>italics</i>, tables, line-breaks &amp; formulas!</span>
+                                        <span style="font-size:11.5px; color:#94a3b8;">Paste <b>1 question</b> OR <b>multiple questions at once</b>. Automatically detects &amp; fills the <b>Correct Option</b>, keeps <i>italics</i>/formulas, and lets you edit any question manually before saving!</span>
                                     </div>
                                     <div style="display:flex; gap:8px; flex-wrap:wrap;">
-                                        <button type="button" class="btn-exam" onclick="parseQuickPasteMCQ('single')" style="background:rgba(56,189,248,0.15); color:#38bdf8; border:1px solid rgba(56,189,248,0.45); padding:7px 13px; font-size:12px; font-weight:700;">✨ Fill Single Form</button>
-                                        <button type="button" class="btn-exam btn-yellow-glow" onclick="parseQuickPasteMCQ('bulk')" style="padding:7px 16px; font-size:12.5px; font-weight:800;">📚 Read &amp; Place Multiple Questions (1-Click Queue)</button>
+                                        <button type="button" class="btn-exam" onclick="parseQuickPasteMCQ('single')" style="background:rgba(56,189,248,0.15); color:#38bdf8; border:1px solid rgba(56,189,248,0.45); padding:7px 13px; font-size:12px; font-weight:700;">✨ Fill Single Form Below</button>
+                                        <button type="button" class="btn-exam btn-yellow-glow" onclick="parseQuickPasteMCQ('bulk')" style="padding:7px 16px; font-size:12.5px; font-weight:800;">📚 Read &amp; Place Multiple Questions (Auto-Detect Answers)</button>
                                         <button type="button" class="btn-exam" onclick="document.getElementById('admSmartPasteInput').value=''; clearBulkStagedQueue();" style="background:rgba(239,68,68,0.12); color:#ef4444; border:1px solid rgba(239,68,68,0.35); padding:7px 11px; font-size:11.5px;">✕ Clear</button>
                                     </div>
                                 </div>
-                                <textarea id="admSmartPasteInput" class="input-field" style="min-height:95px; margin-bottom:0; font-size:13px; line-height:1.5;" placeholder="Paste 1 or multiple MCQs here! Example:&#10;Q1. Which of the following represents the scientific name of Mango?&#10;(A) Mangifera Indica Linn.&#10;(B) mangifera indica Linn.&#10;(C) Mangifera indica Linn.&#10;(D) Mangifera indica Linn.&#10;Correct Option: (C)&#10;NCERT Explanation: Genus starts with capital, species with small letter, both italicized...&#10;&#10;Q2. Next question..."></textarea>
+                                <textarea id="admSmartPasteInput" class="input-field" style="min-height:105px; margin-bottom:0; font-size:13px; line-height:1.5;" placeholder="Paste 1 or multiple MCQs here (Q1... (A)... (B)... (C)... (D)... Correct Option: (C) Explanation: ...) and click '📚 Read & Place Multiple Questions'!"></textarea>
 
-                                <!-- 📚 INTERACTIVE BULK STAGING & 1-CLICK UPLOAD QUEUE -->
+                                <!-- 📚 INTERACTIVE BULK STAGING, MANUAL EDITING & 1-CLICK UPLOAD QUEUE -->
                                 <div id="admBulkStagingPanel" style="display:none; margin-top:16px; border-top:1px solid #2b3954; padding-top:16px;">
                                     <div style="background:#0b0f19; border:1px solid #2b3954; border-radius:10px; padding:12px 14px; margin-bottom:14px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; position:sticky; top:68px; z-index:40; box-shadow:0 10px 25px rgba(0,0,0,0.75);">
                                         <div id="admBulkQueueSummaryBadges" style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;"></div>
@@ -467,24 +467,24 @@ async function _renderAdminPanel() {
                                             </select>
                                             <button type="button" class="btn-exam" onclick="bulkAutoSplitAllStatements()" style="background:rgba(168,85,247,0.16); color:#c084fc; border:1px solid rgba(168,85,247,0.4); padding:6px 11px; font-size:11.5px; font-weight:700;">📑 Split All Statements</button>
                                             <button type="button" class="btn-exam" onclick="bulkAutoFormatAllChemistry()" style="background:rgba(16,185,129,0.15); color:#10b981; border:1px solid rgba(16,185,129,0.4); padding:6px 11px; font-size:11.5px; font-weight:700;">🪄 Format All Reactions</button>
-                                            <button type="button" class="btn-exam" onclick="addBlankQuestionToBulkQueue()" style="background:#1e293b; color:#fff; border:1px solid #334155; padding:6px 11px; font-size:11.5px;">➕ Add Card</button>
+                                            <button type="button" class="btn-exam" onclick="addBlankQuestionToBulkQueue()" style="background:#1e293b; color:#fff; border:1px solid #334155; padding:6px 11px; font-size:11.5px;">➕ Add Blank Question</button>
                                             <button type="button" id="btnUploadAllBulkMCQs" class="btn-exam btn-green-glow" onclick="uploadAllBulkStagedMCQs()" style="padding:8px 18px; font-size:13px; font-weight:800;">☁️ Upload All Questions Now</button>
                                         </div>
                                     </div>
-                                    <div id="admBulkCardsList" style="display:flex; flex-direction:column; gap:14px;"></div>
+                                    <div id="admBulkCardsList" style="display:flex; flex-direction:column; gap:16px;"></div>
                                 </div>
                             </div>
 
                             <!-- 🧪 1-CLICK TEXT STYLE, LINE SPACING, CHEMICAL REACTION & MATH FORMULA BAR -->
                             <div style="background:#101626; border:1px solid #2b3954; border-radius:12px; padding:12px 14px; margin-bottom:16px;">
                                 <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:8px;">
-                                    <span style="font-size:11.5px; font-weight:800; color:#38bdf8; text-transform:uppercase;">✍️ Text Styles, Statement Line-Breaks, Reactions &amp; Math Toolbar</span>
+                                    <span style="font-size:11.5px; font-weight:800; color:#38bdf8; text-transform:uppercase;">✍️ Text Styles, Statement Line-Breaks, Reactions &amp; Math Toolbar (Works in Single Form &amp; Bulk Cards!)</span>
                                     <div style="display:flex; gap:6px; flex-wrap:wrap;">
                                         <button type="button" onclick="autoSeparateStatementsInActiveInput()" style="background:rgba(168,85,247,0.18); color:#c084fc; border:1px solid rgba(168,85,247,0.45); border-radius:6px; padding:4px 10px; font-size:11px; font-weight:700; cursor:pointer;" title="Automatically puts I., II., III., IV., Statement I/II, Assertion/Reason on separate lines">📑 Auto-Split Statements (I, II, III)</button>
                                         <button type="button" onclick="formatPlainChemistryToLatex()" style="background:rgba(16,185,129,0.15); color:#10b981; border:1px solid rgba(16,185,129,0.4); border-radius:6px; padding:4px 10px; font-size:11px; font-weight:700; cursor:pointer;" title="Automatically converts H2SO4, ->, <=>, ^2+ in active box into clean formulas">🪄 Auto-Format Reaction / Formula</button>
                                     </div>
                                 </div>
-                                <!-- Row 1: Text Styling & Line Spacing (Italic, Bold, Underline, Subscript, Superscript, Blank Line Space) -->
+                                <!-- Row 1: Text Styling & Line Spacing -->
                                 <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:8px; padding-bottom:8px; border-bottom:1px solid rgba(255,255,255,0.08);">
                                     <button type="button" class="admin-preset-chip" style="color:#f472b6; border-color:rgba(244,114,182,0.45); background:rgba(244,114,182,0.12);" onclick="applyAdminTextStyleTag('i')" title="Shortcut: Ctrl+I"><i>𝐼 Italic</i></button>
                                     <button type="button" class="admin-preset-chip" style="color:#f472b6; border-color:rgba(244,114,182,0.45); background:rgba(244,114,182,0.12);" onclick="applyAdminTextStyleTag('b')" title="Shortcut: Ctrl+B"><b>𝐁 Bold</b></button>
@@ -2527,7 +2527,7 @@ async function uploadFileToCloudinary(file) {
 }
 
 // ==========================================
-// FORMULA TOOLBAR, SCREENSHOT PASTE, MATCH TABLE, DIAGRAM & AUTO-MIXED ENGINE
+// FORMULA TOOLBAR, BULK SMART PARSER, SCREENSHOT PASTE, MATCH TABLE, DIAGRAM & AUTO-MIXED ENGINE
 // ==========================================
 (function injectStudentDiagramTableAndQuestionImgStyles() {
     if (document.getElementById('mcqs-diagram-qimg-styles')) return;
@@ -2597,7 +2597,6 @@ async function uploadFileToCloudinary(file) {
             gap: 6px;
             opacity: 0.88;
         }
-        /* Match-the-Column Table Styling (Matches Dark Exam UI in Image 2) */
         .mcq-match-table-wrap {
             margin: 14px 0 16px 0;
             width: 100%;
@@ -2643,17 +2642,15 @@ async function uploadFileToCloudinary(file) {
     document.head.appendChild(st);
 })();
 
-let lastFocusedFormulaInput = null;
+var lastFocusedFormulaInput = null;
 
-// Universal Pasted/Selected Image Blobs for Question, Diagram & Explanation
-let adminImageSlots = {
+var adminImageSlots = {
     QUESTION: null,
     DIAGRAM: null,
     EXPLANATION: null
 };
 
-// State for Match-the-Column / Custom Table Builder
-let adminMatchTableState = {
+var adminMatchTableState = {
     enabled: false,
     rows: 4,
     cols: 2,
@@ -2676,33 +2673,26 @@ function setLastFocusedFormulaInput(el) {
     if (el) lastFocusedFormulaInput = el;
 }
 
-// Converts every Enter (\n) to <br>, double Enter (\n\n) to <br><br> (blank space between lines), and preserves multiple spaces
 function formatMultilineTextToHtml(rawText) {
     if (!rawText) return '';
     let str = String(rawText).replace(/\r\n?/g, '\n');
-    // Preserve multiple horizontal spaces typed by admin
     str = str.replace(/ {2,}/g, match => ' ' + '&nbsp;'.repeat(match.length - 1));
-    // Convert every newline into <br> so 1 Enter = next line, 2 Enters = blank space between adjacent lines
     str = str.replace(/\n/g, '<br>');
     return str;
 }
 
-// 1-Click Button: Automatically puts inline statements (I., II., III., IV., Statement I, Assertion/Reason) onto separate lines
 function autoSeparateStatementsInActiveInput() {
     let target = (lastFocusedFormulaInput && lastFocusedFormulaInput.tagName === 'TEXTAREA')
         ? lastFocusedFormulaInput
         : document.getElementById('admQuestion');
     if (!target || !target.value.trim()) {
-        return showNotification('⚠️ Paste or type a statement question in Question Text first.');
+        return showNotification('⚠️ Click inside a Question Text box first.');
     }
 
     let s = target.value;
-    // Put Roman numerals I., II., III., IV., V., VI. or (I), (II), (i), (ii) onto new lines
     s = s.replace(/([^\n])\s+(\b(?:I|II|III|IV|V|VI|VII)\.\s+)/g, '$1\n$2');
-    s = s.replace(/([^\n])\s+(\((?:i|ii|iii|iv|v|vi|I|II|III|IV|V|VI)\)\s+)/g, '$1\n$2');
-    // Put Statement I / Statement II / Assertion (A) / Reason (R) onto new lines
+    s = s.replace(/([^\n])\s+(\((?:i\vert{}ii\vert{}iii\vert{}iv\vert{}v\vert{}vi\vert{}I\vert{}II\vert{}III\vert{}IV\vert{}V\vert{}VI)\)\s+)/g, '$1\n$2');
     s = s.replace(/([^\n])\s+(\b(?:Statement\s*(?:I|II|III|IV|1|2|3|4)|Assertion\s*\(?A\)?|Reason\s*\(?R\)?)\s*[:\-])/gi, '$1\n$2');
-    // Put trailing question prompt ("Which of the above...", "Select the correct...", "In the light of...") onto a new line with a blank space above it
     s = s.replace(/([^\n])\s+((?:Which\s+of\s+the\s+(?:above|following)|Select\s+the\s+correct|Choose\s+the\s+correct|In\s+the\s+light\s+of|How\s+many\s+of\s+the\s+above)\b)/gi, '$1\n\n$2');
 
     target.value = s;
@@ -2711,7 +2701,6 @@ function autoSeparateStatementsInActiveInput() {
     showNotification('📑 Statements separated onto clean lines!');
 }
 
-// 1-Click Button: Inserts a blank line space at cursor position
 function insertBlankLineSpacingInActiveInput() {
     let target = lastFocusedFormulaInput || document.getElementById('admQuestion');
     if (!target) return;
@@ -2726,7 +2715,6 @@ function insertBlankLineSpacingInActiveInput() {
     updateAdminLiveFormulaPreview();
 }
 
-// Wrap or unwrap selected text with <i>, <b>, <u>, <sub>, <sup>
 function applyAdminTextStyleTag(tag) {
     let target = lastFocusedFormulaInput || document.getElementById('admQuestion');
     if (!target) return;
@@ -2765,7 +2753,7 @@ function stripHtmlStyleTagsFromActiveInput() {
     const end = target.selectionEnd || 0;
     if (start !== end) {
         const cleaned = target.value.substring(start, end).replace(/<\/?(?:i|em|b|strong|u|sub|sup|s)>/gi, '');
-        target.value = target.value.substring(start, end) ? (target.value.substring(0, start) + cleaned + target.value.substring(end)) : target.value;
+        target.value = target.value.substring(0, start) + cleaned + target.value.substring(end);
     } else {
         target.value = target.value.replace(/<\/?(?:i|em|b|strong|u|sub|sup|s)>/gi, '');
     }
@@ -2774,7 +2762,6 @@ function stripHtmlStyleTagsFromActiveInput() {
     showNotification('🧹 Style tags cleared!');
 }
 
-// Convert Unicode Mathematical Italic/Bold characters into clean <i>...</i> / <b>...</b> HTML tags
 function convertUnicodeMathStylesToHtml(str) {
     if (!str) return '';
     let out = '';
@@ -2806,7 +2793,6 @@ function convertUnicodeMathStylesToHtml(str) {
     return out;
 }
 
-// Extract exact Italic (<i>), Bold (<b>), Underline (<u>), Subscript (<sub>), Superscript (<sup>), Tables, AND exact line breaks from Clipboard
 function extractStyledTextFromClipboardHtml(htmlStr, plainFallback, preserveLineBreaks = true) {
     const cleanPlain = convertUnicodeMathStylesToHtml(plainFallback || '').replace(/\r\n?/g, '\n').replace(/[ \t]*\bPDF(?:\s*\+\s*\d+)?\b/g, '');
     if (!htmlStr || typeof DOMParser === 'undefined') {
@@ -2819,7 +2805,6 @@ function extractStyledTextFromClipboardHtml(htmlStr, plainFallback, preserveLine
 
         doc.querySelectorAll('script, style, button, svg, sup.citation, a[href*="pdf"]').forEach(el => el.remove());
 
-        // Automatically convert any HTML <table> (like Match-the-Column from Gemini/ChatGPT/Word) into clean .mcq-match-table HTML!
         doc.querySelectorAll('table').forEach(tbl => {
             const rows = Array.from(tbl.querySelectorAll('tr'));
             if (!rows.length) return;
@@ -2920,7 +2905,6 @@ function extractStyledTextFromClipboardHtml(htmlStr, plainFallback, preserveLine
     }
 }
 
-// Global Paste & Shortcut Interceptor for Admin MCQ Fields (Preserves Italics, Bold, Underline, Sub, Sup & Line Breaks)
 (function attachAdminRichStylePasteAndShortcuts() {
     if (window._adminRichStylePasteAttached) return;
     window._adminRichStylePasteAttached = true;
@@ -2991,11 +2975,10 @@ function extractStyledTextFromClipboardHtml(htmlStr, plainFallback, preserveLine
 })();
 
 // ==========================================
-// 📚 200% ACCURATE MULTI-QUESTION BULK PARSER & STAGING ENGINE
+// 📚 200% ACCURATE MULTI-QUESTION BULK PARSER, AUTO-ANSWER DETECTOR & MANUAL EDITOR
 // ==========================================
-let adminBulkStagedQuestions = [];
+var adminBulkStagedQuestions = [];
 
-// Converts Markdown pipe tables (| Col I | Col II |) into clean .mcq-match-table HTML
 function convertMarkdownPipeTablesInText(text) {
     if (!text || !text.includes('|')) return text;
     const lines = text.split('\n');
@@ -3032,7 +3015,6 @@ function convertMarkdownPipeTablesInText(text) {
     return out.join('\n');
 }
 
-// Splits raw text containing 1 to 200+ MCQs into individual question blocks without breaking numbered statements (1., 2., I., II.)
 function splitRawTextIntoMCQBlocks(rawText) {
     let cleaned = convertMarkdownPipeTablesInText(
         String(rawText || '')
@@ -3048,13 +3030,13 @@ function splitRawTextIntoMCQBlocks(rawText) {
     let hasSeenOptionsInCurrent = false;
     let hasSeenAnswerOrExpInCurrent = false;
 
-    const explicitQHeaderRegex = /^\s*(?:<[bBiI]>\s*)?(?:Q(?:uestion|ue)?\s*\d+[\.\:\)\-]|Question\s*#\d+|\[\s*Q\d+\s*\])/i;
+    const explicitQHeaderRegex = /^\s*(?:<[bBiI]>\s*)?(?:Q(?:uestion|ue|ns)?\s*[\.\:\-]?\s*\d+[\.\:\)\-]?|Question\s*#\d+|\[\s*Q\d+\s*\])/i;
     const numberedLineRegex = /^\s*(?:<[bBiI]>\s*)?(?:\d{1,3}[\.\)\:]|\(\d{1,3}\))\s+\S+/;
     const dividerLineRegex = /^\s*(?:\-{3,}|={3,}|\*{3,})\s*$/;
 
-    const optionDetectionRegex = /(?:^|\s)(?:\([A-D]\)|[A-D][\)\.])\s+\S+/;
-    const ansDetectionRegex = /^\s*(?:[•○◦o\-\*]\s*)?(?:<[bBiI]>\s*)?(?:Correct\s*(?:Option|Answer|Ans|Choice)?|Answer|Ans)\s*[:\-]/i;
-    const expDetectionRegex = /^\s*(?:[•○◦o\-\*]\s*)?(?:<[bBiI]>\s*)?(?:NCERT\s+)?(?:Explanation|Exp|Solution|Sol|Hint)\s*[:\-]/i;
+    const optionDetectionRegex = /(?:^|\s)(?:\([A-Da-d]\)|[A-Da-d][\)\.])\s+\S+/;
+    const ansDetectionRegex = /^\s*(?:[•○◦o\-\*👉✓✔]\s*)?(?:<[bBiI]>\s*)?(?:Correct\s*(?:Option|Options|Answer|Answers|Ans|Choice)?|Right\s*(?:Option|Answer)|Answer|Ans|Key)\s*[\.\:\-\=]/i;
+    const expDetectionRegex = /^\s*(?:[•○◦o\-\*💡]\s*)?(?:<[bBiI]>\s*)?(?:NCERT\s+)?(?:Explanation|Exp|Solution|Sol|Hint|Reason\s+for\s+Answer)\s*[\.\:\-]/i;
 
     for (let i = 0; i < lines.length; i++) {
         const line = lines[i];
@@ -3073,9 +3055,6 @@ function splitRawTextIntoMCQBlocks(rawText) {
         const isExplicitQ = explicitQHeaderRegex.test(trimmed);
         const isNumberedStart = numberedLineRegex.test(trimmed);
 
-        // Start a new block if:
-        // 1. Explicit "Q1.", "Q2.", "Question 3:" header (and current block already has content)
-        // 2. Numbered line ("1.", "2.") AFTER we already saw Options A-D or Answer/Explanation in the current block
         if (currentLines.length > 0 && (isExplicitQ || (isNumberedStart && (hasSeenAnswerOrExpInCurrent || hasSeenOptionsInCurrent)))) {
             blocks.push(currentLines.join('\n').trim());
             currentLines = [line];
@@ -3101,11 +3080,36 @@ function splitRawTextIntoMCQBlocks(rawText) {
     return blocks.filter(b => b.length > 5);
 }
 
-// Parses a single MCQ text block with 200% accuracy (protects Assertion(A), Match tables, statements, italics, and multi-line explanations)
+// Extracts A, B, C, or D from any answer string (e.g. "(C)", "c", "(B) Mangifera indica", "Option D", "A, C")
+function extractAnswerLettersFromString(rawAnsStr) {
+    if (!rawAnsStr) return [];
+    const clean = String(rawAnsStr).replace(/<\/?(?:b|strong|i|em|u)>/gi, '').trim();
+
+    // 1. Check if it starts with "(C) Some option text..." or "C) Some option text..." or "C. Some text" or just "C"
+    const leadingMatch = clean.match(/^(?:Option\s+|Choice\s+)?[\(\[]?([A-Da-d])[\)\]\.\:\-]?(?:\s|$)/i);
+    if (leadingMatch && !/^[A-Da-d]\s*[,&\/]\s*[A-Da-d]/i.test(clean)) {
+        return [leadingMatch[1].toUpperCase()];
+    }
+
+    // 2. Check for multiple correct options like "(A), (C)" or "A and B" or "B, D"
+    const multiMatch = clean.match(/^(?:[\([]?[A-Da-d][\)]]?\s*(?:[,&\/]|\band\b)\s*)+[\([]?[A-Da-d][\)]]?$/i);
+    if (multiMatch) {
+        return [...new Set([...clean.matchAll(/[A-Da-d]/g)].map(m => m[0].toUpperCase()))];
+    }
+
+    // 3. Fallback: Look for "(A)" / "(B)" / "(C)" / "(D)" or "Option C" anywhere in the answer string
+    const parenMatch = clean.match(/(?:Option\s+|Choice\s+)?[\(\[]([A-Da-d])[\)\]]/i);
+    if (parenMatch) return [parenMatch[1].toUpperCase()];
+
+    const wordMatch = clean.match(/\b(?:Option|Choice|Ans|Answer)\s+([A-Da-d])\b/i);
+    if (wordMatch) return [wordMatch[1].toUpperCase()];
+
+    return [];
+}
+
 function parseSingleMCQBlockAccurate(rawBlock, defaultDifficulty = 'Mixed') {
     let text = String(rawBlock || '').trim();
 
-    // Temporarily mask any embedded Match-the-Column HTML tables so table cells ("a. Primata") are never mistaken for options
     const maskedTables = [];
     text = text.replace(/<div class="mcq-match-table-wrap">[\s\S]*?<\/div>/gi, (match) => {
         const token = `__MCQ_TABLE_TOKEN_${maskedTables.length}__`;
@@ -3118,7 +3122,7 @@ function parseSingleMCQBlockAccurate(rawBlock, defaultDifficulty = 'Mixed') {
     let options = { A: '', B: '', C: '', D: '' };
 
     // 1. Extract Explanation (NCERT Explanation, Explanation, Exp, Solution, Sol, Hint)
-    const expRegex = /(?:^|\n)\s*(?:[•○◦o\-\*]\s*)?(?:<[bBiI]>\s*)?(?:NCERT\s+)?(?:Explanation|Exp|Solution|Sol|Hint)\s*[:\-]\s*(?:<\/[bBiI]>\s*)?([\s\S]+)$/i;
+    const expRegex = /(?:^|\n)\s*(?:[•○◦o\-\*💡]\s*)?(?:<[bBiI]>\s*)?(?:NCERT\s+)?(?:Explanation|Exp|Solution|Sol|Hint)\s*[\.\:\-]\s*(?:<\/[bBiI]>\s*)?([\s\S]+)$/i;
     const expMatch = text.match(expRegex);
     if (expMatch) {
         explanation = expMatch[1]
@@ -3128,16 +3132,82 @@ function parseSingleMCQBlockAccurate(rawBlock, defaultDifficulty = 'Mixed') {
         text = text.slice(0, expMatch.index).trim();
     }
 
-    // 2. Extract Correct Answer(s) (Correct Option: (C), Answer: B, Ans: A, C, etc.)
-    const ansRegex = /(?:^|\n)\s*(?:[•○◦o\-\*]\s*)?(?:<[bBiI]>\s*)?(?:Correct\s*(?:Option|Options|Answer|Answers|Ans|Choice)?|Answer|Ans)\s*[:\-]\s*(?:<\/[bBiI]>\s*)?([^\n]+)$/i;
+    // 2. Check if an Answer line was accidentally placed INSIDE or AFTER the Explanation
+    const ansInsideExpRegex = /(?:^|\n)\s*(?:[•○◦o\-\*👉✓✔]\s*)?(?:<[bBiI]>\s*)?(?:Correct\s*(?:Option|Options|Answer|Answers|Ans|Choice)?|Right\s*(?:Option|Answer)|Answer|Ans|Key)\s*[\.\:\-\=]\s*(?:<\/[bBiI]>\s*)?([^\n]+)/i;
+    if (explanation) {
+        const ansInExp = explanation.match(ansInsideExpRegex);
+        if (ansInExp) {
+            const extracted = extractAnswerLettersFromString(ansInExp[1]);
+            if (extracted.length > 0) correctAnswers = extracted;
+            explanation = explanation.replace(ansInExp[0], '').trim();
+        }
+    }
+
+    // 3. Extract Explicit Answer Line from main text (Correct Option: (C), Answer: B, Ans. (a), Key: D, etc.)
+    const ansRegex = /(?:^|\n)\s*(?:[•○◦o\-\*👉✓✔]\s*)?(?:<[bBiI]>\s*)?(?:Correct\s*(?:Option|Options|Answer|Answers|Ans|Choice)?|Right\s*(?:Option|Answer)|Answer|Ans|Key)\s*[\.\:\-\=]\s*(?:<\/[bBiI]>\s*)?([^\n]+)$/i;
     const ansMatch = text.match(ansRegex);
     if (ansMatch) {
-        const ansLine = ansMatch[1].replace(/<\/?(?:b|strong|i|em)>/gi, '').trim();
-        // Match option letters (A, B, C, D) at start or inside parentheses
-        const letterMatches = [...ansLine.matchAll(/(?:^|[\(\[\s,&\/])([A-Da-d])(?=[\)\]\s,.&\/]\vert{}$)/g)].map(m => m[1].toUpperCase()); if (letterMatches.length > 0) { correctAnswers = [...new Set(letterMatches)]; } text = text.slice(0, ansMatch.index).trim(); }      // 3. Extract Options A, B, C, D safely (ignoring "Assertion (A)" or "Statement (A)" in the stem) // First try strict uppercase (A), (B), (C), (D) or A), B), C), D) or A., B., C., D. const optRegexUpper = /(?:^\vert{}\n\vert{}\s{2,})(?!(?:Assertion\vert{}Statement\vert{}Column\vert{}List\vert{}Part\vert{}Section\vert{}Group\vert{}Fig)\s*)\(?([A-D])[\)\.\:]\s+([\s\S]*?)(?=(?:\n\vert{}\s{2,})\(?[B-D][\)\.\:]\s+\vert{}\s*$)/g; let matches = [...text.matchAll(optRegexUpper)];      // Fallback to case-insensitive if options were typed in lowercase (a), (b), (c), (d) if (matches.length < 2) { const optRegexAny = /(?:^\vert{}\n\vert{}\s{2,})\(?([A-Da-d])[\)\.\:]\s+([\s\S]*?)(?=(?:\n\vert{}\s{2,})\(?[B-Db-d][\)\.\:]\s+\vert{}\s*$)/gi; const allCandidateMatches = [...text.matchAll(optRegexAny)]; // Take the last 4 matches if there were lowercase a,b,c,d items earlier in the question if (allCandidateMatches.length >= 4) { matches = allCandidateMatches.slice(-4); } else { matches = allCandidateMatches; } }      let questionStem = text; if (matches.length >= 2) { // Find where the real Option A starts let firstOptStartIdx = matches[0].index; questionStem = text.slice(0, firstOptStartIdx).trim();          matches.forEach(m => { const letter = m[1].toUpperCase(); if (['A', 'B', 'C', 'D'].includes(letter)) { let optVal = m[2].replace(/[ \t]*\bPDF(?:\s*\+\s*\d+)?\b/g, '').trim(); // Check if option has a checkmark ✅ or ✔ indicating it's the correct answer if (/[✅✔☑]/.test(optVal)) { optVal = optVal.replace(/[✅✔☑]/g, '').trim(); if (!correctAnswers.includes(letter)) correctAnswers.push(letter); } options[letter] = optVal; } }); }      // Strip leading "Q1.", "Q.12", "Question 5:", "1." from question stem while keeping internal statement numbers intact questionStem = questionStem .replace(/^\s*(?:<[bBiI]>\s*)?(?:Q(?:uestion\vert{}ue)?\s*\d*[\.\:\)\-]\s*|\d{1,3}[\.\)\:]\s+|\(\d{1,3}\)\s+)(?:<\/[bBiI]>\s*)?/i, '')
+        const extracted = extractAnswerLettersFromString(ansMatch[1]);
+        if (extracted.length > 0) correctAnswers = extracted;
+        text = text.slice(0, ansMatch.index).trim();
+    }
+
+    // Also check if there is an inline "[Ans: C]" or "(Ans: B)" or "Correct Option: (C)" at the end of the last option line
+    const inlineAnsEndRegex = /[\(\[]?\b(?:Correct\s*(?:Option|Answer|Ans)|Answer|Ans)\s*[\.\:\-\=]\s*[\(\[]?([A-Da-d])[\)\]]?[\)\]]?\s*$/i;
+    const inlineEndMatch = text.match(inlineAnsEndRegex);
+    if (inlineEndMatch) {
+        const letter = inlineEndMatch[1].toUpperCase();
+        if (!correctAnswers.includes(letter)) correctAnswers.push(letter);
+        text = text.slice(0, inlineEndMatch.index).trim();
+    }
+
+    // 4. Extract Options A, B, C, D safely
+    const optRegexUpper = /(?:^|\n|\s{2,})(?!(?:Assertion|Statement|Column|List|Part|Section|Group|Fig)\s*)\(?([A-D])[\)\.\:]\s+([\s\S]*?)(?=(?:\n|\s{2,})\(?[B-D][\)\.\:]\s+|\s*$)/g;
+    let matches = [...text.matchAll(optRegexUpper)];
+
+    if (matches.length < 2) {
+        const optRegexAny = /(?:^|\n|\s{2,})\(?([A-Da-d])[\)\.\:]\s+([\s\S]*?)(?=(?:\n|\s{2,})\(?[B-Db-d][\)\.\:]\s+|\s*$)/gi;
+        const allCandidateMatches = [...text.matchAll(optRegexAny)];
+        if (allCandidateMatches.length >= 4) {
+            matches = allCandidateMatches.slice(-4);
+        } else {
+            matches = allCandidateMatches;
+        }
+    }
+
+    let questionStem = text;
+    if (matches.length >= 2) {
+        let firstOptStartIdx = matches[0].index;
+        questionStem = text.slice(0, firstOptStartIdx).trim();
+
+        matches.forEach(m => {
+            const letter = m[1].toUpperCase();
+            if (['A', 'B', 'C', 'D'].includes(letter)) {
+                let optVal = m[2].replace(/[ \t]*\bPDF(?:\s*\+\s*\d+)?\b/g, '').trim();
+                if (/[✅✔☑]/.test(optVal) || /\(\s*correct\s*\)/i.test(optVal)) {
+                    optVal = optVal.replace(/[✅✔☑]|\(\s*correct\s*\)/gi, '').trim();
+                    if (!correctAnswers.includes(letter)) correctAnswers.push(letter);
+                }
+                options[letter] = optVal;
+            }
+        });
+    }
+
+    // 5. Fallback: If Correct Option still wasn't explicitly labeled, check if Explanation says "option (C) is correct" / "correct answer is (B)"
+    if (correctAnswers.length === 0 && explanation) {
+        const expHintMatch = explanation.match(/(?:option|answer|choice)\s+\(?([A-Da-d])\)?\s+is\s+correct|correct\s+(?:option|answer|choice)\s+is\s+\(?([A-Da-d])\)?|hence\s*,?\s*\(?([A-Da-d])\)?\s+is\s+correct/i);
+        if (expHintMatch) {
+            const detectedLetter = (expHintMatch[1] || expHintMatch[2] || expHintMatch[3] || '').toUpperCase();
+            if (['A', 'B', 'C', 'D'].includes(detectedLetter)) {
+                correctAnswers.push(detectedLetter);
+            }
+        }
+    }
+
+    questionStem = questionStem
+        .replace(/^\s*(?:<[bBiI]>\s*)?(?:Q(?:uestion|ue|ns)?\s*[\.\:\-]?\s*\d*[\.\:\)\-]\s*|\d{1,3}[\.\)\:]\s+|\(\d{1,3}\)\s+)(?:<\/[bBiI]>\s*)?/i, '')
         .trim();
 
-    // Restore any masked Match-the-Column HTML tables into the question stem and explanation
     maskedTables.forEach((tblHtml, idx) => {
         const token = `__MCQ_TABLE_TOKEN_${idx}__`;
         questionStem = questionStem.replace(token, `\n${tblHtml}\n`);
@@ -3177,7 +3247,7 @@ function parseSingleMCQBlockAccurate(rawBlock, defaultDifficulty = 'Mixed') {
     };
 }
 
-// Upgraded Smart Quick-Paste Entrypoint: Supports Single Form Auto-Fill AND 1-Click Bulk Multi-Question Queue
+// Entrypoint for Single Form Fill & 1-Click Bulk Multi-Question Queue
 parseQuickPasteMCQ = function(mode = 'auto') {
     const rawEl = document.getElementById('admSmartPasteInput');
     if (!rawEl || !rawEl.value.trim()) {
@@ -3188,7 +3258,6 @@ parseQuickPasteMCQ = function(mode = 'auto') {
     const blocks = splitRawTextIntoMCQBlocks(rawEl.value);
     const defaultDiff = document.getElementById('admDifficulty')?.value || 'Mixed';
 
-    // If user clicked "Fill Single Form" and there's only 1 question, fill the main single form below
     if (mode === 'single' && blocks.length === 1) {
         const parsed = parseSingleMCQBlockAccurate(blocks[0], defaultDiff);
         document.getElementById('admQuestion').value = parsed.question;
@@ -3201,15 +3270,39 @@ parseQuickPasteMCQ = function(mode = 'auto') {
             cb.checked = parsed.correctAnswers.includes(cb.value);
         });
         updateAdminLiveFormulaPreview();
-        showNotification('✨ Single Question, Styled Options & Explanation auto-filled!');
+        showNotification(`✨ Single Question & Correct Answer (${parsed.correctAnswers.join(', ') || 'None'}) auto-filled!`);
         return;
     }
 
-    // Otherwise (Bulk Mode OR multiple questions detected), populate the 1-Click Bulk Staging Queue!
     adminBulkStagedQuestions = blocks.map(b => parseSingleMCQBlockAccurate(b, defaultDiff));
     renderAdminBulkStagingQueue();
-    showNotification(`📚 Parsed & placed ${adminBulkStagedQuestions.length} question(s) with 100% style & formula preservation!`);
+    const autoAnsCount = adminBulkStagedQuestions.filter(q => q.correctAnswers.length > 0).length;
+    showNotification(`📚 Placed ${adminBulkStagedQuestions.length} question(s) & auto-detected ${autoAnsCount}/${adminBulkStagedQuestions.length} Correct Answers!`);
 };
+
+// Loads a specific Bulk Card into the Main Single Editor below if the admin wants full manual editing there
+function loadBulkCardIntoMainSingleForm(idx) {
+    const item = adminBulkStagedQuestions[idx];
+    if (!item) return;
+    document.getElementById('admQuestion').value = item.question || '';
+    document.getElementById('admOptA').value = item.options.A || '';
+    document.getElementById('admOptB').value = item.options.B || '';
+    document.getElementById('admOptC').value = item.options.C || '';
+    document.getElementById('admOptD').value = item.options.D || '';
+    document.getElementById('admExplanation').value = item.explanation || '';
+    const diffEl = document.getElementById('admDifficulty');
+    if (diffEl) diffEl.value = item.level || 'Mixed';
+    document.querySelectorAll('.admCorrectCb').forEach(cb => {
+        cb.checked = item.correctAnswers.includes(cb.value);
+    });
+    updateAdminLiveFormulaPreview();
+    const qBox = document.getElementById('admQuestion');
+    if (qBox) {
+        qBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        qBox.focus();
+    }
+    showNotification(`✏️ Loaded Question #${idx + 1} into the Main Editor below!`);
+}
 
 function clearBulkStagedQueue() {
     adminBulkStagedQuestions = [];
@@ -3266,7 +3359,7 @@ function updateBulkQueueSummaryHeader() {
     badgeWrap.innerHTML = `
         <span style="background:rgba(56,189,248,0.16); color:#38bdf8; border:1px solid rgba(56,189,248,0.4); padding:5px 12px; border-radius:20px; font-size:12px; font-weight:800;">📚 Total Staged: ${total} MCQs</span>
         <span style="background:rgba(16,185,129,0.16); color:#10b981; border:1px solid rgba(16,185,129,0.4); padding:5px 12px; border-radius:20px; font-size:12px; font-weight:800;">🟢 Ready: ${readyCount}</span>
-        ${missingCount > 0 ? `<span style="background:rgba(239,68,68,0.18); color:#ef4444; border:1px solid rgba(239,68,68,0.45); padding:5px 12px; border-radius:20px; font-size:12px; font-weight:800;">⚠️ Needs Answer/Option: ${missingCount}</span>` : `<span style="background:rgba(168,85,247,0.18); color:#c084fc; border:1px solid rgba(168,85,247,0.45); padding:5px 12px; border-radius:20px; font-size:12px; font-weight:800;">✨ 100% Verified</span>`}
+        ${missingCount > 0 ? `<span style="background:rgba(239,68,68,0.18); color:#ef4444; border:1px solid rgba(239,68,68,0.45); padding:5px 12px; border-radius:20px; font-size:12px; font-weight:800;">⚠️ Needs Manual Check: ${missingCount}</span>` : `<span style="background:rgba(168,85,247,0.18); color:#c084fc; border:1px solid rgba(168,85,247,0.45); padding:5px 12px; border-radius:20px; font-size:12px; font-weight:800;">✨ All Answers Auto-Detected &amp; Verified</span>`}
     `;
     if (uploadBtn) {
         uploadBtn.innerText = `☁️ Upload All ${total} Question${total === 1 ? '' : 's'} Now (1-Click)`;
@@ -3285,10 +3378,12 @@ function refreshSingleBulkCardPreview(idx) {
         statusBadge.style.background = ready ? 'rgba(16,185,129,0.16)' : 'rgba(239,68,68,0.18)';
         statusBadge.style.color = ready ? '#10b981' : '#ef4444';
         statusBadge.style.borderColor = ready ? 'rgba(16,185,129,0.4)' : 'rgba(239,68,68,0.45)';
-        statusBadge.innerHTML = ready ? '🟢 Verified &amp; Ready' : '⚠️ Select Correct Option / Fill Options';
+        statusBadge.innerHTML = ready
+            ? `🟢 Correct Option Auto-Filled: (${item.correctAnswers.join(', ')})`
+            : '⚠️ Click A / B / C / D below to select Correct Answer';
     }
     if (cardEl) {
-        cardEl.style.borderColor = ready ? 'rgba(56,189,248,0.3)' : 'rgba(239,68,68,0.6)';
+        cardEl.style.borderColor = ready ? 'rgba(56,189,248,0.35)' : 'rgba(239,68,68,0.65)';
     }
 
     if (prevEl) {
@@ -3297,7 +3392,7 @@ function refreshSingleBulkCardPreview(idx) {
         const expHtml = formatMultilineTextToHtml(item.explanation);
         prevEl.innerHTML = `
             <div style="font-size:10.5px; font-weight:800; color:var(--primary-yellow); text-transform:uppercase; margin-bottom:6px;">👁️ Live Student Preview (#${idx + 1})</div>
-            ${qHtml ? `<div style="margin-bottom:8px; line-height:1.65; color:#fff;"><b>Q${idx + 1}:</b>${qHtml}</div>` : ''}
+            ${qHtml ? `<div style="margin-bottom:8px; line-height:1.65; color:#fff;"><b>Q${idx + 1}:</b> ${qHtml}</div>` : ''}
             ${item.questionImagePreviewUrl ? `<div class="mcq-question-text-img-wrap"><img src="${item.questionImagePreviewUrl}" style="max-height:160px;"></div>` : ''}
             ${tblHtml}
             ${item.diagramPreviewUrl ? `<div class="mcq-diagram-card ${item.diagramBgMode === 'dark' ? 'bg-dark' : 'bg-light'}"><img src="${item.diagramPreviewUrl}" style="max-height:160px;">${item.diagramCaption ? `<div class="mcq-diagram-caption">📐 ${item.diagramCaption}</div>` : ''}</div>` : ''}
@@ -3315,7 +3410,7 @@ function refreshSingleBulkCardPreview(idx) {
                     { left: '$$', right: '$$', display: true },
                     { left: '$', right: '$', display: false },
                     { left: '\\(', right: '\\)', display: false },
-                    { left: '[', right: ']', display: true }
+                    { left: '\\[', right: '\\]', display: true }
                 ],
                 throwOnError: false
             });
@@ -3343,7 +3438,7 @@ function toggleBulkItemCorrectAns(idx, letter, checked) {
     } else if (!checked) {
         item.correctAnswers = item.correctAnswers.filter(x => x !== letter);
     }
-    refreshSingleBulkCardPreview(idx);
+    renderAdminBulkStagingQueue();
 }
 
 function toggleBulkCardExtraTools(idx) {
@@ -3570,16 +3665,17 @@ function renderAdminBulkStagingQueue() {
         }
 
         return `
-            <div id="bulkStagedCard_${idx}" style="background:#0d121f; border:1.5px solid ${ready ? 'rgba(56,189,248,0.3)' : 'rgba(239,68,68,0.6)'}; border-radius:12px; padding:14px; transition:0.2s;">
+            <div id="bulkStagedCard_${idx}" style="background:#0d121f; border:1.5px solid ${ready ? 'rgba(56,189,248,0.35)' : 'rgba(239,68,68,0.65)'}; border-radius:12px; padding:14px; transition:0.2s;">
                 <!-- Card Header -->
                 <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:10px; padding-bottom:8px; border-bottom:1px solid #1e293b;">
                     <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
                         <span style="background:var(--primary-yellow); color:#000; font-weight:900; font-size:12px; padding:3px 10px; border-radius:6px;">Q #${idx + 1}</span>
                         <span id="bulkCardStatusBadge_${idx}" style="background:${ready ? 'rgba(16,185,129,0.16)' : 'rgba(239,68,68,0.18)'}; color:${ready ? '#10b981' : '#ef4444'}; border:1px solid ${ready ? 'rgba(16,185,129,0.4)' : 'rgba(239,68,68,0.45)'}; padding:3px 10px; border-radius:20px; font-size:11px; font-weight:800;">
-                            ${ready ? '🟢 Verified &amp; Ready' : '⚠️ Select Correct Option / Fill Options'}
+                            ${ready ? `🟢 Correct Option Auto-Filled: (${item.correctAnswers.join(', ')})` : '⚠️ Click A / B / C / D below to select Correct Answer'}
                         </span>
                     </div>
                     <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                        <button type="button" onclick="loadBulkCardIntoMainSingleForm(${idx})" style="background:rgba(56,189,248,0.15); color:#38bdf8; border:1px solid rgba(56,189,248,0.4); border-radius:6px; padding:5px 10px; font-size:11px; font-weight:700; cursor:pointer;" title="Load this question into the main form below for full editing">⬆️ Edit in Main Form</button>
                         <button type="button" onclick="toggleBulkCardExtraTools(${idx})" style="background:rgba(168,85,247,0.15); color:#c084fc; border:1px solid rgba(168,85,247,0.4); border-radius:6px; padding:5px 10px; font-size:11px; font-weight:700; cursor:pointer;">
                             🖼️ + Image / Diagram / Match Table ${(item.questionImageBlob || item.diagramBlob || item.explanationImageBlob || mt.enabled) ? '●' : ''}
                         </button>
@@ -3593,13 +3689,13 @@ function renderAdminBulkStagingQueue() {
                     </div>
                 </div>
 
-                <!-- Question Text -->
+                <!-- Editable Question Text -->
+                <div style="font-size:11px; color:#94a3b8; margin-bottom:4px; font-weight:700;">✏️ Edit Question Text Manually (if needed):</div>
                 <textarea class="input-field" style="min-height:68px; font-size:13.5px; margin-bottom:8px;" placeholder="Question #${idx + 1} text (or paste screenshot with Ctrl+V)..." onfocus="setLastFocusedFormulaInput(this)" oninput="updateBulkItemField(${idx}, 'question', this.value)" onpaste="handleBulkCardPasteImage(event, ${idx}, 'QUESTION')">${item.question}</textarea>
 
                 <!-- Expandable Media & Match Table Drawer per Question -->
                 <div id="bulkCardToolsDrawer_${idx}" style="display:${item.showTools ? 'block' : 'none'}; background:#111729; border:1px dashed #334155; border-radius:10px; padding:12px; margin-bottom:10px;">
                     <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(210px, 1fr)); gap:10px;">
-                        <!-- Question Image Slot -->
                         <div style="background:#0b0f19; border:1px solid rgba(56,189,248,0.35); border-radius:8px; padding:9px;" onpaste="handleBulkCardPasteImage(event, ${idx}, 'QUESTION')">
                             <div style="font-size:11.5px; font-weight:800; color:#38bdf8; margin-bottom:6px;">📸 Question Image / Screenshot</div>
                             <div style="display:flex; gap:6px; flex-wrap:wrap;">
@@ -3610,7 +3706,6 @@ function renderAdminBulkStagingQueue() {
                             </div>
                         </div>
 
-                        <!-- Dedicated Diagram Slot -->
                         <div style="background:#0b0f19; border:1px solid rgba(253,184,19,0.35); border-radius:8px; padding:9px;" onpaste="handleBulkCardPasteImage(event, ${idx}, 'DIAGRAM')">
                             <div style="font-size:11.5px; font-weight:800; color:#fdb813; margin-bottom:6px;">📐 Dedicated Diagram / Circuit</div>
                             <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:6px;">
@@ -3628,7 +3723,6 @@ function renderAdminBulkStagingQueue() {
                             </div>
                         </div>
 
-                        <!-- Explanation Image Slot -->
                         <div style="background:#0b0f19; border:1px solid rgba(16,185,129,0.35); border-radius:8px; padding:9px;" onpaste="handleBulkCardPasteImage(event, ${idx}, 'EXPLANATION')">
                             <div style="font-size:11.5px; font-weight:800; color:#10b981; margin-bottom:6px;">🖼️ Explanation Solution Image</div>
                             <div style="display:flex; gap:6px; flex-wrap:wrap;">
@@ -3649,21 +3743,22 @@ function renderAdminBulkStagingQueue() {
                     </div>
                 </div>
 
-                <!-- Options A, B, C, D + Correct Answer Checkboxes -->
+                <!-- Editable Options A, B, C, D + Auto-Checked Correct Answer Checkboxes -->
+                <div style="font-size:11px; color:#94a3b8; margin-bottom:4px; font-weight:700;">✅ Options &amp; Auto-Detected Correct Answer (Click checkbox A/B/C/D or edit option text anytime):</div>
                 <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:8px;">
                     ${['A', 'B', 'C', 'D'].map(letter => `
-                        <div style="display:flex; align-items:center; gap:6px; background:#13192a; border:1px solid ${item.correctAnswers.includes(letter) ? '#10b981' : '#263147'}; border-radius:8px; padding:4px 8px;">
-                            <label style="display:flex; align-items:center; gap:4px; cursor:pointer; font-weight:800; font-size:12.5px; color:${item.correctAnswers.includes(letter) ? '#10b981' : '#94a3b8'}; user-select:none;" title="Mark ${letter} as Correct Answer">
-                                <input type="checkbox" ${item.correctAnswers.includes(letter) ? 'checked' : ''} onchange="toggleBulkItemCorrectAns(${idx}, '${letter}', this.checked)" style="accent-color:#10b981; width:15px; height:15px; cursor:pointer;">
+                        <div style="display:flex; align-items:center; gap:6px; background:${item.correctAnswers.includes(letter) ? 'rgba(16,185,129,0.12)' : '#13192a'}; border:1.5px solid ${item.correctAnswers.includes(letter) ? '#10b981' : '#263147'}; border-radius:8px; padding:4px 8px;">
+                            <label style="display:flex; align-items:center; gap:5px; cursor:pointer; font-weight:900; font-size:13px; color:${item.correctAnswers.includes(letter) ? '#10b981' : '#94a3b8'}; user-select:none;" title="Mark ${letter} as Correct Answer">
+                                <input type="checkbox" ${item.correctAnswers.includes(letter) ? 'checked' : ''} onchange="toggleBulkItemCorrectAns(${idx}, '${letter}', this.checked)" style="accent-color:#10b981; width:16px; height:16px; cursor:pointer;">
                                 ${letter}
                             </label>
-                            <input type="text" class="input-field" value="${escAttr(item.options[letter])}" placeholder="Option ${letter}" onfocus="setLastFocusedFormulaInput(this)" oninput="updateBulkItemField(${idx}, '${letter}', this.value)" style="margin:0; border:none; background:transparent; padding:5px 4px; font-size:13px;">
+                            <input type="text" class="input-field" value="${escAttr(item.options[letter])}" placeholder="Option ${letter}" onfocus="setLastFocusedFormulaInput(this)" oninput="updateBulkItemField(${idx}, '${letter}', this.value)" style="margin:0; border:none; background:transparent; padding:5px 4px; font-size:13px; color:#fff;">
                         </div>
                     `).join('')}
                 </div>
 
-                <!-- Explanation -->
-                <textarea class="input-field" style="min-height:48px; font-size:12.5px; margin-bottom:8px;" placeholder="Explanation (Optional — or press Ctrl+V to paste solution screenshot)..." onfocus="setLastFocusedFormulaInput(this)" oninput="updateBulkItemField(${idx}, 'explanation', this.value)" onpaste="handleBulkCardPasteImage(event, ${idx}, 'EXPLANATION')">${item.explanation}</textarea>
+                <!-- Editable Explanation -->
+                <textarea class="input-field" style="min-height:48px; font-size:12.5px; margin-bottom:8px;" placeholder="Explanation (Optional — edit text or press Ctrl+V to paste solution screenshot)..." onfocus="setLastFocusedFormulaInput(this)" oninput="updateBulkItemField(${idx}, 'explanation', this.value)" onpaste="handleBulkCardPasteImage(event, ${idx}, 'EXPLANATION')">${item.explanation}</textarea>
 
                 <!-- Live Student Preview per Card -->
                 <div id="bulkCardLivePreview_${idx}" style="background:#080c15; border:1px solid rgba(253,184,19,0.28); border-radius:8px; padding:10px 12px; font-size:13px;"></div>
@@ -3674,7 +3769,6 @@ function renderAdminBulkStagingQueue() {
     adminBulkStagedQuestions.forEach((_, idx) => refreshSingleBulkCardPreview(idx));
 }
 
-// 1-Click Batch Uploader: Uploads all staged questions (including any attached images/diagrams/tables) to Firestore
 async function uploadAllBulkStagedMCQs() {
     if (!adminBulkStagedQuestions.length) return showNotification('⚠️ No questions in the bulk queue.');
     const targetPath = adminSelectedPath.join(' > ');
@@ -3684,7 +3778,7 @@ async function uploadAllBulkStagedMCQs() {
     if (incompleteIdx !== -1) {
         const card = document.getElementById(`bulkStagedCard_${incompleteIdx}`);
         if (card) card.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        return alert(`⚠️ Question #${incompleteIdx + 1} is missing a Correct Answer or Option A/B. Please check the highlighted card (#${incompleteIdx + 1}) before uploading!`);
+        return alert(`⚠️ Question #${incompleteIdx + 1} is missing a Correct Answer or Option A/B. Please check card #${incompleteIdx + 1} and tick its Correct Answer checkbox before uploading!`);
     }
 
     const btn = document.getElementById('btnUploadAllBulkMCQs');
@@ -3772,7 +3866,6 @@ async function uploadAllBulkStagedMCQs() {
             });
         }
 
-        // Save all prepared MCQs in atomic Firestore batches (preserves exact order)
         const nowMs = Date.now();
         for (let i = 0; i < preparedDocs.length; i += 400) {
             const batch = db.batch();
@@ -4099,7 +4192,7 @@ function updateAdminLiveFormulaPreview() {
                 { left: '$$', right: '$$', display: true },
                 { left: '$', right: '$', display: false },
                 { left: '\\(', right: '\\)', display: false },
-                { left: '[', right: ']', display: true }
+                { left: '\\[', right: '\\]', display: true }
             ],
             throwOnError: false
         });
@@ -4285,23 +4378,45 @@ async function generateAutoMixedQuestionsForSubtopic() {
     if (btn) { btn.innerText = '🎲 Auto-Combine & Shuffle into Mixed Level'; btn.disabled = false; }
 }
 
-const _origHandleAdminPathChange = handleAdminPathChange;
-handleAdminPathChange = function(event, depth) {
-    _origHandleAdminPathChange(event, depth);
-    setTimeout(refreshAutoMixAvailableCounts, 80);
-};
+if (!window._origHandleAdminPathChangeWrapped) {
+    window._origHandleAdminPathChangeWrapped = handleAdminPathChange;
+    handleAdminPathChange = function(event, depth) {
+        window._origHandleAdminPathChangeWrapped(event, depth);
+        setTimeout(refreshAutoMixAvailableCounts, 80);
+    };
+}
 
-const _origClearAdminUploadForm = clearAdminUploadForm;
-clearAdminUploadForm = function(isSmartClear = false) {
-    _origClearAdminUploadForm(isSmartClear);
-    clearUniversalImageSlot('QUESTION');
-    clearUniversalImageSlot('DIAGRAM');
-    clearUniversalImageSlot('EXPLANATION');
-    const tblCb = document.getElementById('admEnableMatchTable');
-    if (tblCb) tblCb.checked = false;
-    toggleAdminMatchTableBuilder(false);
-    updateAdminLiveFormulaPreview();
-};
+if (!window._origClearAdminUploadFormWrapped) {
+    window._origClearAdminUploadFormWrapped = clearAdminUploadForm;
+    clearAdminUploadForm = function(isSmartClear = false) {
+        window._origClearAdminUploadFormWrapped(isSmartClear);
+        clearUniversalImageSlot('QUESTION');
+        clearUniversalImageSlot('DIAGRAM');
+        clearUniversalImageSlot('EXPLANATION');
+        const tblCb = document.getElementById('admEnableMatchTable');
+        if (tblCb) tblCb.checked = false;
+        toggleAdminMatchTableBuilder(false);
+        updateAdminLiveFormulaPreview();
+    };
+}
+
+// Self-Healing Guard: Ensures refreshing #/admin-panel never leaves a blank screen
+(function ensureAdminPanelRendersOnRefresh() {
+    function checkAndRenderAdmin() {
+        if (window.location.hash === '#/admin-panel') {
+            const dyn = document.getElementById('dynamic-content');
+            if (dyn && !dyn.innerHTML.trim() && typeof _renderAdminPanel === 'function') {
+                _renderAdminPanel();
+            }
+        }
+    }
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => setTimeout(checkAndRenderAdmin, 150));
+    } else {
+        setTimeout(checkAndRenderAdmin, 150);
+    }
+    window.addEventListener('load', () => setTimeout(checkAndRenderAdmin, 300));
+})();
 
 async function processAdminUpload() {
     const type = document.getElementById('admResourceType').value;
@@ -4358,7 +4473,6 @@ async function processAdminUpload() {
                 explanationImageUrl = await uploadFileToCloudinary(expImgFile);
             }
 
-            // Assemble Question HTML: Multi-Line Question Text -> Question Image -> Match-the-Column Table -> Dedicated Diagram
             let finalQuestionHtml = questionTextFormatted;
             if (questionImageUrl) {
                 const safeQUrl = questionImageUrl.replace(/'/g, "\\'");
@@ -4379,7 +4493,6 @@ async function processAdminUpload() {
                 finalQuestionHtml = `${finalQuestionHtml}${diagBlock}`;
             }
 
-            // Assemble Explanation HTML: Multi-Line Explanation Text + Explanation Image/Screenshot
             let finalExplanationHtml = explanationTextFormatted;
             if (explanationImageUrl) {
                 const safeEUrl = explanationImageUrl.replace(/'/g, "\\'");
