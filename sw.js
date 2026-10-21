@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mcqsprep-cache-v59';
+const CACHE_NAME = 'mcqsprep-cache-v60';
 const ASSETS = [
   '/',
   '/index.html',
@@ -42,15 +42,33 @@ self.addEventListener('fetch', (event) => {
     if (event.request.mode === 'navigate') {
         event.respondWith(
             caches.open(CACHE_NAME).then(async (cache) => {
-                const cachedIndex = await cache.match('/index.html', { ignoreSearch: true }) || await cache.match('/', { ignoreSearch: true });
-                const networkFetch = fetch(event.request).then((networkResponse) => {
+                try {
+                    const networkResponse = await fetch(event.request);
                     if (networkResponse && networkResponse.status === 200) {
                         cache.put('/index.html', networkResponse.clone());
                     }
                     return networkResponse;
-                }).catch(() => cachedIndex);
+                } catch (err) {
+                    return (await cache.match('/index.html', { ignoreSearch: true })) || (await cache.match('/', { ignoreSearch: true }));
+                }
+            })
+        );
+        return;
+    }
 
-                return cachedIndex || networkFetch;
+    // Network-First for local JS, CSS, and HTML so code updates appear immediately without stale cache issues
+    if (url.includes('/js/') || url.includes('/style.css') || url.endsWith('/index.html')) {
+        event.respondWith(
+            caches.open(CACHE_NAME).then(async (cache) => {
+                try {
+                    const networkResponse = await fetch(event.request);
+                    if (networkResponse && networkResponse.status === 200) {
+                        cache.put(event.request, networkResponse.clone());
+                    }
+                    return networkResponse;
+                } catch (err) {
+                    return await cache.match(event.request, { ignoreSearch: true });
+                }
             })
         );
         return;
