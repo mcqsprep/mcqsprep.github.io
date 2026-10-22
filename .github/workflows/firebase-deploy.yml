@@ -5,6 +5,14 @@ on:
     branches:
       - main
 
+concurrency:
+  group: firebase-live-deploy
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  checks: write
+
 jobs:
   build_and_deploy:
     runs-on: ubuntu-latest
@@ -15,7 +23,6 @@ jobs:
       - name: Deploy to Firebase Hosting
         uses: FirebaseExtended/action-hosting-deploy@v0
         with:
-          repoToken: ${{ secrets.GITHUB_TOKEN }}
           firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
           channelId: live
           projectId: mcqsprep
