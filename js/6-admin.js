@@ -4553,16 +4553,15 @@ if (!window._origClearAdminUploadFormWrapped) {
     };
 }
 
-// ==========================================
 // 🚀 STUDENT QUIZ ENGINE UPGRADES (ALL 60+ QUESTIONS, ANYTIME SUBMIT, RESUME VS START NEW EXCLUDING CORRECT)
 // ==========================================
 (function upgradeStudentQuizEngineGlobally() {
-    if (window._studentQuizEngineUpgradedV61) return;
-    window._studentQuizEngineUpgradedV61 = true;
+    if (window._studentQuizEngineUpgradedV62) return;
+    window._studentQuizEngineUpgradedV62 = true;
 
     function getUserProgressStorageKey() {
         const uid = (typeof currentUser !== 'undefined' && currentUser && currentUser.uid) ? currentUser.uid : 'guest';
-        return `mcqsprep_topic_progress_v1_${uid}`;
+        return `mcqsprep_topic_progress_v2_${uid}`;
     }
 
     function readAllTopicsProgressMap() {
@@ -4594,14 +4593,14 @@ if (!window._origClearAdminUploadFormWrapped) {
         return userArr.every(ans => correctArr.includes(ans)) && correctArr.every(ans => userArr.includes(ans));
     }
 
-    // Saves live progress every time a student selects an answer or navigates questions
+    // Saves live progress every time a student selects an answer or moves between questions
     window.saveLiveQuizSessionProgress = function() {
         if (typeof currentQuizPath === 'undefined' || !currentQuizPath || currentQuizPath === 'Daily Quiz Challenge') return;
         if (typeof currentQuestions === 'undefined' || !Array.isArray(currentQuestions) || currentQuestions.length === 0) return;
 
         const map = readAllTopicsProgressMap();
         const rec = map[currentQuizPath] || { correctIds: [], wrongIds: [], skippedIds: [], inProgress: null };
-        const answeredCount = typeof userAnswers !== 'undefined' ? Object.keys(userAnswers).length : 0;
+        const answeredCount = (typeof userAnswers !== 'undefined' && userAnswers) ? Object.keys(userAnswers).length : 0;
 
         if (answeredCount > 0) {
             rec.inProgress = {
@@ -4616,7 +4615,7 @@ if (!window._origClearAdminUploadFormWrapped) {
         }
     };
 
-    // Records final Correct, Wrong, and Skipped question IDs when student submits (anytime or at the end)
+    // Records final Correct, Wrong, and Skipped question IDs when student submits (both per-topic and globally)
     window.recordSubmittedQuizMastery = function() {
         if (typeof currentQuizPath === 'undefined' || !currentQuizPath || currentQuizPath === 'Daily Quiz Challenge') return;
         if (typeof currentQuestions === 'undefined' || !Array.isArray(currentQuestions) || currentQuestions.length === 0) return;
@@ -4645,17 +4644,36 @@ if (!window._origClearAdminUploadFormWrapped) {
                 correctSet.delete(q.id);
                 skippedSet.delete(q.id);
             }
+
+            // Also update the question's home topic path if this was a Custom Practice session
+            if (q.path && q.path !== currentQuizPath) {
+                const subRec = map[q.path] || { correctIds: [], wrongIds: [], skippedIds: [], inProgress: null };
+                const sCorr = new Set(subRec.correctIds || []);
+                const sWrong = new Set(subRec.wrongIds || []);
+                const sSkip = new Set(subRec.skippedIds || []);
+                if (!hasAns) {
+                    if (!sCorr.has(q.id) && !sWrong.has(q.id)) sSkip.add(q.id);
+                } else if (isQuestionAnsweredCorrectly(q, ans)) {
+                    sCorr.add(q.id); sWrong.delete(q.id); sSkip.delete(q.id);
+                } else {
+                    sWrong.add(q.id); sCorr.delete(q.id); sSkip.delete(q.id);
+                }
+                subRec.correctIds = Array.from(sCorr);
+                subRec.wrongIds = Array.from(sWrong);
+                subRec.skippedIds = Array.from(sSkip);
+                map[q.path] = subRec;
+            }
         });
 
         rec.correctIds = Array.from(correctSet);
         rec.wrongIds = Array.from(wrongSet);
         rec.skippedIds = Array.from(skippedSet);
-        rec.inProgress = null; // Clear active in-progress session since it was submitted
+        rec.inProgress = null;
         map[currentQuizPath] = rec;
         writeAllTopicsProgressMap(map);
     };
 
-    // Anytime Submit handler (works on Question 1, Question 20, or any question in MCQ Practice & Custom Practice)
+    // Anytime Submit handler (works under every question in MCQ Practice & Custom Practice)
     window.triggerAnytimeQuizSubmit = function() {
         const total = (typeof currentQuestions !== 'undefined' && Array.isArray(currentQuestions)) ? currentQuestions.length : 0;
         const attempted = (typeof userAnswers !== 'undefined' && userAnswers) ? Object.keys(userAnswers).length : 0;
@@ -4667,11 +4685,11 @@ if (!window._origClearAdminUploadFormWrapped) {
         }
     };
 
-    // Wrap renderQuizInterface to inject the "SUBMIT" button under every question in MCQ Practice & Custom Practice
-    if (typeof renderQuizInterface === 'function' && !window._origRenderQuizInterfaceV61) {
-        window._origRenderQuizInterfaceV61 = renderQuizInterface;
+    // Inject the "✅ SUBMIT (Attempted/Total)" button under every question in MCQ Practice & Custom Practice
+    if (typeof renderQuizInterface === 'function' && !window._origRenderQuizInterfaceV62) {
+        window._origRenderQuizInterfaceV62 = renderQuizInterface;
         renderQuizInterface = function() {
-            window._origRenderQuizInterfaceV61();
+            window._origRenderQuizInterfaceV62();
             window.saveLiveQuizSessionProgress();
 
             const dyn = document.getElementById('dynamic-content');
@@ -4679,7 +4697,6 @@ if (!window._origClearAdminUploadFormWrapped) {
             const total = (typeof currentQuestions !== 'undefined' && Array.isArray(currentQuestions)) ? currentQuestions.length : 0;
             const attempted = (typeof userAnswers !== 'undefined' && userAnswers) ? Object.keys(userAnswers).length : 0;
 
-            // Find the bottom navigation bar containing NEXT / SUBMIT
             const buttons = Array.from(dyn.querySelectorAll('button'));
             const nextOrFinishBtn = buttons.find(b => /NEXT|FINISH|SUBMIT/i.test(b.innerText || '') && !b.classList.contains('btn-anytime-submit'));
             const alreadyHasAnytimeBtn = dyn.querySelector('.btn-anytime-submit');
@@ -4700,25 +4717,22 @@ if (!window._origClearAdminUploadFormWrapped) {
         };
     }
 
-    // Wrap selectOption so the live Submit (Attempted/Total) counter and auto-save update immediately
-    if (typeof selectOption === 'function' && !window._origSelectOptionV61) {
-        window._origSelectOptionV61 = selectOption;
+    if (typeof selectOption === 'function' && !window._origSelectOptionV62) {
+        window._origSelectOptionV62 = selectOption;
         selectOption = function(letter) {
-            window._origSelectOptionV61(letter);
+            window._origSelectOptionV62(letter);
             window.saveLiveQuizSessionProgress();
         };
     }
 
-    // Wrap submitQuiz so mastery (Correct / Wrong / Skipped) is recorded on every submission
-    if (typeof submitQuiz === 'function' && !window._origSubmitQuizV61) {
-        window._origSubmitQuizV61 = submitQuiz;
+    if (typeof submitQuiz === 'function' && !window._origSubmitQuizV62) {
+        window._origSubmitQuizV62 = submitQuiz;
         submitQuiz = async function() {
             window.recordSubmittedQuizMastery();
-            return await window._origSubmitQuizV61();
+            return await window._origSubmitQuizV62();
         };
     }
 
-    // Helper to launch a prepared question list into the quiz engine
     function launchQuizWithQuestionsList(pathString, questionsList, restoredSession = null) {
         currentQuizPath = pathString;
         currentQuestions = questionsList;
@@ -4739,13 +4753,21 @@ if (!window._origClearAdminUploadFormWrapped) {
     }
 
     // Upgrade _initiateQuizEngine:
-    // 1. Removes the 50-question cap (loads all 60, 100, or 300+ questions in the topic)
-    // 2. Detects previous/in-progress attempts and offers "Resume Practice" vs "Start New (Exclude Correct)"
-    if (typeof _initiateQuizEngine === 'function' && !window._origInitiateQuizEngineV61) {
-        window._origInitiateQuizEngineV61 = _initiateQuizEngine;
-        _initiateQuizEngine = async function(pathString) {
-            if (pathString === 'Daily Quiz Challenge') {
-                return await window._origInitiateQuizEngineV61(pathString);
+    // Properly reads currentPath.join(' > ') when called with no arguments, loads all 60+ MCQs, and shows Resume vs Start New (Exclude Correct)
+    if (typeof _initiateQuizEngine === 'function' && !window._origInitiateQuizEngineV62) {
+        window._origInitiateQuizEngineV62 = _initiateQuizEngine;
+        _initiateQuizEngine = async function(optionalPathString) {
+            const isDaily = (Array.isArray(currentPath) && currentPath[0] === 'Daily Quiz Challenge') || optionalPathString === 'Daily Quiz Challenge';
+            if (isDaily) {
+                return await window._origInitiateQuizEngineV62(optionalPathString);
+            }
+
+            const targetPath = (typeof optionalPathString === 'string' && optionalPathString.trim())
+                ? optionalPathString.trim()
+                : (Array.isArray(currentPath) && currentPath.length > 0 ? currentPath.join(' > ') : '');
+
+            if (!targetPath) {
+                return await window._origInitiateQuizEngineV62(optionalPathString);
             }
 
             const dyn = document.getElementById('dynamic-content');
@@ -4754,47 +4776,38 @@ if (!window._origClearAdminUploadFormWrapped) {
             }
 
             try {
-                let snap = await db.collection('content')
-                    .where('path', '==', pathString)
+                // Use range query on targetPath without any 50-question limit so all 60, 100, or 300+ questions load
+                const snap = await db.collection('content')
+                    .where('path', '>=', targetPath)
+                    .where('path', '<=', targetPath + '\uf8ff')
                     .get();
 
-                let allDocs = [];
+                let exactDocs = [];
+                let childDocs = [];
                 snap.forEach(doc => {
                     const d = doc.data();
                     if (!d.type || d.type === 'mcq') {
-                        allDocs.push({ id: doc.id, ...d });
+                        const item = { id: doc.id, ...d };
+                        if (d.path === targetPath) exactDocs.push(item);
+                        else if (String(d.path || '').startsWith(targetPath + ' > ')) childDocs.push(item);
                     }
                 });
 
-                // If parent folder selected, also check child paths
-                if (allDocs.length === 0) {
-                    const childSnap = await db.collection('content')
-                        .where('path', '>=', pathString + ' > ')
-                        .where('path', '<=', pathString + ' > \uf8ff')
-                        .get();
-                    childSnap.forEach(doc => {
-                        const d = doc.data();
-                        if (!d.type || d.type === 'mcq') {
-                            allDocs.push({ id: doc.id, ...d });
-                        }
-                    });
-                }
+                const allDocs = exactDocs.length > 0 ? exactDocs : childDocs;
 
                 if (allDocs.length === 0) {
                     if (dyn) {
-                        dyn.innerHTML = `<div class="card" style="text-align:center; padding:45px 20px;"><h3>No MCQs Uploaded Yet</h3><p style="color:var(--text-muted);">Questions for <b>${pathString}</b> will appear here soon.</p><button class="btn-exam" onclick="window.history.back()" style="margin-top:15px;">&larr; Go Back</button></div>`;
+                        dyn.innerHTML = `<div class="card" style="text-align:center; padding:45px 20px;"><h3>No MCQs Uploaded Yet</h3><p style="color:var(--text-muted);">Questions for <b>${targetPath}</b> will appear here soon.</p><button class="btn-exam" onclick="window.history.back()" style="margin-top:15px;">&larr; Go Back</button></div>`;
                     }
                     return;
                 }
 
-                // Check saved progress for this topic
-                const rec = getTopicProgressRecord(pathString);
+                const rec = getTopicProgressRecord(targetPath);
                 const inProg = rec.inProgress;
                 const savedCorrectSet = new Set(rec.correctIds || []);
                 const savedWrongSet = new Set(rec.wrongIds || []);
                 const savedSkippedSet = new Set(rec.skippedIds || []);
 
-                // Also fold any in-progress answers into temporary sets so "Start New" knows which ones were answered correctly even if user didn't click Submit last time
                 if (inProg && inProg.userAnswers) {
                     allDocs.forEach(q => {
                         const uAns = inProg.userAnswers[q.id];
@@ -4813,20 +4826,16 @@ if (!window._origClearAdminUploadFormWrapped) {
                 const hasPreviousHistory = savedCorrectSet.size > 0 || savedWrongSet.size > 0;
 
                 if (!hasInProgress && !hasPreviousHistory) {
-                    // Fresh topic: load ALL questions (no 50-question limit!)
-                    const shuffledAll = shuffleArrayNonSerial(allDocs);
-                    launchQuizWithQuestionsList(pathString, shuffledAll, null);
+                    launchQuizWithQuestionsList(targetPath, shuffleArrayNonSerial(allDocs), null);
                     return;
                 }
 
-                // Compute pools for "Start New (Exclude Correct)"
                 const wrongAndSkippedAndUnattempted = allDocs.filter(q => !savedCorrectSet.has(q.id));
                 const wrongCount = allDocs.filter(q => savedWrongSet.has(q.id) && !savedCorrectSet.has(q.id)).length;
                 const skippedCount = allDocs.filter(q => savedSkippedSet.has(q.id) && !savedCorrectSet.has(q.id) && !savedWrongSet.has(q.id)).length;
                 const unattemptedCount = Math.max(0, wrongAndSkippedAndUnattempted.length - wrongCount - skippedCount);
                 const inProgAnsweredCount = hasInProgress ? Object.keys(inProg.userAnswers).length : 0;
 
-                // Show Resume Practice vs Start New (Exclude Correct) choice screen
                 if (dyn) {
                     dyn.innerHTML = `
                         <div class="admin-panel-card" style="max-width:640px; margin:35px auto; padding:28px 24px; border:1.5px solid rgba(253,184,19,0.4); background:linear-gradient(145deg, #121624, #0d111d); border-radius:16px; box-shadow:0 15px 40px rgba(0,0,0,0.6);">
@@ -4834,7 +4843,7 @@ if (!window._origClearAdminUploadFormWrapped) {
                                 <span style="font-size:26px;">🎯</span>
                                 <div>
                                     <h2 style="margin:0; font-size:20px; color:#fff;">Welcome Back to This Topic!</h2>
-                                    <div style="font-size:12.5px; color:#94a3b8; margin-top:2px;">${pathString} • Total Questions: <b style="color:#fdb813;">${allDocs.length}</b></div>
+                                    <div style="font-size:12.5px; color:#94a3b8; margin-top:2px;">${targetPath} • Total Questions: <b style="color:#fdb813;">${allDocs.length}</b></div>
                                 </div>
                             </div>
 
@@ -4891,14 +4900,12 @@ if (!window._origClearAdminUploadFormWrapped) {
                         if (hasInProgress && Array.isArray(inProg.questionIds) && inProg.questionIds.length > 0) {
                             const docMap = new Map(allDocs.map(d => [d.id, d]));
                             const ordered = inProg.questionIds.map(id => docMap.get(id)).filter(Boolean);
-                            // Append any newly uploaded questions that weren't in the earlier session
                             const existingSet = new Set(ordered.map(d => d.id));
                             allDocs.forEach(d => { if (!existingSet.has(d.id)) ordered.push(d); });
-                            launchQuizWithQuestionsList(pathString, ordered, inProg);
+                            launchQuizWithQuestionsList(targetPath, ordered, inProg);
                         } else {
-                            // Resume on remaining unattempted/wrong/skipped questions or full list at first unanswered index
                             const pool = wrongAndSkippedAndUnattempted.length > 0 ? wrongAndSkippedAndUnattempted : allDocs;
-                            launchQuizWithQuestionsList(pathString, pool, null);
+                            launchQuizWithQuestionsList(targetPath, pool, null);
                         }
                     };
 
@@ -4906,27 +4913,26 @@ if (!window._origClearAdminUploadFormWrapped) {
                         if (wrongAndSkippedAndUnattempted.length === 0) {
                             alert(`🎉 You have already answered all ${allDocs.length} questions in this topic correctly! Clicking OK will reset history so you can practice all ${allDocs.length} questions again.`);
                             const map = readAllTopicsProgressMap();
-                            delete map[pathString];
+                            delete map[targetPath];
                             writeAllTopicsProgressMap(map);
-                            launchQuizWithQuestionsList(pathString, shuffleArrayNonSerial(allDocs), null);
+                            launchQuizWithQuestionsList(targetPath, shuffleArrayNonSerial(allDocs), null);
                             return;
                         }
-                        // Clear old in-progress session but keep correctIds so they stay excluded
                         const map = readAllTopicsProgressMap();
-                        if (map[pathString]) {
-                            map[pathString].correctIds = Array.from(savedCorrectSet);
-                            map[pathString].wrongIds = Array.from(savedWrongSet);
-                            map[pathString].inProgress = null;
+                        if (map[targetPath]) {
+                            map[targetPath].correctIds = Array.from(savedCorrectSet);
+                            map[targetPath].wrongIds = Array.from(savedWrongSet);
+                            map[targetPath].inProgress = null;
                             writeAllTopicsProgressMap(map);
                         }
-                        launchQuizWithQuestionsList(pathString, shuffleArrayNonSerial(wrongAndSkippedAndUnattempted), null);
+                        launchQuizWithQuestionsList(targetPath, shuffleArrayNonSerial(wrongAndSkippedAndUnattempted), null);
                     };
 
                     document.getElementById('btnResetAllPracticeFresh').onclick = () => {
                         const map = readAllTopicsProgressMap();
-                        delete map[pathString];
+                        delete map[targetPath];
                         writeAllTopicsProgressMap(map);
-                        launchQuizWithQuestionsList(pathString, shuffleArrayNonSerial(allDocs), null);
+                        launchQuizWithQuestionsList(targetPath, shuffleArrayNonSerial(allDocs), null);
                     };
                 }
             } catch (err) {
