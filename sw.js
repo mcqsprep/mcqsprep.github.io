@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mcqsprep-cache-v62';
+const CACHE_NAME = 'mcqsprep-cache-v63';
 const ASSETS = [
   '/',
   '/index.html',
