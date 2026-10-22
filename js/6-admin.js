@@ -2527,9 +2527,9 @@ async function uploadFileToCloudinary(file) {
 }
 
 // ==========================================
-// FORMULA TOOLBAR, BULK SMART PARSER, SCREENSHOT PASTE, MATCH TABLE, DIAGRAM & AUTO-MIXED ENGINE
+// FORMULA TOOLBAR, BULK SMART PARSER, UNIVERSAL MATCH-TABLE DETECTOR & QUIZ ENGINE UPGRADES
 // ==========================================
-(function injectStudentDiagramTableAndQuestionImgStyles() {
+(function injectStudentDiagramTableAndQuizUpgradeStyles() {
     if (document.getElementById('mcqs-diagram-qimg-styles')) return;
     const st = document.createElement('style');
     st.id = 'mcqs-diagram-qimg-styles';
@@ -2637,6 +2637,18 @@ async function uploadFileToCloudinary(file) {
         }
         .mcq-match-table tr:last-child td {
             border-bottom: none;
+        }
+        .btn-anytime-submit {
+            background: linear-gradient(135deg, #10b981, #059669) !important;
+            color: #ffffff !important;
+            border: 1px solid rgba(16, 185, 129, 0.6) !important;
+            font-weight: 800 !important;
+            box-shadow: 0 4px 14px rgba(16, 185, 129, 0.28);
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+        .btn-anytime-submit:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 18px rgba(16, 185, 129, 0.4);
         }
     `;
     document.head.appendChild(st);
@@ -2805,23 +2817,18 @@ function extractStyledTextFromClipboardHtml(htmlStr, plainFallback, preserveLine
 
         doc.querySelectorAll('script, style, button, svg, sup.citation, a[href*="pdf"]').forEach(el => el.remove());
 
+        // Convert HTML <table> into pipe format so our Universal Match-Column Detector turns it into an editable Match Table!
         doc.querySelectorAll('table').forEach(tbl => {
             const rows = Array.from(tbl.querySelectorAll('tr'));
             if (!rows.length) return;
-            let theadHtml = '';
-            let tbodyHtml = '';
-            rows.forEach((tr, rIdx) => {
+            let mdRows = [];
+            rows.forEach((tr) => {
                 const cells = Array.from(tr.querySelectorAll('th, td'));
                 if (!cells.length) return;
-                const isHeader = (rIdx === 0 && (tr.querySelector('th') || /column|list|group|item/i.test(tr.textContent || '')));
-                if (isHeader && !theadHtml) {
-                    theadHtml = `<tr>${cells.map(c => `<th>${(c.innerHTML || '').replace(/<\/?(?:p|div)[^>]*>/gi, ' ').trim()}</th>`).join('')}</tr>`;
-                } else {
-                    tbodyHtml += `<tr>${cells.map(c => `<td>${formatCellWithBoldPrefix((c.innerHTML || '').replace(/<\/?(?:p|div)[^>]*>/gi, ' ').trim())}</td>`).join('')}</tr>`;
-                }
+                const rowStr = '| ' + cells.map(c => (c.innerHTML || '').replace(/<\/?(?:p|div|br)[^>]*>/gi, ' ').replace(/\s+/g, ' ').trim()).join(' | ') + ' |';
+                mdRows.push(rowStr);
             });
-            const tableWrapperHtml = `\n<div class="mcq-match-table-wrap"><table class="mcq-match-table">${theadHtml ? `<thead>${theadHtml}</thead>` : ''}<tbody>${tbodyHtml}</tbody></table></div>\n`;
-            const textMarker = doc.createTextNode(tableWrapperHtml);
+            const textMarker = doc.createTextNode('\n' + mdRows.join('\n') + '\n');
             tbl.parentNode.replaceChild(textMarker, tbl);
         });
 
@@ -2975,79 +2982,208 @@ function extractStyledTextFromClipboardHtml(htmlStr, plainFallback, preserveLine
 })();
 
 // ==========================================
-// 📚 200% ACCURATE MULTI-QUESTION BULK PARSER, AUTO-ANSWER DETECTOR & MANUAL EDITOR
+// 📊 UNIVERSAL MATCH-THE-COLUMN AUTO-DETECTOR (ANY TEXT/TABLE STYLE -> STRUCTURED TABLE)
+// ==========================================
+function autoExtractUniversalMatchTableFromQuestionStem(rawQuestionStem) {
+    let text = String(rawQuestionStem || '').replace(/\r\n?/g, '\n').trim();
+    if (!text) return { cleanQuestion: '', matchTable: null };
+
+    const makeTableObj = (headers, rowsArr) => {
+        const numCols = Math.min(5, Math.max(2, headers.length || 2));
+        const numRows = Math.min(10, Math.max(2, rowsArr.length));
+        const paddedHeaders = ['Column I', 'Column II', 'Column III', 'Column IV', 'Column V'];
+        for (let c = 0; c < numCols; c++) {
+            if (headers[c] && headers[c].trim()) paddedHeaders[c] = headers[c].trim();
+        }
+        const paddedCells = [];
+        for (let r = 0; r < Math.max(6, numRows); r++) {
+            const row = ['', '', '', '', ''];
+            if (rowsArr[r]) {
+                for (let c = 0; c < numCols; c++) {
+                    row[c] = (rowsArr[r][c] || '').trim();
+                }
+            }
+            paddedCells.push(row);
+        }
+        return {
+            enabled: true,
+            rows: numRows,
+            cols: numCols,
+            headers: paddedHeaders,
+            cells: paddedCells
+        };
+    };
+
+    // 1. Check for Markdown Pipe Table: | Column I | Column II |
+    const lines = text.split('\n');
+    let pipeStart = -1, pipeEnd = -1;
+    for (let i = 0; i < lines.length; i++) {
+        const t = lines[i].trim();
+        if (t.startsWith('|') && t.endsWith('|') && t.split('|').length >= 4) {
+            if (pipeStart === -1) pipeStart = i;
+            pipeEnd = i;
+        } else if (pipeStart !== -1) {
+            break;
+        }
+    }
+    if (pipeStart !== -1 && (pipeEnd - pipeStart + 1) >= 2) {
+        const pipeLines = lines.slice(pipeStart, pipeEnd + 1).map(l => l.trim()).filter(l => !/^\|[\s\-:|]+\|$/.test(l));
+        if (pipeLines.length >= 2) {
+            const firstRow = pipeLines[0].slice(1, -1).split('|').map(c => c.trim());
+            const isHeader = /column|list|group|item|part|feature|organism|phylum|order|family|class|term|function/i.test(firstRow.join(' '));
+            const headers = isHeader ? firstRow : ['Column I', 'Column II'];
+            const dataLines = isHeader ? pipeLines.slice(1) : pipeLines;
+            const rowsArr = dataLines.map(l => l.slice(1, -1).split('|').map(c => c.trim()));
+            if (rowsArr.length >= 2) {
+                const cleanQ = [...lines.slice(0, pipeStart), ...lines.slice(pipeEnd + 1)].join('\n').trim();
+                return { cleanQuestion: cleanQ || 'Match the columns and select the correct option:', matchTable: makeTableObj(headers, rowsArr) };
+            }
+        }
+    }
+
+    // 2. Check for Side-by-Side Lines (Tab, 2+ Spaces, or Inline Right-Marker like "a. Primata   i. Anacardiaceae" or "(a) Primata - (i) Anacardiaceae")
+    const leftMarkerStr = '(?:\\(?[a-fA-FP-Up-u1-6][\\.\\)]\\s+)';
+    const rightMarkerStr = '(?:\\(?(:?i|ii|iii|iv|v|vi|I|II|III|IV|V|VI|1|2|3|4|5|6|p|q|r|s|P|Q|R|S)[\\.\\)]\\s+)';
+    const sideBySideLineRegex = new RegExp(`^\\s*(${leftMarkerStr}.+?)\\s*(?:\\t|\\s{2,}|\\s+[–—\\-]\\s+)(${rightMarkerStr}.+)$`, 'i');
+    const inlineRomanSplitRegex = new RegExp(`^\\s*(${leftMarkerStr}.+?)\\s+(\\(?(:?i|ii|iii|iv|v|vi|I|II|III|IV|V|VI)[\\.\\)]\\s+.+)$`);
+
+    let sbsIndices = [];
+    let sbsPairs = [];
+    for (let i = 0; i < lines.length; i++) {
+        const ln = lines[i].trim();
+        let m = ln.match(sideBySideLineRegex) || ln.match(inlineRomanSplitRegex);
+        if (m) {
+            sbsIndices.push(i);
+            sbsPairs.push([m[1].trim(), m[2].trim()]);
+        }
+    }
+    if (sbsPairs.length >= 2) {
+        let headers = ['Column I', 'Column II'];
+        const firstIdx = sbsIndices[0];
+        const removeSet = new Set(sbsIndices);
+        if (firstIdx > 0) {
+            const prevLine = lines[firstIdx - 1].trim();
+            const hdrMatch = prevLine.match(/^((?:Column|List|Group|Part)\s*[\-I1A]+\b[^\t]*?)(?:\t|\s{2,}|\s+\/\s+|\s+and\s+)((?:Column|List|Group|Part)\s*[\-II2B]+\b.*)$/i);
+            if (hdrMatch) {
+                headers = [hdrMatch[1].trim(), hdrMatch[2].trim()];
+                removeSet.add(firstIdx - 1);
+            }
+        }
+        const cleanQ = lines.filter((_, idx) => !removeSet.has(idx)).join('\n').trim();
+        return { cleanQuestion: cleanQ || 'Match the following columns:', matchTable: makeTableObj(headers, sbsPairs) };
+    }
+
+    // 3. Check for Stacked / Sequential Blocks (e.g. Column I followed by a, b, c, d then Column II followed by i, ii, iii, iv)
+    const colHeaderLineRegex = /^\s*(?:<b>|<I>)?\s*((?:Column|List|Group)\s*[\-\s]*(?:I|II|1|2|A|B)(?:\s*\([^)]+\))?)\s*(?:<\/b>|<\/I>)?\s*:?\s*$/i;
+    const leftItemStartRegex = /^\s*(\(?[a-fA-FP-Up-u][\.\)]|\([1-6]\))\s+(.+)$/;
+    const rightItemStartRegex = /^\s*(\(?(?:i|ii|iii|iv|v|vi|I|II|III|IV|V|VI|1|2|3|4|5|6|p|q|r|s)[\.\)])\s+(.+)$/;
+
+    let colHeadersFound = [];
+    let leftItems = [];
+    let rightItems = [];
+    let usedLineIndices = new Set();
+    let mode = 'NONE'; // 'LEFT' | 'RIGHT'
+
+    for (let i = 0; i < lines.length; i++) {
+        const ln = lines[i].trim();
+        if (!ln) continue;
+
+        const hdrM = ln.match(colHeaderLineRegex);
+        if (hdrM) {
+            colHeadersFound.push(hdrM[1].trim());
+            usedLineIndices.add(i);
+            mode = colHeadersFound.length === 1 ? 'LEFT' : 'RIGHT';
+            continue;
+        }
+
+        const isLeft = leftItemStartRegex.test(ln);
+        const isRight = rightItemStartRegex.test(ln);
+
+        if (mode === 'LEFT' && isLeft) {
+            leftItems.push(ln);
+            usedLineIndices.add(i);
+        } else if ((mode === 'LEFT' || mode === 'RIGHT') && isRight && leftItems.length >= 2) {
+            mode = 'RIGHT';
+            rightItems.push(ln);
+            usedLineIndices.add(i);
+        } else if (mode === 'NONE' && isLeft) {
+            // Stacked items even without explicit "Column I" header line
+            leftItems.push(ln);
+            usedLineIndices.add(i);
+            mode = 'LEFT';
+        } else if (mode === 'LEFT' && !isLeft && !isRight && leftItems.length < 2) {
+            // Reset if it was a false start
+            leftItems = [];
+            usedLineIndices.clear();
+            mode = 'NONE';
+        }
+    }
+
+    if (leftItems.length >= 2 && rightItems.length >= 2 && Math.abs(leftItems.length - rightItems.length) <= 2) {
+        const rowCount = Math.max(leftItems.length, rightItems.length);
+        const pairedRows = [];
+        for (let r = 0; r < rowCount; r++) {
+            pairedRows.push([leftItems[r] || '', rightItems[r] || '']);
+        }
+        const headers = [
+            colHeadersFound[0] || 'Column I',
+            colHeadersFound[1] || 'Column II'
+        ];
+        const cleanQ = lines.filter((_, idx) => !usedLineIndices.has(idx)).join('\n').trim();
+        return { cleanQuestion: cleanQ || 'Match Column I with Column II:', matchTable: makeTableObj(headers, pairedRows) };
+    }
+
+    return { cleanQuestion: text, matchTable: null };
+}
+
+// ==========================================
+// 📚 200% ACCURATE MULTI-QUESTION BULK PARSER (SUPPORTS 60 to 250+ QUESTIONS AT ONCE)
 // ==========================================
 var adminBulkStagedQuestions = [];
 
-function convertMarkdownPipeTablesInText(text) {
-    if (!text || !text.includes('|')) return text;
-    const lines = text.split('\n');
-    let out = [];
-    let i = 0;
-
-    while (i < lines.length) {
-        const line = lines[i].trim();
-        if (line.startsWith('|') && line.endsWith('|') && line.split('|').length >= 4) {
-            let tableLines = [];
-            while (i < lines.length && lines[i].trim().startsWith('|') && lines[i].trim().endsWith('|')) {
-                tableLines.push(lines[i].trim());
-                i++;
-            }
-            if (tableLines.length >= 2) {
-                const validRows = tableLines.filter(r => !/^\|[\s\-:|]+\|$/.test(r));
-                if (validRows.length >= 2) {
-                    const headerCells = validRows[0].slice(1, -1).split('|').map(c => c.trim());
-                    const theadHtml = `<tr>${headerCells.map(h => `<th>${h}</th>`).join('')}</tr>`;
-                    const tbodyHtml = validRows.slice(1).map(r => {
-                        const cells = r.slice(1, -1).split('|').map(c => formatCellWithBoldPrefix(c.trim()));
-                        return `<tr>${cells.map(c => `<td>${c}</td>`).join('')}</tr>`;
-                    }).join('');
-                    out.push(`<div class="mcq-match-table-wrap"><table class="mcq-match-table"><thead>${theadHtml}</thead><tbody>${tbodyHtml}</tbody></table></div>`);
-                    continue;
-                }
-            }
-            out.push(...tableLines);
-        } else {
-            out.push(lines[i]);
-            i++;
-        }
-    }
-    return out.join('\n');
-}
-
 function splitRawTextIntoMCQBlocks(rawText) {
-    let cleaned = convertMarkdownPipeTablesInText(
-        String(rawText || '')
-            .replace(/\r\n?/g, '\n')
-            .replace(/[ \t]*\bPDF(?:\s*\+\s*\d+)?\b/g, '')
-            .trim()
-    );
+    let cleaned = String(rawText || '')
+        .replace(/\r\n?/g, '\n')
+        .replace(/[ \t]*\bPDF(?:\s*\+\s*\d+)?\b/g, '')
+        .trim();
     if (!cleaned) return [];
+
+    // Pre-split any inline "Q2." or "Question 2:" that got glued onto the end of a previous line
+    cleaned = cleaned.replace(/([^\n])\s+((?:Q(?:uestion|ue|ns)?\s*[\.\:\-]?\s*\d+[\.\:\)\-]\s+))/gi, '$1\n$2');
 
     const lines = cleaned.split('\n');
     const blocks = [];
     let currentLines = [];
-    let hasSeenOptionsInCurrent = false;
-    let hasSeenAnswerOrExpInCurrent = false;
+    let currentOptionLettersSeen = new Set();
+    let hasSeenAnswerLine = false;
+    let hasSeenExpLine = false;
 
-    const explicitQHeaderRegex = /^\s*(?:<[bBiI]>\s*)?(?:Q(?:uestion|ue|ns)?\s*[\.\:\-]?\s*\d+[\.\:\)\-]?|Question\s*#\d+|\[\s*Q\d+\s*\])/i;
+    const explicitQHeaderRegex = /^\s*(?:<[bBiI]>\s*)?(?:Q(?:uestion|ue|ns)?\s*[\.\:\-#]?\s*\d+[\.\:\)\-]?|Question\s*#\d+|\[\s*Q\d+\s*\])/i;
     const numberedLineRegex = /^\s*(?:<[bBiI]>\s*)?(?:\d{1,3}[\.\)\:]|\(\d{1,3}\))\s+\S+/;
     const dividerLineRegex = /^\s*(?:\-{3,}|={3,}|\*{3,})\s*$/;
 
-    const optionDetectionRegex = /(?:^|\s)(?:\([A-Da-d]\)|[A-Da-d][\)\.])\s+\S+/;
+    const optionLineRegex = /(?:^|\s{2,})\(?([A-Da-d])[\)\.\:]\s+\S+/g;
     const ansDetectionRegex = /^\s*(?:[•○◦o\-\*👉✓✔]\s*)?(?:<[bBiI]>\s*)?(?:Correct\s*(?:Option|Options|Answer|Answers|Ans|Choice)?|Right\s*(?:Option|Answer)|Answer|Ans|Key)\s*[\.\:\-\=]/i;
     const expDetectionRegex = /^\s*(?:[•○◦o\-\*💡]\s*)?(?:<[bBiI]>\s*)?(?:NCERT\s+)?(?:Explanation|Exp|Solution|Sol|Hint|Reason\s+for\s+Answer)\s*[\.\:\-]/i;
+
+    const flushCurrentBlock = () => {
+        if (currentLines.length > 0) {
+            const joined = currentLines.join('\n').trim();
+            if (joined.length > 5) blocks.push(joined);
+        }
+        currentLines = [];
+        currentOptionLettersSeen = new Set();
+        hasSeenAnswerLine = false;
+        hasSeenExpLine = false;
+    };
 
     for (let i = 0; i < lines.length; i++) {
         const line = lines[i];
         const trimmed = line.trim();
 
         if (dividerLineRegex.test(trimmed)) {
-            if (currentLines.length > 0 && (hasSeenOptionsInCurrent || hasSeenAnswerOrExpInCurrent)) {
-                blocks.push(currentLines.join('\n').trim());
-                currentLines = [];
-                hasSeenOptionsInCurrent = false;
-                hasSeenAnswerOrExpInCurrent = false;
+            if (currentLines.length > 0 && (currentOptionLettersSeen.size >= 2 || hasSeenAnswerLine || hasSeenExpLine)) {
+                flushCurrentBlock();
                 continue;
             }
         }
@@ -3055,49 +3191,46 @@ function splitRawTextIntoMCQBlocks(rawText) {
         const isExplicitQ = explicitQHeaderRegex.test(trimmed);
         const isNumberedStart = numberedLineRegex.test(trimmed);
 
-        if (currentLines.length > 0 && (isExplicitQ || (isNumberedStart && (hasSeenAnswerOrExpInCurrent || hasSeenOptionsInCurrent)))) {
-            blocks.push(currentLines.join('\n').trim());
-            currentLines = [line];
-            hasSeenOptionsInCurrent = false;
-            hasSeenAnswerOrExpInCurrent = false;
+        // Start a new question block if:
+        // 1. Explicit "Q1.", "Q2.", "Question 3:" header
+        // 2. Numbered line ("1.", "2.", "60.") AFTER we have already seen at least 2 options (A & B) OR an Answer/Explanation line
+        if (currentLines.length > 0 && (
+            isExplicitQ ||
+            (isNumberedStart && (hasSeenAnswerLine || hasSeenExpLine || currentOptionLettersSeen.size >= 3))
+        )) {
+            flushCurrentBlock();
+            currentLines.push(line);
             continue;
         }
 
         currentLines.push(line);
 
-        if (optionDetectionRegex.test(trimmed) && !/Assertion\s*\(A\)|Statement\s*\(A\)/i.test(trimmed)) {
-            hasSeenOptionsInCurrent = true;
+        if (!/Assertion\s*\(A\)|Statement\s*\(A\)/i.test(trimmed)) {
+            const optMatches = [...trimmed.matchAll(optionLineRegex)];
+            optMatches.forEach(m => currentOptionLettersSeen.add(m[1].toUpperCase()));
         }
-        if (ansDetectionRegex.test(trimmed) || expDetectionRegex.test(trimmed)) {
-            hasSeenAnswerOrExpInCurrent = true;
-        }
+        if (ansDetectionRegex.test(trimmed)) hasSeenAnswerLine = true;
+        if (expDetectionRegex.test(trimmed)) hasSeenExpLine = true;
     }
 
-    if (currentLines.length > 0) {
-        blocks.push(currentLines.join('\n').trim());
-    }
-
-    return blocks.filter(b => b.length > 5);
+    flushCurrentBlock();
+    return blocks;
 }
 
-// Extracts A, B, C, or D from any answer string (e.g. "(C)", "c", "(B) Mangifera indica", "Option D", "A, C")
 function extractAnswerLettersFromString(rawAnsStr) {
     if (!rawAnsStr) return [];
     const clean = String(rawAnsStr).replace(/<\/?(?:b|strong|i|em|u)>/gi, '').trim();
 
-    // 1. Check if it starts with "(C) Some option text..." or "C) Some option text..." or "C. Some text" or just "C"
     const leadingMatch = clean.match(/^(?:Option\s+|Choice\s+)?[\(\[]?([A-Da-d])[\)\]\.\:\-]?(?:\s|$)/i);
     if (leadingMatch && !/^[A-Da-d]\s*[,&\/]\s*[A-Da-d]/i.test(clean)) {
         return [leadingMatch[1].toUpperCase()];
     }
 
-    // 2. Check for multiple correct options like "(A), (C)" or "A and B" or "B, D"
-    const multiMatch = clean.match(/^(?:[\([]?[A-Da-d][\)]]?\s*(?:[,&\/]|\band\b)\s*)+[\([]?[A-Da-d][\)]]?$/i);
+    const multiMatch = clean.match(/^(?:[\(\[]?[A-Da-d][\)\]]?\s*(?:[,&\/]|\band\b)\s*)+[\(\[]?[A-Da-d][\)\]]?$/i);
     if (multiMatch) {
         return [...new Set([...clean.matchAll(/[A-Da-d]/g)].map(m => m[0].toUpperCase()))];
     }
 
-    // 3. Fallback: Look for "(A)" / "(B)" / "(C)" / "(D)" or "Option C" anywhere in the answer string
     const parenMatch = clean.match(/(?:Option\s+|Choice\s+)?[\(\[]([A-Da-d])[\)\]]/i);
     if (parenMatch) return [parenMatch[1].toUpperCase()];
 
@@ -3110,18 +3243,11 @@ function extractAnswerLettersFromString(rawAnsStr) {
 function parseSingleMCQBlockAccurate(rawBlock, defaultDifficulty = 'Mixed') {
     let text = String(rawBlock || '').trim();
 
-    const maskedTables = [];
-    text = text.replace(/<div class="mcq-match-table-wrap">[\s\S]*?<\/div>/gi, (match) => {
-        const token = `__MCQ_TABLE_TOKEN_${maskedTables.length}__`;
-        maskedTables.push(match);
-        return token;
-    });
-
     let explanation = '';
     let correctAnswers = [];
     let options = { A: '', B: '', C: '', D: '' };
 
-    // 1. Extract Explanation (NCERT Explanation, Explanation, Exp, Solution, Sol, Hint)
+    // 1. Extract Explanation
     const expRegex = /(?:^|\n)\s*(?:[•○◦o\-\*💡]\s*)?(?:<[bBiI]>\s*)?(?:NCERT\s+)?(?:Explanation|Exp|Solution|Sol|Hint)\s*[\.\:\-]\s*(?:<\/[bBiI]>\s*)?([\s\S]+)$/i;
     const expMatch = text.match(expRegex);
     if (expMatch) {
@@ -3132,7 +3258,7 @@ function parseSingleMCQBlockAccurate(rawBlock, defaultDifficulty = 'Mixed') {
         text = text.slice(0, expMatch.index).trim();
     }
 
-    // 2. Check if an Answer line was accidentally placed INSIDE or AFTER the Explanation
+    // 2. Check if Answer line was inside Explanation
     const ansInsideExpRegex = /(?:^|\n)\s*(?:[•○◦o\-\*👉✓✔]\s*)?(?:<[bBiI]>\s*)?(?:Correct\s*(?:Option|Options|Answer|Answers|Ans|Choice)?|Right\s*(?:Option|Answer)|Answer|Ans|Key)\s*[\.\:\-\=]\s*(?:<\/[bBiI]>\s*)?([^\n]+)/i;
     if (explanation) {
         const ansInExp = explanation.match(ansInsideExpRegex);
@@ -3143,7 +3269,7 @@ function parseSingleMCQBlockAccurate(rawBlock, defaultDifficulty = 'Mixed') {
         }
     }
 
-    // 3. Extract Explicit Answer Line from main text (Correct Option: (C), Answer: B, Ans. (a), Key: D, etc.)
+    // 3. Extract Explicit Answer Line from main text
     const ansRegex = /(?:^|\n)\s*(?:[•○◦o\-\*👉✓✔]\s*)?(?:<[bBiI]>\s*)?(?:Correct\s*(?:Option|Options|Answer|Answers|Ans|Choice)?|Right\s*(?:Option|Answer)|Answer|Ans|Key)\s*[\.\:\-\=]\s*(?:<\/[bBiI]>\s*)?([^\n]+)$/i;
     const ansMatch = text.match(ansRegex);
     if (ansMatch) {
@@ -3152,7 +3278,6 @@ function parseSingleMCQBlockAccurate(rawBlock, defaultDifficulty = 'Mixed') {
         text = text.slice(0, ansMatch.index).trim();
     }
 
-    // Also check if there is an inline "[Ans: C]" or "(Ans: B)" or "Correct Option: (C)" at the end of the last option line
     const inlineAnsEndRegex = /[\(\[]?\b(?:Correct\s*(?:Option|Answer|Ans)|Answer|Ans)\s*[\.\:\-\=]\s*[\(\[]?([A-Da-d])[\)\]]?[\)\]]?\s*$/i;
     const inlineEndMatch = text.match(inlineAnsEndRegex);
     if (inlineEndMatch) {
@@ -3161,7 +3286,7 @@ function parseSingleMCQBlockAccurate(rawBlock, defaultDifficulty = 'Mixed') {
         text = text.slice(0, inlineEndMatch.index).trim();
     }
 
-    // 4. Extract Options A, B, C, D safely
+    // 4. Extract Options A, B, C, D safely (taking the last 4 options so Match-the-Column items a,b,c,d are never confused with MCQ options!)
     const optRegexUpper = /(?:^|\n|\s{2,})(?!(?:Assertion|Statement|Column|List|Part|Section|Group|Fig)\s*)\(?([A-D])[\)\.\:]\s+([\s\S]*?)(?=(?:\n|\s{2,})\(?[B-D][\)\.\:]\s+|\s*$)/g;
     let matches = [...text.matchAll(optRegexUpper)];
 
@@ -3193,7 +3318,7 @@ function parseSingleMCQBlockAccurate(rawBlock, defaultDifficulty = 'Mixed') {
         });
     }
 
-    // 5. Fallback: If Correct Option still wasn't explicitly labeled, check if Explanation says "option (C) is correct" / "correct answer is (B)"
+    // 5. Fallback answer check inside Explanation
     if (correctAnswers.length === 0 && explanation) {
         const expHintMatch = explanation.match(/(?:option|answer|choice)\s+\(?([A-Da-d])\)?\s+is\s+correct|correct\s+(?:option|answer|choice)\s+is\s+\(?([A-Da-d])\)?|hence\s*,?\s*\(?([A-Da-d])\)?\s+is\s+correct/i);
         if (expHintMatch) {
@@ -3204,15 +3329,29 @@ function parseSingleMCQBlockAccurate(rawBlock, defaultDifficulty = 'Mixed') {
         }
     }
 
+    // Strip leading Q1. / 1.
     questionStem = questionStem
-        .replace(/^\s*(?:<[bBiI]>\s*)?(?:Q(?:uestion|ue|ns)?\s*[\.\:\-]?\s*\d*[\.\:\)\-]\s*|\d{1,3}[\.\)\:]\s+|\(\d{1,3}\)\s+)(?:<\/[bBiI]>\s*)?/i, '')
+        .replace(/^\s*(?:<[bBiI]>\s*)?(?:Q(?:uestion|ue|ns)?\s*[\.\:\-#]?\s*\d*[\.\:\)\-]\s*|\d{1,3}[\.\)\:]\s+|\(\d{1,3}\)\s+)(?:<\/[bBiI]>\s*)?/i, '')
         .trim();
 
-    maskedTables.forEach((tblHtml, idx) => {
-        const token = `__MCQ_TABLE_TOKEN_${idx}__`;
-        questionStem = questionStem.replace(token, `\n${tblHtml}\n`);
-        explanation = explanation.replace(token, `\n${tblHtml}\n`);
-    });
+    // 6. Automatically detect Match-the-Column written in ANY style and convert it into the structured Match Table!
+    const matchDetection = autoExtractUniversalMatchTableFromQuestionStem(questionStem);
+    questionStem = matchDetection.cleanQuestion;
+
+    const defaultMatchTable = matchDetection.matchTable || {
+        enabled: false,
+        rows: 4,
+        cols: 2,
+        headers: ['Column I', 'Column II', 'Column III', 'Column IV'],
+        cells: [
+            ['a. ', 'i. ', '', ''],
+            ['b. ', 'ii. ', '', ''],
+            ['c. ', 'iii. ', '', ''],
+            ['d. ', 'iv. ', '', ''],
+            ['e. ', 'v. ', '', ''],
+            ['f. ', 'vi. ', '', '']
+        ]
+    };
 
     return {
         id: 'bulk_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
@@ -3221,7 +3360,7 @@ function parseSingleMCQBlockAccurate(rawBlock, defaultDifficulty = 'Mixed') {
         correctAnswers,
         explanation: explanation.trim(),
         level: defaultDifficulty,
-        showTools: false,
+        showTools: Boolean(matchDetection.matchTable),
         questionImageBlob: null,
         questionImagePreviewUrl: '',
         diagramBlob: null,
@@ -3230,24 +3369,10 @@ function parseSingleMCQBlockAccurate(rawBlock, defaultDifficulty = 'Mixed') {
         diagramBgMode: 'light',
         explanationImageBlob: null,
         explanationImagePreviewUrl: '',
-        matchTable: {
-            enabled: false,
-            rows: 4,
-            cols: 2,
-            headers: ['Column I', 'Column II', 'Column III', 'Column IV'],
-            cells: [
-                ['a. ', 'i. ', '', ''],
-                ['b. ', 'ii. ', '', ''],
-                ['c. ', 'iii. ', '', ''],
-                ['d. ', 'iv. ', '', ''],
-                ['e. ', 'v. ', '', ''],
-                ['f. ', 'vi. ', '', '']
-            ]
-        }
+        matchTable: defaultMatchTable
     };
 }
 
-// Entrypoint for Single Form Fill & 1-Click Bulk Multi-Question Queue
 parseQuickPasteMCQ = function(mode = 'auto') {
     const rawEl = document.getElementById('admSmartPasteInput');
     if (!rawEl || !rawEl.value.trim()) {
@@ -3269,18 +3394,31 @@ parseQuickPasteMCQ = function(mode = 'auto') {
         document.querySelectorAll('.admCorrectCb').forEach(cb => {
             cb.checked = parsed.correctAnswers.includes(cb.value);
         });
+
+        // If a Match-the-Column table was auto-detected, populate the Single Form Match Table Builder automatically!
+        if (parsed.matchTable && parsed.matchTable.enabled) {
+            adminMatchTableState.enabled = true;
+            adminMatchTableState.rows = parsed.matchTable.rows;
+            adminMatchTableState.cols = parsed.matchTable.cols;
+            adminMatchTableState.headers = [...parsed.matchTable.headers];
+            adminMatchTableState.cells = parsed.matchTable.cells.map(r => [...r]);
+            const tblCb = document.getElementById('admEnableMatchTable');
+            if (tblCb) tblCb.checked = true;
+            toggleAdminMatchTableBuilder(true);
+        }
+
         updateAdminLiveFormulaPreview();
-        showNotification(`✨ Single Question & Correct Answer (${parsed.correctAnswers.join(', ') || 'None'}) auto-filled!`);
+        showNotification(`✨ Single Question${parsed.matchTable?.enabled ? ' + Auto Match-Table' : ''} & Answer (${parsed.correctAnswers.join(', ') || 'None'}) filled!`);
         return;
     }
 
     adminBulkStagedQuestions = blocks.map(b => parseSingleMCQBlockAccurate(b, defaultDiff));
     renderAdminBulkStagingQueue();
     const autoAnsCount = adminBulkStagedQuestions.filter(q => q.correctAnswers.length > 0).length;
-    showNotification(`📚 Placed ${adminBulkStagedQuestions.length} question(s) & auto-detected ${autoAnsCount}/${adminBulkStagedQuestions.length} Correct Answers!`);
+    const autoTblCount = adminBulkStagedQuestions.filter(q => q.matchTable && q.matchTable.enabled).length;
+    showNotification(`📚 Placed ${adminBulkStagedQuestions.length} MCQs (${autoAnsCount} Answers & ${autoTblCount} Match-Tables auto-built)!`);
 };
 
-// Loads a specific Bulk Card into the Main Single Editor below if the admin wants full manual editing there
 function loadBulkCardIntoMainSingleForm(idx) {
     const item = adminBulkStagedQuestions[idx];
     if (!item) return;
@@ -3295,6 +3433,16 @@ function loadBulkCardIntoMainSingleForm(idx) {
     document.querySelectorAll('.admCorrectCb').forEach(cb => {
         cb.checked = item.correctAnswers.includes(cb.value);
     });
+    if (item.matchTable && item.matchTable.enabled) {
+        adminMatchTableState.enabled = true;
+        adminMatchTableState.rows = item.matchTable.rows;
+        adminMatchTableState.cols = item.matchTable.cols;
+        adminMatchTableState.headers = [...item.matchTable.headers];
+        adminMatchTableState.cells = item.matchTable.cells.map(r => [...r]);
+        const tblCb = document.getElementById('admEnableMatchTable');
+        if (tblCb) tblCb.checked = true;
+        toggleAdminMatchTableBuilder(true);
+    }
     updateAdminLiveFormulaPreview();
     const qBox = document.getElementById('admQuestion');
     if (qBox) {
@@ -3355,11 +3503,13 @@ function updateBulkQueueSummaryHeader() {
     const total = adminBulkStagedQuestions.length;
     const readyCount = adminBulkStagedQuestions.filter(isBulkItemReady).length;
     const missingCount = total - readyCount;
+    const tableCount = adminBulkStagedQuestions.filter(q => q.matchTable && q.matchTable.enabled).length;
 
     badgeWrap.innerHTML = `
         <span style="background:rgba(56,189,248,0.16); color:#38bdf8; border:1px solid rgba(56,189,248,0.4); padding:5px 12px; border-radius:20px; font-size:12px; font-weight:800;">📚 Total Staged: ${total} MCQs</span>
         <span style="background:rgba(16,185,129,0.16); color:#10b981; border:1px solid rgba(16,185,129,0.4); padding:5px 12px; border-radius:20px; font-size:12px; font-weight:800;">🟢 Ready: ${readyCount}</span>
-        ${missingCount > 0 ? `<span style="background:rgba(239,68,68,0.18); color:#ef4444; border:1px solid rgba(239,68,68,0.45); padding:5px 12px; border-radius:20px; font-size:12px; font-weight:800;">⚠️ Needs Manual Check: ${missingCount}</span>` : `<span style="background:rgba(168,85,247,0.18); color:#c084fc; border:1px solid rgba(168,85,247,0.45); padding:5px 12px; border-radius:20px; font-size:12px; font-weight:800;">✨ All Answers Auto-Detected &amp; Verified</span>`}
+        ${tableCount > 0 ? `<span style="background:rgba(168,85,247,0.18); color:#c084fc; border:1px solid rgba(168,85,247,0.45); padding:5px 12px; border-radius:20px; font-size:12px; font-weight:800;">📊 Auto Match-Tables: ${tableCount}</span>` : ''}
+        ${missingCount > 0 ? `<span style="background:rgba(239,68,68,0.18); color:#ef4444; border:1px solid rgba(239,68,68,0.45); padding:5px 12px; border-radius:20px; font-size:12px; font-weight:800;">⚠️ Needs Manual Check: ${missingCount}</span>` : `<span style="background:rgba(16,185,129,0.18); color:#10b981; border:1px solid rgba(16,185,129,0.45); padding:5px 12px; border-radius:20px; font-size:12px; font-weight:800;">✨ All Answers Verified</span>`}
     `;
     if (uploadBtn) {
         uploadBtn.innerText = `☁️ Upload All ${total} Question${total === 1 ? '' : 's'} Now (1-Click)`;
@@ -3379,7 +3529,7 @@ function refreshSingleBulkCardPreview(idx) {
         statusBadge.style.color = ready ? '#10b981' : '#ef4444';
         statusBadge.style.borderColor = ready ? 'rgba(16,185,129,0.4)' : 'rgba(239,68,68,0.45)';
         statusBadge.innerHTML = ready
-            ? `🟢 Correct Option Auto-Filled: (${item.correctAnswers.join(', ')})`
+            ? `🟢 Correct Option Auto-Filled: (${item.correctAnswers.join(', ')})${item.matchTable?.enabled ? ' • 📊 Table Auto-Built' : ''}`
             : '⚠️ Click A / B / C / D below to select Correct Answer';
     }
     if (cardEl) {
@@ -3533,10 +3683,10 @@ function toggleBulkCardMatchTable(idx, enabled) {
 function resizeBulkCardMatchTable(idx, dRows, dCols) {
     const item = adminBulkStagedQuestions[idx];
     if (!item) return;
-    item.matchTable.rows = Math.min(8, Math.max(1, item.matchTable.rows + dRows));
-    item.matchTable.cols = Math.min(4, Math.max(1, item.matchTable.cols + dCols));
+    item.matchTable.rows = Math.min(10, Math.max(1, item.matchTable.rows + dRows));
+    item.matchTable.cols = Math.min(5, Math.max(1, item.matchTable.cols + dCols));
     while (item.matchTable.cells.length < item.matchTable.rows) {
-        item.matchTable.cells.push(['', '', '', '']);
+        item.matchTable.cells.push(['', '', '', '', '']);
     }
     renderAdminBulkStagingQueue();
 }
@@ -3551,7 +3701,7 @@ function updateBulkCardMatchHeader(idx, colIdx, val) {
 function updateBulkCardMatchCell(idx, rowIdx, colIdx, val) {
     const item = adminBulkStagedQuestions[idx];
     if (!item) return;
-    if (!item.matchTable.cells[rowIdx]) item.matchTable.cells[rowIdx] = ['', '', '', ''];
+    if (!item.matchTable.cells[rowIdx]) item.matchTable.cells[rowIdx] = ['', '', '', '', ''];
     item.matchTable.cells[rowIdx][colIdx] = val;
     refreshSingleBulkCardPreview(idx);
 }
@@ -3580,6 +3730,15 @@ function applyBulkGlobalDifficulty(level) {
 
 function bulkAutoSplitAllStatements() {
     adminBulkStagedQuestions.forEach(item => {
+        // Also run Match-the-Column auto-detection if not already enabled
+        if (!item.matchTable || !item.matchTable.enabled) {
+            const det = autoExtractUniversalMatchTableFromQuestionStem(item.question);
+            if (det.matchTable) {
+                item.question = det.cleanQuestion;
+                item.matchTable = det.matchTable;
+                item.showTools = true;
+            }
+        }
         let s = item.question || '';
         s = s.replace(/([^\n])\s+(\b(?:I|II|III|IV|V|VI|VII)\.\s+)/g, '$1\n$2');
         s = s.replace(/([^\n])\s+(\((?:i|ii|iii|iv|v|vi|I|II|III|IV|V|VI)\)\s+)/g, '$1\n$2');
@@ -3588,7 +3747,7 @@ function bulkAutoSplitAllStatements() {
         item.question = s;
     });
     renderAdminBulkStagingQueue();
-    showNotification('📑 Statements separated onto clean lines across all staged questions!');
+    showNotification('📑 Statements separated & Match Tables checked across all staged questions!');
 }
 
 function bulkAutoFormatAllChemistry() {
@@ -3649,7 +3808,7 @@ function renderAdminBulkStagingQueue() {
             matchTableGridHtml = `
                 <div style="margin-top:8px; background:#0d1322; border:1px solid #2b3954; border-radius:8px; padding:10px;">
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; flex-wrap:wrap; gap:8px;">
-                        <span style="font-size:11.5px; color:#c084fc; font-weight:800;">📊 Match-the-Column Table (#${idx + 1})</span>
+                        <span style="font-size:11.5px; color:#c084fc; font-weight:800;">📊 Auto-Built Match-the-Column Table (#${idx + 1})</span>
                         <div style="display:flex; gap:6px; align-items:center;">
                             <span style="font-size:11px; color:#94a3b8;">Rows: ${mt.rows}</span>
                             <button type="button" onclick="resizeBulkCardMatchTable(${idx}, -1, 0)" style="background:#1e293b; color:#fff; border:1px solid #334155; border-radius:4px; padding:2px 7px; cursor:pointer;">−</button>
@@ -3666,16 +3825,15 @@ function renderAdminBulkStagingQueue() {
 
         return `
             <div id="bulkStagedCard_${idx}" style="background:#0d121f; border:1.5px solid ${ready ? 'rgba(56,189,248,0.35)' : 'rgba(239,68,68,0.65)'}; border-radius:12px; padding:14px; transition:0.2s;">
-                <!-- Card Header -->
                 <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:10px; padding-bottom:8px; border-bottom:1px solid #1e293b;">
                     <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
                         <span style="background:var(--primary-yellow); color:#000; font-weight:900; font-size:12px; padding:3px 10px; border-radius:6px;">Q #${idx + 1}</span>
                         <span id="bulkCardStatusBadge_${idx}" style="background:${ready ? 'rgba(16,185,129,0.16)' : 'rgba(239,68,68,0.18)'}; color:${ready ? '#10b981' : '#ef4444'}; border:1px solid ${ready ? 'rgba(16,185,129,0.4)' : 'rgba(239,68,68,0.45)'}; padding:3px 10px; border-radius:20px; font-size:11px; font-weight:800;">
-                            ${ready ? `🟢 Correct Option Auto-Filled: (${item.correctAnswers.join(', ')})` : '⚠️ Click A / B / C / D below to select Correct Answer'}
+                            ${ready ? `🟢 Correct Option Auto-Filled: (${item.correctAnswers.join(', ')})${mt.enabled ? ' • 📊 Table Auto-Built' : ''}` : '⚠️ Click A / B / C / D below to select Correct Answer'}
                         </span>
                     </div>
                     <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-                        <button type="button" onclick="loadBulkCardIntoMainSingleForm(${idx})" style="background:rgba(56,189,248,0.15); color:#38bdf8; border:1px solid rgba(56,189,248,0.4); border-radius:6px; padding:5px 10px; font-size:11px; font-weight:700; cursor:pointer;" title="Load this question into the main form below for full editing">⬆️ Edit in Main Form</button>
+                        <button type="button" onclick="loadBulkCardIntoMainSingleForm(${idx})" style="background:rgba(56,189,248,0.15); color:#38bdf8; border:1px solid rgba(56,189,248,0.4); border-radius:6px; padding:5px 10px; font-size:11px; font-weight:700; cursor:pointer;">⬆️ Edit in Main Form</button>
                         <button type="button" onclick="toggleBulkCardExtraTools(${idx})" style="background:rgba(168,85,247,0.15); color:#c084fc; border:1px solid rgba(168,85,247,0.4); border-radius:6px; padding:5px 10px; font-size:11px; font-weight:700; cursor:pointer;">
                             🖼️ + Image / Diagram / Match Table ${(item.questionImageBlob || item.diagramBlob || item.explanationImageBlob || mt.enabled) ? '●' : ''}
                         </button>
@@ -3689,11 +3847,9 @@ function renderAdminBulkStagingQueue() {
                     </div>
                 </div>
 
-                <!-- Editable Question Text -->
                 <div style="font-size:11px; color:#94a3b8; margin-bottom:4px; font-weight:700;">✏️ Edit Question Text Manually (if needed):</div>
                 <textarea class="input-field" style="min-height:68px; font-size:13.5px; margin-bottom:8px;" placeholder="Question #${idx + 1} text (or paste screenshot with Ctrl+V)..." onfocus="setLastFocusedFormulaInput(this)" oninput="updateBulkItemField(${idx}, 'question', this.value)" onpaste="handleBulkCardPasteImage(event, ${idx}, 'QUESTION')">${item.question}</textarea>
 
-                <!-- Expandable Media & Match Table Drawer per Question -->
                 <div id="bulkCardToolsDrawer_${idx}" style="display:${item.showTools ? 'block' : 'none'}; background:#111729; border:1px dashed #334155; border-radius:10px; padding:12px; margin-bottom:10px;">
                     <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(210px, 1fr)); gap:10px;">
                         <div style="background:#0b0f19; border:1px solid rgba(56,189,248,0.35); border-radius:8px; padding:9px;" onpaste="handleBulkCardPasteImage(event, ${idx}, 'QUESTION')">
@@ -3743,7 +3899,6 @@ function renderAdminBulkStagingQueue() {
                     </div>
                 </div>
 
-                <!-- Editable Options A, B, C, D + Auto-Checked Correct Answer Checkboxes -->
                 <div style="font-size:11px; color:#94a3b8; margin-bottom:4px; font-weight:700;">✅ Options &amp; Auto-Detected Correct Answer (Click checkbox A/B/C/D or edit option text anytime):</div>
                 <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:8px;">
                     ${['A', 'B', 'C', 'D'].map(letter => `
@@ -3757,10 +3912,8 @@ function renderAdminBulkStagingQueue() {
                     `).join('')}
                 </div>
 
-                <!-- Editable Explanation -->
                 <textarea class="input-field" style="min-height:48px; font-size:12.5px; margin-bottom:8px;" placeholder="Explanation (Optional — edit text or press Ctrl+V to paste solution screenshot)..." onfocus="setLastFocusedFormulaInput(this)" oninput="updateBulkItemField(${idx}, 'explanation', this.value)" onpaste="handleBulkCardPasteImage(event, ${idx}, 'EXPLANATION')">${item.explanation}</textarea>
 
-                <!-- Live Student Preview per Card -->
                 <div id="bulkCardLivePreview_${idx}" style="background:#080c15; border:1px solid rgba(253,184,19,0.28); border-radius:8px; padding:10px 12px; font-size:13px;"></div>
             </div>
         `;
@@ -4025,7 +4178,7 @@ function renderAdminMatchTableInputs() {
 function formatCellWithBoldPrefix(rawCell) {
     let safe = String(rawCell || '').trim();
     if (!safe) return '';
-    return safe.replace(/^([a-zA-Z0-9]{1,4}[\.\)])(\s+)/, '<b>$1</b>$2');
+    return safe.replace(/^([a-zA-Z0-9\(\)]{1,5}[\.\)])(\s+)/, '<b>$1</b>$2');
 }
 
 function buildMatchTableHtmlForQuestion() {
@@ -4400,6 +4553,390 @@ if (!window._origClearAdminUploadFormWrapped) {
     };
 }
 
+// ==========================================
+// 🚀 STUDENT QUIZ ENGINE UPGRADES (ALL 60+ QUESTIONS, ANYTIME SUBMIT, RESUME VS START NEW EXCLUDING CORRECT)
+// ==========================================
+(function upgradeStudentQuizEngineGlobally() {
+    if (window._studentQuizEngineUpgradedV61) return;
+    window._studentQuizEngineUpgradedV61 = true;
+
+    function getUserProgressStorageKey() {
+        const uid = (typeof currentUser !== 'undefined' && currentUser && currentUser.uid) ? currentUser.uid : 'guest';
+        return `mcqsprep_topic_progress_v1_${uid}`;
+    }
+
+    function readAllTopicsProgressMap() {
+        try {
+            const raw = localStorage.getItem(getUserProgressStorageKey());
+            return raw ? JSON.parse(raw) : {};
+        } catch (e) {
+            return {};
+        }
+    }
+
+    function writeAllTopicsProgressMap(mapObj) {
+        try {
+            localStorage.setItem(getUserProgressStorageKey(), JSON.stringify(mapObj));
+        } catch (e) {}
+    }
+
+    function getTopicProgressRecord(pathStr) {
+        if (!pathStr) return { correctIds: [], wrongIds: [], skippedIds: [], inProgress: null };
+        const map = readAllTopicsProgressMap();
+        return map[pathStr] || { correctIds: [], wrongIds: [], skippedIds: [], inProgress: null };
+    }
+
+    function isQuestionAnsweredCorrectly(qObj, selectedVal) {
+        if (!qObj || !selectedVal) return false;
+        const correctArr = Array.isArray(qObj.correctAnswers) ? qObj.correctAnswers : [qObj.correctAnswer || 'A'];
+        const userArr = Array.isArray(selectedVal) ? selectedVal : [selectedVal];
+        if (userArr.length === 0) return false;
+        return userArr.every(ans => correctArr.includes(ans)) && correctArr.every(ans => userArr.includes(ans));
+    }
+
+    // Saves live progress every time a student selects an answer or navigates questions
+    window.saveLiveQuizSessionProgress = function() {
+        if (typeof currentQuizPath === 'undefined' || !currentQuizPath || currentQuizPath === 'Daily Quiz Challenge') return;
+        if (typeof currentQuestions === 'undefined' || !Array.isArray(currentQuestions) || currentQuestions.length === 0) return;
+
+        const map = readAllTopicsProgressMap();
+        const rec = map[currentQuizPath] || { correctIds: [], wrongIds: [], skippedIds: [], inProgress: null };
+        const answeredCount = typeof userAnswers !== 'undefined' ? Object.keys(userAnswers).length : 0;
+
+        if (answeredCount > 0) {
+            rec.inProgress = {
+                questionIds: currentQuestions.map(q => q.id),
+                currentIndex: typeof currentIndex !== 'undefined' ? currentIndex : 0,
+                userAnswers: { ...(typeof userAnswers !== 'undefined' ? userAnswers : {}) },
+                timeSpent: { ...(typeof timeSpent !== 'undefined' ? timeSpent : {}) },
+                updatedAt: Date.now()
+            };
+            map[currentQuizPath] = rec;
+            writeAllTopicsProgressMap(map);
+        }
+    };
+
+    // Records final Correct, Wrong, and Skipped question IDs when student submits (anytime or at the end)
+    window.recordSubmittedQuizMastery = function() {
+        if (typeof currentQuizPath === 'undefined' || !currentQuizPath || currentQuizPath === 'Daily Quiz Challenge') return;
+        if (typeof currentQuestions === 'undefined' || !Array.isArray(currentQuestions) || currentQuestions.length === 0) return;
+
+        const map = readAllTopicsProgressMap();
+        const rec = map[currentQuizPath] || { correctIds: [], wrongIds: [], skippedIds: [], inProgress: null };
+        const correctSet = new Set(rec.correctIds || []);
+        const wrongSet = new Set(rec.wrongIds || []);
+        const skippedSet = new Set(rec.skippedIds || []);
+
+        currentQuestions.forEach(q => {
+            if (!q || !q.id) return;
+            const ans = (typeof userAnswers !== 'undefined' && userAnswers) ? userAnswers[q.id] : undefined;
+            const hasAns = ans !== undefined && ans !== null && (!Array.isArray(ans) || ans.length > 0);
+
+            if (!hasAns) {
+                if (!correctSet.has(q.id) && !wrongSet.has(q.id)) {
+                    skippedSet.add(q.id);
+                }
+            } else if (isQuestionAnsweredCorrectly(q, ans)) {
+                correctSet.add(q.id);
+                wrongSet.delete(q.id);
+                skippedSet.delete(q.id);
+            } else {
+                wrongSet.add(q.id);
+                correctSet.delete(q.id);
+                skippedSet.delete(q.id);
+            }
+        });
+
+        rec.correctIds = Array.from(correctSet);
+        rec.wrongIds = Array.from(wrongSet);
+        rec.skippedIds = Array.from(skippedSet);
+        rec.inProgress = null; // Clear active in-progress session since it was submitted
+        map[currentQuizPath] = rec;
+        writeAllTopicsProgressMap(map);
+    };
+
+    // Anytime Submit handler (works on Question 1, Question 20, or any question in MCQ Practice & Custom Practice)
+    window.triggerAnytimeQuizSubmit = function() {
+        const total = (typeof currentQuestions !== 'undefined' && Array.isArray(currentQuestions)) ? currentQuestions.length : 0;
+        const attempted = (typeof userAnswers !== 'undefined' && userAnswers) ? Object.keys(userAnswers).length : 0;
+        const msg = attempted < total
+            ? `You have attempted ${attempted} out of ${total} questions.\n\nDo you want to save and submit your attempted questions now?`
+            : `Submit your test (${attempted}/${total} attempted)?`;
+        if (confirm(msg)) {
+            submitQuiz();
+        }
+    };
+
+    // Wrap renderQuizInterface to inject the "SUBMIT" button under every question in MCQ Practice & Custom Practice
+    if (typeof renderQuizInterface === 'function' && !window._origRenderQuizInterfaceV61) {
+        window._origRenderQuizInterfaceV61 = renderQuizInterface;
+        renderQuizInterface = function() {
+            window._origRenderQuizInterfaceV61();
+            window.saveLiveQuizSessionProgress();
+
+            const dyn = document.getElementById('dynamic-content');
+            if (!dyn) return;
+            const total = (typeof currentQuestions !== 'undefined' && Array.isArray(currentQuestions)) ? currentQuestions.length : 0;
+            const attempted = (typeof userAnswers !== 'undefined' && userAnswers) ? Object.keys(userAnswers).length : 0;
+
+            // Find the bottom navigation bar containing NEXT / SUBMIT
+            const buttons = Array.from(dyn.querySelectorAll('button'));
+            const nextOrFinishBtn = buttons.find(b => /NEXT|FINISH|SUBMIT/i.test(b.innerText || '') && !b.classList.contains('btn-anytime-submit'));
+            const alreadyHasAnytimeBtn = dyn.querySelector('.btn-anytime-submit');
+
+            if (nextOrFinishBtn && !alreadyHasAnytimeBtn) {
+                const isLastQuestion = (typeof currentIndex !== 'undefined') && (currentIndex === total - 1);
+                if (!isLastQuestion) {
+                    const submitNowBtn = document.createElement('button');
+                    submitNowBtn.type = 'button';
+                    submitNowBtn.className = 'btn-exam btn-anytime-submit';
+                    submitNowBtn.style.cssText = 'padding: 10px 16px; font-size: 13px; border-radius: 10px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;';
+                    submitNowBtn.innerHTML = `✅ SUBMIT (${attempted}/${total})`;
+                    submitNowBtn.title = 'Save and submit your attempted questions right now';
+                    submitNowBtn.onclick = window.triggerAnytimeQuizSubmit;
+                    nextOrFinishBtn.parentNode.insertBefore(submitNowBtn, nextOrFinishBtn.nextSibling);
+                }
+            }
+        };
+    }
+
+    // Wrap selectOption so the live Submit (Attempted/Total) counter and auto-save update immediately
+    if (typeof selectOption === 'function' && !window._origSelectOptionV61) {
+        window._origSelectOptionV61 = selectOption;
+        selectOption = function(letter) {
+            window._origSelectOptionV61(letter);
+            window.saveLiveQuizSessionProgress();
+        };
+    }
+
+    // Wrap submitQuiz so mastery (Correct / Wrong / Skipped) is recorded on every submission
+    if (typeof submitQuiz === 'function' && !window._origSubmitQuizV61) {
+        window._origSubmitQuizV61 = submitQuiz;
+        submitQuiz = async function() {
+            window.recordSubmittedQuizMastery();
+            return await window._origSubmitQuizV61();
+        };
+    }
+
+    // Helper to launch a prepared question list into the quiz engine
+    function launchQuizWithQuestionsList(pathString, questionsList, restoredSession = null) {
+        currentQuizPath = pathString;
+        currentQuestions = questionsList;
+        if (typeof currentTimer !== 'undefined' && currentTimer) clearInterval(currentTimer);
+
+        if (restoredSession) {
+            currentIndex = Math.min(questionsList.length - 1, Math.max(0, restoredSession.currentIndex || 0));
+            userAnswers = { ...(restoredSession.userAnswers || {}) };
+            timeSpent = { ...(restoredSession.timeSpent || {}) };
+        } else {
+            currentIndex = 0;
+            userAnswers = {};
+            timeSpent = {};
+        }
+
+        renderQuizInterface();
+        if (typeof startQuestionTimer === 'function') startQuestionTimer();
+    }
+
+    // Upgrade _initiateQuizEngine:
+    // 1. Removes the 50-question cap (loads all 60, 100, or 300+ questions in the topic)
+    // 2. Detects previous/in-progress attempts and offers "Resume Practice" vs "Start New (Exclude Correct)"
+    if (typeof _initiateQuizEngine === 'function' && !window._origInitiateQuizEngineV61) {
+        window._origInitiateQuizEngineV61 = _initiateQuizEngine;
+        _initiateQuizEngine = async function(pathString) {
+            if (pathString === 'Daily Quiz Challenge') {
+                return await window._origInitiateQuizEngineV61(pathString);
+            }
+
+            const dyn = document.getElementById('dynamic-content');
+            if (dyn) {
+                dyn.innerHTML = `<div style="text-align:center; padding:70px 20px;"><div class="spinner"></div><p style="margin-top:15px; color:var(--text-muted);">Loading all questions for this topic...</p></div>`;
+            }
+
+            try {
+                let snap = await db.collection('content')
+                    .where('path', '==', pathString)
+                    .get();
+
+                let allDocs = [];
+                snap.forEach(doc => {
+                    const d = doc.data();
+                    if (!d.type || d.type === 'mcq') {
+                        allDocs.push({ id: doc.id, ...d });
+                    }
+                });
+
+                // If parent folder selected, also check child paths
+                if (allDocs.length === 0) {
+                    const childSnap = await db.collection('content')
+                        .where('path', '>=', pathString + ' > ')
+                        .where('path', '<=', pathString + ' > \uf8ff')
+                        .get();
+                    childSnap.forEach(doc => {
+                        const d = doc.data();
+                        if (!d.type || d.type === 'mcq') {
+                            allDocs.push({ id: doc.id, ...d });
+                        }
+                    });
+                }
+
+                if (allDocs.length === 0) {
+                    if (dyn) {
+                        dyn.innerHTML = `<div class="card" style="text-align:center; padding:45px 20px;"><h3>No MCQs Uploaded Yet</h3><p style="color:var(--text-muted);">Questions for <b>${pathString}</b> will appear here soon.</p><button class="btn-exam" onclick="window.history.back()" style="margin-top:15px;">&larr; Go Back</button></div>`;
+                    }
+                    return;
+                }
+
+                // Check saved progress for this topic
+                const rec = getTopicProgressRecord(pathString);
+                const inProg = rec.inProgress;
+                const savedCorrectSet = new Set(rec.correctIds || []);
+                const savedWrongSet = new Set(rec.wrongIds || []);
+                const savedSkippedSet = new Set(rec.skippedIds || []);
+
+                // Also fold any in-progress answers into temporary sets so "Start New" knows which ones were answered correctly even if user didn't click Submit last time
+                if (inProg && inProg.userAnswers) {
+                    allDocs.forEach(q => {
+                        const uAns = inProg.userAnswers[q.id];
+                        if (uAns !== undefined && uAns !== null) {
+                            if (isQuestionAnsweredCorrectly(q, uAns)) {
+                                savedCorrectSet.add(q.id);
+                                savedWrongSet.delete(q.id);
+                            } else {
+                                savedWrongSet.add(q.id);
+                            }
+                        }
+                    });
+                }
+
+                const hasInProgress = Boolean(inProg && inProg.userAnswers && Object.keys(inProg.userAnswers).length > 0);
+                const hasPreviousHistory = savedCorrectSet.size > 0 || savedWrongSet.size > 0;
+
+                if (!hasInProgress && !hasPreviousHistory) {
+                    // Fresh topic: load ALL questions (no 50-question limit!)
+                    const shuffledAll = shuffleArrayNonSerial(allDocs);
+                    launchQuizWithQuestionsList(pathString, shuffledAll, null);
+                    return;
+                }
+
+                // Compute pools for "Start New (Exclude Correct)"
+                const wrongAndSkippedAndUnattempted = allDocs.filter(q => !savedCorrectSet.has(q.id));
+                const wrongCount = allDocs.filter(q => savedWrongSet.has(q.id) && !savedCorrectSet.has(q.id)).length;
+                const skippedCount = allDocs.filter(q => savedSkippedSet.has(q.id) && !savedCorrectSet.has(q.id) && !savedWrongSet.has(q.id)).length;
+                const unattemptedCount = Math.max(0, wrongAndSkippedAndUnattempted.length - wrongCount - skippedCount);
+                const inProgAnsweredCount = hasInProgress ? Object.keys(inProg.userAnswers).length : 0;
+
+                // Show Resume Practice vs Start New (Exclude Correct) choice screen
+                if (dyn) {
+                    dyn.innerHTML = `
+                        <div class="admin-panel-card" style="max-width:640px; margin:35px auto; padding:28px 24px; border:1.5px solid rgba(253,184,19,0.4); background:linear-gradient(145deg, #121624, #0d111d); border-radius:16px; box-shadow:0 15px 40px rgba(0,0,0,0.6);">
+                            <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
+                                <span style="font-size:26px;">🎯</span>
+                                <div>
+                                    <h2 style="margin:0; font-size:20px; color:#fff;">Welcome Back to This Topic!</h2>
+                                    <div style="font-size:12.5px; color:#94a3b8; margin-top:2px;">${pathString} • Total Questions: <b style="color:#fdb813;">${allDocs.length}</b></div>
+                                </div>
+                            </div>
+
+                            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(120px, 1fr)); gap:10px; margin:18px 0;">
+                                <div style="background:#090d16; border:1px solid rgba(16,185,129,0.35); border-radius:10px; padding:10px; text-align:center;">
+                                    <div style="font-size:11px; color:#94a3b8; font-weight:700;">✅ CORRECT</div>
+                                    <div style="font-size:20px; font-weight:900; color:#10b981; margin-top:2px;">${savedCorrectSet.size}</div>
+                                </div>
+                                <div style="background:#090d16; border:1px solid rgba(244,63,94,0.35); border-radius:10px; padding:10px; text-align:center;">
+                                    <div style="font-size:11px; color:#94a3b8; font-weight:700;">❌ WRONG</div>
+                                    <div style="font-size:20px; font-weight:900; color:#f43f5e; margin-top:2px;">${wrongCount}</div>
+                                </div>
+                                <div style="background:#090d16; border:1px solid rgba(234,179,8,0.35); border-radius:10px; padding:10px; text-align:center;">
+                                    <div style="font-size:11px; color:#94a3b8; font-weight:700;">⏭️ SKIPPED</div>
+                                    <div style="font-size:20px; font-weight:900; color:#eab308; margin-top:2px;">${skippedCount}</div>
+                                </div>
+                                <div style="background:#090d16; border:1px solid rgba(56,189,248,0.35); border-radius:10px; padding:10px; text-align:center;">
+                                    <div style="font-size:11px; color:#94a3b8; font-weight:700;">🆕 UNATTEMPTED</div>
+                                    <div style="font-size:20px; font-weight:900; color:#38bdf8; margin-top:2px;">${unattemptedCount}</div>
+                                </div>
+                            </div>
+
+                            <div style="display:flex; flex-direction:column; gap:12px; margin-top:20px;">
+                                <button type="button" id="btnResumeTopicPractice" class="btn-exam btn-yellow-glow" style="padding:14px 18px; font-size:14.5px; font-weight:800; text-align:left; display:flex; justify-content:space-between; align-items:center; border-radius:12px;">
+                                    <div>
+                                        <div>▶️ Resume Practice</div>
+                                        <div style="font-size:11.5px; font-weight:500; opacity:0.85; margin-top:2px;">
+                                            ${hasInProgress
+                                                ? `Continue where you left off (${inProgAnsweredCount}/${allDocs.length} answered in current session)`
+                                                : `Continue practicing with your previous progress preserved`}
+                                        </div>
+                                    </div>
+                                    <span style="font-size:18px;">&rarr;</span>
+                                </button>
+
+                                <button type="button" id="btnStartNewSmartPractice" class="btn-exam" style="background:linear-gradient(135deg, #10b981, #059669); color:#fff; border:none; padding:14px 18px; font-size:14.5px; font-weight:800; text-align:left; display:flex; justify-content:space-between; align-items:center; border-radius:12px; cursor:pointer;">
+                                    <div>
+                                        <div>🚀 Start New (${wrongAndSkippedAndUnattempted.length} Questions — Exclude Correct)</div>
+                                        <div style="font-size:11.5px; font-weight:500; opacity:0.92; margin-top:2px;">
+                                            Gives only Wrong (${wrongCount}), Skipped (${skippedCount}) &amp; Not Attempted (${unattemptedCount}) • Skips ${savedCorrectSet.size} Correct MCQs
+                                        </div>
+                                    </div>
+                                    <span style="font-size:18px;">&rarr;</span>
+                                </button>
+
+                                <button type="button" id="btnResetAllPracticeFresh" class="btn-exam" style="background:#161d2f; color:#94a3b8; border:1px solid #2b3954; padding:10px 16px; font-size:12.5px; font-weight:700; border-radius:10px; cursor:pointer; text-align:center;">
+                                    🔄 Reset Topic History &amp; Practice All ${allDocs.length} Questions from Scratch
+                                </button>
+                            </div>
+                        </div>
+                    `;
+
+                    document.getElementById('btnResumeTopicPractice').onclick = () => {
+                        if (hasInProgress && Array.isArray(inProg.questionIds) && inProg.questionIds.length > 0) {
+                            const docMap = new Map(allDocs.map(d => [d.id, d]));
+                            const ordered = inProg.questionIds.map(id => docMap.get(id)).filter(Boolean);
+                            // Append any newly uploaded questions that weren't in the earlier session
+                            const existingSet = new Set(ordered.map(d => d.id));
+                            allDocs.forEach(d => { if (!existingSet.has(d.id)) ordered.push(d); });
+                            launchQuizWithQuestionsList(pathString, ordered, inProg);
+                        } else {
+                            // Resume on remaining unattempted/wrong/skipped questions or full list at first unanswered index
+                            const pool = wrongAndSkippedAndUnattempted.length > 0 ? wrongAndSkippedAndUnattempted : allDocs;
+                            launchQuizWithQuestionsList(pathString, pool, null);
+                        }
+                    };
+
+                    document.getElementById('btnStartNewSmartPractice').onclick = () => {
+                        if (wrongAndSkippedAndUnattempted.length === 0) {
+                            alert(`🎉 You have already answered all ${allDocs.length} questions in this topic correctly! Clicking OK will reset history so you can practice all ${allDocs.length} questions again.`);
+                            const map = readAllTopicsProgressMap();
+                            delete map[pathString];
+                            writeAllTopicsProgressMap(map);
+                            launchQuizWithQuestionsList(pathString, shuffleArrayNonSerial(allDocs), null);
+                            return;
+                        }
+                        // Clear old in-progress session but keep correctIds so they stay excluded
+                        const map = readAllTopicsProgressMap();
+                        if (map[pathString]) {
+                            map[pathString].correctIds = Array.from(savedCorrectSet);
+                            map[pathString].wrongIds = Array.from(savedWrongSet);
+                            map[pathString].inProgress = null;
+                            writeAllTopicsProgressMap(map);
+                        }
+                        launchQuizWithQuestionsList(pathString, shuffleArrayNonSerial(wrongAndSkippedAndUnattempted), null);
+                    };
+
+                    document.getElementById('btnResetAllPracticeFresh').onclick = () => {
+                        const map = readAllTopicsProgressMap();
+                        delete map[pathString];
+                        writeAllTopicsProgressMap(map);
+                        launchQuizWithQuestionsList(pathString, shuffleArrayNonSerial(allDocs), null);
+                    };
+                }
+            } catch (err) {
+                console.error('Quiz Engine Error:', err);
+                if (dyn) dyn.innerHTML = `<div class="card" style="text-align:center; padding:40px;"><p style="color:#ef4444;">Failed to load questions: ${err.message}</p></div>`;
+            }
+        };
+    }
+})();
+
 // Self-Healing Guard: Ensures refreshing #/admin-panel never leaves a blank screen
 (function ensureAdminPanelRendersOnRefresh() {
     function checkAndRenderAdmin() {
@@ -4428,6 +4965,20 @@ async function processAdminUpload() {
     try {
         if (type === 'mcq') {
             let questionTextRaw = document.getElementById('admQuestion').value.trim();
+
+            // Auto-detect Match-the-Column if admin pasted one directly into Question Text without ticking the Match Table box
+            if (!adminMatchTableState.enabled && questionTextRaw) {
+                const autoMatch = autoExtractUniversalMatchTableFromQuestionStem(questionTextRaw);
+                if (autoMatch.matchTable && autoMatch.matchTable.enabled) {
+                    questionTextRaw = autoMatch.cleanQuestion;
+                    adminMatchTableState.enabled = true;
+                    adminMatchTableState.rows = autoMatch.matchTable.rows;
+                    adminMatchTableState.cols = autoMatch.matchTable.cols;
+                    adminMatchTableState.headers = [...autoMatch.matchTable.headers];
+                    adminMatchTableState.cells = autoMatch.matchTable.cells.map(r => [...r]);
+                }
+            }
+
             let questionTextFormatted = formatMultilineTextToHtml(questionTextRaw);
             const matchTableHtml = buildMatchTableHtmlForQuestion();
             const options = {
