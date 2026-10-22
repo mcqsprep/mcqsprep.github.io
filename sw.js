@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mcqsprep-cache-v60';
+const CACHE_NAME = 'mcqsprep-cache-v61';
 const ASSETS = [
   '/',
   '/index.html',
@@ -56,7 +56,6 @@ self.addEventListener('fetch', (event) => {
         return;
     }
 
-    // Network-First for local JS, CSS, and HTML so code updates appear immediately without stale cache issues
     if (url.includes('/js/') || url.includes('/style.css') || url.endsWith('/index.html')) {
         event.respondWith(
             caches.open(CACHE_NAME).then(async (cache) => {
