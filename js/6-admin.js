@@ -2556,6 +2556,15 @@ async function uploadFileToCloudinary(file) {
             border-radius: 6px;
             cursor: zoom-in;
         }
+        .mcq-diagrams-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 14px;
+            margin: 14px 0 16px 0;
+            width: 100%;
+            box-sizing: border-box;
+            align-items: stretch;
+        }
         .mcq-diagram-card {
             margin: 14px auto 16px auto;
             border: 1.5px solid rgba(253, 184, 19, 0.45);
@@ -2567,6 +2576,13 @@ async function uploadFileToCloudinary(file) {
             box-sizing: border-box;
             box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
             overflow: hidden;
+        }
+        .mcq-diagrams-row .mcq-diagram-card {
+            margin: 0;
+            max-width: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
         }
         .mcq-diagram-card.bg-light {
             background: #ffffff;
@@ -2659,8 +2675,72 @@ var lastFocusedFormulaInput = null;
 var adminImageSlots = {
     QUESTION: null,
     DIAGRAM: null,
+    DIAGRAM2: null,
     EXPLANATION: null
 };
+
+// Builds 1 centered diagram card OR 2 side-by-side diagram cards
+function buildSingleDiagramCardHtml(url, caption, bgMode, isPreview = false) {
+    if (!url) return '';
+    const safeUrl = String(url).replace(/'/g, "\\'");
+    const safeCap = String(caption || '').replace(/'/g, "\\'");
+    const bgClass = bgMode === 'dark' ? 'bg-dark' : 'bg-light';
+    const maxH = isPreview ? '160px' : '230px';
+    const capHtml = caption
+        ? `<div class="mcq-diagram-caption">📐 ${caption}${isPreview ? '' : ' <span style="font-size:10.5px; opacity:0.7;">(Tap to zoom)</span>'}</div>`
+        : (isPreview ? '' : `<div class="mcq-diagram-caption" style="font-size:11px; opacity:0.7;">🔍 Tap diagram to zoom</div>`);
+    return `<div class="mcq-diagram-card ${bgClass}"><img src="${url}" alt="Diagram" style="max-height:${maxH};" onclick="openStudentDiagramLightbox('${safeUrl}', '${safeCap}')">${capHtml}</div>`;
+}
+
+function buildCombinedDiagramsHtml(d1Url, d1Cap, d1Bg, d2Url, d2Cap, d2Bg, isPreview = false) {
+    const card1 = buildSingleDiagramCardHtml(d1Url, d1Cap, d1Bg, isPreview);
+    const card2 = buildSingleDiagramCardHtml(d2Url, d2Cap, d2Bg, isPreview);
+    if (card1 && card2) {
+        return `<div class="mcq-diagrams-row">${card1}${card2}</div>`;
+    }
+    return card1 || card2 || '';
+}
+
+// Automatically injects the 2nd Diagram uploader box into the Single Question Form if not present yet
+function ensureSecondDiagramSlotInSingleForm() {
+    const diag1Wrap = document.getElementById('admDiagramPreviewWrap');
+    if (!diag1Wrap || document.getElementById('admDiagram2SectionBox')) return;
+    const diag1Card = diag1Wrap.parentElement;
+    if (!diag1Card) return;
+
+    const diag2Box = document.createElement('div');
+    diag2Box.id = 'admDiagram2SectionBox';
+    diag2Box.style.cssText = 'margin-top:12px; padding-top:12px; border-top:1px dashed rgba(253,184,19,0.35);';
+    diag2Box.setAttribute('onpaste', "handleUniversalImagePaste(event, 'DIAGRAM2')");
+    diag2Box.innerHTML = `
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:8px;">
+            <label class="admin-label" style="color:#38bdf8; margin-bottom:0;">📐 2nd Diagram / Figure #2 (Optional — Displays Side-by-Side)</label>
+            <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                <button type="button" onclick="triggerClipboardImagePaste('DIAGRAM2')" style="background:rgba(16,185,129,0.16); color:#10b981; border:1px solid rgba(16,185,129,0.45); border-radius:6px; padding:4px 10px; font-size:11px; font-weight:800; cursor:pointer;">📋 Paste Screenshot</button>
+                <button type="button" onclick="document.getElementById('admQImage2').click()" style="background:rgba(56,189,248,0.15); color:#38bdf8; border:1px solid rgba(56,189,248,0.4); border-radius:6px; padding:4px 10px; font-size:11px; font-weight:700; cursor:pointer;">📁 Upload File</button>
+                <button type="button" onclick="clearUniversalImageSlot('DIAGRAM2')" id="btnClearDiagram2Img" style="display:none; background:rgba(239,68,68,0.15); color:#ef4444; border:1px solid rgba(239,68,68,0.4); border-radius:6px; padding:4px 9px; font-size:11px; font-weight:700; cursor:pointer;">✕ Remove</button>
+            </div>
+        </div>
+        <input type="file" id="admQImage2" class="input-field" accept="image/*" style="padding: 7px 10px; margin-bottom:8px; font-size:12px;" onchange="handleUniversalFileSelect(this, 'DIAGRAM2')">
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            <input type="text" id="admDiagram2Caption" class="input-field" placeholder="2nd Diagram Caption (e.g. Figure 4.3 — or click here & press Ctrl+V)" style="flex:2; min-width:140px; margin-bottom:0; padding:8px 10px; font-size:12px;" oninput="updateAdminLiveFormulaPreview()" onpaste="handleUniversalImagePaste(event, 'DIAGRAM2')">
+            <select id="admDiagram2BgMode" class="input-field" style="flex:1; min-width:130px; margin-bottom:0; padding:8px 10px; font-size:12px;" onchange="updateAdminDiagramPreviewBg(); updateAdminLiveFormulaPreview();">
+                <option value="light">☀️ Crisp White Backing</option>
+                <option value="dark">🌙 Dark Backing</option>
+            </select>
+        </div>
+        <div id="admDiagram2PreviewWrap" style="display:none; margin-top:10px; background:#ffffff; padding:10px; border-radius:8px; text-align:center; border:1px solid #334155;">
+            <img id="admDiagram2PreviewImg" src="" style="max-height:160px; max-width:100%; object-fit:contain; display:block; margin:0 auto;">
+        </div>
+    `;
+    diag1Card.appendChild(diag2Box);
+
+    const cap1 = document.getElementById('admDiagramCaption');
+    if (cap1 && !cap1.dataset.liveBound) {
+        cap1.dataset.liveBound = 'true';
+        cap1.addEventListener('input', updateAdminLiveFormulaPreview);
+    }
+}
 
 var adminMatchTableState = {
     enabled: false,
@@ -2703,7 +2783,7 @@ function autoSeparateStatementsInActiveInput() {
 
     let s = target.value;
     s = s.replace(/([^\n])\s+(\b(?:I|II|III|IV|V|VI|VII)\.\s+)/g, '$1\n$2');
-    s = s.replace(/([^\n])\s+(\((?:i\vert{}ii\vert{}iii\vert{}iv\vert{}v\vert{}vi\vert{}I\vert{}II\vert{}III\vert{}IV\vert{}V\vert{}VI)\)\s+)/g, '$1\n$2');
+    s = s.replace(/([^\n])\s+(\((?:i|ii|iii|iv|v|vi|I|II|III|IV|V|VI)\)\s+)/g, '$1\n$2');
     s = s.replace(/([^\n])\s+(\b(?:Statement\s*(?:I|II|III|IV|1|2|3|4)|Assertion\s*\(?A\)?|Reason\s*\(?R\)?)\s*[:\-])/gi, '$1\n$2');
     s = s.replace(/([^\n])\s+((?:Which\s+of\s+the\s+(?:above|following)|Select\s+the\s+correct|Choose\s+the\s+correct|In\s+the\s+light\s+of|How\s+many\s+of\s+the\s+above)\b)/gi, '$1\n\n$2');
 
@@ -2817,7 +2897,6 @@ function extractStyledTextFromClipboardHtml(htmlStr, plainFallback, preserveLine
 
         doc.querySelectorAll('script, style, button, svg, sup.citation, a[href*="pdf"]').forEach(el => el.remove());
 
-        // Convert HTML <table> into pipe format so our Universal Match-Column Detector turns it into an editable Match Table!
         doc.querySelectorAll('table').forEach(tbl => {
             const rows = Array.from(tbl.querySelectorAll('tr'));
             if (!rows.length) return;
@@ -2985,7 +3064,6 @@ function extractStyledTextFromClipboardHtml(htmlStr, plainFallback, preserveLine
 // 📊 UNIVERSAL MATCH-THE-COLUMN AUTO-DETECTOR (INLINE, STACKED, SIDE-BY-SIDE, PIPE & HTML TABLES)
 // ==========================================
 
-// Splits a column body like "(a) <i>Sycon</i>, (b) <i>Spongilla</i>, (c) <i>Euspongia</i>" into individual row items
 function splitColumnContentIntoRowItems(rawColStr) {
     if (!rawColStr) return [];
     let s = String(rawColStr)
@@ -2994,11 +3072,9 @@ function splitColumnContentIntoRowItems(rawColStr) {
         .trim();
     if (!s) return [];
 
-    // Insert a newline before any inline item marker: (a), (b), (i), (ii), (1), (2), a., b., i., ii., 1., 2., P., Q., etc.
     const inlineSplitRegex = /(?:[,;]\s*|\s{2,}|\s+)(?=(?:<[bBiI]>\s*)*(?:\((?:[a-gA-Gp-uP-U]|[1-9]|i{1,3}|iv|vi{0,3}|ix|x|I{1,3}|IV|VI{0,3}|IX|X)\)|(?:[a-gA-Gp-uP-U]|[1-9]|i{1,3}|iv|vi{0,3}|ix|x)[.\)])(?:\s*<\/[bBiI]>)*\s+)/g;
     s = s.replace(inlineSplitRegex, '\n');
 
-    // Also split uppercase A., B., C., D. or I., II., III., IV. when preceded by a comma, semicolon, or 2+ spaces
     const upperSplitRegex = /(?:[,;]\s*|\s{2,})(?=(?:<[bBiI]>\s*)*(?:[A-GP-U]|I{1,3}|IV|VI{0,3}|IX|X)[.\)](?:\s*<\/[bBiI]>)*\s+)/g;
     s = s.replace(upperSplitRegex, '\n');
 
@@ -3040,7 +3116,6 @@ function autoExtractUniversalMatchTableFromQuestionStem(rawQuestionStem) {
         };
     };
 
-    // Pre-split if "<b>Column II:</b>" or "Column II:" was pasted on the same line right after Column I's items
     text = text.replace(
         /([^\n])\s+(?=(?:<[bBiI]>\s*)*(?:Column|List|Group|Set)\s*[\-\s]*(?:II|III|2|3|B|C)(?:\s*\([^)\n]*\))?\s*(?:<\/[bBiI]>\s*)*[:\-–—]\s*(?:<[bBiI]>\s*)*\(?)/gi,
         '$1\n'
@@ -3048,9 +3123,7 @@ function autoExtractUniversalMatchTableFromQuestionStem(rawQuestionStem) {
 
     const lines = text.split('\n');
 
-    // ---------------------------------------------------------
     // STYLE 1: Markdown Pipe Table (| Column I | Column II |)
-    // ---------------------------------------------------------
     let pipeStart = -1, pipeEnd = -1;
     for (let i = 0; i < lines.length; i++) {
         const t = lines[i].trim();
@@ -3082,9 +3155,7 @@ function autoExtractUniversalMatchTableFromQuestionStem(rawQuestionStem) {
         }
     }
 
-    // ---------------------------------------------------------
     // STYLE 2: Inline OR Multi-Line "Column I: (a)..., (b)..." & "Column II: (i)..., (ii)..."
-    // ---------------------------------------------------------
     const colStartLineRegex = /^\s*(?:<(?:b|strong|i|em|u)>\s*)*((?:Column|List|Group|Set)\s*[\-\s]*(?:I{1,3}|IV|1|2|3|4|A|B|C)(?:\s*\([^)\n]+\))?)\s*(?:<\/(?:b|strong|i|em|u)>\s*)*(?:[:\-–—]\s*(.*))?$/i;
     const trailingPromptLineRegex = /^\s*(?:Which\s+of\s+the|Select\s+the|Choose\s+the|In\s+the\s+light\s+of|Match\s+the|Codes?\s*[:\-]|Options?\s*[:\-])/i;
 
@@ -3098,7 +3169,6 @@ function autoExtractUniversalMatchTableFromQuestionStem(rawQuestionStem) {
         if (!trimmed) continue;
 
         const colMatch = trimmed.match(colStartLineRegex);
-        // Make sure it's a real column header line, not a prose sentence like "Column I with Column II"
         if (colMatch && !/\b(?:with|and|to|from|in)\s+(?:Column|List|Group)/i.test(trimmed)) {
             const headerTitle = colMatch[1].trim();
             const inlineRest = (colMatch[2] || '').trim();
@@ -3117,7 +3187,6 @@ function autoExtractUniversalMatchTableFromQuestionStem(rawQuestionStem) {
                 currentSection = null;
                 continue;
             }
-            // Check if this line belongs to the current column (starts with an item marker or continues items)
             const looksLikeItem = /^(?:<[bBiI]>\s*)*(?:\((?:[a-gA-Gp-uP-U]|[1-9]|i{1,3}|iv|vi{0,3}|ix|x|I{1,3}|IV|VI{0,3}|IX|X)\)|(?:[a-gA-Gp-uP-U]|[1-9]|i{1,3}|iv|vi{0,3}|ix|x|I{1,3}|IV|VI{0,3}|IX|X)[.\)])\s+/i.test(trimmed);
             if (looksLikeItem || currentSection.rawParts.length === 0) {
                 currentSection.rawParts.push(trimmed);
@@ -3146,9 +3215,7 @@ function autoExtractUniversalMatchTableFromQuestionStem(rawQuestionStem) {
         }
     }
 
-    // ---------------------------------------------------------
     // STYLE 3: Side-by-Side Rows ("a. Primata   i. Anacardiaceae")
-    // ---------------------------------------------------------
     const leftMarkerStr = '(?:(?:<[bBiI]>\\s*)*\\(?[a-fA-FP-Up-u1-6][\\.\\)](?:\\s*<\\/[bBiI]>)*\\s+)';
     const rightMarkerStr = '(?:(?:<[bBiI]>\\s*)*\\(?(:?i|ii|iii|iv|v|vi|I|II|III|IV|V|VI|1|2|3|4|5|6|p|q|r|s|P|Q|R|S)[\\.\\)](?:\\s*<\\/[bBiI]>)*\\s+)';
     const sideBySideLineRegex = new RegExp(`^\\s*(${leftMarkerStr}.+?)\\s*(?:\\t|\\s{2,}|\\s+[–—\\-]\\s+)(${rightMarkerStr}.+)$`, 'i');
@@ -3180,9 +3247,7 @@ function autoExtractUniversalMatchTableFromQuestionStem(rawQuestionStem) {
         return { cleanQuestion: cleanQ || 'Match the following columns:', matchTable: makeTableObj(headers, sbsPairs) };
     }
 
-    // ---------------------------------------------------------
     // STYLE 4: Unheaded Inline or Stacked Lists
-    // ---------------------------------------------------------
     const startsWithLeftMarker = /^\s*(?:<[bBiI]>\s*)*(?:\([a-fA-FP-Up-u]\)|[a-fA-FP-Up-u][.\)])\s+/;
     const startsWithRightMarker = /^\s*(?:<[bBiI]>\s*)*(?:\((?:i{1,3}|iv|vi{0,3}|1|2|3|4|5|6)\)|(?:i{1,3}|iv|vi{0,3}|1|2|3|4|5|6)[.\)])\s+/i;
 
@@ -3449,6 +3514,10 @@ function parseSingleMCQBlockAccurate(rawBlock, defaultDifficulty = 'Mixed') {
         diagramPreviewUrl: '',
         diagramCaption: '',
         diagramBgMode: 'light',
+        diagram2Blob: null,
+        diagram2PreviewUrl: '',
+        diagram2Caption: '',
+        diagram2BgMode: 'light',
         explanationImageBlob: null,
         explanationImagePreviewUrl: '',
         matchTable: defaultMatchTable
@@ -3503,6 +3572,8 @@ parseQuickPasteMCQ = function(mode = 'auto') {
 function loadBulkCardIntoMainSingleForm(idx) {
     const item = adminBulkStagedQuestions[idx];
     if (!item) return;
+    ensureSecondDiagramSlotInSingleForm();
+
     document.getElementById('admQuestion').value = item.question || '';
     document.getElementById('admOptA').value = item.options.A || '';
     document.getElementById('admOptB').value = item.options.B || '';
@@ -3514,6 +3585,24 @@ function loadBulkCardIntoMainSingleForm(idx) {
     document.querySelectorAll('.admCorrectCb').forEach(cb => {
         cb.checked = item.correctAnswers.includes(cb.value);
     });
+
+    if (item.diagramBlob) {
+        applyBlobOrFileToSlot('DIAGRAM', item.diagramBlob);
+    } else {
+        clearUniversalImageSlot('DIAGRAM');
+    }
+    if (document.getElementById('admDiagramCaption')) document.getElementById('admDiagramCaption').value = item.diagramCaption || '';
+    if (document.getElementById('admDiagramBgMode')) document.getElementById('admDiagramBgMode').value = item.diagramBgMode || 'light';
+
+    if (item.diagram2Blob) {
+        applyBlobOrFileToSlot('DIAGRAM2', item.diagram2Blob);
+    } else {
+        clearUniversalImageSlot('DIAGRAM2');
+    }
+    if (document.getElementById('admDiagram2Caption')) document.getElementById('admDiagram2Caption').value = item.diagram2Caption || '';
+    if (document.getElementById('admDiagram2BgMode')) document.getElementById('admDiagram2BgMode').value = item.diagram2BgMode || 'light';
+    updateAdminDiagramPreviewBg();
+
     if (item.matchTable && item.matchTable.enabled) {
         adminMatchTableState.enabled = true;
         adminMatchTableState.rows = item.matchTable.rows;
@@ -3570,7 +3659,7 @@ function buildBulkItemMatchTableHtml(item) {
 }
 
 function isBulkItemReady(item) {
-    const hasQ = Boolean(item.question.trim() || item.questionImageBlob || (item.matchTable && item.matchTable.enabled));
+    const hasQ = Boolean(item.question.trim() || item.questionImageBlob || item.diagramBlob || item.diagram2Blob || (item.matchTable && item.matchTable.enabled));
     const hasOpts = Boolean(item.options.A.trim() && item.options.B.trim());
     const hasAns = Array.isArray(item.correctAnswers) && item.correctAnswers.length > 0;
     return hasQ && hasOpts && hasAns;
@@ -3620,13 +3709,18 @@ function refreshSingleBulkCardPreview(idx) {
     if (prevEl) {
         const qHtml = formatMultilineTextToHtml(item.question);
         const tblHtml = buildBulkItemMatchTableHtml(item);
+        const diagramsHtml = buildCombinedDiagramsHtml(
+            item.diagramPreviewUrl, item.diagramCaption, item.diagramBgMode,
+            item.diagram2PreviewUrl, item.diagram2Caption, item.diagram2BgMode,
+            true
+        );
         const expHtml = formatMultilineTextToHtml(item.explanation);
         prevEl.innerHTML = `
             <div style="font-size:10.5px; font-weight:800; color:var(--primary-yellow); text-transform:uppercase; margin-bottom:6px;">👁️ Live Student Preview (#${idx + 1})</div>
             ${qHtml ? `<div style="margin-bottom:8px; line-height:1.65; color:#fff;"><b>Q${idx + 1}:</b> ${qHtml}</div>` : ''}
             ${item.questionImagePreviewUrl ? `<div class="mcq-question-text-img-wrap"><img src="${item.questionImagePreviewUrl}" style="max-height:160px;"></div>` : ''}
             ${tblHtml}
-            ${item.diagramPreviewUrl ? `<div class="mcq-diagram-card ${item.diagramBgMode === 'dark' ? 'bg-dark' : 'bg-light'}"><img src="${item.diagramPreviewUrl}" style="max-height:160px;">${item.diagramCaption ? `<div class="mcq-diagram-caption">📐 ${item.diagramCaption}</div>` : ''}</div>` : ''}
+            ${diagramsHtml}
             <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; font-size:12.5px; color:#cbd5e1; margin-top:6px;">
                 <div style="${item.correctAnswers.includes('A') ? 'color:#10b981; font-weight:700;' : ''}"><b>A)</b> ${item.options.A || '-'} ${item.correctAnswers.includes('A') ? '✓' : ''}</div>
                 <div style="${item.correctAnswers.includes('B') ? 'color:#10b981; font-weight:700;' : ''}"><b>B)</b> ${item.options.B || '-'} ${item.correctAnswers.includes('B') ? '✓' : ''}</div>
@@ -3684,18 +3778,23 @@ function handleBulkCardImageBlob(idx, slot, blob) {
     const item = adminBulkStagedQuestions[idx];
     if (!item || !blob) return;
     const url = URL.createObjectURL(blob);
+    item.showTools = true;
     if (slot === 'QUESTION') {
         item.questionImageBlob = blob;
         item.questionImagePreviewUrl = url;
     } else if (slot === 'DIAGRAM') {
         item.diagramBlob = blob;
         item.diagramPreviewUrl = url;
+    } else if (slot === 'DIAGRAM2') {
+        item.diagram2Blob = blob;
+        item.diagram2PreviewUrl = url;
     } else if (slot === 'EXPLANATION') {
         item.explanationImageBlob = blob;
         item.explanationImagePreviewUrl = url;
     }
     renderAdminBulkStagingQueue();
-    showNotification(`📸 Attached ${slot.toLowerCase()} image to Question #${idx + 1}!`);
+    const labelMap = { QUESTION: 'Question', DIAGRAM: '1st Diagram', DIAGRAM2: '2nd Diagram', EXPLANATION: 'Explanation' };
+    showNotification(`📸 Attached ${labelMap[slot] || slot} image to Question #${idx + 1}!`);
 }
 
 function handleBulkCardFileSelect(inputEl, idx, slot) {
@@ -3733,7 +3832,7 @@ async function triggerBulkCardClipboardPaste(idx, slot) {
             throw new Error('Clipboard read unsupported');
         }
     } catch (e) {
-        showNotification('📋 Click inside the Question/Explanation box on this card and press Ctrl+V to paste screenshot!');
+        showNotification('📋 Click inside the Caption or Question box on this card and press Ctrl+V to paste screenshot!');
     }
 }
 
@@ -3747,6 +3846,10 @@ function clearBulkCardImageSlot(idx, slot) {
         item.diagramBlob = null;
         item.diagramPreviewUrl = '';
         item.diagramCaption = '';
+    } else if (slot === 'DIAGRAM2') {
+        item.diagram2Blob = null;
+        item.diagram2PreviewUrl = '';
+        item.diagram2Caption = '';
     } else if (slot === 'EXPLANATION') {
         item.explanationImageBlob = null;
         item.explanationImagePreviewUrl = '';
@@ -3811,7 +3914,6 @@ function applyBulkGlobalDifficulty(level) {
 
 function bulkAutoSplitAllStatements() {
     adminBulkStagedQuestions.forEach(item => {
-        // Also run Match-the-Column auto-detection if not already enabled
         if (!item.matchTable || !item.matchTable.enabled) {
             const det = autoExtractUniversalMatchTableFromQuestionStem(item.question);
             if (det.matchTable) {
@@ -3916,7 +4018,7 @@ function renderAdminBulkStagingQueue() {
                     <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
                         <button type="button" onclick="loadBulkCardIntoMainSingleForm(${idx})" style="background:rgba(56,189,248,0.15); color:#38bdf8; border:1px solid rgba(56,189,248,0.4); border-radius:6px; padding:5px 10px; font-size:11px; font-weight:700; cursor:pointer;">⬆️ Edit in Main Form</button>
                         <button type="button" onclick="toggleBulkCardExtraTools(${idx})" style="background:rgba(168,85,247,0.15); color:#c084fc; border:1px solid rgba(168,85,247,0.4); border-radius:6px; padding:5px 10px; font-size:11px; font-weight:700; cursor:pointer;">
-                            🖼️ + Image / Diagram / Match Table ${(item.questionImageBlob || item.diagramBlob || item.explanationImageBlob || mt.enabled) ? '●' : ''}
+                            🖼️ + Image / Diagrams (1 &amp; 2) / Table ${(item.questionImageBlob || item.diagramBlob || item.diagram2Blob || item.explanationImageBlob || mt.enabled) ? '●' : ''}
                         </button>
                         <select class="input-field" onchange="updateBulkItemField(${idx}, 'level', this.value)" style="margin:0; width:auto; padding:4px 9px; font-size:11.5px; font-weight:700;">
                             <option value="Mixed" ${item.level === 'Mixed' ? 'selected' : ''}>Mixed</option>
@@ -3932,7 +4034,8 @@ function renderAdminBulkStagingQueue() {
                 <textarea class="input-field" style="min-height:68px; font-size:13.5px; margin-bottom:8px;" placeholder="Question #${idx + 1} text (or paste screenshot with Ctrl+V)..." onfocus="setLastFocusedFormulaInput(this)" oninput="updateBulkItemField(${idx}, 'question', this.value)" onpaste="handleBulkCardPasteImage(event, ${idx}, 'QUESTION')">${item.question}</textarea>
 
                 <div id="bulkCardToolsDrawer_${idx}" style="display:${item.showTools ? 'block' : 'none'}; background:#111729; border:1px dashed #334155; border-radius:10px; padding:12px; margin-bottom:10px;">
-                    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(210px, 1fr)); gap:10px;">
+                    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(205px, 1fr)); gap:10px;">
+                        <!-- 1. Question Screenshot -->
                         <div style="background:#0b0f19; border:1px solid rgba(56,189,248,0.35); border-radius:8px; padding:9px;" onpaste="handleBulkCardPasteImage(event, ${idx}, 'QUESTION')">
                             <div style="font-size:11.5px; font-weight:800; color:#38bdf8; margin-bottom:6px;">📸 Question Image / Screenshot</div>
                             <div style="display:flex; gap:6px; flex-wrap:wrap;">
@@ -3943,8 +4046,9 @@ function renderAdminBulkStagingQueue() {
                             </div>
                         </div>
 
-                        <div style="background:#0b0f19; border:1px solid rgba(253,184,19,0.35); border-radius:8px; padding:9px;" onpaste="handleBulkCardPasteImage(event, ${idx}, 'DIAGRAM')">
-                            <div style="font-size:11.5px; font-weight:800; color:#fdb813; margin-bottom:6px;">📐 Dedicated Diagram / Circuit</div>
+                        <!-- 2. Dedicated Diagram #1 -->
+                        <div style="background:#0b0f19; border:1px solid rgba(253,184,19,0.45); border-radius:8px; padding:9px;" onpaste="handleBulkCardPasteImage(event, ${idx}, 'DIAGRAM')">
+                            <div style="font-size:11.5px; font-weight:800; color:#fdb813; margin-bottom:6px;">📐 Diagram #1 (e.g. Fig 4.2)</div>
                             <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:6px;">
                                 <input type="file" id="bulkDiagFile_${idx}" accept="image/*" style="display:none;" onchange="handleBulkCardFileSelect(this, ${idx}, 'DIAGRAM')">
                                 <button type="button" onclick="triggerBulkCardClipboardPaste(${idx}, 'DIAGRAM')" style="background:rgba(16,185,129,0.15); color:#10b981; border:1px solid rgba(16,185,129,0.4); border-radius:5px; padding:4px 8px; font-size:11px; font-weight:700; cursor:pointer;">📋 Paste</button>
@@ -3952,7 +4056,7 @@ function renderAdminBulkStagingQueue() {
                                 ${item.diagramPreviewUrl ? `<button type="button" onclick="clearBulkCardImageSlot(${idx}, 'DIAGRAM')" style="background:rgba(239,68,68,0.15); color:#ef4444; border:none; border-radius:5px; padding:4px 8px; font-size:11px; cursor:pointer;">✕</button>` : ''}
                             </div>
                             <div style="display:flex; gap:5px;">
-                                <input type="text" class="input-field" placeholder="Caption (e.g. Fig 1)" value="${escAttr(item.diagramCaption)}" oninput="updateBulkItemField(${idx}, 'diagramCaption', this.value)" style="margin:0; padding:4px 7px; font-size:11px; flex:1;">
+                                <input type="text" class="input-field" placeholder="Caption 1 (or Ctrl+V here)" value="${escAttr(item.diagramCaption)}" oninput="updateBulkItemField(${idx}, 'diagramCaption', this.value)" onpaste="handleBulkCardPasteImage(event, ${idx}, 'DIAGRAM')" style="margin:0; padding:4px 7px; font-size:11px; flex:1;">
                                 <select class="input-field" onchange="updateBulkItemField(${idx}, 'diagramBgMode', this.value)" style="margin:0; padding:4px 6px; font-size:11px; width:auto;">
                                     <option value="light" ${item.diagramBgMode === 'light' ? 'selected' : ''}>☀️ White</option>
                                     <option value="dark" ${item.diagramBgMode === 'dark' ? 'selected' : ''}>🌙 Dark</option>
@@ -3960,6 +4064,25 @@ function renderAdminBulkStagingQueue() {
                             </div>
                         </div>
 
+                        <!-- 3. Dedicated Diagram #2 (Side-by-Side) -->
+                        <div style="background:#0b0f19; border:1px solid rgba(168,85,247,0.45); border-radius:8px; padding:9px;" onpaste="handleBulkCardPasteImage(event, ${idx}, 'DIAGRAM2')">
+                            <div style="font-size:11.5px; font-weight:800; color:#c084fc; margin-bottom:6px;">📐 Diagram #2 (e.g. Fig 4.3)</div>
+                            <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:6px;">
+                                <input type="file" id="bulkDiag2File_${idx}" accept="image/*" style="display:none;" onchange="handleBulkCardFileSelect(this, ${idx}, 'DIAGRAM2')">
+                                <button type="button" onclick="triggerBulkCardClipboardPaste(${idx}, 'DIAGRAM2')" style="background:rgba(16,185,129,0.15); color:#10b981; border:1px solid rgba(16,185,129,0.4); border-radius:5px; padding:4px 8px; font-size:11px; font-weight:700; cursor:pointer;">📋 Paste</button>
+                                <button type="button" onclick="document.getElementById('bulkDiag2File_${idx}').click()" style="background:rgba(168,85,247,0.15); color:#c084fc; border:1px solid rgba(168,85,247,0.4); border-radius:5px; padding:4px 8px; font-size:11px; cursor:pointer;">📁 Upload</button>
+                                ${item.diagram2PreviewUrl ? `<button type="button" onclick="clearBulkCardImageSlot(${idx}, 'DIAGRAM2')" style="background:rgba(239,68,68,0.15); color:#ef4444; border:none; border-radius:5px; padding:4px 8px; font-size:11px; cursor:pointer;">✕</button>` : ''}
+                            </div>
+                            <div style="display:flex; gap:5px;">
+                                <input type="text" class="input-field" placeholder="Caption 2 (or Ctrl+V here)" value="${escAttr(item.diagram2Caption)}" oninput="updateBulkItemField(${idx}, 'diagram2Caption', this.value)" onpaste="handleBulkCardPasteImage(event, ${idx}, 'DIAGRAM2')" style="margin:0; padding:4px 7px; font-size:11px; flex:1;">
+                                <select class="input-field" onchange="updateBulkItemField(${idx}, 'diagram2BgMode', this.value)" style="margin:0; padding:4px 6px; font-size:11px; width:auto;">
+                                    <option value="light" ${item.diagram2BgMode === 'light' ? 'selected' : ''}>☀️ White</option>
+                                    <option value="dark" ${item.diagram2BgMode === 'dark' ? 'selected' : ''}>🌙 Dark</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- 4. Explanation Solution Image -->
                         <div style="background:#0b0f19; border:1px solid rgba(16,185,129,0.35); border-radius:8px; padding:9px;" onpaste="handleBulkCardPasteImage(event, ${idx}, 'EXPLANATION')">
                             <div style="font-size:11.5px; font-weight:800; color:#10b981; margin-bottom:6px;">🖼️ Explanation Solution Image</div>
                             <div style="display:flex; gap:6px; flex-wrap:wrap;">
@@ -4035,8 +4158,14 @@ async function uploadAllBulkStagedMCQs() {
 
             let diagramUrl = null;
             if (item.diagramBlob) {
-                if (btn) btn.innerText = `☁️ Uploading Q#${i + 1} Diagram...`;
+                if (btn) btn.innerText = `☁️ Uploading Q#${i + 1} Diagram #1...`;
                 diagramUrl = await uploadFileToCloudinary(item.diagramBlob);
+            }
+
+            let diagram2Url = null;
+            if (item.diagram2Blob) {
+                if (btn) btn.innerText = `☁️ Uploading Q#${i + 1} Diagram #2...`;
+                diagram2Url = await uploadFileToCloudinary(item.diagram2Blob);
             }
 
             let explanationImageUrl = null;
@@ -4047,6 +4176,11 @@ async function uploadAllBulkStagedMCQs() {
 
             let finalQuestionHtml = formatMultilineTextToHtml(item.question.trim());
             const matchTableHtml = buildBulkItemMatchTableHtml(item);
+            const diagramsHtml = buildCombinedDiagramsHtml(
+                diagramUrl, item.diagramCaption, item.diagramBgMode,
+                diagram2Url, item.diagram2Caption, item.diagram2BgMode,
+                false
+            );
 
             if (questionImageUrl) {
                 const safeQUrl = questionImageUrl.replace(/'/g, "\\'");
@@ -4056,15 +4190,8 @@ async function uploadAllBulkStagedMCQs() {
             if (matchTableHtml) {
                 finalQuestionHtml = `${finalQuestionHtml}${matchTableHtml}`;
             }
-            if (diagramUrl) {
-                const safeDUrl = diagramUrl.replace(/'/g, "\\'");
-                const safeCap = (item.diagramCaption || '').replace(/'/g, "\\'");
-                const bgClass = item.diagramBgMode === 'dark' ? 'bg-dark' : 'bg-light';
-                const capHtml = item.diagramCaption
-                    ? `<div class="mcq-diagram-caption">📐 ${item.diagramCaption} <span style="font-size:10.5px; opacity:0.7;">(Tap to zoom)</span></div>`
-                    : `<div class="mcq-diagram-caption" style="font-size:11px; opacity:0.7;">🔍 Tap diagram to zoom</div>`;
-                const diagBlock = `<div class="mcq-diagram-card ${bgClass}"><img src="${diagramUrl}" alt="Diagram" onclick="openStudentDiagramLightbox('${safeDUrl}', '${safeCap}')">${capHtml}</div>`;
-                finalQuestionHtml = `${finalQuestionHtml}${diagBlock}`;
+            if (diagramsHtml) {
+                finalQuestionHtml = `${finalQuestionHtml}${diagramsHtml}`;
             }
 
             let finalExplanationHtml = formatMultilineTextToHtml(item.explanation.trim());
@@ -4095,6 +4222,8 @@ async function uploadAllBulkStagedMCQs() {
                 questionImageUrl,
                 diagramUrl,
                 diagramCaption: item.diagramCaption || '',
+                diagram2Url,
+                diagram2Caption: item.diagram2Caption || '',
                 explanationImageUrl,
                 randomKey: Math.random()
             });
@@ -4295,13 +4424,16 @@ function buildMatchTableHtmlForQuestion() {
 }
 
 // ==========================================
-// 📸 UNIVERSAL SCREENSHOT PASTE & FILE UPLOAD (QUESTION, DIAGRAM, EXPLANATION)
+// 📸 UNIVERSAL SCREENSHOT PASTE & FILE UPLOAD (QUESTION, DIAGRAM 1, DIAGRAM 2, EXPLANATION)
 // ==========================================
 function getSlotDomIds(slot) {
     if (slot === 'QUESTION') {
         return { fileId: 'admQTextImageFile', wrapId: 'admQTextImgPreviewWrap', imgId: 'admQTextImgPreview', clrId: 'btnClearQTextImg', label: 'Question Image' };
     } else if (slot === 'DIAGRAM') {
-        return { fileId: 'admQImage', wrapId: 'admDiagramPreviewWrap', imgId: 'admDiagramPreviewImg', clrId: 'btnClearDiagramImg', label: 'Diagram Image' };
+        return { fileId: 'admQImage', wrapId: 'admDiagramPreviewWrap', imgId: 'admDiagramPreviewImg', clrId: 'btnClearDiagramImg', label: '1st Diagram Image' };
+    } else if (slot === 'DIAGRAM2') {
+        ensureSecondDiagramSlotInSingleForm();
+        return { fileId: 'admQImage2', wrapId: 'admDiagram2PreviewWrap', imgId: 'admDiagram2PreviewImg', clrId: 'btnClearDiagram2Img', label: '2nd Diagram Image' };
     } else {
         return { fileId: 'admExpImageFile', wrapId: 'admExpImgPreviewWrap', imgId: 'admExpImgPreview', clrId: 'btnClearExpImg', label: 'Explanation Image' };
     }
@@ -4318,7 +4450,8 @@ function applyBlobOrFileToSlot(slot, blobOrFile) {
     if (img) img.src = url;
     if (wrap) wrap.style.display = 'block';
     if (clr) clr.style.display = 'inline-block';
-    if (slot === 'DIAGRAM') updateAdminDiagramPreviewBg();
+    if (slot === 'DIAGRAM' || slot === 'DIAGRAM2') updateAdminDiagramPreviewBg();
+    updateAdminLiveFormulaPreview();
     showNotification(`📸 ${label} attached!`);
 }
 
@@ -4358,7 +4491,9 @@ async function triggerClipboardImagePaste(slot) {
             throw new Error('Clipboard read API not supported');
         }
     } catch (e) {
-        const focusId = slot === 'QUESTION' ? 'admQuestion' : (slot === 'DIAGRAM' ? 'admDiagramCaption' : 'admExplanation');
+        const focusId = slot === 'QUESTION'
+            ? 'admQuestion'
+            : (slot === 'DIAGRAM' ? 'admDiagramCaption' : (slot === 'DIAGRAM2' ? 'admDiagram2Caption' : 'admExplanation'));
         const el = document.getElementById(focusId);
         if (el) el.focus();
         showNotification('📋 Box focused! Now press Ctrl+V (Desktop) or Long-Press -> Paste (Mobile) to paste your screenshot.');
@@ -4379,13 +4514,21 @@ function clearUniversalImageSlot(slot) {
     if (slot === 'DIAGRAM') {
         const cap = document.getElementById('admDiagramCaption');
         if (cap) cap.value = '';
+    } else if (slot === 'DIAGRAM2') {
+        const cap2 = document.getElementById('admDiagram2Caption');
+        if (cap2) cap2.value = '';
     }
+    updateAdminLiveFormulaPreview();
 }
 
 function updateAdminDiagramPreviewBg() {
-    const mode = document.getElementById('admDiagramBgMode')?.value || 'light';
-    const wrap = document.getElementById('admDiagramPreviewWrap');
-    if (wrap) wrap.style.background = mode === 'dark' ? '#0d1527' : '#ffffff';
+    const mode1 = document.getElementById('admDiagramBgMode')?.value || 'light';
+    const wrap1 = document.getElementById('admDiagramPreviewWrap');
+    if (wrap1) wrap1.style.background = mode1 === 'dark' ? '#0d1527' : '#ffffff';
+
+    const mode2 = document.getElementById('admDiagram2BgMode')?.value || 'light';
+    const wrap2 = document.getElementById('admDiagram2PreviewWrap');
+    if (wrap2) wrap2.style.background = mode2 === 'dark' ? '#0d1527' : '#ffffff';
 }
 
 function updateAdminLiveFormulaPreview() {
@@ -4396,6 +4539,17 @@ function updateAdminLiveFormulaPreview() {
     const qRaw = document.getElementById('admQuestion')?.value.trim() || '';
     const qFormatted = formatMultilineTextToHtml(qRaw);
     const tableHtml = buildMatchTableHtmlForQuestion();
+
+    const d1Src = document.getElementById('admDiagramPreviewImg')?.getAttribute('src') || '';
+    const d1Cap = document.getElementById('admDiagramCaption')?.value.trim() || '';
+    const d1Bg  = document.getElementById('admDiagramBgMode')?.value || 'light';
+
+    const d2Src = document.getElementById('admDiagram2PreviewImg')?.getAttribute('src') || '';
+    const d2Cap = document.getElementById('admDiagram2Caption')?.value.trim() || '';
+    const d2Bg  = document.getElementById('admDiagram2BgMode')?.value || 'light';
+
+    const diagramsHtml = buildCombinedDiagramsHtml(d1Src, d1Cap, d1Bg, d2Src, d2Cap, d2Bg, true);
+
     const a = document.getElementById('admOptA')?.value.trim() || '';
     const b = document.getElementById('admOptB')?.value.trim() || '';
     const c = document.getElementById('admOptC')?.value.trim() || '';
@@ -4403,7 +4557,7 @@ function updateAdminLiveFormulaPreview() {
     const expRaw = document.getElementById('admExplanation')?.value.trim() || '';
     const expFormatted = formatMultilineTextToHtml(expRaw);
 
-    if (!qFormatted && !tableHtml && !a && !b && !c && !d && !expFormatted) {
+    if (!qFormatted && !tableHtml && !diagramsHtml && !a && !b && !c && !d && !expFormatted) {
         card.style.display = 'none';
         return;
     }
@@ -4411,6 +4565,7 @@ function updateAdminLiveFormulaPreview() {
     content.innerHTML = `
         ${qFormatted ? `<div style="margin-bottom:10px; line-height:1.7;"><b>Q:</b> ${qFormatted}</div>` : ''}
         ${tableHtml}
+        ${diagramsHtml}
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; font-size:13px; color:#cbd5e1; margin-top:8px;">
             ${a ? `<div><b>A)</b> ${a}</div>` : ''}
             ${b ? `<div><b>B)</b> ${b}</div>` : ''}
@@ -4596,6 +4751,8 @@ async function generateAutoMixedQuestionsForSubtopic() {
                     questionImageUrl: q.questionImageUrl || null,
                     diagramUrl: q.diagramUrl || null,
                     diagramCaption: q.diagramCaption || '',
+                    diagram2Url: q.diagram2Url || null,
+                    diagram2Caption: q.diagram2Caption || '',
                     explanationImageUrl: q.explanationImageUrl || null,
                     randomKey: Math.random(),
                     timestamp: firebase.firestore.Timestamp.fromMillis(nowMs - (i + idx) * 1000)
@@ -4612,10 +4769,19 @@ async function generateAutoMixedQuestionsForSubtopic() {
     if (btn) { btn.innerText = '🎲 Auto-Combine & Shuffle into Mixed Level'; btn.disabled = false; }
 }
 
+if (!window._origBuildAdminSelectorsWrapped) {
+    window._origBuildAdminSelectorsWrapped = _buildAdminSelectors;
+    _buildAdminSelectors = function() {
+        window._origBuildAdminSelectorsWrapped();
+        ensureSecondDiagramSlotInSingleForm();
+    };
+}
+
 if (!window._origHandleAdminPathChangeWrapped) {
     window._origHandleAdminPathChangeWrapped = handleAdminPathChange;
     handleAdminPathChange = function(event, depth) {
         window._origHandleAdminPathChangeWrapped(event, depth);
+        ensureSecondDiagramSlotInSingleForm();
         setTimeout(refreshAutoMixAvailableCounts, 80);
     };
 }
@@ -4626,6 +4792,7 @@ if (!window._origClearAdminUploadFormWrapped) {
         window._origClearAdminUploadFormWrapped(isSmartClear);
         clearUniversalImageSlot('QUESTION');
         clearUniversalImageSlot('DIAGRAM');
+        clearUniversalImageSlot('DIAGRAM2');
         clearUniversalImageSlot('EXPLANATION');
         const tblCb = document.getElementById('admEnableMatchTable');
         if (tblCb) tblCb.checked = false;
@@ -4674,7 +4841,6 @@ if (!window._origClearAdminUploadFormWrapped) {
         return userArr.every(ans => correctArr.includes(ans)) && correctArr.every(ans => userArr.includes(ans));
     }
 
-    // Saves live progress every time a student selects an answer or moves between questions
     window.saveLiveQuizSessionProgress = function() {
         if (typeof currentQuizPath === 'undefined' || !currentQuizPath || currentQuizPath === 'Daily Quiz Challenge') return;
         if (typeof currentQuestions === 'undefined' || !Array.isArray(currentQuestions) || currentQuestions.length === 0) return;
@@ -4696,7 +4862,6 @@ if (!window._origClearAdminUploadFormWrapped) {
         }
     };
 
-    // Records final Correct, Wrong, and Skipped question IDs when student submits (both per-topic and globally)
     window.recordSubmittedQuizMastery = function() {
         if (typeof currentQuizPath === 'undefined' || !currentQuizPath || currentQuizPath === 'Daily Quiz Challenge') return;
         if (typeof currentQuestions === 'undefined' || !Array.isArray(currentQuestions) || currentQuestions.length === 0) return;
@@ -4726,7 +4891,6 @@ if (!window._origClearAdminUploadFormWrapped) {
                 skippedSet.delete(q.id);
             }
 
-            // Also update the question's home topic path if this was a Custom Practice session
             if (q.path && q.path !== currentQuizPath) {
                 const subRec = map[q.path] || { correctIds: [], wrongIds: [], skippedIds: [], inProgress: null };
                 const sCorr = new Set(subRec.correctIds || []);
@@ -4754,7 +4918,6 @@ if (!window._origClearAdminUploadFormWrapped) {
         writeAllTopicsProgressMap(map);
     };
 
-    // Anytime Submit handler (works under every question in MCQ Practice & Custom Practice)
     window.triggerAnytimeQuizSubmit = function() {
         const total = (typeof currentQuestions !== 'undefined' && Array.isArray(currentQuestions)) ? currentQuestions.length : 0;
         const attempted = (typeof userAnswers !== 'undefined' && userAnswers) ? Object.keys(userAnswers).length : 0;
@@ -4766,7 +4929,6 @@ if (!window._origClearAdminUploadFormWrapped) {
         }
     };
 
-    // Inject the "✅ SUBMIT (Attempted/Total)" button under every question in MCQ Practice & Custom Practice
     if (typeof renderQuizInterface === 'function' && !window._origRenderQuizInterfaceV62) {
         window._origRenderQuizInterfaceV62 = renderQuizInterface;
         renderQuizInterface = function() {
@@ -4833,8 +4995,6 @@ if (!window._origClearAdminUploadFormWrapped) {
         if (typeof startQuestionTimer === 'function') startQuestionTimer();
     }
 
-    // Upgrade _initiateQuizEngine:
-    // Properly reads currentPath.join(' > ') when called with no arguments, loads all 60+ MCQs, and shows Resume vs Start New (Exclude Correct)
     if (typeof _initiateQuizEngine === 'function' && !window._origInitiateQuizEngineV62) {
         window._origInitiateQuizEngineV62 = _initiateQuizEngine;
         _initiateQuizEngine = async function(optionalPathString) {
@@ -4857,7 +5017,6 @@ if (!window._origClearAdminUploadFormWrapped) {
             }
 
             try {
-                // Use range query on targetPath without any 50-question limit so all 60, 100, or 300+ questions load
                 const snap = await db.collection('content')
                     .where('path', '>=', targetPath)
                     .where('path', '<=', targetPath + '\uf8ff')
@@ -5051,9 +5210,9 @@ async function processAdminUpload() {
 
     try {
         if (type === 'mcq') {
+            ensureSecondDiagramSlotInSingleForm();
             let questionTextRaw = document.getElementById('admQuestion').value.trim();
 
-            // Auto-detect Match-the-Column if admin pasted one directly into Question Text without ticking the Match Table box
             if (!adminMatchTableState.enabled && questionTextRaw) {
                 const autoMatch = autoExtractUniversalMatchTableFromQuestionStem(questionTextRaw);
                 if (autoMatch.matchTable && autoMatch.matchTable.enabled) {
@@ -5080,17 +5239,21 @@ async function processAdminUpload() {
 
             const qTextImgFile = adminImageSlots.QUESTION || document.getElementById('admQTextImageFile')?.files?.[0] || null;
             const diagramFile = adminImageSlots.DIAGRAM || document.getElementById('admQImage')?.files?.[0] || null;
+            const diagram2File = adminImageSlots.DIAGRAM2 || document.getElementById('admQImage2')?.files?.[0] || null;
             const expImgFile = adminImageSlots.EXPLANATION || document.getElementById('admExpImageFile')?.files?.[0] || null;
 
             const diagramCaption = document.getElementById('admDiagramCaption')?.value.trim() || '';
             const diagramBgMode = document.getElementById('admDiagramBgMode')?.value || 'light';
 
+            const diagram2Caption = document.getElementById('admDiagram2Caption')?.value.trim() || '';
+            const diagram2BgMode = document.getElementById('admDiagram2BgMode')?.value || 'light';
+
             let level = document.getElementById('admDifficulty').value;
             const leaf = (adminSelectedPath[adminSelectedPath.length - 1] || '').replace(/^\d+\.\s*/, '').trim();
             if (['Easy', 'Medium', 'Hard', 'Mixed'].includes(leaf) && level === 'Mixed') level = leaf;
 
-            if ((!questionTextFormatted && !qTextImgFile && !matchTableHtml) || !options.A || !options.B || !correctAnswers.length) {
-                throw new Error('Provide Question Text, Question Screenshot, or Match Table, plus Option A, Option B, and Correct Answer.');
+            if ((!questionTextFormatted && !qTextImgFile && !matchTableHtml && !diagramFile && !diagram2File) || !options.A || !options.B || !correctAnswers.length) {
+                throw new Error('Provide Question Text, Question Screenshot, Diagram, or Match Table, plus Option A, Option B, and Correct Answer.');
             }
 
             let questionImageUrl = null;
@@ -5101,8 +5264,14 @@ async function processAdminUpload() {
 
             let diagramUrl = null;
             if (diagramFile) {
-                btn.innerText = 'Uploading Diagram...';
+                btn.innerText = 'Uploading Diagram #1...';
                 diagramUrl = await uploadFileToCloudinary(diagramFile);
+            }
+
+            let diagram2Url = null;
+            if (diagram2File) {
+                btn.innerText = 'Uploading Diagram #2...';
+                diagram2Url = await uploadFileToCloudinary(diagram2File);
             }
 
             let explanationImageUrl = null;
@@ -5120,15 +5289,14 @@ async function processAdminUpload() {
             if (matchTableHtml) {
                 finalQuestionHtml = `${finalQuestionHtml}${matchTableHtml}`;
             }
-            if (diagramUrl) {
-                const safeDUrl = diagramUrl.replace(/'/g, "\\'");
-                const safeCap = diagramCaption.replace(/'/g, "\\'");
-                const bgClass = diagramBgMode === 'dark' ? 'bg-dark' : 'bg-light';
-                const capHtml = diagramCaption
-                    ? `<div class="mcq-diagram-caption">📐 ${diagramCaption} <span style="font-size:10.5px; opacity:0.7;">(Tap to zoom)</span></div>`
-                    : `<div class="mcq-diagram-caption" style="font-size:11px; opacity:0.7;">🔍 Tap diagram to zoom</div>`;
-                const diagBlock = `<div class="mcq-diagram-card ${bgClass}"><img src="${diagramUrl}" alt="Diagram" onclick="openStudentDiagramLightbox('${safeDUrl}', '${safeCap}')">${capHtml}</div>`;
-                finalQuestionHtml = `${finalQuestionHtml}${diagBlock}`;
+
+            const diagramsHtml = buildCombinedDiagramsHtml(
+                diagramUrl, diagramCaption, diagramBgMode,
+                diagram2Url, diagram2Caption, diagram2BgMode,
+                false
+            );
+            if (diagramsHtml) {
+                finalQuestionHtml = `${finalQuestionHtml}${diagramsHtml}`;
             }
 
             let finalExplanationHtml = explanationTextFormatted;
@@ -5151,6 +5319,8 @@ async function processAdminUpload() {
                 questionImageUrl,
                 diagramUrl,
                 diagramCaption,
+                diagram2Url,
+                diagram2Caption,
                 explanationImageUrl,
                 randomKey: Math.random(),
                 timestamp: firebase.firestore.FieldValue.serverTimestamp()
