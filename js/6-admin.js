@@ -2995,7 +2995,7 @@ function splitColumnContentIntoRowItems(rawColStr) {
     if (!s) return [];
 
     // Insert a newline before any inline item marker: (a), (b), (i), (ii), (1), (2), a., b., i., ii., 1., 2., P., Q., etc.
-    const inlineSplitRegex = /(?:[,;]\s*|\s{2,}|\s+)(?=(?:<[bBiI]>\s*)*(?:\((?:[a-gA-Gp-uP-U]\vert{}[1-9]\vert{}i{1,3}\vert{}iv\vert{}vi{0,3}\vert{}ix\vert{}x\vert{}I{1,3}\vert{}IV\vert{}VI{0,3}\vert{}IX\vert{}X)\)|(?:[a-gA-Gp-uP-U]|[1-9]|i{1,3}|iv|vi{0,3}|ix|x)[.\)])(?:\s*<\/[bBiI]>)*\s+)/g;
+    const inlineSplitRegex = /(?:[,;]\s*|\s{2,}|\s+)(?=(?:<[bBiI]>\s*)*(?:\((?:[a-gA-Gp-uP-U]|[1-9]|i{1,3}|iv|vi{0,3}|ix|x|I{1,3}|IV|VI{0,3}|IX|X)\)|(?:[a-gA-Gp-uP-U]|[1-9]|i{1,3}|iv|vi{0,3}|ix|x)[.\)])(?:\s*<\/[bBiI]>)*\s+)/g;
     s = s.replace(inlineSplitRegex, '\n');
 
     // Also split uppercase A., B., C., D. or I., II., III., IV. when preceded by a comma, semicolon, or 2+ spaces
@@ -3042,7 +3042,83 @@ function autoExtractUniversalMatchTableFromQuestionStem(rawQuestionStem) {
 
     // Pre-split if "<b>Column II:</b>" or "Column II:" was pasted on the same line right after Column I's items
     text = text.replace(
-        /([^\n])\s+(?=(?:<[bBiI]>\s*)*(?:Column|List|Group|Set)\s*[\-\s]*(?:II|III|2|3|B|C)(?:\s*\([^)\n]*\))?\s*(?:<\/[bBiI]>\s*)*[:\-–—]\s*(?:<[bBiI]>\s*)*\(?)/gi, '$1\n' );      const lines = text.split('\n');      // --------------------------------------------------------- // STYLE 1: Markdown Pipe Table (\vert{} Column I \vert{} Column II \vert{}) // --------------------------------------------------------- let pipeStart = -1, pipeEnd = -1; for (let i = 0; i < lines.length; i++) { const t = lines[i].trim(); if (t.startsWith('\vert{}') && t.endsWith('\vert{}') && t.split('\vert{}').length >= 4) { if (pipeStart === -1) pipeStart = i; pipeEnd = i; } else if (pipeStart !== -1) { break; } } if (pipeStart !== -1 && (pipeEnd - pipeStart + 1) >= 2) { const pipeLines = lines.slice(pipeStart, pipeEnd + 1).map(l => l.trim()).filter(l => !/^\Vert{}[\s\-:\vert{}]+\Vert{}$/.test(l)); if (pipeLines.length >= 2) { const firstRow = pipeLines[0].slice(1, -1).split('\vert{}').map(c => c.trim()); const isHeader = /column\vert{}list\vert{}group\vert{}item\vert{}part\vert{}feature\vert{}organism\vert{}phylum\vert{}order\vert{}family\vert{}class\vert{}term\vert{}function\vert{}name/i.test(firstRow.join(' ')); const headers = isHeader ? firstRow : ['Column I', 'Column II']; const dataLines = isHeader ? pipeLines.slice(1) : pipeLines; const rowsArr = dataLines.map(l => l.slice(1, -1).split('\vert{}').map(c => c.trim())); if (rowsArr.length >= 2) { const cleanQ = [...lines.slice(0, pipeStart), ...lines.slice(pipeEnd + 1)].join('\n').trim(); return { cleanQuestion: cleanQ \vert{}\vert{} 'Match the columns and select the correct option:', matchTable: makeTableObj(headers, rowsArr) }; } } }      // --------------------------------------------------------- // STYLE 2: Inline OR Multi-Line "Column I: (a)..., (b)..." & "Column II: (i)..., (ii)..." // (Handles exact format in column.png as well as stacked Column I / Column II blocks) // --------------------------------------------------------- const colStartLineRegex = /^\s*(?:<(?:b\vert{}strong\vert{}i\vert{}em\vert{}u)>\s*)*((?:Column\vert{}List\vert{}Group\vert{}Set)\s*[\-\s]*(?:I{1,3}\vert{}IV\vert{}1\vert{}2\vert{}3\vert{}4\vert{}A\vert{}B\vert{}C)(?:\s*\([^)\n]+\))?)\s*(?:<\/(?:b\vert{}strong\vert{}i\vert{}em\vert{}u)>\s*)*(?:[:\-–—]\s*(.*))?$/i; const trailingPromptLineRegex = /^\s*(?:Which\s+of\s+the\vert{}Select\s+the\vert{}Choose\s+the\vert{}In\s+the\s+light\s+of\vert{}Match\s+the\vert{}Codes?\s*[:\-]\vert{}Options?\s*[:\-])/i;      let colSections = []; let currentSection = null; let consumedLineIndices = new Set();      for (let i = 0; i < lines.length; i++) { const rawLine = lines[i]; const trimmed = rawLine.trim(); if (!trimmed) continue;          const colMatch = trimmed.match(colStartLineRegex); // Make sure it's a real column header line, not a prose sentence like "Column I with Column II" if (colMatch && !/\b(?:with\vert{}and\vert{}to\vert{}from\vert{}in)\s+(?:Column\vert{}List\vert{}Group)/i.test(trimmed)) { const headerTitle = colMatch[1].trim(); const inlineRest = (colMatch[2] \vert{}\vert{} '').trim(); currentSection = { header: headerTitle, rawParts: inlineRest ? [inlineRest] : [], lineIndices: [i] }; colSections.push(currentSection); consumedLineIndices.add(i); continue; }          if (currentSection) { if (trailingPromptLineRegex.test(trimmed)) { currentSection = null; continue; } // Check if this line belongs to the current column (starts with an item marker or continues items) const looksLikeItem = /^(?:<[bBiI]>\s*)*(?:\((?:[a-gA-Gp-uP-U]\vert{}[1-9]\vert{}i{1,3}\vert{}iv\vert{}vi{0,3}\vert{}ix\vert{}x\vert{}I{1,3}\vert{}IV\vert{}VI{0,3}\vert{}IX\vert{}X)\)\vert{}(?:[a-gA-Gp-uP-U]\vert{}[1-9]\vert{}i{1,3}\vert{}iv\vert{}vi{0,3}\vert{}ix\vert{}x\vert{}I{1,3}\vert{}IV\vert{}VI{0,3}\vert{}IX\vert{}X)[.\)])\s+/i.test(trimmed);
+        /([^\n])\s+(?=(?:<[bBiI]>\s*)*(?:Column|List|Group|Set)\s*[\-\s]*(?:II|III|2|3|B|C)(?:\s*\([^)\n]*\))?\s*(?:<\/[bBiI]>\s*)*[:\-–—]\s*(?:<[bBiI]>\s*)*\(?)/gi,
+        '$1\n'
+    );
+
+    const lines = text.split('\n');
+
+    // ---------------------------------------------------------
+    // STYLE 1: Markdown Pipe Table (| Column I | Column II |)
+    // ---------------------------------------------------------
+    let pipeStart = -1, pipeEnd = -1;
+    for (let i = 0; i < lines.length; i++) {
+        const t = lines[i].trim();
+        if (t.startsWith('|') && t.endsWith('|') && t.split('|').length >= 4) {
+            if (pipeStart === -1) pipeStart = i;
+            pipeEnd = i;
+        } else if (pipeStart !== -1) {
+            break;
+        }
+    }
+    if (pipeStart !== -1 && (pipeEnd - pipeStart + 1) >= 2) {
+        const pipeLines = lines
+            .slice(pipeStart, pipeEnd + 1)
+            .map(l => l.trim())
+            .filter(l => !/^\|[\s\-:|]+\|$/.test(l));
+        if (pipeLines.length >= 2) {
+            const firstRow = pipeLines[0].slice(1, -1).split('|').map(c => c.trim());
+            const isHeader = /column|list|group|item|part|feature|organism|phylum|order|family|class|term|function|name/i.test(firstRow.join(' '));
+            const headers = isHeader ? firstRow : ['Column I', 'Column II'];
+            const dataLines = isHeader ? pipeLines.slice(1) : pipeLines;
+            const rowsArr = dataLines.map(l => l.slice(1, -1).split('|').map(c => c.trim()));
+            if (rowsArr.length >= 2) {
+                const cleanQ = [...lines.slice(0, pipeStart), ...lines.slice(pipeEnd + 1)].join('\n').trim();
+                return {
+                    cleanQuestion: cleanQ || 'Match the columns and select the correct option:',
+                    matchTable: makeTableObj(headers, rowsArr)
+                };
+            }
+        }
+    }
+
+    // ---------------------------------------------------------
+    // STYLE 2: Inline OR Multi-Line "Column I: (a)..., (b)..." & "Column II: (i)..., (ii)..."
+    // ---------------------------------------------------------
+    const colStartLineRegex = /^\s*(?:<(?:b|strong|i|em|u)>\s*)*((?:Column|List|Group|Set)\s*[\-\s]*(?:I{1,3}|IV|1|2|3|4|A|B|C)(?:\s*\([^)\n]+\))?)\s*(?:<\/(?:b|strong|i|em|u)>\s*)*(?:[:\-–—]\s*(.*))?$/i;
+    const trailingPromptLineRegex = /^\s*(?:Which\s+of\s+the|Select\s+the|Choose\s+the|In\s+the\s+light\s+of|Match\s+the|Codes?\s*[:\-]|Options?\s*[:\-])/i;
+
+    let colSections = [];
+    let currentSection = null;
+    let consumedLineIndices = new Set();
+
+    for (let i = 0; i < lines.length; i++) {
+        const rawLine = lines[i];
+        const trimmed = rawLine.trim();
+        if (!trimmed) continue;
+
+        const colMatch = trimmed.match(colStartLineRegex);
+        // Make sure it's a real column header line, not a prose sentence like "Column I with Column II"
+        if (colMatch && !/\b(?:with|and|to|from|in)\s+(?:Column|List|Group)/i.test(trimmed)) {
+            const headerTitle = colMatch[1].trim();
+            const inlineRest = (colMatch[2] || '').trim();
+            currentSection = {
+                header: headerTitle,
+                rawParts: inlineRest ? [inlineRest] : [],
+                lineIndices: [i]
+            };
+            colSections.push(currentSection);
+            consumedLineIndices.add(i);
+            continue;
+        }
+
+        if (currentSection) {
+            if (trailingPromptLineRegex.test(trimmed)) {
+                currentSection = null;
+                continue;
+            }
+            // Check if this line belongs to the current column (starts with an item marker or continues items)
+            const looksLikeItem = /^(?:<[bBiI]>\s*)*(?:\((?:[a-gA-Gp-uP-U]|[1-9]|i{1,3}|iv|vi{0,3}|ix|x|I{1,3}|IV|VI{0,3}|IX|X)\)|(?:[a-gA-Gp-uP-U]|[1-9]|i{1,3}|iv|vi{0,3}|ix|x|I{1,3}|IV|VI{0,3}|IX|X)[.\)])\s+/i.test(trimmed);
             if (looksLikeItem || currentSection.rawParts.length === 0) {
                 currentSection.rawParts.push(trimmed);
                 currentSection.lineIndices.push(i);
@@ -3074,7 +3150,7 @@ function autoExtractUniversalMatchTableFromQuestionStem(rawQuestionStem) {
     // STYLE 3: Side-by-Side Rows ("a. Primata   i. Anacardiaceae")
     // ---------------------------------------------------------
     const leftMarkerStr = '(?:(?:<[bBiI]>\\s*)*\\(?[a-fA-FP-Up-u1-6][\\.\\)](?:\\s*<\\/[bBiI]>)*\\s+)';
-    const rightMarkerStr = '(?:(?:<[bBiI]>\\s*)*\\(?(:?i\vert{}ii\vert{}iii\vert{}iv\vert{}v\vert{}vi\vert{}I\vert{}II\vert{}III\vert{}IV\vert{}V\vert{}VI\vert{}1\vert{}2\vert{}3\vert{}4\vert{}5\vert{}6\vert{}p\vert{}q\vert{}r\vert{}s\vert{}P\vert{}Q\vert{}R\vert{}S)[\\.\\)](?:\\s*<\\/[bBiI]>)*\\s+)';
+    const rightMarkerStr = '(?:(?:<[bBiI]>\\s*)*\\(?(:?i|ii|iii|iv|v|vi|I|II|III|IV|V|VI|1|2|3|4|5|6|p|q|r|s|P|Q|R|S)[\\.\\)](?:\\s*<\\/[bBiI]>)*\\s+)';
     const sideBySideLineRegex = new RegExp(`^\\s*(${leftMarkerStr}.+?)\\s*(?:\\t|\\s{2,}|\\s+[–—\\-]\\s+)(${rightMarkerStr}.+)$`, 'i');
     const inlineRomanSplitRegex = new RegExp(`^\\s*(${leftMarkerStr}.+?)\\s+(\\(?(:?i|ii|iii|iv|v|vi|I|II|III|IV|V|VI)[\\.\\)]\\s+.+)$`);
 
@@ -3106,11 +3182,9 @@ function autoExtractUniversalMatchTableFromQuestionStem(rawQuestionStem) {
 
     // ---------------------------------------------------------
     // STYLE 4: Unheaded Inline or Stacked Lists
-    // e.g. Line A: "(a) Sycon, (b) Spongilla, (c) Euspongia"
-    //      Line B: "(i) Bath sponge, (ii) Scypha, (iii) Fresh water sponge"
     // ---------------------------------------------------------
     const startsWithLeftMarker = /^\s*(?:<[bBiI]>\s*)*(?:\([a-fA-FP-Up-u]\)|[a-fA-FP-Up-u][.\)])\s+/;
-    const startsWithRightMarker = /^\s*(?:<[bBiI]>\s*)*(?:\((?:i{1,3}\vert{}iv\vert{}vi{0,3}\vert{}1\vert{}2\vert{}3\vert{}4\vert{}5\vert{}6)\)|(?:i{1,3}|iv|vi{0,3}|1|2|3|4|5|6)[.\)])\s+/i;
+    const startsWithRightMarker = /^\s*(?:<[bBiI]>\s*)*(?:\((?:i{1,3}|iv|vi{0,3}|1|2|3|4|5|6)\)|(?:i{1,3}|iv|vi{0,3}|1|2|3|4|5|6)[.\)])\s+/i;
 
     let unheadedLeftLines = [];
     let unheadedRightLines = [];
@@ -3236,10 +3310,113 @@ function extractAnswerLettersFromString(rawAnsStr) {
         return [...new Set([...clean.matchAll(/[A-Da-d]/g)].map(m => m[0].toUpperCase()))];
     }
 
-    const parenMatch = clean.match(/(?:Option\s+|Choice\s+)?[\(\[]([A-Da-d])[\)\]]/i); if (parenMatch) return [parenMatch[1].toUpperCase()];      const wordMatch = clean.match(/\b(?:Option\vert{}Choice\vert{}Ans\vert{}Answer)\s+([A-Da-d])\b/i); if (wordMatch) return [wordMatch[1].toUpperCase()];      return []; }  function parseSingleMCQBlockAccurate(rawBlock, defaultDifficulty = 'Mixed') { let text = String(rawBlock \vert{}\vert{} '').trim();      let explanation = ''; let correctAnswers = []; let options = { A: '', B: '', C: '', D: '' };      // 1. Extract Explanation const expRegex = /(?:^\vert{}\n)\s*(?:[•○◦o\-\*💡]\s*)?(?:<[bBiI]>\s*)?(?:NCERT\s+)?(?:Explanation\vert{}Exp\vert{}Solution\vert{}Sol\vert{}Hint)\s*[\.\:\-]\s*(?:<\/[bBiI]>\s*)?([\s\S]+)$/i; const expMatch = text.match(expRegex); if (expMatch) { explanation = expMatch[1] .replace(/^\s*<\/(?:b\vert{}strong\vert{}i\vert{}em)>\s*/i, '') .replace(/\s*<\/(?:b\vert{}strong)>\s*$/i, '') .trim(); text = text.slice(0, expMatch.index).trim(); }      // 2. Check if Answer line was inside Explanation const ansInsideExpRegex = /(?:^\vert{}\n)\s*(?:[•○◦o\-\*👉✓✔]\s*)?(?:<[bBiI]>\s*)?(?:Correct\s*(?:Option\vert{}Options\vert{}Answer\vert{}Answers\vert{}Ans\vert{}Choice)?\vert{}Right\s*(?:Option\vert{}Answer)\vert{}Answer\vert{}Ans\vert{}Key)\s*[\.\:\-\=]\s*(?:<\/[bBiI]>\s*)?([^\n]+)/i; if (explanation) { const ansInExp = explanation.match(ansInsideExpRegex); if (ansInExp) { const extracted = extractAnswerLettersFromString(ansInExp[1]); if (extracted.length > 0) correctAnswers = extracted; explanation = explanation.replace(ansInExp[0], '').trim(); } }      // 3. Extract Explicit Answer Line from main text const ansRegex = /(?:^\vert{}\n)\s*(?:[•○◦o\-\*👉✓✔]\s*)?(?:<[bBiI]>\s*)?(?:Correct\s*(?:Option\vert{}Options\vert{}Answer\vert{}Answers\vert{}Ans\vert{}Choice)?\vert{}Right\s*(?:Option\vert{}Answer)\vert{}Answer\vert{}Ans\vert{}Key)\s*[\.\:\-\=]\s*(?:<\/[bBiI]>\s*)?([^\n]+)$/i; const ansMatch = text.match(ansRegex); if (ansMatch) { const extracted = extractAnswerLettersFromString(ansMatch[1]); if (extracted.length > 0) correctAnswers = extracted; text = text.slice(0, ansMatch.index).trim(); }      const inlineAnsEndRegex = /[\(\[]?\b(?:Correct\s*(?:Option\vert{}Answer\vert{}Ans)\vert{}Answer\vert{}Ans)\s*[\.\:\-\=]\s*[\(\[]?([A-Da-d])[\)\]]?[\)\]]?\s*$/i; const inlineEndMatch = text.match(inlineAnsEndRegex); if (inlineEndMatch) { const letter = inlineEndMatch[1].toUpperCase(); if (!correctAnswers.includes(letter)) correctAnswers.push(letter); text = text.slice(0, inlineEndMatch.index).trim(); }      // 4. Extract Options A, B, C, D safely from the bottom of the question (so Column I items (a), (b), (c) or A., B., C. are never touched!) const optRegexUpper = /(?:^\vert{}\n\vert{}\s{2,})(?!(?:Assertion\vert{}Statement\vert{}Column\vert{}List\vert{}Part\vert{}Section\vert{}Group\vert{}Fig)\s*)\(?([A-D])[\)\.\:]\s+([\s\S]*?)(?=(?:\n\vert{}\s{2,})\(?[B-D][\)\.\:]\s+\vert{}\s*$)/g; let matches = [...text.matchAll(optRegexUpper)]; if (matches.length > 4) { matches = matches.slice(-4); }      if (matches.length < 2) { const optRegexAny = /(?:^\vert{}\n\vert{}\s{2,})\(?([A-Da-d])[\)\.\:]\s+([\s\S]*?)(?=(?:\n\vert{}\s{2,})\(?[B-Db-d][\)\.\:]\s+\vert{}\s*$)/gi; const allCandidateMatches = [...text.matchAll(optRegexAny)]; if (allCandidateMatches.length >= 4) { matches = allCandidateMatches.slice(-4); } else { matches = allCandidateMatches; } }      let questionStem = text; if (matches.length >= 2) { let firstOptStartIdx = matches[0].index; questionStem = text.slice(0, firstOptStartIdx).trim();          matches.forEach(m => { const letter = m[1].toUpperCase(); if (['A', 'B', 'C', 'D'].includes(letter)) { let optVal = m[2].replace(/[ \t]*\bPDF(?:\s*\+\s*\d+)?\b/g, '').trim(); if (/[✅✔☑]/.test(optVal) \vert{}\vert{} /\(\s*correct\s*\)/i.test(optVal)) { optVal = optVal.replace(/[✅✔☑]\vert{}\(\s*correct\s*\)/gi, '').trim(); if (!correctAnswers.includes(letter)) correctAnswers.push(letter); } options[letter] = optVal; } }); }      // 5. Fallback answer check inside Explanation if (correctAnswers.length === 0 && explanation) { const expHintMatch = explanation.match(/(?:option\vert{}answer\vert{}choice)\s+\(?([A-Da-d])\)?\s+is\s+correct\vert{}correct\s+(?:option\vert{}answer\vert{}choice)\s+is\s+\(?([A-Da-d])\)?\vert{}hence\s*,?\s*\(?([A-Da-d])\)?\s+is\s+correct/i); if (expHintMatch) { const detectedLetter = (expHintMatch[1] \vert{}\vert{} expHintMatch[2] \vert{}\vert{} expHintMatch[3] \vert{}\vert{} '').toUpperCase(); if (['A', 'B', 'C', 'D'].includes(detectedLetter)) { correctAnswers.push(detectedLetter); } } }      // Strip leading Q1. / 1. questionStem = questionStem .replace(/^\s*(?:<[bBiI]>\s*)?(?:Q(?:uestion\vert{}ue\vert{}ns)?\s*[\.\:\-#]?\s*\d*[\.\:\)\-]\s*\vert{}\d{1,3}[\.\)\:]\s+|\(\d{1,3}\)\s+)(?:<\/[bBiI]>\s*)?/i, '')
+    const parenMatch = clean.match(/(?:Option\s+|Choice\s+)?[\(\[]([A-Da-d])[\)\]]/i);
+    if (parenMatch) return [parenMatch[1].toUpperCase()];
+
+    const wordMatch = clean.match(/\b(?:Option|Choice|Ans|Answer)\s+([A-Da-d])\b/i);
+    if (wordMatch) return [wordMatch[1].toUpperCase()];
+
+    return [];
+}
+
+function parseSingleMCQBlockAccurate(rawBlock, defaultDifficulty = 'Mixed') {
+    let text = String(rawBlock || '').trim();
+
+    let explanation = '';
+    let correctAnswers = [];
+    let options = { A: '', B: '', C: '', D: '' };
+
+    // 1. Extract Explanation
+    const expRegex = /(?:^|\n)\s*(?:[•○◦o\-\*💡]\s*)?(?:<[bBiI]>\s*)?(?:NCERT\s+)?(?:Explanation|Exp|Solution|Sol|Hint)\s*[\.\:\-]\s*(?:<\/[bBiI]>\s*)?([\s\S]+)$/i;
+    const expMatch = text.match(expRegex);
+    if (expMatch) {
+        explanation = expMatch[1]
+            .replace(/^\s*<\/(?:b|strong|i|em)>\s*/i, '')
+            .replace(/\s*<\/(?:b|strong)>\s*$/i, '')
+            .trim();
+        text = text.slice(0, expMatch.index).trim();
+    }
+
+    // 2. Check if Answer line was inside Explanation
+    const ansInsideExpRegex = /(?:^|\n)\s*(?:[•○◦o\-\*👉✓✔]\s*)?(?:<[bBiI]>\s*)?(?:Correct\s*(?:Option|Options|Answer|Answers|Ans|Choice)?|Right\s*(?:Option|Answer)|Answer|Ans|Key)\s*[\.\:\-\=]\s*(?:<\/[bBiI]>\s*)?([^\n]+)/i;
+    if (explanation) {
+        const ansInExp = explanation.match(ansInsideExpRegex);
+        if (ansInExp) {
+            const extracted = extractAnswerLettersFromString(ansInExp[1]);
+            if (extracted.length > 0) correctAnswers = extracted;
+            explanation = explanation.replace(ansInExp[0], '').trim();
+        }
+    }
+
+    // 3. Extract Explicit Answer Line from main text
+    const ansRegex = /(?:^|\n)\s*(?:[•○◦o\-\*👉✓✔]\s*)?(?:<[bBiI]>\s*)?(?:Correct\s*(?:Option|Options|Answer|Answers|Ans|Choice)?|Right\s*(?:Option|Answer)|Answer|Ans|Key)\s*[\.\:\-\=]\s*(?:<\/[bBiI]>\s*)?([^\n]+)$/i;
+    const ansMatch = text.match(ansRegex);
+    if (ansMatch) {
+        const extracted = extractAnswerLettersFromString(ansMatch[1]);
+        if (extracted.length > 0) correctAnswers = extracted;
+        text = text.slice(0, ansMatch.index).trim();
+    }
+
+    const inlineAnsEndRegex = /[\(\[]?\b(?:Correct\s*(?:Option|Answer|Ans)|Answer|Ans)\s*[\.\:\-\=]\s*[\(\[]?([A-Da-d])[\)\]]?[\)\]]?\s*$/i;
+    const inlineEndMatch = text.match(inlineAnsEndRegex);
+    if (inlineEndMatch) {
+        const letter = inlineEndMatch[1].toUpperCase();
+        if (!correctAnswers.includes(letter)) correctAnswers.push(letter);
+        text = text.slice(0, inlineEndMatch.index).trim();
+    }
+
+    // 4. Extract Options A, B, C, D safely from the bottom of the question
+    const optRegexUpper = /(?:^|\n|\s{2,})(?!(?:Assertion|Statement|Column|List|Part|Section|Group|Fig)\s*)\(?([A-D])[\)\.\:]\s+([\s\S]*?)(?=(?:\n|\s{2,})\(?[B-D][\)\.\:]\s+|\s*$)/g;
+    let matches = [...text.matchAll(optRegexUpper)];
+    if (matches.length > 4) {
+        matches = matches.slice(-4);
+    }
+
+    if (matches.length < 2) {
+        const optRegexAny = /(?:^|\n|\s{2,})\(?([A-Da-d])[\)\.\:]\s+([\s\S]*?)(?=(?:\n|\s{2,})\(?[B-Db-d][\)\.\:]\s+|\s*$)/gi;
+        const allCandidateMatches = [...text.matchAll(optRegexAny)];
+        if (allCandidateMatches.length >= 4) {
+            matches = allCandidateMatches.slice(-4);
+        } else {
+            matches = allCandidateMatches;
+        }
+    }
+
+    let questionStem = text;
+    if (matches.length >= 2) {
+        let firstOptStartIdx = matches[0].index;
+        questionStem = text.slice(0, firstOptStartIdx).trim();
+
+        matches.forEach(m => {
+            const letter = m[1].toUpperCase();
+            if (['A', 'B', 'C', 'D'].includes(letter)) {
+                let optVal = m[2].replace(/[ \t]*\bPDF(?:\s*\+\s*\d+)?\b/g, '').trim();
+                if (/[✅✔☑]/.test(optVal) || /\(\s*correct\s*\)/i.test(optVal)) {
+                    optVal = optVal.replace(/[✅✔☑]|\(\s*correct\s*\)/gi, '').trim();
+                    if (!correctAnswers.includes(letter)) correctAnswers.push(letter);
+                }
+                options[letter] = optVal;
+            }
+        });
+    }
+
+    // 5. Fallback answer check inside Explanation
+    if (correctAnswers.length === 0 && explanation) {
+        const expHintMatch = explanation.match(/(?:option|answer|choice)\s+\(?([A-Da-d])\)?\s+is\s+correct|correct\s+(?:option|answer|choice)\s+is\s+\(?([A-Da-d])\)?|hence\s*,?\s*\(?([A-Da-d])\)?\s+is\s+correct/i);
+        if (expHintMatch) {
+            const detectedLetter = (expHintMatch[1] || expHintMatch[2] || expHintMatch[3] || '').toUpperCase();
+            if (['A', 'B', 'C', 'D'].includes(detectedLetter)) {
+                correctAnswers.push(detectedLetter);
+            }
+        }
+    }
+
+    // Strip leading Q1. / 1.
+    questionStem = questionStem
+        .replace(/^\s*(?:<[bBiI]>\s*)?(?:Q(?:uestion|ue|ns)?\s*[\.\:\-#]?\s*\d*[\.\:\)\-]\s*|\d{1,3}[\.\)\:]\s+|\(\d{1,3}\)\s+)(?:<\/[bBiI]>\s*)?/i, '')
         .trim();
 
-    // 6. Automatically detect Match-the-Column written in ANY style (including inline "Column I: (a)..., (b)...") and build the table!
+    // 6. Automatically detect Match-the-Column written in ANY style and build the table!
     const matchDetection = autoExtractUniversalMatchTableFromQuestionStem(questionStem);
     questionStem = matchDetection.cleanQuestion;
 
