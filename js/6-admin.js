@@ -2558,7 +2558,7 @@ async function uploadFileToCloudinary(file) {
         }
         .mcq-diagrams-row {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
             gap: 14px;
             margin: 14px 0 16px 0;
             width: 100%;
@@ -2675,11 +2675,41 @@ var lastFocusedFormulaInput = null;
 var adminImageSlots = {
     QUESTION: null,
     DIAGRAM: null,
-    DIAGRAM2: null,
     EXPLANATION: null
 };
 
-// Builds 1 centered diagram card OR 2 side-by-side diagram cards
+// State for extra diagrams (#2, #3, #4...) in the Single Question Form
+var adminExtraSingleDiagrams = [
+    { blob: null, previewUrl: '', caption: '', bgMode: 'light' }
+];
+
+function createEmptyDiagramSlotObj() {
+    return { blob: null, previewUrl: '', caption: '', bgMode: 'light' };
+}
+
+function getNormalizedItemDiagrams(item) {
+    if (!item) return [createEmptyDiagramSlotObj(), createEmptyDiagramSlotObj()];
+    if (!Array.isArray(item.diagrams) || item.diagrams.length === 0) {
+        item.diagrams = [
+            {
+                blob: item.diagramBlob || null,
+                previewUrl: item.diagramPreviewUrl || '',
+                caption: item.diagramCaption || '',
+                bgMode: item.diagramBgMode || 'light'
+            },
+            createEmptyDiagramSlotObj()
+        ];
+    } else if (item.diagrams.length === 1) {
+        item.diagrams.push(createEmptyDiagramSlotObj());
+    }
+    // Keep legacy properties synced with slot #0
+    item.diagramBlob = item.diagrams[0].blob || null;
+    item.diagramPreviewUrl = item.diagrams[0].previewUrl || '';
+    item.diagramCaption = item.diagrams[0].caption || '';
+    item.diagramBgMode = item.diagrams[0].bgMode || 'light';
+    return item.diagrams;
+}
+
 function buildSingleDiagramCardHtml(url, caption, bgMode, isPreview = false) {
     if (!url) return '';
     const safeUrl = String(url).replace(/'/g, "\\'");
@@ -2692,53 +2722,153 @@ function buildSingleDiagramCardHtml(url, caption, bgMode, isPreview = false) {
     return `<div class="mcq-diagram-card ${bgClass}"><img src="${url}" alt="Diagram" style="max-height:${maxH};" onclick="openStudentDiagramLightbox('${safeUrl}', '${safeCap}')">${capHtml}</div>`;
 }
 
-function buildCombinedDiagramsHtml(d1Url, d1Cap, d1Bg, d2Url, d2Cap, d2Bg, isPreview = false) {
-    const card1 = buildSingleDiagramCardHtml(d1Url, d1Cap, d1Bg, isPreview);
-    const card2 = buildSingleDiagramCardHtml(d2Url, d2Cap, d2Bg, isPreview);
-    if (card1 && card2) {
-        return `<div class="mcq-diagrams-row">${card1}${card2}</div>`;
-    }
-    return card1 || card2 || '';
+function buildMultiDiagramsHtmlFromList(diagList, isPreview = false) {
+    if (!Array.isArray(diagList)) return '';
+    const cards = diagList
+        .filter(d => d && d.url)
+        .map(d => buildSingleDiagramCardHtml(d.url, d.caption, d.bgMode, isPreview))
+        .filter(Boolean);
+    if (cards.length === 0) return '';
+    if (cards.length === 1) return cards[0];
+    return `<div class="mcq-diagrams-row">${cards.join('')}</div>`;
 }
 
-// Automatically injects the 2nd Diagram uploader box into the Single Question Form if not present yet
-function ensureSecondDiagramSlotInSingleForm() {
+// Injects dynamic Multi-Diagram manager (#2, #3, #4...) into the Main Single Question Form
+function ensureMultiDiagramSlotsInSingleForm() {
     const diag1Wrap = document.getElementById('admDiagramPreviewWrap');
-    if (!diag1Wrap || document.getElementById('admDiagram2SectionBox')) return;
+    if (!diag1Wrap) return;
     const diag1Card = diag1Wrap.parentElement;
     if (!diag1Card) return;
-
-    const diag2Box = document.createElement('div');
-    diag2Box.id = 'admDiagram2SectionBox';
-    diag2Box.style.cssText = 'margin-top:12px; padding-top:12px; border-top:1px dashed rgba(253,184,19,0.35);';
-    diag2Box.setAttribute('onpaste', "handleUniversalImagePaste(event, 'DIAGRAM2')");
-    diag2Box.innerHTML = `
-        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:8px;">
-            <label class="admin-label" style="color:#38bdf8; margin-bottom:0;">📐 2nd Diagram / Figure #2 (Optional — Displays Side-by-Side)</label>
-            <div style="display:flex; gap:6px; flex-wrap:wrap;">
-                <button type="button" onclick="triggerClipboardImagePaste('DIAGRAM2')" style="background:rgba(16,185,129,0.16); color:#10b981; border:1px solid rgba(16,185,129,0.45); border-radius:6px; padding:4px 10px; font-size:11px; font-weight:800; cursor:pointer;">📋 Paste Screenshot</button>
-                <button type="button" onclick="document.getElementById('admQImage2').click()" style="background:rgba(56,189,248,0.15); color:#38bdf8; border:1px solid rgba(56,189,248,0.4); border-radius:6px; padding:4px 10px; font-size:11px; font-weight:700; cursor:pointer;">📁 Upload File</button>
-                <button type="button" onclick="clearUniversalImageSlot('DIAGRAM2')" id="btnClearDiagram2Img" style="display:none; background:rgba(239,68,68,0.15); color:#ef4444; border:1px solid rgba(239,68,68,0.4); border-radius:6px; padding:4px 9px; font-size:11px; font-weight:700; cursor:pointer;">✕ Remove</button>
-            </div>
-        </div>
-        <input type="file" id="admQImage2" class="input-field" accept="image/*" style="padding: 7px 10px; margin-bottom:8px; font-size:12px;" onchange="handleUniversalFileSelect(this, 'DIAGRAM2')">
-        <div style="display:flex; gap:8px; flex-wrap:wrap;">
-            <input type="text" id="admDiagram2Caption" class="input-field" placeholder="2nd Diagram Caption (e.g. Figure 4.3 — or click here & press Ctrl+V)" style="flex:2; min-width:140px; margin-bottom:0; padding:8px 10px; font-size:12px;" oninput="updateAdminLiveFormulaPreview()" onpaste="handleUniversalImagePaste(event, 'DIAGRAM2')">
-            <select id="admDiagram2BgMode" class="input-field" style="flex:1; min-width:130px; margin-bottom:0; padding:8px 10px; font-size:12px;" onchange="updateAdminDiagramPreviewBg(); updateAdminLiveFormulaPreview();">
-                <option value="light">☀️ Crisp White Backing</option>
-                <option value="dark">🌙 Dark Backing</option>
-            </select>
-        </div>
-        <div id="admDiagram2PreviewWrap" style="display:none; margin-top:10px; background:#ffffff; padding:10px; border-radius:8px; text-align:center; border:1px solid #334155;">
-            <img id="admDiagram2PreviewImg" src="" style="max-height:160px; max-width:100%; object-fit:contain; display:block; margin:0 auto;">
-        </div>
-    `;
-    diag1Card.appendChild(diag2Box);
 
     const cap1 = document.getElementById('admDiagramCaption');
     if (cap1 && !cap1.dataset.liveBound) {
         cap1.dataset.liveBound = 'true';
         cap1.addEventListener('input', updateAdminLiveFormulaPreview);
+    }
+
+    let container = document.getElementById('admExtraDiagramsContainer');
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'admExtraDiagramsContainer';
+        container.style.cssText = 'margin-top:12px; padding-top:12px; border-top:1px dashed rgba(253,184,19,0.35);';
+        diag1Card.appendChild(container);
+    }
+    renderSingleFormExtraDiagrams();
+}
+
+function renderSingleFormExtraDiagrams() {
+    const container = document.getElementById('admExtraDiagramsContainer');
+    if (!container) return;
+    if (!Array.isArray(adminExtraSingleDiagrams) || adminExtraSingleDiagrams.length === 0) {
+        adminExtraSingleDiagrams = [createEmptyDiagramSlotObj()];
+    }
+
+    const escAttr = (s) => String(s || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+
+    const slotsHtml = adminExtraSingleDiagrams.map((slot, sIdx) => {
+        const num = sIdx + 2;
+        return `
+            <div style="background:#0d1322; border:1px solid rgba(56,189,248,0.35); border-radius:8px; padding:10px; margin-bottom:10px;" onpaste="handleSingleExtraDiagramPaste(event, ${sIdx})">
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px; margin-bottom:6px;">
+                    <span style="font-size:11.5px; font-weight:800; color:#38bdf8;">📐 Diagram #${num} (Side-by-Side)</span>
+                    <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                        <input type="file" id="admExtraDiagFile_${sIdx}" accept="image/*" style="display:none;" onchange="handleSingleExtraDiagramFile(this, ${sIdx})">
+                        <button type="button" onclick="triggerSingleExtraDiagramClipboardPaste(${sIdx})" style="background:rgba(16,185,129,0.16); color:#10b981; border:1px solid rgba(16,185,129,0.45); border-radius:5px; padding:3px 9px; font-size:11px; font-weight:800; cursor:pointer;">📋 Paste</button>
+                        <button type="button" onclick="document.getElementById('admExtraDiagFile_${sIdx}').click()" style="background:rgba(56,189,248,0.15); color:#38bdf8; border:1px solid rgba(56,189,248,0.4); border-radius:5px; padding:3px 9px; font-size:11px; font-weight:700; cursor:pointer;">📁 Upload</button>
+                        ${(slot.previewUrl || adminExtraSingleDiagrams.length > 1) ? `<button type="button" onclick="removeOrClearSingleExtraDiagram(${sIdx})" style="background:rgba(239,68,68,0.15); color:#ef4444; border:1px solid rgba(239,68,68,0.4); border-radius:5px; padding:3px 8px; font-size:11px; font-weight:700; cursor:pointer;">✕</button>` : ''}
+                    </div>
+                </div>
+                <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                    <input type="text" class="input-field" placeholder="Diagram #${num} Caption (or click here & press Ctrl+V)" value="${escAttr(slot.caption)}" oninput="updateSingleExtraDiagramField(${sIdx}, 'caption', this.value)" onpaste="handleSingleExtraDiagramPaste(event, ${sIdx})" style="flex:2; min-width:130px; margin:0; padding:6px 9px; font-size:12px;">
+                    <select class="input-field" onchange="updateSingleExtraDiagramField(${sIdx}, 'bgMode', this.value)" style="flex:1; min-width:110px; margin:0; padding:6px 8px; font-size:12px;">
+                        <option value="light" ${slot.bgMode === 'light' ? 'selected' : ''}>☀️ White</option>
+                        <option value="dark" ${slot.bgMode === 'dark' ? 'selected' : ''}>🌙 Dark</option>
+                    </select>
+                </div>
+                ${slot.previewUrl ? `
+                    <div style="margin-top:8px; background:${slot.bgMode === 'dark' ? '#0d1527' : '#ffffff'}; padding:8px; border-radius:6px; text-align:center; border:1px solid #334155;">
+                        <img src="${slot.previewUrl}" style="max-height:140px; max-width:100%; object-fit:contain; display:block; margin:0 auto;">
+                    </div>
+                ` : ''}
+            </div>
+        `;
+    }).join('');
+
+    container.innerHTML = `
+        ${slotsHtml}
+        <button type="button" onclick="addAnotherSingleExtraDiagramSlot()" style="width:100%; background:rgba(168,85,247,0.14); color:#c084fc; border:1px dashed rgba(168,85,247,0.5); border-radius:8px; padding:7px 12px; font-size:12px; font-weight:800; cursor:pointer;">➕ Add Another Diagram Under This Question</button>
+    `;
+}
+
+function addAnotherSingleExtraDiagramSlot() {
+    adminExtraSingleDiagrams.push(createEmptyDiagramSlotObj());
+    renderSingleFormExtraDiagrams();
+}
+
+function removeOrClearSingleExtraDiagram(sIdx) {
+    if (adminExtraSingleDiagrams.length > 1 && !adminExtraSingleDiagrams[sIdx].previewUrl) {
+        adminExtraSingleDiagrams.splice(sIdx, 1);
+    } else if (adminExtraSingleDiagrams[sIdx].previewUrl && adminExtraSingleDiagrams.length === 1) {
+        adminExtraSingleDiagrams[0] = createEmptyDiagramSlotObj();
+    } else {
+        adminExtraSingleDiagrams.splice(sIdx, 1);
+    }
+    renderSingleFormExtraDiagrams();
+    updateAdminLiveFormulaPreview();
+}
+
+function updateSingleExtraDiagramField(sIdx, field, val) {
+    if (!adminExtraSingleDiagrams[sIdx]) return;
+    adminExtraSingleDiagrams[sIdx][field] = val;
+    if (field === 'bgMode') renderSingleFormExtraDiagrams();
+    updateAdminLiveFormulaPreview();
+}
+
+function applySingleExtraDiagramBlob(sIdx, blob) {
+    if (!blob || !adminExtraSingleDiagrams[sIdx]) return;
+    adminExtraSingleDiagrams[sIdx].blob = blob;
+    adminExtraSingleDiagrams[sIdx].previewUrl = URL.createObjectURL(blob);
+    renderSingleFormExtraDiagrams();
+    updateAdminLiveFormulaPreview();
+    showNotification(`📸 Diagram #${sIdx + 2} attached!`);
+}
+
+function handleSingleExtraDiagramFile(inputEl, sIdx) {
+    if (!inputEl || !inputEl.files || !inputEl.files[0]) return;
+    applySingleExtraDiagramBlob(sIdx, inputEl.files[0]);
+}
+
+function handleSingleExtraDiagramPaste(event, sIdx) {
+    const items = event.clipboardData?.items;
+    if (!items) return;
+    for (let it of items) {
+        if (it.type && it.type.indexOf('image') !== -1) {
+            event.preventDefault();
+            event.stopPropagation();
+            applySingleExtraDiagramBlob(sIdx, it.getAsFile());
+            return;
+        }
+    }
+}
+
+async function triggerSingleExtraDiagramClipboardPaste(sIdx) {
+    try {
+        if (navigator.clipboard && typeof navigator.clipboard.read === 'function') {
+            const clipItems = await navigator.clipboard.read();
+            for (const clipItem of clipItems) {
+                const imgType = clipItem.types.find(t => t.startsWith('image/'));
+                if (imgType) {
+                    const blob = await clipItem.getType(imgType);
+                    applySingleExtraDiagramBlob(sIdx, blob);
+                    return;
+                }
+            }
+            showNotification('⚠️ No screenshot found on clipboard. Take a screenshot first!');
+        } else {
+            throw new Error('Clipboard read unsupported');
+        }
+    } catch (e) {
+        showNotification(`📋 Click inside the Diagram #${sIdx + 2} Caption box and press Ctrl+V to paste screenshot!`);
     }
 }
 
@@ -2747,18 +2877,11 @@ var adminMatchTableState = {
     rows: 4,
     cols: 2,
     headers: ['Column I', 'Column II', 'Column III', 'Column IV', 'Column V'],
-    cells: [
-        ['a. ', 'i. ', '', '', ''],
-        ['b. ', 'ii. ', '', '', ''],
-        ['c. ', 'iii. ', '', '', ''],
-        ['d. ', 'iv. ', '', '', ''],
-        ['e. ', 'v. ', '', '', ''],
-        ['f. ', 'vi. ', '', '', ''],
-        ['g. ', 'vii. ', '', '', ''],
-        ['h. ', 'viii. ', '', '', ''],
-        ['i. ', 'ix. ', '', '', ''],
-        ['j. ', 'x. ', '', '', '']
-    ]
+    cells: Array.from({ length: 15 }, (_, i) => [
+        `${String.fromCharCode(97 + i)}. `,
+        `${['i','ii','iii','iv','v','vi','vii','viii','ix','x','xi','xii','xiii','xiv','xv'][i]}. `,
+        '', '', ''
+    ])
 };
 
 function setLastFocusedFormulaInput(el) {
@@ -3061,9 +3184,38 @@ function extractStyledTextFromClipboardHtml(htmlStr, plainFallback, preserveLine
 })();
 
 // ==========================================
-// 📊 UNIVERSAL MATCH-THE-COLUMN AUTO-DETECTOR (INLINE, STACKED, SIDE-BY-SIDE, PIPE & HTML TABLES)
+// 📊 UNIVERSAL MATCH-THE-COLUMN AUTO-DETECTOR (2 TO 15 ROWS, UNEQUAL ROWS, INLINE, STACKED, ALTERNATING & SIDE-BY-SIDE)
 // ==========================================
 
+const ROMAN_LOWER_PAT = '(?:xv|xiv|xiii|xii|xi|viii|vii|vi|iv|ix|x|v|iii|ii|i)';
+const ROMAN_UPPER_PAT = '(?:XV|XIV|XIII|XII|XI|VIII|VII|VI|IV|IX|X|V|III|II|I)';
+const ANY_ITEM_TOKEN_PAT = `(?:${ROMAN_LOWER_PAT}|${ROMAN_UPPER_PAT}|1[0-5]|[1-9]|[a-oA-Op-zP-Z])`;
+
+function classifyRowMarkerFamily(line) {
+    const clean = String(line || '').replace(/^\s*(?:<\/?[bBiIuU]>\s*)*/, '').trim();
+    const m = clean.match(/^(?:\(([a-zA-Z0-9]+)\)|([a-zA-Z0-9]+)[\.\)\:])\s+/);
+    if (!m) return null;
+    const rawTok = m[1] || m[2];
+    const lower = rawTok.toLowerCase();
+
+    if (/^\d+$/.test(rawTok)) {
+        const n = parseInt(rawTok, 10);
+        if (n >= 1 && n <= 15) return { family: 'NUM', token: rawTok };
+    }
+    if (/^(?:xv|xiv|xiii|xii|xi|viii|vii|vi|iv|ix|x|v|iii|ii|i)$/.test(rawTok)) {
+        return { family: 'ROMAN_L', token: rawTok };
+    }
+    if (/^(?:XV|XIV|XIII|XII|XI|VIII|VII|VI|IV|IX|X|V|III|II|I)$/.test(rawTok)) {
+        return { family: 'ROMAN_U', token: rawTok };
+    }
+    if (/^[p-z]$/.test(rawTok)) return { family: 'PQRS_L', token: rawTok };
+    if (/^[P-Z]$/.test(rawTok)) return { family: 'PQRS_U', token: rawTok };
+    if (/^[a-o]$/.test(rawTok)) return { family: 'ALPHA_L', token: rawTok };
+    if (/^[A-O]$/.test(rawTok)) return { family: 'ALPHA_U', token: rawTok };
+    return null;
+}
+
+// Splits a column body into individual row items (supports 2 to 15 items)
 function splitColumnContentIntoRowItems(rawColStr) {
     if (!rawColStr) return [];
     let s = String(rawColStr)
@@ -3072,10 +3224,18 @@ function splitColumnContentIntoRowItems(rawColStr) {
         .trim();
     if (!s) return [];
 
-    const inlineSplitRegex = /(?:[,;]\s*|\s{2,}|\s+)(?=(?:<[bBiI]>\s*)*(?:\((?:[a-gA-Gp-uP-U]|[1-9]|i{1,3}|iv|vi{0,3}|ix|x|I{1,3}|IV|VI{0,3}|IX|X)\)|(?:[a-gA-Gp-uP-U]|[1-9]|i{1,3}|iv|vi{0,3}|ix|x)[.\)])(?:\s*<\/[bBiI]>)*\s+)/g;
+    // Insert a newline before inline markers like (a), (b), (i), (ii), (1), (2), a., b., i., ii., 1., 2., P., Q., etc.
+    const inlineSplitRegex = new RegExp(
+        `(?:[,;]\\s*|\\s{2,}|\\s+)(?=(?:<[bBiI]>\\s*)*(?:\\(${ANY_ITEM_TOKEN_PAT}\\)|(?:${ROMAN_LOWER_PAT}|1[0-5]|[1-9]|[a-oP-Zp-z])[\\.\\)])(?:\\s*<\\/[bBiI]>)*\\s+)`,
+        'g'
+    );
     s = s.replace(inlineSplitRegex, '\n');
 
-    const upperSplitRegex = /(?:[,;]\s*|\s{2,})(?=(?:<[bBiI]>\s*)*(?:[A-GP-U]|I{1,3}|IV|VI{0,3}|IX|X)[.\)](?:\s*<\/[bBiI]>)*\s+)/g;
+    // Also split uppercase A., B., C... or I., II., III... when preceded by comma, semicolon, or 2+ spaces
+    const upperSplitRegex = new RegExp(
+        `(?:[,;]\\s*|\\s{2,})(?=(?:<[bBiI]>\\s*)*(?:[A-OP-Z]|${ROMAN_UPPER_PAT})[\\.\\)](?:\\s*<\\/[bBiI]>)*\\s+)`,
+        'g'
+    );
     s = s.replace(upperSplitRegex, '\n');
 
     return s
@@ -3090,7 +3250,7 @@ function autoExtractUniversalMatchTableFromQuestionStem(rawQuestionStem) {
 
     const makeTableObj = (headers, rowsArr) => {
         const numCols = Math.min(5, Math.max(2, headers.length || 2));
-        const numRows = Math.min(10, Math.max(2, rowsArr.length));
+        const numRows = Math.min(15, Math.max(2, rowsArr.length));
         const paddedHeaders = ['Column I', 'Column II', 'Column III', 'Column IV', 'Column V'];
         for (let c = 0; c < numCols; c++) {
             if (headers[c] && headers[c].trim()) {
@@ -3116,14 +3276,18 @@ function autoExtractUniversalMatchTableFromQuestionStem(rawQuestionStem) {
         };
     };
 
+    // Pre-split if "Column II:" was pasted on the same line right after Column I's items
     text = text.replace(
-        /([^\n])\s+(?=(?:<[bBiI]>\s*)*(?:Column|List|Group|Set)\s*[\-\s]*(?:II|III|2|3|B|C)(?:\s*\([^)\n]*\))?\s*(?:<\/[bBiI]>\s*)*[:\-–—]\s*(?:<[bBiI]>\s*)*\(?)/gi,
+        /([^\n])\s+(?=(?:<[bBiI]>\s*)*(?:Column|List|Group|Set|Part|Section|Table)\s*[\-\s]*(?:II|III|2|3|B|C)(?:\s*\([^)\n]*\))?\s*(?:<\/[bBiI]>\s*)*[:\-–—]\s*(?:<[bBiI]>\s*)*\(?)/gi,
         '$1\n'
     );
 
     const lines = text.split('\n');
+    const trailingPromptLineRegex = /^\s*(?:Which\s+of\s+the|Select\s+the|Choose\s+the|In\s+the\s+light\s+of|Match\s+the\s+columns?\s+and|Find\s+the\s+correct|The\s+correct\s+match|Codes?\s*[:\-]|Options?\s*[:\-])/i;
 
-    // STYLE 1: Markdown Pipe Table (| Column I | Column II |)
+    // ---------------------------------------------------------
+    // STYLE 1: Markdown Pipe Table (| Column I | Column II |) - 2 to 15 rows
+    // ---------------------------------------------------------
     let pipeStart = -1, pipeEnd = -1;
     for (let i = 0; i < lines.length; i++) {
         const t = lines[i].trim();
@@ -3141,7 +3305,7 @@ function autoExtractUniversalMatchTableFromQuestionStem(rawQuestionStem) {
             .filter(l => !/^\|[\s\-:|]+\|$/.test(l));
         if (pipeLines.length >= 2) {
             const firstRow = pipeLines[0].slice(1, -1).split('|').map(c => c.trim());
-            const isHeader = /column|list|group|item|part|feature|organism|phylum|order|family|class|term|function|name/i.test(firstRow.join(' '));
+            const isHeader = /column|list|group|set|part|table|item|feature|organism|phylum|order|family|class|term|function|name|type|example/i.test(firstRow.join(' '));
             const headers = isHeader ? firstRow : ['Column I', 'Column II'];
             const dataLines = isHeader ? pipeLines.slice(1) : pipeLines;
             const rowsArr = dataLines.map(l => l.slice(1, -1).split('|').map(c => c.trim()));
@@ -3155,9 +3319,53 @@ function autoExtractUniversalMatchTableFromQuestionStem(rawQuestionStem) {
         }
     }
 
-    // STYLE 2: Inline OR Multi-Line "Column I: (a)..., (b)..." & "Column II: (i)..., (ii)..."
-    const colStartLineRegex = /^\s*(?:<(?:b|strong|i|em|u)>\s*)*((?:Column|List|Group|Set)\s*[\-\s]*(?:I{1,3}|IV|1|2|3|4|A|B|C)(?:\s*\([^)\n]+\))?)\s*(?:<\/(?:b|strong|i|em|u)>\s*)*(?:[:\-–—]\s*(.*))?$/i;
-    const trailingPromptLineRegex = /^\s*(?:Which\s+of\s+the|Select\s+the|Choose\s+the|In\s+the\s+light\s+of|Match\s+the|Codes?\s*[:\-]|Options?\s*[:\-])/i;
+    // ---------------------------------------------------------
+    // STYLE 2: Side-by-Side Rows on the Same Line (2 to 15 rows)
+    // e.g. "(a) Sycon   (i) Scypha" or "A. Primata - I. Mammalia" or "1. Item   a. Match"
+    // ---------------------------------------------------------
+    const markerWrapPat = `(?:(?:<[bBiI]>\\s*)*(?:\\(${ANY_ITEM_TOKEN_PAT}\\)|${ANY_ITEM_TOKEN_PAT}[\\.\\)\\:])(?:\\s*<\\/[bBiI]>)*\\s+)`;
+    const sideBySideWideRegex = new RegExp(`^\\s*(${markerWrapPat}.+?)\\s*(?:\\t|\\s{2,}|\\s+[–—\\-]\\s+)(${markerWrapPat}.+)$`, 'i');
+    const sideBySideSingleSpaceRegex = new RegExp(`^\\s*(${markerWrapPat}\\S.+?)\\s+((?:\\((?:${ROMAN_LOWER_PAT}|${ROMAN_UPPER_PAT}|1[0-5]|[1-9]|[p-zP-Z])\\)|(?:${ROMAN_LOWER_PAT}|${ROMAN_UPPER_PAT}|1[0-5]|[1-9]|[p-zP-Z])[\\.\\)])\\s+.+)$`);
+    const dualHeaderLineRegex = /^\s*(?:<\/?(?:b|strong|i|em|u)>\s*)*((?:Column|List|Group|Set|Part|Section|Table)\s*[\-\s]*(?:I|1|A)\b(?:\s*\([^)\n]+\))?)\s+(?:<\/?(?:b|strong|i|em|u)>\s*)*((?:Column|List|Group|Set|Part|Section|Table)\s*[\-\s]*(?:II|2|B)\b(?:\s*\([^)\n]+\))?)\s*$/i;
+
+    let sbsIndices = [];
+    let sbsPairs = [];
+    for (let i = 0; i < lines.length; i++) {
+        const ln = lines[i].trim();
+        if (!ln || trailingPromptLineRegex.test(ln)) continue;
+        let m = ln.match(sideBySideWideRegex) || ln.match(sideBySideSingleSpaceRegex);
+        if (m) {
+            sbsIndices.push(i);
+            sbsPairs.push([m[1].trim(), m[2].trim()]);
+        }
+    }
+    if (sbsPairs.length >= 2) {
+        let headers = ['Column I', 'Column II'];
+        const removeSet = new Set(sbsIndices);
+        for (let i = 0; i <= sbsIndices[0]; i++) {
+            const prevClean = lines[i].trim().replace(/<\/?(?:b|strong|i|em|u)>/gi, '');
+            const hm = prevClean.match(dualHeaderLineRegex);
+            if (hm) {
+                headers = [hm[1].trim(), hm[2].trim()];
+                removeSet.add(i);
+            }
+        }
+        const cleanQ = lines.filter((_, idx) => !removeSet.has(idx)).join('\n').trim();
+        return {
+            cleanQuestion: cleanQ || 'Match the following columns:',
+            matchTable: makeTableObj(headers, sbsPairs)
+        };
+    }
+
+    // ---------------------------------------------------------
+    // STYLE 3: Explicit Column / List / Group / Set / Part Headers
+    // Handles:
+    //  - Stacked ("Column I: ... Column II: ...") with 2 to 15 rows or unequal rows (e.g. 4 vs 5)
+    //  - Inline ("Column I: (a)..., (b)... \n Column II: (i)..., (ii)...")
+    //  - Top-Header Pair ("Column I" then "Column II" right at top, followed by items below)
+    // ---------------------------------------------------------
+    const colStartLineRegex = /^\s*(?:<(?:b|strong|i|em|u)>\s*)*((?:Column|List|Group|Set|Part|Section|Table)\s*[\-\s]*(?:I{1,3}|IV|1|2|3|4|A|B|C)(?:\s*\([^)\n]+\))?)\s*(?:<\/(?:b|strong|i|em|u)>\s*)*(?:[:\-–—]\s*(.*))?$/i;
+    const itemLineTestRegex = new RegExp(`^(?:<[bBiI]>\\s*)*(?:\\(${ANY_ITEM_TOKEN_PAT}\\)|${ANY_ITEM_TOKEN_PAT}[\\.\\)\\:])\\s+`, 'i');
 
     let colSections = [];
     let currentSection = null;
@@ -3168,8 +3376,19 @@ function autoExtractUniversalMatchTableFromQuestionStem(rawQuestionStem) {
         const trimmed = rawLine.trim();
         if (!trimmed) continue;
 
+        const cleanForDual = trimmed.replace(/<\/?(?:b|strong|i|em|u)>/gi, '');
+        const dualMatch = cleanForDual.match(dualHeaderLineRegex);
+        if (dualMatch) {
+            const sec1 = { header: dualMatch[1].trim(), rawParts: [], lineIndices: [i] };
+            const sec2 = { header: dualMatch[2].trim(), rawParts: [], lineIndices: [i] };
+            colSections.push(sec1, sec2);
+            currentSection = sec2;
+            consumedLineIndices.add(i);
+            continue;
+        }
+
         const colMatch = trimmed.match(colStartLineRegex);
-        if (colMatch && !/\b(?:with|and|to|from|in)\s+(?:Column|List|Group)/i.test(trimmed)) {
+        if (colMatch && !/\b(?:with|and|to|from|in|between)\s+(?:Column|List|Group|Set|Part)/i.test(trimmed)) {
             const headerTitle = colMatch[1].trim();
             const inlineRest = (colMatch[2] || '').trim();
             currentSection = {
@@ -3187,8 +3406,8 @@ function autoExtractUniversalMatchTableFromQuestionStem(rawQuestionStem) {
                 currentSection = null;
                 continue;
             }
-            const looksLikeItem = /^(?:<[bBiI]>\s*)*(?:\((?:[a-gA-Gp-uP-U]|[1-9]|i{1,3}|iv|vi{0,3}|ix|x|I{1,3}|IV|VI{0,3}|IX|X)\)|(?:[a-gA-Gp-uP-U]|[1-9]|i{1,3}|iv|vi{0,3}|ix|x|I{1,3}|IV|VI{0,3}|IX|X)[.\)])\s+/i.test(trimmed);
-            if (looksLikeItem || currentSection.rawParts.length === 0) {
+            const looksLikeItem = itemLineTestRegex.test(trimmed);
+            if (looksLikeItem || currentSection.rawParts.length < 15) {
                 currentSection.rawParts.push(trimmed);
                 currentSection.lineIndices.push(i);
                 consumedLineIndices.add(i);
@@ -3199,7 +3418,30 @@ function autoExtractUniversalMatchTableFromQuestionStem(rawQuestionStem) {
     }
 
     if (colSections.length >= 2) {
-        const parsedCols = colSections.map(sec => splitColumnContentIntoRowItems(sec.rawParts.join('\n')));
+        let parsedCols = colSections.map(sec => splitColumnContentIntoRowItems(sec.rawParts.join('\n')));
+
+        // Special Case: "Column I" and "Column II" headers were both at the top, so all items landed in colSections[1]!
+        if (parsedCols[0].length === 0 && parsedCols[1].length >= 4) {
+            const allItems = parsedCols[1];
+            const firstFam = classifyRowMarkerFamily(allItems[0])?.family;
+            let leftList = [];
+            let rightList = [];
+
+            if (firstFam) {
+                allItems.forEach(it => {
+                    const f = classifyRowMarkerFamily(it)?.family;
+                    if (f === firstFam) leftList.push(it);
+                    else rightList.push(it);
+                });
+            }
+            if (leftList.length < 2 || rightList.length < 2) {
+                const half = Math.ceil(allItems.length / 2);
+                leftList = allItems.slice(0, half);
+                rightList = allItems.slice(half);
+            }
+            parsedCols = [leftList, rightList];
+        }
+
         if (parsedCols[0].length >= 2 && parsedCols[1].length >= 2) {
             const maxRows = Math.max(...parsedCols.map(c => c.length));
             const rowsArr = [];
@@ -3215,70 +3457,60 @@ function autoExtractUniversalMatchTableFromQuestionStem(rawQuestionStem) {
         }
     }
 
-    // STYLE 3: Side-by-Side Rows ("a. Primata   i. Anacardiaceae")
-    const leftMarkerStr = '(?:(?:<[bBiI]>\\s*)*\\(?[a-fA-FP-Up-u1-6][\\.\\)](?:\\s*<\\/[bBiI]>)*\\s+)';
-    const rightMarkerStr = '(?:(?:<[bBiI]>\\s*)*\\(?(:?i|ii|iii|iv|v|vi|I|II|III|IV|V|VI|1|2|3|4|5|6|p|q|r|s|P|Q|R|S)[\\.\\)](?:\\s*<\\/[bBiI]>)*\\s+)';
-    const sideBySideLineRegex = new RegExp(`^\\s*(${leftMarkerStr}.+?)\\s*(?:\\t|\\s{2,}|\\s+[–—\\-]\\s+)(${rightMarkerStr}.+)$`, 'i');
-    const inlineRomanSplitRegex = new RegExp(`^\\s*(${leftMarkerStr}.+?)\\s+(\\(?(:?i|ii|iii|iv|v|vi|I|II|III|IV|V|VI)[\\.\\)]\\s+.+)$`);
-
-    let sbsIndices = [];
-    let sbsPairs = [];
-    for (let i = 0; i < lines.length; i++) {
-        const ln = lines[i].trim();
-        let m = ln.match(sideBySideLineRegex) || ln.match(inlineRomanSplitRegex);
-        if (m) {
-            sbsIndices.push(i);
-            sbsPairs.push([m[1].trim(), m[2].trim()]);
+    // ---------------------------------------------------------
+    // STYLE 4: Unheaded Stacked, Inline, or Alternating Lists (2 to 15 rows, equal or unequal)
+    // Works for ANY pair of marker families (e.g. a,b,c vs i,ii,iii OR A,B,C vs 1,2,3 OR 1,2,3 vs a,b,c)
+    // ---------------------------------------------------------
+    let expandedLines = [];
+    lines.forEach((rawLn, lineIdx) => {
+        const t = rawLn.trim();
+        if (!t || trailingPromptLineRegex.test(t)) return;
+        const subItems = splitColumnContentIntoRowItems(t);
+        if (subItems.length > 1) {
+            subItems.forEach(sub => expandedLines.push({ text: sub, lineIdx }));
+        } else {
+            expandedLines.push({ text: t, lineIdx });
         }
-    }
-    if (sbsPairs.length >= 2) {
-        let headers = ['Column I', 'Column II'];
-        const firstIdx = sbsIndices[0];
-        const removeSet = new Set(sbsIndices);
-        if (firstIdx > 0) {
-            const prevLine = lines[firstIdx - 1].trim().replace(/<\/?(?:b|strong|i|em|u)>/gi, '');
-            const hdrMatch = prevLine.match(/^((?:Column|List|Group|Part)\s*[\-\s]*(?:I|1|A)\b.*?)\s+((?:Column|List|Group|Part)\s*[\-\s]*(?:II|2|B)\b.*)$/i);
-            if (hdrMatch) {
-                headers = [hdrMatch[1].trim(), hdrMatch[2].trim()];
-                removeSet.add(firstIdx - 1);
-            }
-        }
-        const cleanQ = lines.filter((_, idx) => !removeSet.has(idx)).join('\n').trim();
-        return { cleanQuestion: cleanQ || 'Match the following columns:', matchTable: makeTableObj(headers, sbsPairs) };
-    }
+    });
 
-    // STYLE 4: Unheaded Inline or Stacked Lists
-    const startsWithLeftMarker = /^\s*(?:<[bBiI]>\s*)*(?:\([a-fA-FP-Up-u]\)|[a-fA-FP-Up-u][.\)])\s+/;
-    const startsWithRightMarker = /^\s*(?:<[bBiI]>\s*)*(?:\((?:i{1,3}|iv|vi{0,3}|1|2|3|4|5|6)\)|(?:i{1,3}|iv|vi{0,3}|1|2|3|4|5|6)[.\)])\s+/i;
+    let leftFamily = null;
+    let rightFamily = null;
+    let leftItems = [];
+    let rightItems = [];
+    let usedOrigLineIndices = new Set();
 
-    let unheadedLeftLines = [];
-    let unheadedRightLines = [];
-    let unheadedUsed = new Set();
+    for (const entry of expandedLines) {
+        const info = classifyRowMarkerFamily(entry.text);
+        if (!info) continue;
 
-    for (let i = 0; i < lines.length; i++) {
-        const ln = lines[i].trim();
-        if (!ln) continue;
-        if (startsWithLeftMarker.test(ln) && unheadedRightLines.length === 0) {
-            unheadedLeftLines.push(ln);
-            unheadedUsed.add(i);
-        } else if (startsWithRightMarker.test(ln) && unheadedLeftLines.length > 0) {
-            unheadedRightLines.push(ln);
-            unheadedUsed.add(i);
+        if (!leftFamily) {
+            leftFamily = info.family;
+            leftItems.push(entry.text);
+            usedOrigLineIndices.add(entry.lineIdx);
+        } else if (info.family === leftFamily) {
+            leftItems.push(entry.text);
+            usedOrigLineIndices.add(entry.lineIdx);
+        } else if (!rightFamily) {
+            rightFamily = info.family;
+            rightItems.push(entry.text);
+            usedOrigLineIndices.add(entry.lineIdx);
+        } else if (info.family === rightFamily) {
+            rightItems.push(entry.text);
+            usedOrigLineIndices.add(entry.lineIdx);
         }
     }
 
-    if (unheadedLeftLines.length > 0 && unheadedRightLines.length > 0) {
-        const leftItems = splitColumnContentIntoRowItems(unheadedLeftLines.join('\n'));
-        const rightItems = splitColumnContentIntoRowItems(unheadedRightLines.join('\n'));
-        if (leftItems.length >= 2 && rightItems.length >= 2) {
-            const maxR = Math.max(leftItems.length, rightItems.length);
-            const paired = [];
-            for (let r = 0; r < maxR; r++) {
-                paired.push([leftItems[r] || '', rightItems[r] || '']);
-            }
-            const cleanQ = lines.filter((_, idx) => !unheadedUsed.has(idx)).join('\n').trim();
-            return { cleanQuestion: cleanQ || 'Match the following:', matchTable: makeTableObj(['Column I', 'Column II'], paired) };
+    if (leftItems.length >= 2 && rightItems.length >= 2) {
+        const maxR = Math.max(leftItems.length, rightItems.length);
+        const paired = [];
+        for (let r = 0; r < maxR; r++) {
+            paired.push([leftItems[r] || '', rightItems[r] || '']);
         }
+        const cleanQ = lines.filter((_, idx) => !usedOrigLineIndices.has(idx)).join('\n').trim();
+        return {
+            cleanQuestion: cleanQ || 'Match the following:',
+            matchTable: makeTableObj(['Column I', 'Column II'], paired)
+        };
     }
 
     return { cleanQuestion: text, matchTable: null };
@@ -3304,6 +3536,7 @@ function splitRawTextIntoMCQBlocks(rawText) {
     let currentOptionLettersSeen = new Set();
     let hasSeenAnswerLine = false;
     let hasSeenExpLine = false;
+    let insideMatchTableZone = false;
 
     const explicitQHeaderRegex = /^\s*(?:<[bBiI]>\s*)?(?:Q(?:uestion|ue|ns)?\s*[\.\:\-#]?\s*\d+[\.\:\)\-]?|Question\s*#\d+|\[\s*Q\d+\s*\])/i;
     const numberedLineRegex = /^\s*(?:<[bBiI]>\s*)?(?:\d{1,3}[\.\)\:]|\(\d{1,3}\))\s+\S+/;
@@ -3322,6 +3555,7 @@ function splitRawTextIntoMCQBlocks(rawText) {
         currentOptionLettersSeen = new Set();
         hasSeenAnswerLine = false;
         hasSeenExpLine = false;
+        insideMatchTableZone = false;
     };
 
     for (let i = 0; i < lines.length; i++) {
@@ -3335,12 +3569,19 @@ function splitRawTextIntoMCQBlocks(rawText) {
             }
         }
 
+        if (/\b(?:Match\s+(?:the\s+)?(?:Column|List|following)|Column\s*[\-\s]*(?:I|1|A)|List\s*[\-\s]*(?:I|1|A))\b/i.test(trimmed)) {
+            insideMatchTableZone = true;
+        }
+        if (/\b(?:Choose\s+the\s+correct|Select\s+the\s+correct|Which\s+of\s+the\s+following\s+options|Codes?\s*[:\-])/i.test(trimmed)) {
+            insideMatchTableZone = false;
+        }
+
         const isExplicitQ = explicitQHeaderRegex.test(trimmed);
         const isNumberedStart = numberedLineRegex.test(trimmed);
 
         if (currentLines.length > 0 && (
             isExplicitQ ||
-            (isNumberedStart && (hasSeenAnswerLine || hasSeenExpLine || currentOptionLettersSeen.size >= 3))
+            (isNumberedStart && (hasSeenAnswerLine || hasSeenExpLine || (!insideMatchTableZone && currentOptionLettersSeen.size >= 4)))
         )) {
             flushCurrentBlock();
             currentLines.push(line);
@@ -3349,7 +3590,7 @@ function splitRawTextIntoMCQBlocks(rawText) {
 
         currentLines.push(line);
 
-        if (!/Assertion\s*\(A\)|Statement\s*\(A\)|Column\s*I|List\s*I/i.test(trimmed)) {
+        if (!insideMatchTableZone && !/Assertion\s*\(A\)|Statement\s*\(A\)|Column\s*I|List\s*I/i.test(trimmed)) {
             const optMatches = [...trimmed.matchAll(optionLineRegex)];
             optMatches.forEach(m => currentOptionLettersSeen.add(m[1].toUpperCase()));
         }
@@ -3365,9 +3606,11 @@ function extractAnswerLettersFromString(rawAnsStr) {
     if (!rawAnsStr) return [];
     const clean = String(rawAnsStr).replace(/<\/?(?:b|strong|i|em|u)>/gi, '').trim();
 
-    const leadingMatch = clean.match(/^(?:Option\s+|Choice\s+)?[\(\[]?([A-Da-d])[\)\]\.\:\-]?(?:\s|$)/i);
-    if (leadingMatch && !/^[A-Da-d]\s*[,&\/]\s*[A-Da-d]/i.test(clean)) {
-        return [leadingMatch[1].toUpperCase()];
+    const leadingMatch = clean.match(/^(?:Option\s+|Choice\s+)?[\(\[]?([A-Da-d1-4])[\)\]\.\:\-]?(?:\s|$)/i);
+    if (leadingMatch && !/^[A-Da-d1-4]\s*[,&\/]\s*[A-Da-d1-4]/i.test(clean)) {
+        const tok = leadingMatch[1].toUpperCase();
+        const numToLet = { '1': 'A', '2': 'B', '3': 'C', '4': 'D' };
+        return [numToLet[tok] || tok];
     }
 
     const multiMatch = clean.match(/^(?:[\([]?[A-Da-d][\)]]?\s*(?:[,&\/]|\band\b)\s*)+[\([]?[A-Da-d][\)]]?$/i);
@@ -3382,6 +3625,63 @@ function extractAnswerLettersFromString(rawAnsStr) {
     if (wordMatch) return [wordMatch[1].toUpperCase()];
 
     return [];
+}
+
+// Extracts ONLY the final sequential option block (A, B, C, D) from the bottom of the question so Column I items (A., B., C., D. or a., b., c., d.) are NEVER touched!
+function extractBottomMCQOptionsSafely(text) {
+    // Find all candidate option starts across the text
+    const extractWithCase = (caseSensitiveUpper) => {
+        const markerRe = caseSensitiveUpper
+            ? /(?:^|\n|\s{2,})(?!(?:Assertion|Statement|Column|List|Part|Section|Group|Fig)\s*)(\(?([A-D])[\)\.\:]\s+)/g
+            : /(?:^|\n|\s{2,})(?!(?:Assertion|Statement|Column|List|Part|Section|Group|Fig)\s*)(\(?([A-Da-d])[\)\.\:]\s+)/g;
+
+        const tokens = [];
+        for (const m of text.matchAll(markerRe)) {
+            const fullMatch = m[0];
+            const markerPart = m[1];
+            const letter = m[2].toUpperCase();
+            const markerStartIdx = m.index + (fullMatch.length - markerPart.length);
+            const contentStartIdx = m.index + fullMatch.length;
+            tokens.push({ letter, markerStartIdx, contentStartIdx });
+        }
+
+        // Search from the END of tokens backwards for a valid sequential A -> B -> C -> D (or A -> B) chain
+        for (let i = tokens.length - 1; i >= 0; i--) {
+            if (tokens[i].letter !== 'A') continue;
+            const chain = [tokens[i]];
+            const expectedOrder = ['B', 'C', 'D'];
+            let nextExpectedIdx = 0;
+
+            for (let j = i + 1; j < tokens.length && nextExpectedIdx < expectedOrder.length; j++) {
+                const cand = tokens[j];
+                if (cand.letter === expectedOrder[nextExpectedIdx]) {
+                    chain.push(cand);
+                    nextExpectedIdx++;
+                } else if (cand.letter === 'A') {
+                    // A later 'A' existed, so this earlier 'A' was inside the question stem/table!
+                    chain.length = 0;
+                    break;
+                }
+            }
+
+            if (chain.length >= 2) {
+                const extracted = [];
+                for (let k = 0; k < chain.length; k++) {
+                    const start = chain[k].contentStartIdx;
+                    const end = (k + 1 < chain.length) ? chain[k + 1].markerStartIdx : text.length;
+                    extracted.push({
+                        letter: chain[k].letter,
+                        markerStartIdx: chain[k].markerStartIdx,
+                        val: text.slice(start, end).trim()
+                    });
+                }
+                return extracted;
+            }
+        }
+        return null;
+    };
+
+    return extractWithCase(true) || extractWithCase(false) || [];
 }
 
 function parseSingleMCQBlockAccurate(rawBlock, defaultDifficulty = 'Mixed') {
@@ -3430,38 +3730,18 @@ function parseSingleMCQBlockAccurate(rawBlock, defaultDifficulty = 'Mixed') {
         text = text.slice(0, inlineEndMatch.index).trim();
     }
 
-    // 4. Extract Options A, B, C, D safely from the bottom of the question
-    const optRegexUpper = /(?:^|\n|\s{2,})(?!(?:Assertion|Statement|Column|List|Part|Section|Group|Fig)\s*)\(?([A-D])[\)\.\:]\s+([\s\S]*?)(?=(?:\n|\s{2,})\(?[B-D][\)\.\:]\s+|\s*$)/g;
-    let matches = [...text.matchAll(optRegexUpper)];
-    if (matches.length > 4) {
-        matches = matches.slice(-4);
-    }
-
-    if (matches.length < 2) {
-        const optRegexAny = /(?:^|\n|\s{2,})\(?([A-Da-d])[\)\.\:]\s+([\s\S]*?)(?=(?:\n|\s{2,})\(?[B-Db-d][\)\.\:]\s+|\s*$)/gi;
-        const allCandidateMatches = [...text.matchAll(optRegexAny)];
-        if (allCandidateMatches.length >= 4) {
-            matches = allCandidateMatches.slice(-4);
-        } else {
-            matches = allCandidateMatches;
-        }
-    }
-
+    // 4. Extract Options A, B, C, D strictly from the final sequential A->B->C->D block at the bottom of the question
+    const optChain = extractBottomMCQOptionsSafely(text);
     let questionStem = text;
-    if (matches.length >= 2) {
-        let firstOptStartIdx = matches[0].index;
-        questionStem = text.slice(0, firstOptStartIdx).trim();
-
-        matches.forEach(m => {
-            const letter = m[1].toUpperCase();
-            if (['A', 'B', 'C', 'D'].includes(letter)) {
-                let optVal = m[2].replace(/[ \t]*\bPDF(?:\s*\+\s*\d+)?\b/g, '').trim();
-                if (/[✅✔☑]/.test(optVal) || /\(\s*correct\s*\)/i.test(optVal)) {
-                    optVal = optVal.replace(/[✅✔☑]|\(\s*correct\s*\)/gi, '').trim();
-                    if (!correctAnswers.includes(letter)) correctAnswers.push(letter);
-                }
-                options[letter] = optVal;
+    if (optChain.length >= 2) {
+        questionStem = text.slice(0, optChain[0].markerStartIdx).trim();
+        optChain.forEach(item => {
+            let optVal = item.val.replace(/[ \t]*\bPDF(?:\s*\+\s*\d+)?\b/g, '').trim();
+            if (/[✅✔☑]/.test(optVal) || /\(\s*correct\s*\)/i.test(optVal)) {
+                optVal = optVal.replace(/[✅✔☑]|\(\s*correct\s*\)/gi, '').trim();
+                if (!correctAnswers.includes(item.letter)) correctAnswers.push(item.letter);
             }
+            options[item.letter] = optVal;
         });
     }
 
@@ -3481,7 +3761,7 @@ function parseSingleMCQBlockAccurate(rawBlock, defaultDifficulty = 'Mixed') {
         .replace(/^\s*(?:<[bBiI]>\s*)?(?:Q(?:uestion|ue|ns)?\s*[\.\:\-#]?\s*\d*[\.\:\)\-]\s*|\d{1,3}[\.\)\:]\s+|\(\d{1,3}\)\s+)(?:<\/[bBiI]>\s*)?/i, '')
         .trim();
 
-    // 6. Automatically detect Match-the-Column written in ANY style and build the table!
+    // 6. Automatically detect Match-the-Column written in ANY style (2 to 15 rows) and build the table!
     const matchDetection = autoExtractUniversalMatchTableFromQuestionStem(questionStem);
     questionStem = matchDetection.cleanQuestion;
 
@@ -3489,15 +3769,12 @@ function parseSingleMCQBlockAccurate(rawBlock, defaultDifficulty = 'Mixed') {
         enabled: false,
         rows: 4,
         cols: 2,
-        headers: ['Column I', 'Column II', 'Column III', 'Column IV'],
-        cells: [
-            ['a. ', 'i. ', '', ''],
-            ['b. ', 'ii. ', '', ''],
-            ['c. ', 'iii. ', '', ''],
-            ['d. ', 'iv. ', '', ''],
-            ['e. ', 'v. ', '', ''],
-            ['f. ', 'vi. ', '', '']
-        ]
+        headers: ['Column I', 'Column II', 'Column III', 'Column IV', 'Column V'],
+        cells: Array.from({ length: 15 }, (_, i) => [
+            `${String.fromCharCode(97 + i)}. `,
+            `${['i','ii','iii','iv','v','vi','vii','viii','ix','x','xi','xii','xiii','xiv','xv'][i]}. `,
+            '', '', ''
+        ])
     };
 
     return {
@@ -3514,10 +3791,10 @@ function parseSingleMCQBlockAccurate(rawBlock, defaultDifficulty = 'Mixed') {
         diagramPreviewUrl: '',
         diagramCaption: '',
         diagramBgMode: 'light',
-        diagram2Blob: null,
-        diagram2PreviewUrl: '',
-        diagram2Caption: '',
-        diagram2BgMode: 'light',
+        diagrams: [
+            createEmptyDiagramSlotObj(),
+            createEmptyDiagramSlotObj()
+        ],
         explanationImageBlob: null,
         explanationImagePreviewUrl: '',
         matchTable: defaultMatchTable
@@ -3558,7 +3835,7 @@ parseQuickPasteMCQ = function(mode = 'auto') {
         }
 
         updateAdminLiveFormulaPreview();
-        showNotification(`✨ Single Question${parsed.matchTable?.enabled ? ' + Auto Match-Table' : ''} & Answer (${parsed.correctAnswers.join(', ') || 'None'}) filled!`);
+        showNotification(`✨ Single Question${parsed.matchTable?.enabled ? ` + Auto Match-Table (${parsed.matchTable.rows} rows)` : ''} & Answer (${parsed.correctAnswers.join(', ') || 'None'}) filled!`);
         return;
     }
 
@@ -3572,7 +3849,8 @@ parseQuickPasteMCQ = function(mode = 'auto') {
 function loadBulkCardIntoMainSingleForm(idx) {
     const item = adminBulkStagedQuestions[idx];
     if (!item) return;
-    ensureSecondDiagramSlotInSingleForm();
+    ensureMultiDiagramSlotsInSingleForm();
+    const diags = getNormalizedItemDiagrams(item);
 
     document.getElementById('admQuestion').value = item.question || '';
     document.getElementById('admOptA').value = item.options.A || '';
@@ -3586,22 +3864,23 @@ function loadBulkCardIntoMainSingleForm(idx) {
         cb.checked = item.correctAnswers.includes(cb.value);
     });
 
-    if (item.diagramBlob) {
-        applyBlobOrFileToSlot('DIAGRAM', item.diagramBlob);
+    if (diags[0] && diags[0].blob) {
+        applyBlobOrFileToSlot('DIAGRAM', diags[0].blob);
     } else {
         clearUniversalImageSlot('DIAGRAM');
     }
-    if (document.getElementById('admDiagramCaption')) document.getElementById('admDiagramCaption').value = item.diagramCaption || '';
-    if (document.getElementById('admDiagramBgMode')) document.getElementById('admDiagramBgMode').value = item.diagramBgMode || 'light';
-
-    if (item.diagram2Blob) {
-        applyBlobOrFileToSlot('DIAGRAM2', item.diagram2Blob);
-    } else {
-        clearUniversalImageSlot('DIAGRAM2');
-    }
-    if (document.getElementById('admDiagram2Caption')) document.getElementById('admDiagram2Caption').value = item.diagram2Caption || '';
-    if (document.getElementById('admDiagram2BgMode')) document.getElementById('admDiagram2BgMode').value = item.diagram2BgMode || 'light';
+    if (document.getElementById('admDiagramCaption')) document.getElementById('admDiagramCaption').value = (diags[0] && diags[0].caption) || '';
+    if (document.getElementById('admDiagramBgMode')) document.getElementById('admDiagramBgMode').value = (diags[0] && diags[0].bgMode) || 'light';
     updateAdminDiagramPreviewBg();
+
+    adminExtraSingleDiagrams = diags.slice(1).map(d => ({
+        blob: d.blob || null,
+        previewUrl: d.previewUrl || '',
+        caption: d.caption || '',
+        bgMode: d.bgMode || 'light'
+    }));
+    if (adminExtraSingleDiagrams.length === 0) adminExtraSingleDiagrams.push(createEmptyDiagramSlotObj());
+    renderSingleFormExtraDiagrams();
 
     if (item.matchTable && item.matchTable.enabled) {
         adminMatchTableState.enabled = true;
@@ -3659,7 +3938,9 @@ function buildBulkItemMatchTableHtml(item) {
 }
 
 function isBulkItemReady(item) {
-    const hasQ = Boolean(item.question.trim() || item.questionImageBlob || item.diagramBlob || item.diagram2Blob || (item.matchTable && item.matchTable.enabled));
+    const diags = getNormalizedItemDiagrams(item);
+    const hasAnyDiag = diags.some(d => Boolean(d.blob || d.previewUrl));
+    const hasQ = Boolean(item.question.trim() || item.questionImageBlob || hasAnyDiag || (item.matchTable && item.matchTable.enabled));
     const hasOpts = Boolean(item.options.A.trim() && item.options.B.trim());
     const hasAns = Array.isArray(item.correctAnswers) && item.correctAnswers.length > 0;
     return hasQ && hasOpts && hasAns;
@@ -3699,7 +3980,7 @@ function refreshSingleBulkCardPreview(idx) {
         statusBadge.style.color = ready ? '#10b981' : '#ef4444';
         statusBadge.style.borderColor = ready ? 'rgba(16,185,129,0.4)' : 'rgba(239,68,68,0.45)';
         statusBadge.innerHTML = ready
-            ? `🟢 Correct Option Auto-Filled: (${item.correctAnswers.join(', ')})${item.matchTable?.enabled ? ' • 📊 Table Auto-Built' : ''}`
+            ? `🟢 Correct Option Auto-Filled: (${item.correctAnswers.join(', ')})${item.matchTable?.enabled ? ` • 📊 Table (${item.matchTable.rows} rows)` : ''}`
             : '⚠️ Click A / B / C / D below to select Correct Answer';
     }
     if (cardEl) {
@@ -3709,9 +3990,9 @@ function refreshSingleBulkCardPreview(idx) {
     if (prevEl) {
         const qHtml = formatMultilineTextToHtml(item.question);
         const tblHtml = buildBulkItemMatchTableHtml(item);
-        const diagramsHtml = buildCombinedDiagramsHtml(
-            item.diagramPreviewUrl, item.diagramCaption, item.diagramBgMode,
-            item.diagram2PreviewUrl, item.diagram2Caption, item.diagram2BgMode,
+        const diags = getNormalizedItemDiagrams(item);
+        const diagramsHtml = buildMultiDiagramsHtmlFromList(
+            diags.map(d => ({ url: d.previewUrl, caption: d.caption, bgMode: d.bgMode })),
             true
         );
         const expHtml = formatMultilineTextToHtml(item.explanation);
@@ -3755,6 +4036,42 @@ function updateBulkItemField(idx, field, value) {
     refreshSingleBulkCardPreview(idx);
 }
 
+// Multi-Diagram handlers for Bulk Staging Cards
+function addAnotherBulkCardDiagramSlot(idx) {
+    const item = adminBulkStagedQuestions[idx];
+    if (!item) return;
+    const diags = getNormalizedItemDiagrams(item);
+    diags.push(createEmptyDiagramSlotObj());
+    item.showTools = true;
+    renderAdminBulkStagingQueue();
+}
+
+function updateBulkCardDiagramSubField(idx, diagIdx, field, val) {
+    const item = adminBulkStagedQuestions[idx];
+    if (!item) return;
+    const diags = getNormalizedItemDiagrams(item);
+    if (!diags[diagIdx]) return;
+    diags[diagIdx][field] = val;
+    if (diagIdx === 0) {
+        item.diagramCaption = diags[0].caption || '';
+        item.diagramBgMode = diags[0].bgMode || 'light';
+    }
+    refreshSingleBulkCardPreview(idx);
+}
+
+function removeOrClearBulkCardDiagramSlot(idx, diagIdx) {
+    const item = adminBulkStagedQuestions[idx];
+    if (!item) return;
+    const diags = getNormalizedItemDiagrams(item);
+    if (diags.length <= 2) {
+        diags[diagIdx] = createEmptyDiagramSlotObj();
+    } else {
+        diags.splice(diagIdx, 1);
+    }
+    getNormalizedItemDiagrams(item);
+    renderAdminBulkStagingQueue();
+}
+
 function toggleBulkItemCorrectAns(idx, letter, checked) {
     const item = adminBulkStagedQuestions[idx];
     if (!item) return;
@@ -3779,26 +4096,55 @@ function handleBulkCardImageBlob(idx, slot, blob) {
     if (!item || !blob) return;
     const url = URL.createObjectURL(blob);
     item.showTools = true;
+
+    if (typeof slot === 'string' && slot.startsWith('DIAGRAM_')) {
+        const dIdx = parseInt(slot.split('_')[1], 10) || 0;
+        const diags = getNormalizedItemDiagrams(item);
+        while (diags.length <= dIdx) diags.push(createEmptyDiagramSlotObj());
+        diags[dIdx].blob = blob;
+        diags[dIdx].previewUrl = url;
+        getNormalizedItemDiagrams(item);
+        renderAdminBulkStagingQueue();
+        showNotification(`📸 Attached Diagram #${dIdx + 1} to Question #${idx + 1}!`);
+        return;
+    }
+
     if (slot === 'QUESTION') {
         item.questionImageBlob = blob;
         item.questionImagePreviewUrl = url;
     } else if (slot === 'DIAGRAM') {
-        item.diagramBlob = blob;
-        item.diagramPreviewUrl = url;
-    } else if (slot === 'DIAGRAM2') {
-        item.diagram2Blob = blob;
-        item.diagram2PreviewUrl = url;
+        const diags = getNormalizedItemDiagrams(item);
+        diags[0].blob = blob;
+        diags[0].previewUrl = url;
+        getNormalizedItemDiagrams(item);
     } else if (slot === 'EXPLANATION') {
         item.explanationImageBlob = blob;
         item.explanationImagePreviewUrl = url;
     }
     renderAdminBulkStagingQueue();
-    const labelMap = { QUESTION: 'Question', DIAGRAM: '1st Diagram', DIAGRAM2: '2nd Diagram', EXPLANATION: 'Explanation' };
-    showNotification(`📸 Attached ${labelMap[slot] || slot} image to Question #${idx + 1}!`);
+    showNotification(`📸 Attached ${slot.toLowerCase()} image to Question #${idx + 1}!`);
 }
 
 function handleBulkCardFileSelect(inputEl, idx, slot) {
-    if (!inputEl || !inputEl.files || !inputEl.files[0]) return;
+    if (!inputEl || !inputEl.files || !inputEl.files.length) return;
+    // If multiple files were selected in a Diagram input, place each into consecutive diagram slots!
+    if (typeof slot === 'string' && slot.startsWith('DIAGRAM_') && inputEl.files.length > 1) {
+        const startDIdx = parseInt(slot.split('_')[1], 10) || 0;
+        const item = adminBulkStagedQuestions[idx];
+        if (!item) return;
+        const diags = getNormalizedItemDiagrams(item);
+        Array.from(inputEl.files).forEach((file, offset) => {
+            const targetIdx = startDIdx + offset;
+            while (diags.length <= targetIdx) diags.push(createEmptyDiagramSlotObj());
+            diags[targetIdx].blob = file;
+            diags[targetIdx].previewUrl = URL.createObjectURL(file);
+        });
+        getNormalizedItemDiagrams(item);
+        item.showTools = true;
+        renderAdminBulkStagingQueue();
+        showNotification(`📸 Attached ${inputEl.files.length} diagrams to Question #${idx + 1}!`);
+        return;
+    }
     handleBulkCardImageBlob(idx, slot, inputEl.files[0]);
 }
 
@@ -3843,13 +4189,8 @@ function clearBulkCardImageSlot(idx, slot) {
         item.questionImageBlob = null;
         item.questionImagePreviewUrl = '';
     } else if (slot === 'DIAGRAM') {
-        item.diagramBlob = null;
-        item.diagramPreviewUrl = '';
-        item.diagramCaption = '';
-    } else if (slot === 'DIAGRAM2') {
-        item.diagram2Blob = null;
-        item.diagram2PreviewUrl = '';
-        item.diagram2Caption = '';
+        removeOrClearBulkCardDiagramSlot(idx, 0);
+        return;
     } else if (slot === 'EXPLANATION') {
         item.explanationImageBlob = null;
         item.explanationImagePreviewUrl = '';
@@ -3867,7 +4208,7 @@ function toggleBulkCardMatchTable(idx, enabled) {
 function resizeBulkCardMatchTable(idx, dRows, dCols) {
     const item = adminBulkStagedQuestions[idx];
     if (!item) return;
-    item.matchTable.rows = Math.min(10, Math.max(1, item.matchTable.rows + dRows));
+    item.matchTable.rows = Math.min(15, Math.max(1, item.matchTable.rows + dRows));
     item.matchTable.cols = Math.min(5, Math.max(1, item.matchTable.cols + dCols));
     while (item.matchTable.cells.length < item.matchTable.rows) {
         item.matchTable.cells.push(['', '', '', '', '']);
@@ -3973,6 +4314,9 @@ function renderAdminBulkStagingQueue() {
     list.innerHTML = adminBulkStagedQuestions.map((item, idx) => {
         const ready = isBulkItemReady(item);
         const mt = item.matchTable;
+        const diags = getNormalizedItemDiagrams(item);
+        const attachedDiagCount = diags.filter(d => Boolean(d.blob || d.previewUrl)).length;
+
         let matchTableGridHtml = '';
         if (mt.enabled) {
             let ths = '';
@@ -3991,7 +4335,7 @@ function renderAdminBulkStagingQueue() {
             matchTableGridHtml = `
                 <div style="margin-top:8px; background:#0d1322; border:1px solid #2b3954; border-radius:8px; padding:10px;">
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; flex-wrap:wrap; gap:8px;">
-                        <span style="font-size:11.5px; color:#c084fc; font-weight:800;">📊 Auto-Built Match-the-Column Table (#${idx + 1})</span>
+                        <span style="font-size:11.5px; color:#c084fc; font-weight:800;">📊 Auto-Built Match-the-Column Table (#${idx + 1} • ${mt.rows} Rows)</span>
                         <div style="display:flex; gap:6px; align-items:center;">
                             <span style="font-size:11px; color:#94a3b8;">Rows: ${mt.rows}</span>
                             <button type="button" onclick="resizeBulkCardMatchTable(${idx}, -1, 0)" style="background:#1e293b; color:#fff; border:1px solid #334155; border-radius:4px; padding:2px 7px; cursor:pointer;">−</button>
@@ -4006,19 +4350,40 @@ function renderAdminBulkStagingQueue() {
             `;
         }
 
+        const multiDiagramSlotsHtml = diags.map((dSlot, dIdx) => `
+            <div style="background:#0b0f19; border:1px solid ${dIdx === 0 ? 'rgba(253,184,19,0.45)' : 'rgba(168,85,247,0.45)'}; border-radius:8px; padding:9px;" onpaste="handleBulkCardPasteImage(event, ${idx}, 'DIAGRAM_${dIdx}')">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                    <span style="font-size:11.5px; font-weight:800; color:${dIdx === 0 ? '#fdb813' : '#c084fc'};">📐 Diagram #${dIdx + 1}</span>
+                    ${(dSlot.previewUrl || diags.length > 2) ? `<button type="button" onclick="removeOrClearBulkCardDiagramSlot(${idx}, ${dIdx})" style="background:rgba(239,68,68,0.15); color:#ef4444; border:none; border-radius:5px; padding:2px 7px; font-size:11px; font-weight:700; cursor:pointer;">✕</button>` : ''}
+                </div>
+                <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:6px;">
+                    <input type="file" id="bulkDiagFile_${idx}_${dIdx}" accept="image/*" multiple style="display:none;" onchange="handleBulkCardFileSelect(this, ${idx}, 'DIAGRAM_${dIdx}')">
+                    <button type="button" onclick="triggerBulkCardClipboardPaste(${idx}, 'DIAGRAM_${dIdx}')" style="background:rgba(16,185,129,0.15); color:#10b981; border:1px solid rgba(16,185,129,0.4); border-radius:5px; padding:4px 8px; font-size:11px; font-weight:700; cursor:pointer;">📋 Paste</button>
+                    <button type="button" onclick="document.getElementById('bulkDiagFile_${idx}_${dIdx}').click()" style="background:rgba(253,184,19,0.15); color:#fdb813; border:1px solid rgba(253,184,19,0.4); border-radius:5px; padding:4px 8px; font-size:11px; cursor:pointer;">📁 Upload</button>
+                </div>
+                <div style="display:flex; gap:5px;">
+                    <input type="text" class="input-field" placeholder="Caption #${dIdx + 1} (or Ctrl+V here)" value="${escAttr(dSlot.caption)}" oninput="updateBulkCardDiagramSubField(${idx}, ${dIdx}, 'caption', this.value)" onpaste="handleBulkCardPasteImage(event, ${idx}, 'DIAGRAM_${dIdx}')" style="margin:0; padding:4px 7px; font-size:11px; flex:1;">
+                    <select class="input-field" onchange="updateBulkCardDiagramSubField(${idx}, ${dIdx}, 'bgMode', this.value)" style="margin:0; padding:4px 6px; font-size:11px; width:auto;">
+                        <option value="light" ${dSlot.bgMode === 'light' ? 'selected' : ''}>☀️ White</option>
+                        <option value="dark" ${dSlot.bgMode === 'dark' ? 'selected' : ''}>🌙 Dark</option>
+                    </select>
+                </div>
+            </div>
+        `).join('');
+
         return `
             <div id="bulkStagedCard_${idx}" style="background:#0d121f; border:1.5px solid ${ready ? 'rgba(56,189,248,0.35)' : 'rgba(239,68,68,0.65)'}; border-radius:12px; padding:14px; transition:0.2s;">
                 <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:10px; padding-bottom:8px; border-bottom:1px solid #1e293b;">
                     <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
                         <span style="background:var(--primary-yellow); color:#000; font-weight:900; font-size:12px; padding:3px 10px; border-radius:6px;">Q #${idx + 1}</span>
                         <span id="bulkCardStatusBadge_${idx}" style="background:${ready ? 'rgba(16,185,129,0.16)' : 'rgba(239,68,68,0.18)'}; color:${ready ? '#10b981' : '#ef4444'}; border:1px solid ${ready ? 'rgba(16,185,129,0.4)' : 'rgba(239,68,68,0.45)'}; padding:3px 10px; border-radius:20px; font-size:11px; font-weight:800;">
-                            ${ready ? `🟢 Correct Option Auto-Filled: (${item.correctAnswers.join(', ')})${mt.enabled ? ' • 📊 Table Auto-Built' : ''}` : '⚠️ Click A / B / C / D below to select Correct Answer'}
+                            ${ready ? `🟢 Correct Option Auto-Filled: (${item.correctAnswers.join(', ')})${mt.enabled ? ` • 📊 Table (${mt.rows} rows)` : ''}` : '⚠️ Click A / B / C / D below to select Correct Answer'}
                         </span>
                     </div>
                     <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
                         <button type="button" onclick="loadBulkCardIntoMainSingleForm(${idx})" style="background:rgba(56,189,248,0.15); color:#38bdf8; border:1px solid rgba(56,189,248,0.4); border-radius:6px; padding:5px 10px; font-size:11px; font-weight:700; cursor:pointer;">⬆️ Edit in Main Form</button>
                         <button type="button" onclick="toggleBulkCardExtraTools(${idx})" style="background:rgba(168,85,247,0.15); color:#c084fc; border:1px solid rgba(168,85,247,0.4); border-radius:6px; padding:5px 10px; font-size:11px; font-weight:700; cursor:pointer;">
-                            🖼️ + Image / Diagrams (1 &amp; 2) / Table ${(item.questionImageBlob || item.diagramBlob || item.diagram2Blob || item.explanationImageBlob || mt.enabled) ? '●' : ''}
+                            🖼️ + Multi-Diagrams ${attachedDiagCount > 0 ? `(${attachedDiagCount})` : ''} / Table ${(item.questionImageBlob || attachedDiagCount > 0 || item.explanationImageBlob || mt.enabled) ? '●' : ''}
                         </button>
                         <select class="input-field" onchange="updateBulkItemField(${idx}, 'level', this.value)" style="margin:0; width:auto; padding:4px 9px; font-size:11.5px; font-weight:700;">
                             <option value="Mixed" ${item.level === 'Mixed' ? 'selected' : ''}>Mixed</option>
@@ -4034,8 +4399,12 @@ function renderAdminBulkStagingQueue() {
                 <textarea class="input-field" style="min-height:68px; font-size:13.5px; margin-bottom:8px;" placeholder="Question #${idx + 1} text (or paste screenshot with Ctrl+V)..." onfocus="setLastFocusedFormulaInput(this)" oninput="updateBulkItemField(${idx}, 'question', this.value)" onpaste="handleBulkCardPasteImage(event, ${idx}, 'QUESTION')">${item.question}</textarea>
 
                 <div id="bulkCardToolsDrawer_${idx}" style="display:${item.showTools ? 'block' : 'none'}; background:#111729; border:1px dashed #334155; border-radius:10px; padding:12px; margin-bottom:10px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:8px;">
+                        <span style="font-size:11.5px; font-weight:800; color:#fdb813;">📐 Attach 1, 2, or Multiple Diagrams Under Q #${idx + 1}:</span>
+                        <button type="button" onclick="addAnotherBulkCardDiagramSlot(${idx})" style="background:rgba(168,85,247,0.18); color:#c084fc; border:1px solid rgba(168,85,247,0.45); border-radius:6px; padding:4px 10px; font-size:11px; font-weight:800; cursor:pointer;">➕ Add Another Diagram Slot</button>
+                    </div>
+
                     <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(205px, 1fr)); gap:10px;">
-                        <!-- 1. Question Screenshot -->
                         <div style="background:#0b0f19; border:1px solid rgba(56,189,248,0.35); border-radius:8px; padding:9px;" onpaste="handleBulkCardPasteImage(event, ${idx}, 'QUESTION')">
                             <div style="font-size:11.5px; font-weight:800; color:#38bdf8; margin-bottom:6px;">📸 Question Image / Screenshot</div>
                             <div style="display:flex; gap:6px; flex-wrap:wrap;">
@@ -4046,43 +4415,8 @@ function renderAdminBulkStagingQueue() {
                             </div>
                         </div>
 
-                        <!-- 2. Dedicated Diagram #1 -->
-                        <div style="background:#0b0f19; border:1px solid rgba(253,184,19,0.45); border-radius:8px; padding:9px;" onpaste="handleBulkCardPasteImage(event, ${idx}, 'DIAGRAM')">
-                            <div style="font-size:11.5px; font-weight:800; color:#fdb813; margin-bottom:6px;">📐 Diagram #1 (e.g. Fig 4.2)</div>
-                            <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:6px;">
-                                <input type="file" id="bulkDiagFile_${idx}" accept="image/*" style="display:none;" onchange="handleBulkCardFileSelect(this, ${idx}, 'DIAGRAM')">
-                                <button type="button" onclick="triggerBulkCardClipboardPaste(${idx}, 'DIAGRAM')" style="background:rgba(16,185,129,0.15); color:#10b981; border:1px solid rgba(16,185,129,0.4); border-radius:5px; padding:4px 8px; font-size:11px; font-weight:700; cursor:pointer;">📋 Paste</button>
-                                <button type="button" onclick="document.getElementById('bulkDiagFile_${idx}').click()" style="background:rgba(253,184,19,0.15); color:#fdb813; border:1px solid rgba(253,184,19,0.4); border-radius:5px; padding:4px 8px; font-size:11px; cursor:pointer;">📁 Upload</button>
-                                ${item.diagramPreviewUrl ? `<button type="button" onclick="clearBulkCardImageSlot(${idx}, 'DIAGRAM')" style="background:rgba(239,68,68,0.15); color:#ef4444; border:none; border-radius:5px; padding:4px 8px; font-size:11px; cursor:pointer;">✕</button>` : ''}
-                            </div>
-                            <div style="display:flex; gap:5px;">
-                                <input type="text" class="input-field" placeholder="Caption 1 (or Ctrl+V here)" value="${escAttr(item.diagramCaption)}" oninput="updateBulkItemField(${idx}, 'diagramCaption', this.value)" onpaste="handleBulkCardPasteImage(event, ${idx}, 'DIAGRAM')" style="margin:0; padding:4px 7px; font-size:11px; flex:1;">
-                                <select class="input-field" onchange="updateBulkItemField(${idx}, 'diagramBgMode', this.value)" style="margin:0; padding:4px 6px; font-size:11px; width:auto;">
-                                    <option value="light" ${item.diagramBgMode === 'light' ? 'selected' : ''}>☀️ White</option>
-                                    <option value="dark" ${item.diagramBgMode === 'dark' ? 'selected' : ''}>🌙 Dark</option>
-                                </select>
-                            </div>
-                        </div>
+                        ${multiDiagramSlotsHtml}
 
-                        <!-- 3. Dedicated Diagram #2 (Side-by-Side) -->
-                        <div style="background:#0b0f19; border:1px solid rgba(168,85,247,0.45); border-radius:8px; padding:9px;" onpaste="handleBulkCardPasteImage(event, ${idx}, 'DIAGRAM2')">
-                            <div style="font-size:11.5px; font-weight:800; color:#c084fc; margin-bottom:6px;">📐 Diagram #2 (e.g. Fig 4.3)</div>
-                            <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:6px;">
-                                <input type="file" id="bulkDiag2File_${idx}" accept="image/*" style="display:none;" onchange="handleBulkCardFileSelect(this, ${idx}, 'DIAGRAM2')">
-                                <button type="button" onclick="triggerBulkCardClipboardPaste(${idx}, 'DIAGRAM2')" style="background:rgba(16,185,129,0.15); color:#10b981; border:1px solid rgba(16,185,129,0.4); border-radius:5px; padding:4px 8px; font-size:11px; font-weight:700; cursor:pointer;">📋 Paste</button>
-                                <button type="button" onclick="document.getElementById('bulkDiag2File_${idx}').click()" style="background:rgba(168,85,247,0.15); color:#c084fc; border:1px solid rgba(168,85,247,0.4); border-radius:5px; padding:4px 8px; font-size:11px; cursor:pointer;">📁 Upload</button>
-                                ${item.diagram2PreviewUrl ? `<button type="button" onclick="clearBulkCardImageSlot(${idx}, 'DIAGRAM2')" style="background:rgba(239,68,68,0.15); color:#ef4444; border:none; border-radius:5px; padding:4px 8px; font-size:11px; cursor:pointer;">✕</button>` : ''}
-                            </div>
-                            <div style="display:flex; gap:5px;">
-                                <input type="text" class="input-field" placeholder="Caption 2 (or Ctrl+V here)" value="${escAttr(item.diagram2Caption)}" oninput="updateBulkItemField(${idx}, 'diagram2Caption', this.value)" onpaste="handleBulkCardPasteImage(event, ${idx}, 'DIAGRAM2')" style="margin:0; padding:4px 7px; font-size:11px; flex:1;">
-                                <select class="input-field" onchange="updateBulkItemField(${idx}, 'diagram2BgMode', this.value)" style="margin:0; padding:4px 6px; font-size:11px; width:auto;">
-                                    <option value="light" ${item.diagram2BgMode === 'light' ? 'selected' : ''}>☀️ White</option>
-                                    <option value="dark" ${item.diagram2BgMode === 'dark' ? 'selected' : ''}>🌙 Dark</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <!-- 4. Explanation Solution Image -->
                         <div style="background:#0b0f19; border:1px solid rgba(16,185,129,0.35); border-radius:8px; padding:9px;" onpaste="handleBulkCardPasteImage(event, ${idx}, 'EXPLANATION')">
                             <div style="font-size:11.5px; font-weight:800; color:#10b981; margin-bottom:6px;">🖼️ Explanation Solution Image</div>
                             <div style="display:flex; gap:6px; flex-wrap:wrap;">
@@ -4126,6 +4460,24 @@ function renderAdminBulkStagingQueue() {
     adminBulkStagedQuestions.forEach((_, idx) => refreshSingleBulkCardPreview(idx));
 }
 
+// Ensures any folder where MCQs are uploaded is marked as 'mcq' (End Topic) instead of 'both' (Empty Category)
+async function markTargetPathAsMcqTopic(targetPath) {
+    if (!targetPath) return;
+    try {
+        const parts = targetPath.split(' > ').filter(Boolean);
+        if (getMergedChildKeysAtPath(parts).length === 0) {
+            topicOverrides.editedPaths = topicOverrides.editedPaths || {};
+            topicOverrides.editedPaths[targetPath] = {
+                ...(topicOverrides.editedPaths[targetPath] || {}),
+                displayName: parts[parts.length - 1],
+                type: 'mcq'
+            };
+            customTopicTypes[targetPath] = { ...(customTopicTypes[targetPath] || {}), type: 'mcq' };
+            await db.collection('settings').doc('topic_overrides').set(topicOverrides, { merge: true });
+        }
+    } catch (e) {}
+}
+
 async function uploadAllBulkStagedMCQs() {
     if (!adminBulkStagedQuestions.length) return showNotification('⚠️ No questions in the bulk queue.');
     const targetPath = adminSelectedPath.join(' > ');
@@ -4156,16 +4508,19 @@ async function uploadAllBulkStagedMCQs() {
                 questionImageUrl = await uploadFileToCloudinary(item.questionImageBlob);
             }
 
-            let diagramUrl = null;
-            if (item.diagramBlob) {
-                if (btn) btn.innerText = `☁️ Uploading Q#${i + 1} Diagram #1...`;
-                diagramUrl = await uploadFileToCloudinary(item.diagramBlob);
-            }
-
-            let diagram2Url = null;
-            if (item.diagram2Blob) {
-                if (btn) btn.innerText = `☁️ Uploading Q#${i + 1} Diagram #2...`;
-                diagram2Url = await uploadFileToCloudinary(item.diagram2Blob);
+            const diags = getNormalizedItemDiagrams(item);
+            const uploadedDiagrams = [];
+            for (let dIdx = 0; dIdx < diags.length; dIdx++) {
+                const dSlot = diags[dIdx];
+                if (dSlot && dSlot.blob) {
+                    if (btn) btn.innerText = `☁️ Uploading Q#${i + 1} Diagram #${dIdx + 1}...`;
+                    const uUrl = await uploadFileToCloudinary(dSlot.blob);
+                    uploadedDiagrams.push({
+                        url: uUrl,
+                        caption: dSlot.caption || '',
+                        bgMode: dSlot.bgMode || 'light'
+                    });
+                }
             }
 
             let explanationImageUrl = null;
@@ -4176,11 +4531,7 @@ async function uploadAllBulkStagedMCQs() {
 
             let finalQuestionHtml = formatMultilineTextToHtml(item.question.trim());
             const matchTableHtml = buildBulkItemMatchTableHtml(item);
-            const diagramsHtml = buildCombinedDiagramsHtml(
-                diagramUrl, item.diagramCaption, item.diagramBgMode,
-                diagram2Url, item.diagram2Caption, item.diagram2BgMode,
-                false
-            );
+            const diagramsHtml = buildMultiDiagramsHtmlFromList(uploadedDiagrams, false);
 
             if (questionImageUrl) {
                 const safeQUrl = questionImageUrl.replace(/'/g, "\\'");
@@ -4220,10 +4571,9 @@ async function uploadAllBulkStagedMCQs() {
                 explanation: finalExplanationHtml,
                 imageUrl: null,
                 questionImageUrl,
-                diagramUrl,
-                diagramCaption: item.diagramCaption || '',
-                diagram2Url,
-                diagram2Caption: item.diagram2Caption || '',
+                diagramUrl: uploadedDiagrams[0]?.url || null,
+                diagramCaption: uploadedDiagrams[0]?.caption || '',
+                diagrams: uploadedDiagrams,
                 explanationImageUrl,
                 randomKey: Math.random()
             });
@@ -4242,6 +4592,7 @@ async function uploadAllBulkStagedMCQs() {
             await batch.commit();
         }
 
+        await markTargetPathAsMcqTopic(targetPath);
         document.getElementById('admSmartPasteInput').value = '';
         clearBulkStagedQueue();
         showNotification(`🎉 Successfully uploaded all ${preparedDocs.length} questions in 1 click!`);
@@ -4286,7 +4637,7 @@ function formatPlainChemistryToLatex() {
 }
 
 // ==========================================
-// 📊 MATCH-THE-COLUMN / CUSTOM TABLE BUILDER FUNCTIONS
+// 📊 MATCH-THE-COLUMN / CUSTOM TABLE BUILDER FUNCTIONS (UP TO 15 ROWS)
 // ==========================================
 function toggleAdminMatchTableBuilder(checked) {
     adminMatchTableState.enabled = Boolean(checked);
@@ -4299,7 +4650,7 @@ function toggleAdminMatchTableBuilder(checked) {
 }
 
 function resizeAdminMatchTable(deltaRows, deltaCols) {
-    adminMatchTableState.rows = Math.min(10, Math.max(1, adminMatchTableState.rows + deltaRows));
+    adminMatchTableState.rows = Math.min(15, Math.max(1, adminMatchTableState.rows + deltaRows));
     adminMatchTableState.cols = Math.min(5, Math.max(1, adminMatchTableState.cols + deltaCols));
     while (adminMatchTableState.cells.length < adminMatchTableState.rows) {
         adminMatchTableState.cells.push(['', '', '', '', '']);
@@ -4320,12 +4671,13 @@ function updateAdminMatchTableCell(rowIdx, colIdx, val) {
 }
 
 function applyMatchTablePrefixPreset(preset) {
-    const roman = ['i', 'ii', 'iii', 'iv', 'v', 'vi', 'vii', 'viii', 'ix', 'x'];
-    const lower = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j'];
-    const upper = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'];
-    const pqrs  = ['P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y'];
+    const roman = ['i', 'ii', 'iii', 'iv', 'v', 'vi', 'vii', 'viii', 'ix', 'x', 'xi', 'xii', 'xiii', 'xiv', 'xv'];
+    const lower = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o'];
+    const upper = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O'];
+    const pqrs  = ['P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 'A', 'B', 'C', 'D'];
 
     for (let r = 0; r < adminMatchTableState.rows; r++) {
+        if (!adminMatchTableState.cells[r]) adminMatchTableState.cells[r] = ['', '', '', '', ''];
         let c0 = (adminMatchTableState.cells[r][0] || '').replace(/^[a-zA-Z0-9\(\)\.\-]+\s*/, '');
         let c1 = (adminMatchTableState.cells[r][1] || '').replace(/^[a-zA-Z0-9\(\)\.\-]+\s*/, '');
         if (preset === 'abcd_roman') {
@@ -4344,7 +4696,7 @@ function applyMatchTablePrefixPreset(preset) {
 }
 
 function resetAdminMatchTableCells() {
-    for (let r = 0; r < 10; r++) {
+    for (let r = 0; r < 15; r++) {
         adminMatchTableState.cells[r] = ['', '', '', '', ''];
     }
     renderAdminMatchTableInputs();
@@ -4388,7 +4740,7 @@ function renderAdminMatchTableInputs() {
 function formatCellWithBoldPrefix(rawCell) {
     let safe = String(rawCell || '').trim();
     if (!safe) return '';
-    return safe.replace(/^([a-zA-Z0-9\(\)]{1,5}[\.\)])(\s+)/, '<b>$1</b>$2');
+    return safe.replace(/^([a-zA-Z0-9\(\)]{1,6}[\.\)])(\s+)/, '<b>$1</b>$2');
 }
 
 function buildMatchTableHtmlForQuestion() {
@@ -4424,16 +4776,13 @@ function buildMatchTableHtmlForQuestion() {
 }
 
 // ==========================================
-// 📸 UNIVERSAL SCREENSHOT PASTE & FILE UPLOAD (QUESTION, DIAGRAM 1, DIAGRAM 2, EXPLANATION)
+// 📸 UNIVERSAL SCREENSHOT PASTE & FILE UPLOAD (QUESTION, DIAGRAMS, EXPLANATION)
 // ==========================================
 function getSlotDomIds(slot) {
     if (slot === 'QUESTION') {
         return { fileId: 'admQTextImageFile', wrapId: 'admQTextImgPreviewWrap', imgId: 'admQTextImgPreview', clrId: 'btnClearQTextImg', label: 'Question Image' };
     } else if (slot === 'DIAGRAM') {
-        return { fileId: 'admQImage', wrapId: 'admDiagramPreviewWrap', imgId: 'admDiagramPreviewImg', clrId: 'btnClearDiagramImg', label: '1st Diagram Image' };
-    } else if (slot === 'DIAGRAM2') {
-        ensureSecondDiagramSlotInSingleForm();
-        return { fileId: 'admQImage2', wrapId: 'admDiagram2PreviewWrap', imgId: 'admDiagram2PreviewImg', clrId: 'btnClearDiagram2Img', label: '2nd Diagram Image' };
+        return { fileId: 'admQImage', wrapId: 'admDiagramPreviewWrap', imgId: 'admDiagramPreviewImg', clrId: 'btnClearDiagramImg', label: 'Diagram #1 Image' };
     } else {
         return { fileId: 'admExpImageFile', wrapId: 'admExpImgPreviewWrap', imgId: 'admExpImgPreview', clrId: 'btnClearExpImg', label: 'Explanation Image' };
     }
@@ -4450,7 +4799,7 @@ function applyBlobOrFileToSlot(slot, blobOrFile) {
     if (img) img.src = url;
     if (wrap) wrap.style.display = 'block';
     if (clr) clr.style.display = 'inline-block';
-    if (slot === 'DIAGRAM' || slot === 'DIAGRAM2') updateAdminDiagramPreviewBg();
+    if (slot === 'DIAGRAM') updateAdminDiagramPreviewBg();
     updateAdminLiveFormulaPreview();
     showNotification(`📸 ${label} attached!`);
 }
@@ -4491,9 +4840,7 @@ async function triggerClipboardImagePaste(slot) {
             throw new Error('Clipboard read API not supported');
         }
     } catch (e) {
-        const focusId = slot === 'QUESTION'
-            ? 'admQuestion'
-            : (slot === 'DIAGRAM' ? 'admDiagramCaption' : (slot === 'DIAGRAM2' ? 'admDiagram2Caption' : 'admExplanation'));
+        const focusId = slot === 'QUESTION' ? 'admQuestion' : (slot === 'DIAGRAM' ? 'admDiagramCaption' : 'admExplanation');
         const el = document.getElementById(focusId);
         if (el) el.focus();
         showNotification('📋 Box focused! Now press Ctrl+V (Desktop) or Long-Press -> Paste (Mobile) to paste your screenshot.');
@@ -4514,21 +4861,14 @@ function clearUniversalImageSlot(slot) {
     if (slot === 'DIAGRAM') {
         const cap = document.getElementById('admDiagramCaption');
         if (cap) cap.value = '';
-    } else if (slot === 'DIAGRAM2') {
-        const cap2 = document.getElementById('admDiagram2Caption');
-        if (cap2) cap2.value = '';
     }
     updateAdminLiveFormulaPreview();
 }
 
 function updateAdminDiagramPreviewBg() {
-    const mode1 = document.getElementById('admDiagramBgMode')?.value || 'light';
-    const wrap1 = document.getElementById('admDiagramPreviewWrap');
-    if (wrap1) wrap1.style.background = mode1 === 'dark' ? '#0d1527' : '#ffffff';
-
-    const mode2 = document.getElementById('admDiagram2BgMode')?.value || 'light';
-    const wrap2 = document.getElementById('admDiagram2PreviewWrap');
-    if (wrap2) wrap2.style.background = mode2 === 'dark' ? '#0d1527' : '#ffffff';
+    const mode = document.getElementById('admDiagramBgMode')?.value || 'light';
+    const wrap = document.getElementById('admDiagramPreviewWrap');
+    if (wrap) wrap.style.background = mode === 'dark' ? '#0d1527' : '#ffffff';
 }
 
 function updateAdminLiveFormulaPreview() {
@@ -4544,11 +4884,14 @@ function updateAdminLiveFormulaPreview() {
     const d1Cap = document.getElementById('admDiagramCaption')?.value.trim() || '';
     const d1Bg  = document.getElementById('admDiagramBgMode')?.value || 'light';
 
-    const d2Src = document.getElementById('admDiagram2PreviewImg')?.getAttribute('src') || '';
-    const d2Cap = document.getElementById('admDiagram2Caption')?.value.trim() || '';
-    const d2Bg  = document.getElementById('admDiagram2BgMode')?.value || 'light';
-
-    const diagramsHtml = buildCombinedDiagramsHtml(d1Src, d1Cap, d1Bg, d2Src, d2Cap, d2Bg, true);
+    const previewDiagList = [];
+    if (d1Src) previewDiagList.push({ url: d1Src, caption: d1Cap, bgMode: d1Bg });
+    (adminExtraSingleDiagrams || []).forEach(slot => {
+        if (slot && slot.previewUrl) {
+            previewDiagList.push({ url: slot.previewUrl, caption: slot.caption || '', bgMode: slot.bgMode || 'light' });
+        }
+    });
+    const diagramsHtml = buildMultiDiagramsHtmlFromList(previewDiagList, true);
 
     const a = document.getElementById('admOptA')?.value.trim() || '';
     const b = document.getElementById('admOptB')?.value.trim() || '';
@@ -4724,6 +5067,7 @@ async function generateAutoMixedQuestionsForSubtopic() {
             });
             await loadCustomTopics();
         }
+        await markTargetPathAsMcqTopic(mixedPath);
 
         if (replaceExisting && pools.MixedDocs.length > 0) {
             for (let i = 0; i < pools.MixedDocs.length; i += 400) {
@@ -4751,8 +5095,7 @@ async function generateAutoMixedQuestionsForSubtopic() {
                     questionImageUrl: q.questionImageUrl || null,
                     diagramUrl: q.diagramUrl || null,
                     diagramCaption: q.diagramCaption || '',
-                    diagram2Url: q.diagram2Url || null,
-                    diagram2Caption: q.diagram2Caption || '',
+                    diagrams: q.diagrams || [],
                     explanationImageUrl: q.explanationImageUrl || null,
                     randomKey: Math.random(),
                     timestamp: firebase.firestore.Timestamp.fromMillis(nowMs - (i + idx) * 1000)
@@ -4773,7 +5116,7 @@ if (!window._origBuildAdminSelectorsWrapped) {
     window._origBuildAdminSelectorsWrapped = _buildAdminSelectors;
     _buildAdminSelectors = function() {
         window._origBuildAdminSelectorsWrapped();
-        ensureSecondDiagramSlotInSingleForm();
+        ensureMultiDiagramSlotsInSingleForm();
     };
 }
 
@@ -4781,7 +5124,7 @@ if (!window._origHandleAdminPathChangeWrapped) {
     window._origHandleAdminPathChangeWrapped = handleAdminPathChange;
     handleAdminPathChange = function(event, depth) {
         window._origHandleAdminPathChangeWrapped(event, depth);
-        ensureSecondDiagramSlotInSingleForm();
+        ensureMultiDiagramSlotsInSingleForm();
         setTimeout(refreshAutoMixAvailableCounts, 80);
     };
 }
@@ -4792,8 +5135,9 @@ if (!window._origClearAdminUploadFormWrapped) {
         window._origClearAdminUploadFormWrapped(isSmartClear);
         clearUniversalImageSlot('QUESTION');
         clearUniversalImageSlot('DIAGRAM');
-        clearUniversalImageSlot('DIAGRAM2');
         clearUniversalImageSlot('EXPLANATION');
+        adminExtraSingleDiagrams = [createEmptyDiagramSlotObj()];
+        renderSingleFormExtraDiagrams();
         const tblCb = document.getElementById('admEnableMatchTable');
         if (tblCb) tblCb.checked = false;
         toggleAdminMatchTableBuilder(false);
@@ -4801,7 +5145,7 @@ if (!window._origClearAdminUploadFormWrapped) {
     };
 }
 
-// 🚀 STUDENT QUIZ ENGINE UPGRADES (ALL 60+ QUESTIONS, ANYTIME SUBMIT, RESUME VS START NEW EXCLUDING CORRECT)
+// 🚀 STUDENT QUIZ ENGINE UPGRADES & AUTO-HEAL FOR MIXED / LEAF MCQ FOLDERS
 // ==========================================
 (function upgradeStudentQuizEngineGlobally() {
     if (window._studentQuizEngineUpgradedV62) return;
@@ -5181,6 +5525,44 @@ if (!window._origClearAdminUploadFormWrapped) {
             }
         };
     }
+
+    // Auto-Heal Watcher: If any leaf folder (like Mixed, Easy, Medium, Hard) ever displays "This category has no subtopics yet", automatically check Firestore and launch its MCQs!
+    let _lastCheckedEmptyPath = '';
+    async function checkAndAutoLaunchLeafMcqFolder() {
+        if (!window.location.hash.startsWith('#/path/')) return;
+        const dyn = document.getElementById('dynamic-content');
+        if (!dyn) return;
+        const text = dyn.innerText || '';
+        if (!text.includes('This category has no subtopics yet')) return;
+
+        const targetPath = (Array.isArray(currentPath) && currentPath.length > 0) ? currentPath.join(' > ') : '';
+        if (!targetPath || _lastCheckedEmptyPath === targetPath) return;
+        _lastCheckedEmptyPath = targetPath;
+
+        const leaf = currentPath[currentPath.length - 1].replace(/^\d+\.\s*/, '').trim().toLowerCase();
+        const isDifficultyLeaf = ['easy', 'medium', 'hard', 'mixed'].includes(leaf);
+
+        try {
+            const snap = await db.collection('content').where('path', '==', targetPath).limit(1).get();
+            if (!snap.empty || isDifficultyLeaf) {
+                if (typeof customTopicTypes !== 'undefined') {
+                    customTopicTypes[targetPath] = { ...(customTopicTypes[targetPath] || {}), type: 'mcq' };
+                }
+                _lastCheckedEmptyPath = '';
+                if (typeof _initiateQuizEngine === 'function') {
+                    _initiateQuizEngine(targetPath);
+                }
+            }
+        } catch (e) {}
+    }
+
+    window.addEventListener('hashchange', () => {
+        _lastCheckedEmptyPath = '';
+        setTimeout(checkAndAutoLaunchLeafMcqFolder, 180);
+        setTimeout(checkAndAutoLaunchLeafMcqFolder, 600);
+    });
+    setTimeout(checkAndAutoLaunchLeafMcqFolder, 350);
+    setTimeout(checkAndAutoLaunchLeafMcqFolder, 900);
 })();
 
 // Self-Healing Guard: Ensures refreshing #/admin-panel never leaves a blank screen
@@ -5210,7 +5592,7 @@ async function processAdminUpload() {
 
     try {
         if (type === 'mcq') {
-            ensureSecondDiagramSlotInSingleForm();
+            ensureMultiDiagramSlotsInSingleForm();
             let questionTextRaw = document.getElementById('admQuestion').value.trim();
 
             if (!adminMatchTableState.enabled && questionTextRaw) {
@@ -5238,21 +5620,19 @@ async function processAdminUpload() {
             let explanationTextFormatted = formatMultilineTextToHtml(explanationTextRaw);
 
             const qTextImgFile = adminImageSlots.QUESTION || document.getElementById('admQTextImageFile')?.files?.[0] || null;
-            const diagramFile = adminImageSlots.DIAGRAM || document.getElementById('admQImage')?.files?.[0] || null;
-            const diagram2File = adminImageSlots.DIAGRAM2 || document.getElementById('admQImage2')?.files?.[0] || null;
+            const diagram1File = adminImageSlots.DIAGRAM || document.getElementById('admQImage')?.files?.[0] || null;
             const expImgFile = adminImageSlots.EXPLANATION || document.getElementById('admExpImageFile')?.files?.[0] || null;
 
-            const diagramCaption = document.getElementById('admDiagramCaption')?.value.trim() || '';
-            const diagramBgMode = document.getElementById('admDiagramBgMode')?.value || 'light';
+            const diagram1Caption = document.getElementById('admDiagramCaption')?.value.trim() || '';
+            const diagram1BgMode = document.getElementById('admDiagramBgMode')?.value || 'light';
 
-            const diagram2Caption = document.getElementById('admDiagram2Caption')?.value.trim() || '';
-            const diagram2BgMode = document.getElementById('admDiagram2BgMode')?.value || 'light';
+            const hasExtraDiag = (adminExtraSingleDiagrams || []).some(d => Boolean(d && d.blob));
 
             let level = document.getElementById('admDifficulty').value;
             const leaf = (adminSelectedPath[adminSelectedPath.length - 1] || '').replace(/^\d+\.\s*/, '').trim();
             if (['Easy', 'Medium', 'Hard', 'Mixed'].includes(leaf) && level === 'Mixed') level = leaf;
 
-            if ((!questionTextFormatted && !qTextImgFile && !matchTableHtml && !diagramFile && !diagram2File) || !options.A || !options.B || !correctAnswers.length) {
+            if ((!questionTextFormatted && !qTextImgFile && !matchTableHtml && !diagram1File && !hasExtraDiag) || !options.A || !options.B || !correctAnswers.length) {
                 throw new Error('Provide Question Text, Question Screenshot, Diagram, or Match Table, plus Option A, Option B, and Correct Answer.');
             }
 
@@ -5262,16 +5642,24 @@ async function processAdminUpload() {
                 questionImageUrl = await uploadFileToCloudinary(qTextImgFile);
             }
 
-            let diagramUrl = null;
-            if (diagramFile) {
+            const uploadedDiagrams = [];
+            if (diagram1File) {
                 btn.innerText = 'Uploading Diagram #1...';
-                diagramUrl = await uploadFileToCloudinary(diagramFile);
+                const u1 = await uploadFileToCloudinary(diagram1File);
+                uploadedDiagrams.push({ url: u1, caption: diagram1Caption, bgMode: diagram1BgMode });
             }
 
-            let diagram2Url = null;
-            if (diagram2File) {
-                btn.innerText = 'Uploading Diagram #2...';
-                diagram2Url = await uploadFileToCloudinary(diagram2File);
+            for (let sIdx = 0; sIdx < (adminExtraSingleDiagrams || []).length; sIdx++) {
+                const slot = adminExtraSingleDiagrams[sIdx];
+                if (slot && slot.blob) {
+                    btn.innerText = `Uploading Diagram #${sIdx + 2}...`;
+                    const uExtra = await uploadFileToCloudinary(slot.blob);
+                    uploadedDiagrams.push({
+                        url: uExtra,
+                        caption: (slot.caption || '').trim(),
+                        bgMode: slot.bgMode || 'light'
+                    });
+                }
             }
 
             let explanationImageUrl = null;
@@ -5290,11 +5678,7 @@ async function processAdminUpload() {
                 finalQuestionHtml = `${finalQuestionHtml}${matchTableHtml}`;
             }
 
-            const diagramsHtml = buildCombinedDiagramsHtml(
-                diagramUrl, diagramCaption, diagramBgMode,
-                diagram2Url, diagram2Caption, diagram2BgMode,
-                false
-            );
+            const diagramsHtml = buildMultiDiagramsHtmlFromList(uploadedDiagrams, false);
             if (diagramsHtml) {
                 finalQuestionHtml = `${finalQuestionHtml}${diagramsHtml}`;
             }
@@ -5317,14 +5701,15 @@ async function processAdminUpload() {
                 explanation: finalExplanationHtml,
                 imageUrl: null,
                 questionImageUrl,
-                diagramUrl,
-                diagramCaption,
-                diagram2Url,
-                diagram2Caption,
+                diagramUrl: uploadedDiagrams[0]?.url || null,
+                diagramCaption: uploadedDiagrams[0]?.caption || '',
+                diagrams: uploadedDiagrams,
                 explanationImageUrl,
                 randomKey: Math.random(),
                 timestamp: firebase.firestore.FieldValue.serverTimestamp()
             });
+
+            await markTargetPathAsMcqTopic(targetPath);
             clearAdminUploadForm(true);
             showNotification('✅ MCQ Uploaded Successfully!');
             refreshAutoMixAvailableCounts();
