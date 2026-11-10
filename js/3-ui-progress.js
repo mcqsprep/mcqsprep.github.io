@@ -2673,71 +2673,126 @@ async function handleLiveSearch() {
 }
 
 // ==========================================
-// 7. PC & MOBILE WEBSITE LANDING HERO, LIVE SIMULATOR & DYNAMIC FEATURE SHOWCASE
+// 7. PC & MOBILE WEBSITE + INSTALLED APP HERO, SELF-EXPLANATORY SIMULATORS & NAVBAR/SEARCH FIX
 // (100% Additive • Zero Existing Code Altered • Auto-Syncs With Future Admin Updates)
 // ==========================================
-(function initMCQsPrepWebsiteExperience() {
-    if (window._mcqsWebsiteExperienceLoaded) return;
-    window._mcqsWebsiteExperienceLoaded = true;
+(function initMCQsPrepUnifiedShowcaseEngine() {
+    if (window._mcqsUnifiedShowcaseLoadedV2) return;
+    window._mcqsUnifiedShowcaseLoadedV2 = true;
 
-    function isStandaloneInstalledApp() {
-        return document.documentElement.classList.contains('is-standalone-pwa') ||
-               window.matchMedia('(display-mode: standalone)').matches ||
-               window.matchMedia('(display-mode: fullscreen)').matches ||
-               window.navigator.standalone === true;
+    function isMobileViewport() {
+        return window.innerWidth <= 860;
     }
 
-    // Injects clean CSS for the Website Hero, Animated Dashboard, Interactive Simulator & Feature Cards
-    function injectWebsiteShowcaseStyles() {
-        if (document.getElementById('mcqs-website-showcase-styles')) return;
+    function injectUnifiedShowcaseStyles() {
+        if (document.getElementById('mcqs-unified-showcase-styles-v2')) return;
         const st = document.createElement('style');
-        st.id = 'mcqs-website-showcase-styles';
+        st.id = 'mcqs-unified-showcase-styles-v2';
         st.textContent = `
-            /* Center Navbar Pills for Website Mode */
+            /* ==========================================
+               1. NAVBAR, WIDE SEARCH BAR & SIGN-IN VISIBILITY FIXES
+               ========================================== */
+            .navbar {
+                display: flex !important;
+                align-items: center !important;
+                justify-content: space-between !important;
+                gap: 10px !important;
+                padding: 10px 18px !important;
+                box-sizing: border-box !important;
+                width: 100% !important;
+                max-width: 100vw !important;
+            }
+            .nav-left {
+                display: flex !important;
+                align-items: center !important;
+                gap: 10px !important;
+                flex-shrink: 0 !important;
+            }
+            .nav-right {
+                display: flex !important;
+                align-items: center !important;
+                gap: 10px !important;
+                flex-shrink: 0 !important;
+            }
+            /* Hide redundant text links on PC when the center pill bar is active so Sign In never gets pushed off-screen */
+            @media (min-width: 861px) {
+                .nav-right > .nav-link-item {
+                    display: none !important;
+                }
+                /* Ensure PC Installed App looks 100% identical to PC Website */
+                html.is-standalone-pwa .navbar .hide-in-app-mode:not(.nav-link-item):not(#installAppBtn),
+                html.is-standalone-pwa #ai-floating-btn {
+                    display: inline-flex !important;
+                }
+            }
+            /* Make Sign In button & User Badge always 100% visible, single-line, and never cut off */
+            #loginNavBtn {
+                white-space: nowrap !important;
+                flex-shrink: 0 !important;
+                padding: 8px 16px !important;
+                border-radius: 999px !important;
+                font-weight: 800 !important;
+                font-size: 13px !important;
+                background: #fdb813 !important;
+                color: #000000 !important;
+                border: none !important;
+                box-shadow: 0 4px 15px rgba(253, 184, 19, 0.35) !important;
+                align-items: center !important;
+                gap: 7px !important;
+                cursor: pointer !important;
+            }
+            #loginNavBtn img {
+                width: 16px !important;
+                height: 16px !important;
+                background: #fff;
+                border-radius: 50%;
+                padding: 2px;
+            }
+            #userBadge {
+                white-space: nowrap !important;
+                flex-shrink: 0 !important;
+            }
+
+            /* Center Navigation Pill Bar (PC Website & PC Installed App) */
             .web-center-nav-pills {
                 display: inline-flex;
                 align-items: center;
-                gap: 4px;
-                background: rgba(17, 21, 34, 0.92);
-                border: 1px solid rgba(255, 255, 255, 0.1);
+                gap: 3px;
+                background: rgba(15, 20, 32, 0.95);
+                border: 1px solid rgba(255, 255, 255, 0.11);
                 border-radius: 999px;
-                padding: 5px 8px;
+                padding: 4px 6px;
                 box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
                 position: relative;
                 z-index: 100;
-            }
-            html.is-standalone-pwa .web-center-nav-pills {
-                display: none !important;
+                flex-shrink: 1;
+                min-width: 0;
             }
             .web-nav-pill-btn {
                 background: transparent;
                 border: none;
                 color: #cbd5e1;
-                font-size: 13px;
+                font-size: 12.5px;
                 font-weight: 700;
-                padding: 7px 14px;
+                padding: 6px 12px;
                 border-radius: 999px;
                 cursor: pointer;
                 transition: all 0.2s ease;
                 display: inline-flex;
                 align-items: center;
-                gap: 6px;
+                gap: 5px;
                 font-family: inherit;
                 white-space: nowrap;
             }
             .web-nav-pill-btn:hover {
                 color: #ffffff;
-                background: rgba(255, 255, 255, 0.07);
+                background: rgba(255, 255, 255, 0.08);
             }
             .web-nav-pill-cta {
-                background: #fdb813 !important;
+                background: linear-gradient(135deg, #fdb813, #f59e0b) !important;
                 color: #000000 !important;
                 font-weight: 800 !important;
-                box-shadow: 0 0 18px rgba(253, 184, 19, 0.35);
-            }
-            .web-nav-pill-cta:hover {
-                transform: translateY(-1px);
-                box-shadow: 0 4px 22px rgba(253, 184, 19, 0.55);
+                box-shadow: 0 0 15px rgba(253, 184, 19, 0.35);
             }
             .web-courses-dropdown-wrap {
                 position: relative;
@@ -2749,11 +2804,11 @@ async function handleLiveSearch() {
                 left: 0;
                 min-width: 250px;
                 background: #0d1322;
-                border: 1px solid rgba(253, 184, 19, 0.4);
+                border: 1px solid rgba(253, 184, 19, 0.45);
                 border-radius: 14px;
                 padding: 8px;
-                box-shadow: 0 20px 45px rgba(0, 0, 0, 0.85);
-                z-index: 2000;
+                box-shadow: 0 20px 45px rgba(0, 0, 0, 0.9);
+                z-index: 3000;
             }
             .web-courses-dropdown-wrap:hover .web-courses-dropdown-menu,
             .web-courses-dropdown-wrap.open .web-courses-dropdown-menu {
@@ -2773,35 +2828,129 @@ async function handleLiveSearch() {
                 transition: background 0.15s ease;
             }
             .web-course-drop-item:hover {
-                background: rgba(253, 184, 19, 0.14);
+                background: rgba(253, 184, 19, 0.15);
                 color: #fdb813;
             }
 
-            /* Architectural Grid & Hero Wrapper */
-            .mcqs-web-landing-wrap {
-                position: relative;
-                margin-bottom: 28px;
+            /* WIDE, CLEAR SEARCH BAR WHEN CLICKED */
+            body.mcqs-search-open .web-center-nav-pills {
+                display: none !important;
+            }
+            #searchWrapper {
+                position: relative !important;
+                flex-shrink: 0 !important;
+            }
+            #searchWrapper.active {
+                flex: 1 1 480px !important;
+                max-width: 620px !important;
+                min-width: 280px !important;
+                z-index: 2500 !important;
+            }
+            #searchWrapper.active .search-icon-btn {
+                display: none !important;
+            }
+            #searchWrapper.active .search-input-container {
+                display: flex !important;
+                align-items: center !important;
+                width: 100% !important;
+                position: relative !important;
+                background: #0f172a !important;
+                border: 1.5px solid #fdb813 !important;
+                border-radius: 999px !important;
+                padding: 3px 12px 3px 16px !important;
+                box-shadow: 0 0 24px rgba(253, 184, 19, 0.28) !important;
+                box-sizing: border-box !important;
+            }
+            #searchWrapper.active #searchInput {
+                width: 100% !important;
+                min-width: 200px !important;
+                height: 36px !important;
+                background: transparent !important;
+                border: none !important;
+                outline: none !important;
+                color: #ffffff !important;
+                font-size: 14.5px !important;
+                font-weight: 500 !important;
+                padding: 0 8px 0 0 !important;
+                display: block !important;
+            }
+            #searchWrapper.active .search-close-btn {
+                position: static !important;
+                transform: none !important;
+                background: rgba(239, 68, 68, 0.18) !important;
+                color: #ef4444 !important;
+                border: 1px solid rgba(239, 68, 68, 0.4) !important;
+                width: 26px !important;
+                height: 26px !important;
+                border-radius: 50% !important;
+                display: inline-flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+                cursor: pointer !important;
+                flex-shrink: 0 !important;
+                font-size: 12px !important;
+            }
+            #searchWrapper.active #searchSuggestions {
+                top: calc(100% + 8px) !important;
+                left: 0 !important;
+                right: 0 !important;
+                width: 100% !important;
+                min-width: 300px !important;
+                background: #0d1527 !important;
+                border: 1px solid rgba(253, 184, 19, 0.45) !important;
+                border-radius: 14px !important;
+                box-shadow: 0 18px 45px rgba(0, 0, 0, 0.9) !important;
+                max-height: 360px !important;
+                overflow-y: auto !important;
+            }
+
+            /* Mobile Full-Width Search Overlay so typed sentences are 100% clear */
+            @media (max-width: 860px) {
+                .web-center-nav-pills {
+                    display: none !important;
+                }
+                #searchWrapper.active {
+                    position: fixed !important;
+                    top: 8px !important;
+                    left: 10px !important;
+                    right: 10px !important;
+                    max-width: none !important;
+                    width: calc(100vw - 20px) !important;
+                    background: #090d16 !important;
+                    padding: 4px !important;
+                    border-radius: 999px !important;
+                    z-index: 99999 !important;
+                }
+            }
+
+            /* ==========================================
+               2. FULL-WIDTH PC HERO & DETAILED SIMULATIONS
+               ========================================== */
+            .mcqs-fullwidth-band {
+                max-width: 1400px;
+                margin: 0 auto;
+                padding: 0 35px;
+                box-sizing: border-box;
             }
             .mcqs-web-hero-section {
                 position: relative;
                 background-color: #080b12;
                 background-image:
-                    radial-gradient(circle at 78% 22%, rgba(253, 184, 19, 0.14) 0%, transparent 52%),
+                    radial-gradient(circle at 76% 24%, rgba(253, 184, 19, 0.14) 0%, transparent 52%),
                     radial-gradient(circle at 18% 80%, rgba(56, 189, 248, 0.1) 0%, transparent 48%),
                     linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
                     linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
-                background-size: 100% 100%, 100% 100%, 46px 46px, 46px 46px;
-                border: 1px solid rgba(253, 184, 19, 0.25);
+                background-size: 100% 100%, 100% 100%, 48px 48px, 48px 48px;
+                border: 1px solid rgba(253, 184, 19, 0.28);
                 border-radius: 22px;
-                padding: 38px 34px;
-                margin-bottom: 28px;
-                overflow: hidden;
+                padding: 36px 36px;
+                margin-bottom: 24px;
                 box-shadow: 0 20px 55px rgba(0, 0, 0, 0.65);
             }
             .mcqs-hero-grid {
                 display: grid;
-                grid-template-columns: 1.08fr 0.92fr;
-                gap: 34px;
+                grid-template-columns: 1.02fr 0.98fr;
+                gap: 36px;
                 align-items: center;
             }
             .mcqs-hero-status-pill {
@@ -2809,13 +2958,13 @@ async function handleLiveSearch() {
                 align-items: center;
                 gap: 8px;
                 background: rgba(255, 255, 255, 0.04);
-                border: 1px solid rgba(253, 184, 19, 0.38);
+                border: 1px solid rgba(253, 184, 19, 0.4);
                 border-radius: 999px;
                 padding: 6px 14px;
                 font-size: 12px;
                 font-weight: 700;
                 color: #e2e8f0;
-                margin-bottom: 18px;
+                margin-bottom: 16px;
             }
             .mcqs-hero-status-dot {
                 width: 8px;
@@ -2826,39 +2975,39 @@ async function handleLiveSearch() {
                 animation: mcqsPulseDot 1.6s infinite alternate;
             }
             .mcqs-hero-main-title {
-                font-size: clamp(30px, 4.2vw, 52px);
+                font-size: clamp(32px, 3.8vw, 50px);
                 font-weight: 900;
                 line-height: 1.08;
                 letter-spacing: -0.8px;
                 color: #ffffff;
-                margin: 0 0 18px 0;
+                margin: 0 0 16px 0;
             }
             .mcqs-hero-highlight {
                 color: #fdb813;
                 text-shadow: 0 0 28px rgba(253, 184, 19, 0.35);
                 display: inline-block;
-                transition: opacity 0.28s ease, transform 0.28s ease;
+                transition: opacity 0.25s ease, transform 0.25s ease;
             }
             .mcqs-hero-subtext {
                 color: #94a3b8;
-                font-size: 15.5px;
+                font-size: 15px;
                 line-height: 1.65;
-                margin: 0 0 24px 0;
+                margin: 0 0 22px 0;
                 max-width: 560px;
             }
             .mcqs-hero-cta-row {
                 display: flex;
                 flex-wrap: wrap;
                 gap: 12px;
-                margin-bottom: 26px;
+                margin-bottom: 24px;
             }
             .mcqs-btn-primary-gold {
                 background: linear-gradient(135deg, #fdb813 0%, #f59e0b 100%);
                 color: #000000;
                 border: none;
-                padding: 13px 24px;
+                padding: 12px 22px;
                 border-radius: 12px;
-                font-size: 14.5px;
+                font-size: 14px;
                 font-weight: 900;
                 cursor: pointer;
                 display: inline-flex;
@@ -2875,9 +3024,9 @@ async function handleLiveSearch() {
                 background: rgba(255, 255, 255, 0.05);
                 color: #ffffff;
                 border: 1px solid rgba(255, 255, 255, 0.16);
-                padding: 13px 20px;
+                padding: 12px 18px;
                 border-radius: 12px;
-                font-size: 14px;
+                font-size: 13.5px;
                 font-weight: 800;
                 cursor: pointer;
                 display: inline-flex;
@@ -2894,17 +3043,17 @@ async function handleLiveSearch() {
                 display: grid;
                 grid-template-columns: repeat(4, 1fr);
                 gap: 10px;
-                padding-top: 18px;
+                padding-top: 16px;
                 border-top: 1px solid rgba(255, 255, 255, 0.08);
             }
             .mcqs-hero-stat-item {
-                background: rgba(15, 23, 42, 0.6);
-                border: 1px solid rgba(255, 255, 255, 0.07);
+                background: rgba(15, 23, 42, 0.65);
+                border: 1px solid rgba(255, 255, 255, 0.08);
                 border-radius: 10px;
                 padding: 10px 12px;
             }
             .mcqs-hero-stat-val {
-                font-size: 18px;
+                font-size: 17px;
                 font-weight: 900;
                 color: #ffffff;
             }
@@ -2915,71 +3064,72 @@ async function handleLiveSearch() {
                 font-weight: 600;
             }
 
-            /* Right Column: Animated macOS Analytics Dashboard Mockup (Image 1 Style) */
+            /* Simulation #1: Self-Explanatory Live Diagnostic & Score Window */
             .mcqs-mockup-window {
                 position: relative;
-                background: #10131c;
-                border: 1.5px solid rgba(255, 255, 255, 0.12);
+                background: #0f131d;
+                border: 1.5px solid rgba(253, 184, 19, 0.35);
                 border-radius: 18px;
                 padding: 18px;
-                box-shadow: 0 25px 60px rgba(0, 0, 0, 0.8), 0 0 35px rgba(253, 184, 19, 0.12);
+                box-shadow: 0 24px 60px rgba(0, 0, 0, 0.82), 0 0 35px rgba(253, 184, 19, 0.12);
             }
             .mcqs-floating-mastery-pill {
                 position: absolute;
                 top: -14px;
-                left: 26px;
-                background: #181c28;
-                border: 1px solid rgba(253, 184, 19, 0.55);
+                left: 22px;
+                background: #171c2b;
+                border: 1.5px solid #fdb813;
                 border-radius: 999px;
-                padding: 6px 14px;
+                padding: 5px 14px;
                 font-size: 12px;
                 font-weight: 800;
                 color: #f8fafc;
                 display: inline-flex;
                 align-items: center;
                 gap: 8px;
-                box-shadow: 0 10px 25px rgba(0, 0, 0, 0.75);
+                box-shadow: 0 10px 25px rgba(0, 0, 0, 0.8);
                 z-index: 5;
-                animation: mcqsFloatPill 3.2s ease-in-out infinite alternate;
             }
-            .mcqs-window-topbar {
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                margin-bottom: 14px;
-                padding-top: 4px;
-            }
-            .mcqs-window-dots {
+            .mcqs-sim1-exam-tabs {
                 display: flex;
                 gap: 6px;
+                flex-wrap: wrap;
+                margin: 8px 0 12px 0;
+                padding-bottom: 10px;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.08);
             }
-            .mcqs-window-dots span {
-                width: 10px;
-                height: 10px;
-                border-radius: 50%;
-                display: inline-block;
+            .mcqs-sim1-tab-btn {
+                background: rgba(255, 255, 255, 0.05);
+                border: 1px solid rgba(255, 255, 255, 0.12);
+                color: #94a3b8;
+                padding: 5px 11px;
+                border-radius: 8px;
+                font-size: 11.5px;
+                font-weight: 800;
+                cursor: pointer;
+                transition: all 0.18s ease;
+            }
+            .mcqs-sim1-tab-btn.active {
+                background: rgba(253, 184, 19, 0.18);
+                border-color: #fdb813;
+                color: #fdb813;
             }
             .mcqs-mockup-body-grid {
                 display: grid;
-                grid-template-columns: 1.15fr 0.85fr;
+                grid-template-columns: 1.12fr 0.88fr;
                 gap: 12px;
             }
             .mcqs-mockup-subcard {
-                background: #161a26;
-                border: 1px solid rgba(255, 255, 255, 0.07);
+                background: #151a28;
+                border: 1px solid rgba(255, 255, 255, 0.08);
                 border-radius: 14px;
-                padding: 15px;
+                padding: 14px;
                 display: flex;
                 flex-direction: column;
                 justify-content: space-between;
             }
-            .mcqs-traj-svg-path {
-                stroke-dasharray: 320;
-                stroke-dashoffset: 320;
-                animation: mcqsDrawCurve 2.4s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-            }
 
-            /* Section 2: Interactive CBT / Exam Condition Simulator (Image 2 Style) */
+            /* Simulation #2: Interactive NTA / CBT Simulator Section */
             .mcqs-cbt-showcase-section {
                 background-color: #080b12;
                 background-image:
@@ -2987,16 +3137,16 @@ async function handleLiveSearch() {
                     linear-gradient(to right, rgba(255, 255, 255, 0.025) 1px, transparent 1px),
                     linear-gradient(to bottom, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
                 background-size: 100% 100%, 44px 44px, 44px 44px;
-                border: 1px solid rgba(255, 255, 255, 0.1);
+                border: 1px solid rgba(255, 255, 255, 0.12);
                 border-radius: 22px;
-                padding: 36px 32px;
-                margin-top: 28px;
-                margin-bottom: 28px;
+                padding: 34px 34px;
+                margin-top: 26px;
+                margin-bottom: 26px;
                 box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
             }
             .mcqs-cbt-grid {
                 display: grid;
-                grid-template-columns: 0.9fr 1.1fr;
+                grid-template-columns: 0.88fr 1.12fr;
                 gap: 32px;
                 align-items: center;
             }
@@ -3004,7 +3154,7 @@ async function handleLiveSearch() {
                 display: flex;
                 flex-direction: column;
                 gap: 14px;
-                margin: 22px 0 26px 0;
+                margin: 20px 0 24px 0;
             }
             .mcqs-cbt-feature-row {
                 display: flex;
@@ -3024,20 +3174,31 @@ async function handleLiveSearch() {
                 font-size: 16px;
                 flex-shrink: 0;
             }
-            /* Authentic NTA / Exam Simulator Card */
             .mcqs-nta-sim-window {
                 background: #ffffff;
                 color: #0f172a;
                 border-radius: 16px;
                 overflow: hidden;
                 box-shadow: 0 24px 60px rgba(0, 0, 0, 0.85);
-                border: 2px solid rgba(253, 184, 19, 0.45);
+                border: 2px solid rgba(253, 184, 19, 0.55);
                 font-family: system-ui, -apple-system, sans-serif;
+            }
+            .mcqs-nta-guide-banner {
+                background: #0f172a;
+                color: #f8fafc;
+                padding: 8px 14px;
+                font-size: 11.5px;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                flex-wrap: wrap;
+                gap: 8px;
+                border-bottom: 1px solid #334155;
             }
             .mcqs-nta-top-header {
                 background: #f8fafc;
                 border-bottom: 1px solid #e2e8f0;
-                padding: 12px 16px;
+                padding: 10px 16px;
                 display: flex;
                 justify-content: space-between;
                 align-items: center;
@@ -3046,11 +3207,11 @@ async function handleLiveSearch() {
             }
             .mcqs-nta-body {
                 display: grid;
-                grid-template-columns: 1.55fr 0.85fr;
-                min-height: 320px;
+                grid-template-columns: 1.58fr 0.82fr;
+                min-height: 330px;
             }
             .mcqs-nta-q-pane {
-                padding: 16px 18px;
+                padding: 15px 18px;
                 border-right: 1px solid #e2e8f0;
                 display: flex;
                 flex-direction: column;
@@ -3061,7 +3222,7 @@ async function handleLiveSearch() {
                 align-items: center;
                 gap: 10px;
                 padding: 8px 11px;
-                border: 1.5px solid #e2e8f0;
+                border: 1.5px solid #cbd5e1;
                 border-radius: 8px;
                 margin-bottom: 7px;
                 cursor: pointer;
@@ -3071,7 +3232,7 @@ async function handleLiveSearch() {
                 background: #ffffff;
             }
             .mcqs-nta-opt-row:hover {
-                border-color: #38bdf8;
+                border-color: #0284c7;
                 background: #f0f9ff;
             }
             .mcqs-nta-opt-row.selected {
@@ -3119,7 +3280,7 @@ async function handleLiveSearch() {
             }
             .mcqs-nta-pal-btn.active-q {
                 outline: 2px solid #0f172a;
-                 outline-offset: 1px;
+                outline-offset: 1px;
             }
             .mcqs-nta-pal-btn.st-answered {
                 background: #16a34a;
@@ -3138,23 +3299,23 @@ async function handleLiveSearch() {
                 border-color: #ea580c;
             }
 
-            /* Section 3: What We Provide Feature Matrix */
+            /* Section 3: What We Provide Grid */
             .mcqs-provide-section {
-                margin-top: 28px;
-                margin-bottom: 24px;
+                margin-top: 24px;
+                margin-bottom: 30px;
             }
             .mcqs-provide-grid {
                 display: grid;
                 grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-                gap: 18px;
+                gap: 16px;
                 margin-top: 18px;
             }
             .mcqs-provide-card {
                 background: linear-gradient(155deg, rgba(20, 26, 42, 0.96), rgba(10, 14, 24, 0.98));
                 border: 1px solid rgba(255, 255, 255, 0.09);
                 border-radius: 16px;
-                padding: 22px;
-                transition: transform 0.22s ease, border-color 0.22s ease, box-shadow 0.22s ease;
+                padding: 20px;
+                transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
                 cursor: pointer;
                 display: flex;
                 flex-direction: column;
@@ -3166,49 +3327,81 @@ async function handleLiveSearch() {
                 box-shadow: 0 14px 34px rgba(0, 0, 0, 0.65);
             }
 
+            /* ==========================================
+               3. COMPACT MOBILE APP HUB (FOR INSTALLED MOBILE APP & MOBILE SCREENS)
+               ========================================== */
+            .mcqs-mobile-app-hub {
+                background: linear-gradient(160deg, #0d1323 0%, #080b14 100%);
+                border: 1px solid rgba(253, 184, 19, 0.32);
+                border-radius: 18px;
+                padding: 16px;
+                margin-bottom: 18px;
+                box-shadow: 0 12px 32px rgba(0, 0, 0, 0.65);
+            }
+            .mcqs-mob-tab-bar {
+                display: grid;
+                grid-template-columns: repeat(3, 1fr);
+                gap: 6px;
+                background: #070a11;
+                padding: 4px;
+                border-radius: 12px;
+                border: 1px solid rgba(255, 255, 255, 0.08);
+                margin: 12px 0;
+            }
+            .mcqs-mob-tab-btn {
+                background: transparent;
+                border: none;
+                color: #94a3b8;
+                padding: 8px 6px;
+                border-radius: 9px;
+                font-size: 11.5px;
+                font-weight: 800;
+                cursor: pointer;
+                text-align: center;
+                transition: 0.18s;
+            }
+            .mcqs-mob-tab-btn.active {
+                background: rgba(253, 184, 19, 0.18);
+                color: #fdb813;
+                border: 1px solid rgba(253, 184, 19, 0.45);
+            }
+
             @keyframes mcqsPulseDot {
                 0% { transform: scale(0.9); opacity: 0.65; }
                 100% { transform: scale(1.25); opacity: 1; }
             }
-            @keyframes mcqsFloatPill {
-                0% { transform: translateY(0px); }
-                100% { transform: translateY(-4px); }
-            }
-            @keyframes mcqsDrawCurve {
-                to { stroke-dashoffset: 0; }
-            }
 
-            @media (max-width: 960px) {
+            @media (max-width: 1024px) {
                 .mcqs-hero-grid, .mcqs-cbt-grid {
                     grid-template-columns: 1fr;
                 }
-                .mcqs-hero-stats-strip {
-                    grid-template-columns: repeat(2, 1fr);
-                }
-                .mcqs-nta-body {
-                    grid-template-columns: 1fr;
-                }
-                .mcqs-nta-q-pane {
-                    border-right: none;
-                    border-bottom: 1px solid #e2e8f0;
-                }
-                .web-center-nav-pills {
-                    display: none;
-                }
-            }
-            @media (max-width: 560px) {
-                .mcqs-web-hero-section, .mcqs-cbt-showcase-section {
-                    padding: 22px 16px;
-                }
-                .mcqs-mockup-body-grid {
-                    grid-template-columns: 1fr;
+                .mcqs-fullwidth-band {
+                    padding: 0 15px;
                 }
             }
         `;
         document.head.appendChild(st);
     }
 
-    // Dynamically reads all active Root Exam Categories from appData & customTopicTypes
+    // Wrap openSearch and closeSearch so clicking Search expands cleanly and never gets squished
+    if (typeof openSearch === 'function' && !window._origOpenSearchWrappedV2) {
+        window._origOpenSearchWrappedV2 = openSearch;
+        openSearch = function() {
+            document.body.classList.add('mcqs-search-open');
+            window._origOpenSearchWrappedV2();
+            const inp = document.getElementById('searchInput');
+            if (inp) setTimeout(() => inp.focus(), 30);
+        };
+    }
+    if (typeof closeSearch === 'function' && !window._origCloseSearchWrappedV2) {
+        window._origCloseSearchWrappedV2 = closeSearch;
+        closeSearch = function() {
+            document.body.classList.remove('mcqs-search-open');
+            window._origCloseSearchWrappedV2();
+        };
+    }
+
+    // Reads active Root Exam Categories dynamically from appData & customTopicTypes
     function getLiveActiveExamCategories() {
         const deletedSet = new Set((typeof topicOverrides !== 'undefined' && topicOverrides && topicOverrides.deletedPaths) || []);
         const keys = new Set(Object.keys(typeof appData !== 'undefined' ? appData : {}));
@@ -3222,70 +3415,63 @@ async function handleLiveSearch() {
         return Array.from(keys).filter(k => k && k !== 'Daily Quiz Challenge' && !deletedSet.has(k));
     }
 
-    // Dynamically counts total folders/subtopics & collects real Subject • Chapter pairs for live animations
+    // Reads real academic Subject & Chapter pairs (filters out "Year-wise", "PYQ", "NCERT Book", etc.)
     function getLivePlatformInventory() {
         const exams = getLiveActiveExamCategories();
         const deletedSet = new Set((typeof topicOverrides !== 'undefined' && topicOverrides && topicOverrides.deletedPaths) || []);
         let totalSubfolders = 0;
         const subjectChapterBadges = [];
+        const skipWords = /year-wise|pyq|ncert book|mock test|practice paper|sample paper|easy|medium|hard|mixed/i;
 
-        function walk(node, trail) {
+        const subjectsByExam = {};
+
+        exams.forEach(ex => {
+            subjectsByExam[ex] = [];
+            const catalog = typeof buildCwCatalogForExam === 'function' ? buildCwCatalogForExam(ex, true) : [];
+            catalog.forEach(subjObj => {
+                if (!skipWords.test(subjObj.label)) {
+                    subjectsByExam[ex].push(subjObj.label);
+                    (subjObj.chapters || []).slice(0, 4).forEach(ch => {
+                        if (!skipWords.test(ch.label)) {
+                            subjectChapterBadges.push(`${subjObj.label} · ${ch.label}`);
+                        }
+                    });
+                }
+            });
+        });
+
+        function countNodes(node, trail) {
             if (!node || typeof node !== 'object' || Array.isArray(node)) return;
             Object.keys(node).forEach(k => {
                 const nextTrail = [...trail, k];
-                const full = nextTrail.join(' > ');
-                if (deletedSet.has(full)) return;
+                if (deletedSet.has(nextTrail.join(' > '))) return;
                 totalSubfolders++;
-                if (nextTrail.length >= 3 && !isCwDifficultyFolder(k)) {
-                    const subj = formatCleanTopicTitle(nextTrail[nextTrail.length - 2]);
-                    const chap = formatCleanTopicTitle(k);
-                    if (subj && chap && subj !== chap) {
-                        subjectChapterBadges.push(`${subj} · ${chap}`);
-                    }
-                }
-                walk(node[k], nextTrail);
+                countNodes(node[k], nextTrail);
             });
         }
-
-        exams.forEach(ex => {
-            if (appData && appData[ex]) walk(appData[ex], [ex]);
-        });
-
-        if (typeof customTopicTypes !== 'undefined') {
-            Object.keys(customTopicTypes).forEach(dbKey => {
-                if (deletedSet.has(dbKey)) return;
-                totalSubfolders++;
-                const parts = dbKey.split(' > ').filter(Boolean);
-                if (parts.length >= 3) {
-                    const leaf = parts[parts.length - 1];
-                    const parent = parts[parts.length - 2];
-                    if (!isCwDifficultyFolder(leaf) && !isCwDifficultyFolder(parent)) {
-                        subjectChapterBadges.push(`${formatCleanTopicTitle(parent)} · ${formatCleanTopicTitle(leaf)}`);
-                    }
-                }
-            });
-        }
+        exams.forEach(ex => { if (appData && appData[ex]) countNodes(appData[ex], [ex]); });
 
         if (subjectChapterBadges.length === 0) {
             subjectChapterBadges.push(
                 'Zoology · Animal Kingdom',
                 'Botany · Biological Classification',
-                'Physics · Laws of Motion',
-                'Chemistry · Chemical Bonding'
+                'Physics · Alternating Current',
+                'Chemistry · Chemical Bonding',
+                'Indian Polity · Fundamental Rights'
             );
         }
 
         return {
             exams,
             examCount: Math.max(1, exams.length),
-            totalSubfolders: Math.max(25, totalSubfolders),
-            subjectChapterBadges: Array.from(new Set(subjectChapterBadges))
+            totalSubfolders: Math.max(30, totalSubfolders),
+            subjectChapterBadges: Array.from(new Set(subjectChapterBadges)),
+            subjectsByExam
         };
     }
 
-    // Injects the Website Center Navbar Pills (Courses ▾, Simulator, Analytics, What We Provide)
+    // Syncs the center pill bar in the Navbar on PC Website & PC Installed App
     function syncWebsiteNavbarPills() {
-        if (isStandaloneInstalledApp()) return;
         const navbar = document.querySelector('.navbar');
         const searchWrap = document.getElementById('searchWrapper');
         if (!navbar || !searchWrap) return;
@@ -3311,7 +3497,7 @@ async function handleLiveSearch() {
             return `
                 <div class="web-course-drop-item" onclick="jumpToSection(['${safeKey}'])">
                     <span>${th.i === 'NONE' ? '📘' : th.i} ${clean}</span>
-                    <span style="font-size:11px; opacity:0.75;">Practice &rarr;</span>
+                    <span style="font-size:11px; opacity:0.75;">Open &rarr;</span>
                 </div>
             `;
         }).join('');
@@ -3331,7 +3517,8 @@ async function handleLiveSearch() {
                 </div>
             </div>
             <button type="button" class="web-nav-pill-btn" onclick="scrollToWebsiteSection('mcqs-cbt-simulator-anchor')">CBT Simulator</button>
-            <button type="button" class="web-nav-pill-btn" onclick="window.location.hash='#/progress'">Results &amp; Analytics</button>
+            <button type="button" class="web-nav-pill-btn" onclick="window.location.hash='#/progress'">Analytics</button>
+            <button type="button" class="web-nav-pill-btn" onclick="showLeaderboardOptions()">Leaderboard</button>
             <button type="button" class="web-nav-pill-btn" onclick="scrollToWebsiteSection('mcqs-what-we-provide-anchor')">What We Offer</button>
             <button type="button" class="web-nav-pill-btn web-nav-pill-cta" onclick="scrollToWebsiteSection('mcqs-home-categories-anchor')">Start Practicing</button>
         `;
@@ -3352,13 +3539,230 @@ async function handleLiveSearch() {
     };
 
     // ==========================================
-    // INTERACTIVE CBT / NTA SIMULATOR ENGINE (PULLS LIVE QUESTIONS FROM FIRESTORE)
+    // SIMULATION #1: INTERACTIVE DIAGNOSTIC & SCORE TRAJECTORY ENGINE
     // ==========================================
-    const FALLBACK_SIM_QUESTIONS = [
+    var sim1ActiveExamIdx = 0;
+
+    function getSim1ProfileForExam(examName, inv) {
+        const clean = formatCleanTopicTitle(examName || 'NEET');
+        const lower = clean.toLowerCase();
+        const realSubjects = (inv.subjectsByExam && inv.subjectsByExam[examName]) || [];
+
+        if (lower.includes('neet')) {
+            const s1 = realSubjects[0] || 'Zoology';
+            const s2 = realSubjects[1] || 'Botany';
+            const s3 = realSubjects[2] || 'Chemistry';
+            const s4 = realSubjects[3] || 'Physics';
+            return {
+                examTitle: clean,
+                scoreText: '652',
+                maxText: '/ 720',
+                liftText: '↑ +54 Score Lift',
+                accText: '91% Accuracy',
+                avgTimeCorrect: '24s',
+                avgTimeWrong: '51s',
+                featuredBadge: `${s1} · Animal Kingdom`,
+                featuredPct: '94%',
+                subjects: [
+                    { name: s1, pct: 94, color: '#10b981' },
+                    { name: s2, pct: 88, color: '#38bdf8' },
+                    { name: s3, pct: 79, color: '#fdb813' },
+                    { name: `${s4} (Weak-Spot Alert <50%)`, pct: 46, color: '#ef4444' }
+                ]
+            };
+        } else if (lower.includes('jee')) {
+            const s1 = realSubjects[0] || 'Mathematics';
+            const s2 = realSubjects[1] || 'Physics';
+            const s3 = realSubjects[2] || 'Chemistry';
+            return {
+                examTitle: clean,
+                scoreText: '248',
+                maxText: '/ 300',
+                liftText: '↑ +38 Score Lift',
+                accText: '88% Accuracy',
+                avgTimeCorrect: '38s',
+                avgTimeWrong: '67s',
+                featuredBadge: `${s2} · Alternating Current`,
+                featuredPct: '91%',
+                subjects: [
+                    { name: s2, pct: 91, color: '#10b981' },
+                    { name: s3, pct: 85, color: '#38bdf8' },
+                    { name: `${s1} (Weak-Spot Alert <50%)`, pct: 48, color: '#ef4444' }
+                ]
+            };
+        } else {
+            const s1 = realSubjects[0] || 'Core Subject I';
+            const s2 = realSubjects[1] || 'Core Subject II';
+            const s3 = realSubjects[2] || 'General Studies';
+            return {
+                examTitle: clean,
+                scoreText: '92%',
+                maxText: 'Mastery',
+                liftText: '↑ +24% Accuracy',
+                accText: 'Top 5% Rank',
+                avgTimeCorrect: '19s',
+                avgTimeWrong: '42s',
+                featuredBadge: `${clean} · High-Yield MCQs`,
+                featuredPct: '95%',
+                subjects: [
+                    { name: s1, pct: 95, color: '#10b981' },
+                    { name: s2, pct: 86, color: '#38bdf8' },
+                    { name: `${s3} (Needs Revision <50%)`, pct: 45, color: '#ef4444' }
+                ]
+            };
+        }
+    }
+
+    window.selectSim1ExamTab = function(idx) {
+        sim1ActiveExamIdx = idx;
+        renderSim1DiagnosticDashboard();
+    };
+
+    function renderSim1DiagnosticDashboard() {
+        const mount = document.getElementById('mcqsSim1DiagnosticMount');
+        if (!mount) return;
+
+        const inv = getLivePlatformInventory();
+        const exams = inv.exams.length ? inv.exams : ['NEET', 'JEE', 'Board', 'General Knowledge'];
+        const safeIdx = sim1ActiveExamIdx % exams.length;
+        const activeExam = exams[safeIdx];
+        const prof = getSim1ProfileForExam(activeExam, inv);
+
+        const tabsHtml = exams.map((ex, i) => `
+            <button type="button" class="mcqs-sim1-tab-btn ${i === safeIdx ? 'active' : ''}" onclick="selectSim1ExamTab(${i})">
+                ${formatCleanTopicTitle(ex)}
+            </button>
+        `).join('');
+
+        const barsHtml = prof.subjects.map(s => `
+            <div style="margin-bottom:7px;">
+                <div style="display:flex; justify-content:space-between; font-size:11px; font-weight:700; margin-bottom:3px;">
+                    <span style="color:#e2e8f0;">${s.name}</span>
+                    <span style="color:${s.color}; font-weight:800;">${s.pct}%</span>
+                </div>
+                <div style="width:100%; height:6px; background:#090d16; border-radius:4px; overflow:hidden;">
+                    <div style="width:${s.pct}%; height:100%; background:${s.color}; border-radius:4px; transition:width 0.4s ease;"></div>
+                </div>
+            </div>
+        `).join('');
+
+        mount.innerHTML = `
+            <div class="mcqs-mockup-window">
+                <div class="mcqs-floating-mastery-pill" onclick="window.location.hash='#/progress'" style="cursor:pointer;" title="Click to open Track Progress">
+                    <span style="color:#10b981;">✔</span>
+                    <span>${prof.featuredBadge}</span>
+                    <span style="color:#fdb813; font-weight:900;">${prof.featuredPct}</span>
+                </div>
+
+                <div style="display:flex; justify-content:space-between; align-items:center; padding-top:6px;">
+                    <div style="display:flex; align-items:center; gap:6px;">
+                        <span style="width:10px; height:10px; border-radius:50%; background:#ef4444; display:inline-block;"></span>
+                        <span style="width:10px; height:10px; border-radius:50%; background:#f59e0b; display:inline-block;"></span>
+                        <span style="width:10px; height:10px; border-radius:50%; background:#10b981; display:inline-block;"></span>
+                        <span style="font-size:11px; font-weight:800; color:#cbd5e1; margin-left:6px;">📊 SIMULATION 1: DIAGNOSTIC &amp; REVISION ENGINE</span>
+                    </div>
+                    <span style="font-size:10.5px; color:#10b981; font-weight:800;">● Click Tabs Below</span>
+                </div>
+
+                <div class="mcqs-sim1-exam-tabs">${tabsHtml}</div>
+
+                <div class="mcqs-mockup-body-grid">
+                    <!-- Left Column: Score Trajectory + Subject Weak-Spot Bars -->
+                    <div class="mcqs-mockup-subcard" onclick="window.location.hash='#/progress'" style="cursor:pointer;" title="Click to open your real Analytics Dashboard">
+                        <div>
+                            <div style="display:flex; justify-content:space-between; align-items:center;">
+                                <span style="font-size:10.5px; color:#94a3b8; font-weight:800; text-transform:uppercase;">${prof.examTitle} Score &amp; Accuracy Trajectory</span>
+                                <span style="font-size:10.5px; color:#38bdf8; font-weight:800;">${prof.accText}</span>
+                            </div>
+                            <div style="display:flex; align-items:baseline; justify-content:space-between; gap:8px; margin-top:4px; flex-wrap:wrap;">
+                                <div>
+                                    <span style="font-size:34px; font-weight:900; color:#ffffff; letter-spacing:-1px;">${prof.scoreText}</span>
+                                    <span style="font-size:12px; color:#94a3b8; font-weight:700;">${prof.maxText}</span>
+                                </div>
+                                <span style="background:rgba(16,185,129,0.16); color:#10b981; border:1px solid rgba(16,185,129,0.4); font-size:10.5px; font-weight:800; padding:3px 8px; border-radius:6px;">${prof.liftText}</span>
+                            </div>
+                        </div>
+
+                        <!-- Labeled SVG Trajectory Graph -->
+                        <div style="margin:8px 0 10px 0;">
+                            <svg viewBox="0 0 240 72" style="width:100%; height:66px; overflow:visible;">
+                                <defs>
+                                    <linearGradient id="mcqsGoldGradV2" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="0%" stop-color="rgba(253, 184, 19, 0.35)"/>
+                                        <stop offset="100%" stop-color="rgba(253, 184, 19, 0.0)"/>
+                                    </linearGradient>
+                                </defs>
+                                <line x1="0" y1="16" x2="240" y2="16" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+                                <line x1="0" y1="40" x2="240" y2="40" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+                                <line x1="0" y1="64" x2="240" y2="64" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+                                <path d="M 8 58 Q 70 50, 125 32 T 228 12 L 228 66 L 8 66 Z" fill="url(#mcqsGoldGradV2)"/>
+                                <path d="M 8 58 Q 70 50, 125 32 T 228 12" fill="none" stroke="#fdb813" stroke-width="3" stroke-linecap="round"/>
+                                <circle cx="8" cy="58" r="3.5" fill="#94a3b8"/>
+                                <circle cx="125" cy="32" r="4" fill="#38bdf8"/>
+                                <circle cx="228" cy="12" r="5" fill="#10b981" stroke="#000" stroke-width="1.5"/>
+                                <text x="8" y="71" fill="#94a3b8" font-size="8.5" font-weight="700">Test 1 (64%)</text>
+                                <text x="102" y="71" fill="#38bdf8" font-size="8.5" font-weight="700">Test 3 (79%)</text>
+                                <text x="190" y="71" fill="#10b981" font-size="8.5" font-weight="800">Now (${prof.featuredPct})</text>
+                            </svg>
+                        </div>
+
+                        <!-- Live Subject Mastery & Weak-Spot Detection Bars -->
+                        <div style="border-top:1px solid rgba(255,255,255,0.07); padding-top:8px;">
+                            <div style="font-size:10px; font-weight:800; color:#94a3b8; text-transform:uppercase; margin-bottom:6px;">Subject Mastery &amp; Auto Weak-Spot Alert (&lt;50%):</div>
+                            ${barsHtml}
+                        </div>
+                    </div>
+
+                    <!-- Right Column: Time-to-Accuracy + Custom Test + Smart Exclude-Correct Revision -->
+                    <div style="display:flex; flex-direction:column; gap:10px;">
+                        <div class="mcqs-mockup-subcard" style="padding:12px;">
+                            <div style="font-size:10px; color:#94a3b8; font-weight:800; text-transform:uppercase; margin-bottom:6px;">⏱️ Time-to-Accuracy Diagnostic</div>
+                            <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
+                                <div style="background:rgba(16,185,129,0.1); border:1px solid rgba(16,185,129,0.35); border-radius:8px; padding:7px; text-align:center;">
+                                    <div style="font-size:16px; font-weight:900; color:#10b981;">${prof.avgTimeCorrect}</div>
+                                    <div style="font-size:9.5px; color:#cbd5e1;">Avg on Correct</div>
+                                </div>
+                                <div style="background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.35); border-radius:8px; padding:7px; text-align:center;">
+                                    <div style="font-size:16px; font-weight:900; color:#ef4444;">${prof.avgTimeWrong}</div>
+                                    <div style="font-size:9.5px; color:#cbd5e1;">Avg on Wrong</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mcqs-mockup-subcard" style="padding:12px;">
+                            <div style="font-size:10px; color:#fdb813; font-weight:800; text-transform:uppercase;">🎯 Custom Mock Generator</div>
+                            <div style="font-size:13.5px; font-weight:800; color:#fff; margin-top:3px;">Mix Subjects &amp; Chapters</div>
+                            <div style="font-size:11px; color:#94a3b8; margin-top:2px;">Choose 20 to 250 MCQs • Easy, Med, Hard or Mixed</div>
+                            <button type="button" onclick="forceCwStep1(event)" style="margin-top:8px; width:100%; background:#fdb813; color:#000; border:none; padding:7px 10px; border-radius:8px; font-size:11.5px; font-weight:900; cursor:pointer; display:flex; justify-content:space-between; align-items:center;">
+                                <span>Launch Custom Setup</span>
+                                <span>▶</span>
+                            </button>
+                        </div>
+
+                        <div class="mcqs-mockup-subcard" style="padding:12px;">
+                            <div style="font-size:10px; color:#38bdf8; font-weight:800; text-transform:uppercase;">🚀 Smart Revision Mode</div>
+                            <div style="font-size:13.5px; font-weight:800; color:#fff; margin-top:3px;">Exclude-Correct Engine</div>
+                            <div style="font-size:11px; color:#94a3b8; margin-top:2px;">Skips MCQs you already solved right &amp; tests only Wrong, Skipped &amp; Unattempted!</div>
+                            <button type="button" onclick="window.location.hash='#/bookmarks'" style="margin-top:8px; width:100%; background:rgba(56,189,248,0.14); color:#38bdf8; border:1px solid rgba(56,189,248,0.4); padding:6px 10px; border-radius:8px; font-size:11px; font-weight:800; cursor:pointer; display:flex; justify-content:space-between; align-items:center;">
+                                <span>Open Bookmarks &amp; Diary</span>
+                                <span>&rarr;</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    // ==========================================
+    // SIMULATION #2: SELF-EXPLANATORY NTA / CBT EXAM SIMULATOR
+    // ==========================================
+    const CURATED_SIM_QUESTIONS = [
         {
+            tag: '📊 Match-the-Column',
             exam: 'NEET',
             path: 'NEET > Zoology > Animal Kingdom',
-            question: 'Match Column I with Column II regarding animal phyla and their characteristic features and select the correct option:',
+            question: 'Match Column I (Phylum) with Column II (Characteristic Feature) and select the correct option:',
             tableHtml: `<div class="mcq-match-table-wrap" style="margin:8px 0;"><table class="mcq-match-table" style="font-size:12.5px;"><thead><tr><th>Column I</th><th>Column II</th></tr></thead><tbody><tr><td><b>(a)</b> Porifera</td><td><b>(i)</b> Water vascular system</td></tr><tr><td><b>(b)</b> Cnidaria</td><td><b>(ii)</b> Canal system &amp; choanocytes</td></tr><tr><td><b>(c)</b> Echinodermata</td><td><b>(iii)</b> Comb plates for locomotion</td></tr><tr><td><b>(d)</b> Ctenophora</td><td><b>(iv)</b> Cnidoblasts for defense</td></tr></tbody></table></div>`,
             options: {
                 A: '(a)-(ii), (b)-(iv), (c)-(i), (d)-(iii)',
@@ -3367,12 +3771,13 @@ async function handleLiveSearch() {
                 D: '(a)-(iv), (b)-(ii), (c)-(iii), (d)-(i)'
             },
             correctAnswers: ['A'],
-            explanation: 'Porifera possesses a water transport / canal system lined by choanocytes (ii). Cnidaria bears cnidoblasts (iv). Echinodermata features a water vascular system (i). Ctenophora has eight external rows of ciliated comb plates (iii).'
+            explanation: 'Porifera possesses a canal system lined by choanocytes (ii). Cnidaria bears stinging cnidoblasts (iv). Echinodermata features a water vascular system (i). Ctenophora has eight external rows of ciliated comb plates (iii).'
         },
         {
+            tag: '⚡ Physics Formula',
             exam: 'NEET / JEE',
             path: 'Physics > Alternating Current',
-            question: 'In an ideal transformer, the turns ratio is $N_p / N_s = 1 / 2$. The ratio $V_s : V_p$ is equal to (the symbols carry their usual meaning):',
+            question: 'In an ideal transformer, the turns ratio is $N_p / N_s = 1 / 2$. The step-up voltage ratio $V_s : V_p$ is equal to:',
             tableHtml: '',
             options: {
                 A: '2 : 1',
@@ -3381,12 +3786,13 @@ async function handleLiveSearch() {
                 D: '1 : 2'
             },
             correctAnswers: ['A'],
-            explanation: 'For an ideal transformer, $\\frac{V_s}{V_p} = \\frac{N_s}{N_p}$. Since $\\frac{N_p}{N_s} = \\frac{1}{2}$, we get $\\frac{V_s}{V_p} = \\frac{2}{1}$, so $V_s : V_p = 2 : 1$.'
+            explanation: 'For an ideal transformer, $\\frac{V_s}{V_p} = \\frac{N_s}{N_p}$. Given $\\frac{N_p}{N_s} = \\frac{1}{2}$, we get $\\frac{V_s}{V_p} = \\frac{2}{1}$, so $V_s : V_p = 2 : 1$.'
         },
         {
+            tag: '🧪 Chemistry Reaction',
             exam: 'Chemistry',
             path: 'Chemistry > Chemical Bonding',
-            question: 'Which of the following molecules has a zero net dipole moment ($\mu = 0$) due to symmetrical geometry?',
+            question: 'Which of the following molecules has a zero net dipole moment ($\\mu = 0$) due to planar symmetrical geometry?',
             tableHtml: '',
             options: {
                 A: 'NH₃',
@@ -3395,9 +3801,10 @@ async function handleLiveSearch() {
                 D: 'SO₂'
             },
             correctAnswers: ['B'],
-            explanation: 'BF₃ has a trigonal planar geometry ($sp^2$ hybridisation) where the three B–F bond dipoles are oriented at $120^\\circ$ and cancel each other out completely ($\mu = 0$).'
+            explanation: 'BF₃ has a trigonal planar geometry ($sp^2$ hybridisation) where the three B–F bond vectors are oriented at $120^\\circ$ and cancel each other completely ($\\mu = 0$).'
         },
         {
+            tag: '⚖️ GK / Polity',
             exam: 'General Knowledge',
             path: 'General Knowledge > Indian Polity',
             question: 'Which Article of the Constitution of India empowers the Supreme Court to issue writs for the enforcement of Fundamental Rights?',
@@ -3414,14 +3821,14 @@ async function handleLiveSearch() {
     ];
 
     var webSimState = {
-        questions: [...FALLBACK_SIM_QUESTIONS],
+        questions: [...CURATED_SIM_QUESTIONS],
         currentIndex: 0,
         selectedExamFilter: 'ALL',
         answers: {},
         reviewMarked: {},
         visited: { 0: true },
         showSolution: false,
-        secondsRemaining: 11942, // 03:19:02 just like the NTA screenshot
+        secondsRemaining: 11942,
         timerId: null,
         fetchedFromDb: false
     };
@@ -3433,26 +3840,30 @@ async function handleLiveSearch() {
             if (examPrefix && examPrefix !== 'ALL') {
                 queryRef = queryRef.where('path', '>=', examPrefix).where('path', '<=', examPrefix + '\uf8ff');
             }
-            const snap = await queryRef.limit(25).get();
+            const snap = await queryRef.limit(16).get();
             const fetched = [];
             snap.forEach(doc => {
                 const d = doc.data();
                 if ((!d.type || d.type === 'mcq') && d.question && d.options && d.options.A && d.options.B) {
                     fetched.push({
                         id: doc.id,
+                        tag: '🔥 Live DB Question',
                         exam: (d.path || '').split(' > ')[0] || 'MCQsPrep',
                         path: d.path || 'Live Question Bank',
                         question: d.question,
                         tableHtml: '',
                         options: d.options,
                         correctAnswers: Array.isArray(d.correctAnswers) && d.correctAnswers.length ? d.correctAnswers : ['A'],
-                        explanation: d.explanation || 'Step-by-step explanation available in full quiz mode.'
+                        explanation: d.explanation || 'Detailed explanation available in full practice mode.'
                     });
                 }
             });
 
-            if (fetched.length >= 2) {
-                webSimState.questions = fetched.slice(0, 15);
+            if (fetched.length >= 1) {
+                // Keep our 4 curated showcase formats first so visitors always see Match-Table + LaTeX, followed by live DB questions!
+                webSimState.questions = (examPrefix && examPrefix !== 'ALL')
+                    ? fetched.slice(0, 15)
+                    : [...CURATED_SIM_QUESTIONS, ...fetched].slice(0, 15);
                 webSimState.currentIndex = 0;
                 webSimState.answers = {};
                 webSimState.reviewMarked = {};
@@ -3460,6 +3871,7 @@ async function handleLiveSearch() {
                 webSimState.showSolution = false;
                 webSimState.fetchedFromDb = true;
                 renderInteractiveNtaSimulatorCard();
+                renderMobileAppHubCard();
             }
         } catch (e) {}
     }
@@ -3475,10 +3887,11 @@ async function handleLiveSearch() {
     function startWebSimulatorClock() {
         if (webSimState.timerId) clearInterval(webSimState.timerId);
         webSimState.timerId = setInterval(() => {
-            const el = document.getElementById('mcqsSimLiveClock');
-            if (!el) return;
             webSimState.secondsRemaining = Math.max(0, webSimState.secondsRemaining - 1);
-            el.innerText = formatSimTimer(webSimState.secondsRemaining);
+            const el = document.getElementById('mcqsSimLiveClock');
+            if (el) el.innerText = formatSimTimer(webSimState.secondsRemaining);
+            const mobEl = document.getElementById('mcqsMobSimClock');
+            if (mobEl) mobEl.innerText = formatSimTimer(webSimState.secondsRemaining);
         }, 1000);
     }
 
@@ -3487,6 +3900,7 @@ async function handleLiveSearch() {
         webSimState.answers[idx] = letter;
         webSimState.visited[idx] = true;
         renderInteractiveNtaSimulatorCard();
+        renderMobileAppHubCard();
     };
 
     window.webSimAction = function(actionType) {
@@ -3505,14 +3919,11 @@ async function handleLiveSearch() {
             webSimState.showSolution = false;
             webSimState.currentIndex = (idx + 1) % total;
             webSimState.visited[webSimState.currentIndex] = true;
-        } else if (actionType === 'PREV') {
-            webSimState.showSolution = false;
-            webSimState.currentIndex = (idx - 1 + total) % total;
-            webSimState.visited[webSimState.currentIndex] = true;
         } else if (actionType === 'TOGGLE_SOL') {
             webSimState.showSolution = !webSimState.showSolution;
         }
         renderInteractiveNtaSimulatorCard();
+        renderMobileAppHubCard();
     };
 
     window.webSimJumpToQuestion = function(qIdx) {
@@ -3520,6 +3931,7 @@ async function handleLiveSearch() {
         webSimState.visited[qIdx] = true;
         webSimState.showSolution = false;
         renderInteractiveNtaSimulatorCard();
+        renderMobileAppHubCard();
     };
 
     window.webSimSwitchExamCategory = function(examKey) {
@@ -3541,7 +3953,7 @@ async function handleLiveSearch() {
 
         const exams = getLiveActiveExamCategories();
         const examOptionsHtml = [
-            `<option value="ALL" ${webSimState.selectedExamFilter === 'ALL' ? 'selected' : ''}>All Live Exams</option>`,
+            `<option value="ALL" ${webSimState.selectedExamFilter === 'ALL' ? 'selected' : ''}>All Formats &amp; Exams</option>`,
             ...exams.map(ex => `<option value="${ex.replace(/"/g, '&quot;')}" ${webSimState.selectedExamFilter === ex ? 'selected' : ''}>${formatCleanTopicTitle(ex)}</option>`)
         ].join('');
 
@@ -3563,10 +3975,10 @@ async function handleLiveSearch() {
             return `
                 <div class="mcqs-nta-opt-row ${stateClass}" onclick="webSimSelectOption('${letKey}')">
                     <input type="radio" name="nta_sim_opt" ${isSelected ? 'checked' : ''} style="margin:0; accent-color:#0284c7; pointer-events:none;">
-                    <span style="font-weight:700; min-width:22px;">(${oIdx + 1})</span>
+                    <span style="font-weight:800; min-width:22px;">(${oIdx + 1})</span>
                     <div style="flex:1;">${optText}</div>
-                    ${chosen && isCorrect ? '<span style="color:#16a34a; font-weight:900; font-size:12px;">✓ Correct</span>' : ''}
-                    ${chosen && isSelected && !isCorrect ? '<span style="color:#dc2626; font-weight:900; font-size:12px;">✕</span>' : ''}
+                    ${chosen && isCorrect ? '<span style="color:#16a34a; font-weight:900; font-size:12px;">✓ Correct (+4)</span>' : ''}
+                    ${chosen && isSelected && !isCorrect ? '<span style="color:#dc2626; font-weight:900; font-size:12px;">✕ Wrong (-1)</span>' : ''}
                 </div>
             `;
         }).join('');
@@ -3582,17 +3994,24 @@ async function handleLiveSearch() {
 
         container.innerHTML = `
             <div class="mcqs-nta-sim-window">
+                <!-- Self-Explanatory Interactive Guide Bar -->
+                <div class="mcqs-nta-guide-banner">
+                    <span style="color:#fdb813; font-weight:800;">🖥️ SIMULATION 2: INTERACTIVE CBT TESTER</span>
+                    <span style="color:#cbd5e1;">① Click an Option (1–4) &rarr; ② Try Save &amp; Next / Review &rarr; ③ Click Palette Numbers</span>
+                </div>
+
                 <div class="mcqs-nta-top-header">
                     <div style="display:flex; align-items:center; gap:10px;">
-                        <div style="width:38px; height:38px; border-radius:8px; background:#e2e8f0; display:flex; align-items:center; justify-content:center; font-size:20px;">👤</div>
+                        <div style="width:36px; height:36px; border-radius:8px; background:#e2e8f0; display:flex; align-items:center; justify-content:center; font-size:18px;">👤</div>
                         <div style="font-size:11.5px; line-height:1.35; color:#334155;">
                             <div>Candidate : <b style="color:#ea580c;">${candidateName}</b></div>
                             <div>Topic : <b style="color:#0f172a;">${formatCleanTopicTitle((q.path || '').split(' > ').pop() || q.exam)}</b></div>
                             <div>Remaining Time : <span id="mcqsSimLiveClock" style="background:#0284c7; color:#fff; padding:1px 7px; border-radius:999px; font-weight:800; font-size:11px;">${formatSimTimer(webSimState.secondsRemaining)}</span></div>
                         </div>
                     </div>
-                    <div style="display:flex; align-items:center; gap:8px;">
-                        <select onchange="webSimSwitchExamCategory(this.value)" style="background:#f59e0b; color:#000; border:none; padding:6px 10px; border-radius:6px; font-size:11.5px; font-weight:800; cursor:pointer;">
+                    <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+                        <span style="font-size:11px; background:#fef3c7; color:#b45309; border:1px solid #f59e0b; padding:3px 8px; border-radius:6px; font-weight:800;">${q.tag || '📝 Standard MCQ'}</span>
+                        <select onchange="webSimSwitchExamCategory(this.value)" style="background:#0f172a; color:#fdb813; border:none; padding:6px 10px; border-radius:6px; font-size:11.5px; font-weight:800; cursor:pointer;">
                             ${examOptionsHtml}
                         </select>
                     </div>
@@ -3603,18 +4022,18 @@ async function handleLiveSearch() {
                         <div>
                             <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #e2e8f0; padding-bottom:8px; margin-bottom:10px;">
                                 <b style="font-size:13.5px; color:#0f172a;">Question ${idx + 1} of ${qList.length}:</b>
-                                <span style="font-size:11px; color:#64748b; font-weight:700;">+4 Marks • -1 Negative</span>
+                                <span style="font-size:11px; color:#16a34a; font-weight:800;">+4 Marks • -1 Negative</span>
                             </div>
-                            <div style="font-size:13.5px; color:#1e293b; line-height:1.55; margin-bottom:10px;" id="mcqsSimQStem">
+                            <div style="font-size:13.5px; color:#1e293b; line-height:1.55; margin-bottom:10px;">
                                 ${q.question}
                                 ${q.tableHtml || ''}
                             </div>
                             <div>${optionsHtml}</div>
                             ${(chosen || webSimState.showSolution) ? `
-                                <div style="margin-top:10px; background:#f0fdf4; border-left:4px solid #16a34a; padding:9px 12px; border-radius:6px; font-size:12px; color:#166534; line-height:1.5;" id="mcqsSimExpBox">
+                                <div style="margin-top:10px; background:#f0fdf4; border-left:4px solid #16a34a; padding:9px 12px; border-radius:6px; font-size:12px; color:#166534; line-height:1.5;">
                                     <b>💡 Instant NCERT Solution:</b> ${q.explanation}
                                 </div>
-                            ` : ''}
+                            ` : `<div style="font-size:11.5px; color:#64748b; margin-top:6px;">👆 Click any option above to test instant answer checking &amp; NCERT explanation!</div>`}
                         </div>
 
                         <div style="border-top:1px solid #e2e8f0; padding-top:10px; margin-top:12px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px;">
@@ -3624,12 +4043,13 @@ async function handleLiveSearch() {
                                 <button type="button" onclick="webSimAction('REVIEW_NEXT')" style="background:#f59e0b; color:#fff; border:none; padding:6px 10px; border-radius:5px; font-size:11px; font-weight:800; cursor:pointer;">MARK FOR REVIEW</button>
                                 <button type="button" onclick="webSimAction('TOGGLE_SOL')" style="background:#0284c7; color:#fff; border:none; padding:6px 10px; border-radius:5px; font-size:11px; font-weight:800; cursor:pointer;">👁️ SOLUTION</button>
                             </div>
-                            <button type="button" onclick="forceCwStep1(event)" style="background:#0f172a; color:#fdb813; border:none; padding:6px 12px; border-radius:5px; font-size:11px; font-weight:800; cursor:pointer;">FULL TEST &rarr;</button>
+                            <button type="button" onclick="forceCwStep1(event)" style="background:#0f172a; color:#fdb813; border:none; padding:6px 12px; border-radius:5px; font-size:11px; font-weight:800; cursor:pointer;">✅ SUBMIT ANYTIME (${answeredCount}/${qList.length})</button>
                         </div>
                     </div>
 
                     <div class="mcqs-nta-palette-pane">
                         <div>
+                            <div style="font-size:10.5px; font-weight:800; color:#475569; text-transform:uppercase; margin-bottom:6px;">Live Status Legend:</div>
                             <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; font-size:11px; color:#475569; padding-bottom:10px; border-bottom:1px dashed #cbd5e1;">
                                 <div><span style="display:inline-block; width:16px; height:16px; background:#16a34a; color:#fff; text-align:center; border-radius:4px; font-weight:800; line-height:16px;">${answeredCount}</span> Answered</div>
                                 <div><span style="display:inline-block; width:16px; height:16px; background:#7c3aed; color:#fff; text-align:center; border-radius:50%; font-weight:800; line-height:16px;">${reviewCount}</span> Review</div>
@@ -3639,7 +4059,7 @@ async function handleLiveSearch() {
                             <div style="font-size:11px; font-weight:800; color:#0f172a; margin-top:8px;">Question Palette (Click to Jump):</div>
                             <div class="mcqs-nta-palette-grid">${paletteHtml}</div>
                         </div>
-                        <button type="button" onclick="forceCwStep1(event)" style="width:100%; margin-top:12px; background:#16a34a; color:#fff; border:none; padding:9px; border-radius:6px; font-size:12px; font-weight:900; cursor:pointer;">✅ SUBMIT / LAUNCH FULL MOCK</button>
+                        <button type="button" onclick="forceCwStep1(event)" style="width:100%; margin-top:12px; background:#16a34a; color:#fff; border:none; padding:9px; border-radius:6px; font-size:12px; font-weight:900; cursor:pointer;">🚀 LAUNCH FULL CUSTOM MOCK</button>
                     </div>
                 </div>
             </div>
@@ -3658,14 +4078,211 @@ async function handleLiveSearch() {
         }
     }
 
-    // Builds the Top Hero + Bottom Interactive Simulator & "What We Provide" sections for #/home
-    function buildWebsiteLandingSections() {
+    // ==========================================
+    // COMPACT MOBILE APP HUB (FOR INSTALLED MOBILE APP & MOBILE VIEWPORTS)
+    // ==========================================
+    var mobileHubTab = 'STATS'; // 'STATS' | 'CBT' | 'OFFER'
+
+    window.switchMobileHubTab = function(tabName) {
+        mobileHubTab = tabName;
+        renderMobileAppHubCard();
+    };
+
+    function renderMobileAppHubCard() {
+        const mount = document.getElementById('mcqsMobileAppHubMount');
+        if (!mount) return;
+
+        const inv = getLivePlatformInventory();
+        const exams = inv.exams.length ? inv.exams : ['NEET', 'JEE', 'Board', 'General Knowledge'];
+        const activeExam = exams[sim1ActiveExamIdx % exams.length];
+        const prof = getSim1ProfileForExam(activeExam, inv);
+
+        let tabBodyHtml = '';
+        if (mobileHubTab === 'STATS') {
+            const examPills = exams.map((ex, i) => `
+                <button type="button" onclick="selectSim1ExamTab(${i}); renderMobileAppHubCard();" style="background:${i === (sim1ActiveExamIdx % exams.length) ? '#fdb813' : 'rgba(255,255,255,0.06)'}; color:${i === (sim1ActiveExamIdx % exams.length) ? '#000' : '#cbd5e1'}; border:none; padding:5px 10px; border-radius:999px; font-size:11px; font-weight:800; cursor:pointer;">
+                    ${formatCleanTopicTitle(ex)}
+                </button>
+            `).join('');
+
+            const bars = prof.subjects.map(s => `
+                <div style="margin-bottom:6px;">
+                    <div style="display:flex; justify-content:space-between; font-size:11px; font-weight:700; margin-bottom:2px;">
+                        <span style="color:#e2e8f0;">${s.name}</span>
+                        <span style="color:${s.color};">${s.pct}%</span>
+                    </div>
+                    <div style="width:100%; height:5px; background:#070a11; border-radius:3px; overflow:hidden;">
+                        <div style="width:${s.pct}%; height:100%; background:${s.color};"></div>
+                    </div>
+                </div>
+            `).join('');
+
+            tabBodyHtml = `
+                <div style="background:#131826; border:1px solid rgba(255,255,255,0.08); border-radius:14px; padding:12px;">
+                    <div style="display:flex; gap:6px; overflow-x:auto; padding-bottom:8px; margin-bottom:8px; border-bottom:1px solid rgba(255,255,255,0.07);">${examPills}</div>
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                        <div>
+                            <div style="font-size:10px; color:#94a3b8; font-weight:800; text-transform:uppercase;">${prof.examTitle} Projected Score</div>
+                            <div style="font-size:26px; font-weight:900; color:#fff;">${prof.scoreText} <span style="font-size:11px; color:#94a3b8;">${prof.maxText}</span></div>
+                        </div>
+                        <div style="text-align:right;">
+                            <span style="background:rgba(16,185,129,0.16); color:#10b981; border:1px solid rgba(16,185,129,0.4); font-size:10.5px; font-weight:800; padding:3px 8px; border-radius:6px; display:inline-block; margin-bottom:4px;">${prof.liftText}</span>
+                            <div style="font-size:10.5px; color:#fdb813; font-weight:800;">⚡ Correct: ${prof.avgTimeCorrect} • Wrong: ${prof.avgTimeWrong}</div>
+                        </div>
+                    </div>
+                    ${bars}
+                    <div style="display:flex; gap:8px; margin-top:10px;">
+                        <button type="button" onclick="window.location.hash='#/progress'" style="flex:1; background:rgba(56,189,248,0.15); color:#38bdf8; border:1px solid rgba(56,189,248,0.4); padding:8px; border-radius:8px; font-size:11.5px; font-weight:800; cursor:pointer;">📊 Full Analytics</button>
+                        <button type="button" onclick="forceCwStep1(event)" style="flex:1; background:#fdb813; color:#000; border:none; padding:8px; border-radius:8px; font-size:11.5px; font-weight:900; cursor:pointer;">🎯 Custom Mock</button>
+                    </div>
+                </div>
+            `;
+        } else if (mobileHubTab === 'CBT') {
+            const qList = webSimState.questions;
+            const idx = Math.min(qList.length - 1, Math.max(0, webSimState.currentIndex));
+            const q = qList[idx];
+            const chosen = webSimState.answers[idx] || null;
+
+            const opts = ['A', 'B', 'C', 'D'].map((letKey, oIdx) => {
+                const txt = q.options?.[letKey];
+                if (!txt) return '';
+                const isSel = chosen === letKey;
+                const isCorr = (q.correctAnswers || []).includes(letKey);
+                let bg = '#ffffff', bdr = '#cbd5e1', col = '#0f172a';
+                if (chosen) {
+                    if (isCorr) { bg = '#dcfce7'; bdr = '#16a34a'; col = '#14532d'; }
+                    else if (isSel) { bg = '#fee2e2'; bdr = '#dc2626'; col = '#7f1d1d'; }
+                }
+                return `
+                    <div onclick="webSimSelectOption('${letKey}')" style="background:${bg}; border:1.5px solid ${bdr}; color:${col}; padding:7px 10px; border-radius:8px; margin-bottom:6px; font-size:12px; font-weight:${isSel || (chosen && isCorr) ? '700' : '500'}; display:flex; justify-content:space-between; align-items:center; cursor:pointer;">
+                        <span><b>(${oIdx + 1})</b> ${txt}</span>
+                        ${chosen && isCorr ? '<b style="color:#16a34a;">✓</b>' : ''}
+                    </div>
+                `;
+            }).join('');
+
+            tabBodyHtml = `
+                <div style="background:#ffffff; color:#0f172a; border-radius:14px; padding:12px; border:1.5px solid #fdb813;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #e2e8f0; padding-bottom:6px; margin-bottom:8px; font-size:11px;">
+                        <b style="color:#0f172a;">Q${idx + 1}/${qList.length} • ${q.tag || 'CBT Mode'}</b>
+                        <span id="mcqsMobSimClock" style="background:#0284c7; color:#fff; padding:2px 7px; border-radius:999px; font-weight:800;">${formatSimTimer(webSimState.secondsRemaining)}</span>
+                    </div>
+                    <div style="font-size:12.5px; color:#1e293b; line-height:1.45; margin-bottom:8px;">${q.question}${q.tableHtml || ''}</div>
+                    ${opts}
+                    ${chosen ? `<div style="background:#f0fdf4; border-left:3px solid #16a34a; padding:6px 8px; border-radius:4px; font-size:11px; color:#166534; margin-bottom:8px;"><b>Solution:</b> ${q.explanation}</div>` : ''}
+                    <div style="display:flex; gap:6px;">
+                        <button type="button" onclick="webSimAction('SAVE_NEXT')" style="flex:1; background:#16a34a; color:#fff; border:none; padding:7px; border-radius:6px; font-size:11px; font-weight:800;">NEXT Q &rarr;</button>
+                        <button type="button" onclick="webSimAction('CLEAR')" style="background:#e2e8f0; color:#334155; border:none; padding:7px 10px; border-radius:6px; font-size:11px; font-weight:700;">CLEAR</button>
+                        <button type="button" onclick="forceCwStep1(event)" style="flex:1; background:#0f172a; color:#fdb813; border:none; padding:7px; border-radius:6px; font-size:11px; font-weight:800;">FULL TEST</button>
+                    </div>
+                </div>
+            `;
+        } else {
+            tabBodyHtml = `
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+                    <div onclick="forceCwStep1(event)" style="background:#131826; border:1px solid rgba(253,184,19,0.35); border-radius:10px; padding:10px; cursor:pointer;">
+                        <div style="font-size:16px;">🎯</div>
+                        <div style="font-size:12px; font-weight:800; color:#fff; margin-top:3px;">20–250 Mock</div>
+                        <div style="font-size:10.5px; color:#94a3b8;">Multi-Chapter Custom</div>
+                    </div>
+                    <div onclick="window.location.hash='#/progress'" style="background:#131826; border:1px solid rgba(56,189,248,0.35); border-radius:10px; padding:10px; cursor:pointer;">
+                        <div style="font-size:16px;">📊</div>
+                        <div style="font-size:12px; font-weight:800; color:#fff; margin-top:3px;">Weak-Spot AI</div>
+                        <div style="font-size:10.5px; color:#94a3b8;">&lt;50% Alert &amp; Speed</div>
+                    </div>
+                    <div onclick="window.location.hash='#/leaderboard'" style="background:#131826; border:1px solid rgba(16,185,129,0.35); border-radius:10px; padding:10px; cursor:pointer;">
+                        <div style="font-size:16px;">🏆</div>
+                        <div style="font-size:12px; font-weight:800; color:#fff; margin-top:3px;">All-India Rank</div>
+                        <div style="font-size:10.5px; color:#94a3b8;">100-MCQ Benchmark</div>
+                    </div>
+                    <div onclick="openAIModal()" style="background:#131826; border:1px solid rgba(168,85,247,0.35); border-radius:10px; padding:10px; cursor:pointer;">
+                        <div style="font-size:16px;">🧠</div>
+                        <div style="font-size:12px; font-weight:800; color:#fff; margin-top:3px;">24/7 AI Tutor</div>
+                        <div style="font-size:10.5px; color:#94a3b8;">Photo Crop &amp; Solve</div>
+                    </div>
+                </div>
+            `;
+        }
+
+        mount.innerHTML = `
+            <div class="mcqs-mobile-app-hub">
+                <div style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
+                    <div>
+                        <span style="font-size:10px; font-weight:800; color:#fdb813; text-transform:uppercase; letter-spacing:0.6px;">● LIVE EXAM SUITE (${inv.examCount} EXAMS)</span>
+                        <h3 style="margin:2px 0 0 0; font-size:17px; font-weight:900; color:#fff;">Smart MCQ &amp; CBT Hub</h3>
+                    </div>
+                    <button type="button" onclick="openAIModal()" style="background:rgba(168,85,247,0.18); color:#c084fc; border:1px solid rgba(168,85,247,0.45); padding:6px 11px; border-radius:999px; font-size:11px; font-weight:800; cursor:pointer;">✨ Ask AI</button>
+                </div>
+
+                <div class="mcqs-mob-tab-bar">
+                    <button type="button" class="mcqs-mob-tab-btn ${mobileHubTab === 'STATS' ? 'active' : ''}" onclick="switchMobileHubTab('STATS')">📊 Analytics Sim</button>
+                    <button type="button" class="mcqs-mob-tab-btn ${mobileHubTab === 'CBT' ? 'active' : ''}" onclick="switchMobileHubTab('CBT')">🖥️ Mini CBT Sim</button>
+                    <button type="button" class="mcqs-mob-tab-btn ${mobileHubTab === 'OFFER' ? 'active' : ''}" onclick="switchMobileHubTab('OFFER')">✨ Features</button>
+                </div>
+
+                ${tabBodyHtml}
+            </div>
+        `;
+
+        if (typeof renderMathInElement === 'function') {
+            renderMathInElement(mount, {
+                delimiters: [
+                    { left: '$$', right: '$$', display: true },
+                    { left: '$', right: '$', display: false },
+                    { left: '\\(', right: '\\)', display: false },
+                    { left: '\\[', right: '\\]', display: true }
+                ],
+                throwOnError: false
+            });
+        }
+    }
+
+    // Builds the Full-Width Top Hero & Full-Width Bottom CBT Simulator + What We Offer bands
+    function mountFullWidthLandingBands() {
+        const mainContainer = document.querySelector('.container');
+        if (!mainContainer) return;
+
+        let topBand = document.getElementById('mcqs-fullwidth-top-band');
+        if (!topBand) {
+            topBand = document.createElement('div');
+            topBand.id = 'mcqs-fullwidth-top-band';
+            topBand.className = 'mcqs-fullwidth-band';
+            mainContainer.parentNode.insertBefore(topBand, mainContainer);
+        }
+
+        let bottomBand = document.getElementById('mcqs-fullwidth-bottom-band');
+        if (!bottomBand) {
+            bottomBand = document.createElement('div');
+            bottomBand.id = 'mcqs-fullwidth-bottom-band';
+            bottomBand.className = 'mcqs-fullwidth-band';
+            mainContainer.parentNode.insertBefore(bottomBand, mainContainer.nextSibling);
+        }
+
+        const rawHash = window.location.hash.replace(/^#\/?/, '');
+        const isRootHome = (!rawHash || rawHash === 'home') && Array.isArray(currentPath) && currentPath.length === 0;
+
+        if (!isRootHome) {
+            topBand.style.display = 'none';
+            bottomBand.style.display = 'none';
+            return;
+        }
+
         const inv = getLivePlatformInventory();
         const examListText = inv.exams.map(e => formatCleanTopicTitle(e)).join(' • ') || 'NEET • JEE • Boards • GK';
         const firstExamClean = formatCleanTopicTitle(inv.exams[0] || 'NEET');
-        const firstSubjBadge = inv.subjectChapterBadges[0] || 'Zoology · Animal Kingdom';
 
-        // Dynamic Exam Ecosystem Cards (Automatically renders every active exam category + its live sub-sections)
+        if (isMobileViewport()) {
+            topBand.style.display = 'block';
+            bottomBand.style.display = 'none';
+            topBand.innerHTML = `<div id="mcqsMobileAppHubMount"></div>`;
+            renderMobileAppHubCard();
+            return;
+        }
+
+        // PC Website & PC Installed App: Full-Width Uncramped Hero + Simulator + What We Offer
+        topBand.style.display = 'block';
+        bottomBand.style.display = 'block';
+
         let usedColors = new Set();
         let usedIcons = new Set();
         const dynamicExamShowcaseCards = inv.exams.map((exKey, idx) => {
@@ -3697,157 +4314,69 @@ async function handleLiveSearch() {
             `;
         }).join('');
 
-        const topHeroHtml = `
-            <div class="mcqs-web-landing-wrap">
-                <section class="mcqs-web-hero-section">
-                    <div class="mcqs-hero-grid">
-                        <!-- Left Column: High-Impact Headline & CTAs -->
-                        <div>
-                            <div class="mcqs-hero-status-pill">
-                                <span class="mcqs-hero-status-dot"></span>
-                                <span>100% Free Active Exam Suite: <b style="color:#fdb813;">${examListText}</b></span>
-                            </div>
-                            <h1 class="mcqs-hero-main-title">
-                                MCQ practice and testing platform for serious <span id="mcqsHeroRotatingExam" class="mcqs-hero-highlight">${firstExamClean} aspirants.</span>
-                            </h1>
-                            <p class="mcqs-hero-subtext">
-                                Practice line-by-line NCERT &amp; PYQ questions across <b>Easy, Medium, Hard &amp; Mixed</b> tiers, build full-length <b>20–250 MCQ custom mock tests</b>, identify weak areas with time-to-accuracy analytics, and resolve doubts 24/7 with our AI Tutor.
-                            </p>
-                            <div class="mcqs-hero-cta-row">
-                                <button type="button" class="mcqs-btn-primary-gold" onclick="forceCwStep1(event)">
-                                    🎯 Build Custom Mock Test (20–250 MCQs)
-                                </button>
-                                <button type="button" class="mcqs-btn-secondary-glass" onclick="scrollToWebsiteSection('mcqs-home-categories-anchor')">
-                                    📂 Browse ${inv.examCount} Exam Categories &darr;
-                                </button>
-                                <button type="button" class="mcqs-btn-secondary-glass" onclick="openAIModal()">
-                                    ✨ Ask AI Tutor
-                                </button>
-                            </div>
-                            <div class="mcqs-hero-stats-strip">
-                                <div class="mcqs-hero-stat-item">
-                                    <div class="mcqs-hero-stat-val" style="color:#fdb813;">${inv.examCount} Exams</div>
-                                    <div class="mcqs-hero-stat-lbl">Live Categories</div>
-                                </div>
-                                <div class="mcqs-hero-stat-item">
-                                    <div class="mcqs-hero-stat-val" style="color:#38bdf8;">${inv.totalSubfolders}+</div>
-                                    <div class="mcqs-hero-stat-lbl">Chapters &amp; Topics</div>
-                                </div>
-                                <div class="mcqs-hero-stat-item">
-                                    <div class="mcqs-hero-stat-val" style="color:#10b981;">20–250</div>
-                                    <div class="mcqs-hero-stat-lbl">Custom Mock MCQs</div>
-                                </div>
-                                <div class="mcqs-hero-stat-item">
-                                    <div class="mcqs-hero-stat-val" style="color:#c084fc;">4 Tiers</div>
-                                    <div class="mcqs-hero-stat-lbl">Easy • Med • Hard • Mixed</div>
-                                </div>
-                            </div>
+        topBand.innerHTML = `
+            <section class="mcqs-web-hero-section">
+                <div class="mcqs-hero-grid">
+                    <div>
+                        <div class="mcqs-hero-status-pill">
+                            <span class="mcqs-hero-status-dot"></span>
+                            <span>100% Free Active Exam Suite: <b style="color:#fdb813;">${examListText}</b></span>
                         </div>
-
-                        <!-- Right Column: Animated Score Trajectory & Revision Queue Mockup (Image 1 Style) -->
-                        <div class="mcqs-mockup-window">
-                            <div class="mcqs-floating-mastery-pill" onclick="window.location.hash='#/progress'" style="cursor:pointer;" title="Click to open Track Progress">
-                                <span style="color:#fdb813;">✔</span>
-                                <span id="mcqsFloatingSubjectBadge">${firstSubjBadge}</span>
-                                <span style="color:#10b981; font-weight:900;" id="mcqsFloatingMasteryPct">92%</span>
+                        <h1 class="mcqs-hero-main-title">
+                            MCQ practice and testing platform for serious <span id="mcqsHeroRotatingExam" class="mcqs-hero-highlight">${firstExamClean} aspirants.</span>
+                        </h1>
+                        <p class="mcqs-hero-subtext">
+                            Practice line-by-line NCERT &amp; PYQ questions across <b>Easy, Medium, Hard &amp; Mixed</b> tiers, build full-length <b>20–250 MCQ custom mock tests</b>, identify weak areas with time-to-accuracy analytics, and resolve doubts 24/7 with our AI Tutor.
+                        </p>
+                        <div class="mcqs-hero-cta-row">
+                            <button type="button" class="mcqs-btn-primary-gold" onclick="forceCwStep1(event)">
+                                🎯 Build Custom Mock Test (20–250 MCQs)
+                            </button>
+                            <button type="button" class="mcqs-btn-secondary-glass" onclick="scrollToWebsiteSection('mcqs-home-categories-anchor')">
+                                📂 Browse ${inv.examCount} Exam Categories &darr;
+                            </button>
+                            <button type="button" class="mcqs-btn-secondary-glass" onclick="openAIModal()">
+                                ✨ Ask AI Tutor
+                            </button>
+                        </div>
+                        <div class="mcqs-hero-stats-strip">
+                            <div class="mcqs-hero-stat-item">
+                                <div class="mcqs-hero-stat-val" style="color:#fdb813;">${inv.examCount} Exams</div>
+                                <div class="mcqs-hero-stat-lbl">Live Categories</div>
                             </div>
-
-                            <div class="mcqs-window-topbar">
-                                <div class="mcqs-window-dots">
-                                    <span style="background:#ef4444;"></span>
-                                    <span style="background:#f59e0b;"></span>
-                                    <span style="background:#10b981;"></span>
-                                </div>
-                                <div style="font-size:11.5px; color:#94a3b8; font-weight:700;">
-                                    Live Diagnostic Engine • <span style="color:#10b981;">Synced</span>
-                                </div>
+                            <div class="mcqs-hero-stat-item">
+                                <div class="mcqs-hero-stat-val" style="color:#38bdf8;">${inv.totalSubfolders}+</div>
+                                <div class="mcqs-hero-stat-lbl">Chapters &amp; Topics</div>
                             </div>
-
-                            <div class="mcqs-mockup-body-grid">
-                                <!-- Left Subcard: Animated Score / Accuracy Trajectory -->
-                                <div class="mcqs-mockup-subcard" onclick="window.location.hash='#/progress'" style="cursor:pointer;">
-                                    <div>
-                                        <div style="font-size:11px; color:#94a3b8; font-weight:700; text-transform:uppercase;">Projected Score &amp; Accuracy</div>
-                                        <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:6px; flex-wrap:wrap;">
-                                            <div style="font-size:40px; font-weight:900; color:#ffffff; letter-spacing:-1px;" id="mcqsAnimatedScoreNum">652</div>
-                                            <div style="display:flex; flex-direction:column; gap:4px;">
-                                                <span style="background:rgba(16,185,129,0.16); color:#10b981; border:1px solid rgba(16,185,129,0.4); font-size:10.5px; font-weight:800; padding:3px 8px; border-radius:6px;">↑ +48 Score Lift</span>
-                                                <span style="background:rgba(253,184,19,0.15); color:#fdb813; border:1px solid rgba(253,184,19,0.4); font-size:10.5px; font-weight:800; padding:3px 8px; border-radius:6px;">★ Time-to-Accuracy</span>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div style="margin:14px 0 8px 0;">
-                                        <svg viewBox="0 0 240 90" style="width:100%; height:82px; overflow:visible;">
-                                            <defs>
-                                                <linearGradient id="mcqsGoldGrad" x1="0" y1="0" x2="0" y2="1">
-                                                    <stop offset="0%" stop-color="rgba(253, 184, 19, 0.38)"/>
-                                                    <stop offset="100%" stop-color="rgba(253, 184, 19, 0.0)"/>
-                                                </linearGradient>
-                                            </defs>
-                                            <line x1="0" y1="20" x2="240" y2="20" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
-                                            <line x1="0" y1="50" x2="240" y2="50" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
-                                            <line x1="0" y1="80" x2="240" y2="80" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
-                                            <path d="M 6 74 Q 65 62, 115 42 T 232 14 L 232 84 L 6 84 Z" fill="url(#mcqsGoldGrad)"/>
-                                            <path class="mcqs-traj-svg-path" d="M 6 74 Q 65 62, 115 42 T 232 14" fill="none" stroke="#fdb813" stroke-width="3" stroke-linecap="round"/>
-                                            <circle cx="232" cy="14" r="5" fill="#fdb813" stroke="#000" stroke-width="2"/>
-                                        </svg>
-                                    </div>
-
-                                    <div style="display:flex; justify-content:space-between; font-size:11px; color:#94a3b8; border-top:1px solid rgba(255,255,255,0.06); padding-top:8px;">
-                                        <span>⏱️ Avg Correct: <b style="color:#10b981;">28s</b></span>
-                                        <span>Weak-Spot Alert: <b style="color:#fdb813;">Active</b></span>
-                                    </div>
-                                </div>
-
-                                <!-- Right Subcards: Custom Test & Smart Revision Queue -->
-                                <div style="display:flex; flex-direction:column; gap:12px;">
-                                    <div class="mcqs-mockup-subcard" style="flex:1;">
-                                        <div>
-                                            <div style="font-size:10.5px; color:#94a3b8; font-weight:700; text-transform:uppercase;">Next Custom Test</div>
-                                            <div style="font-size:15px; font-weight:800; color:#fff; margin-top:4px;">Full Multi-Chapter Mock</div>
-                                            <div style="font-size:11.5px; color:#94a3b8; margin-top:2px;">Easy • Medium • Hard • Mixed</div>
-                                        </div>
-                                        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:12px; gap:6px;">
-                                            <span style="font-size:10.5px; background:rgba(255,255,255,0.06); color:#cbd5e1; padding:4px 8px; border-radius:6px; font-weight:700;">Up to 250 MCQs</span>
-                                            <button type="button" onclick="forceCwStep1(event)" style="background:#fdb813; color:#000; border:none; width:34px; height:34px; border-radius:8px; font-weight:900; cursor:pointer; display:flex; align-items:center; justify-content:center;" title="Launch Custom Mock">▶</button>
-                                        </div>
-                                    </div>
-
-                                    <div class="mcqs-mockup-subcard" style="flex:1;">
-                                        <div>
-                                            <div style="font-size:10.5px; color:#94a3b8; font-weight:700; text-transform:uppercase;">🔄 Smart Revision Queue</div>
-                                            <div style="display:flex; align-items:baseline; gap:8px; margin-top:4px;">
-                                                <span style="font-size:26px; font-weight:900; color:#fff;">Exclude-Correct</span>
-                                            </div>
-                                            <div style="font-size:11px; color:#94a3b8; margin-top:2px;">Practice only Wrong, Skipped &amp; Bookmarked MCQs</div>
-                                        </div>
-                                        <button type="button" onclick="window.location.hash='#/bookmarks'" style="margin-top:10px; width:100%; background:rgba(255,255,255,0.06); color:#fff; border:1px solid rgba(255,255,255,0.14); padding:7px 12px; border-radius:8px; font-size:11.5px; font-weight:800; cursor:pointer; text-align:left; display:flex; justify-content:space-between; align-items:center;">
-                                            <span>Open Saved &amp; Diary</span>
-                                            <span>&rsaquo;</span>
-                                        </button>
-                                    </div>
-                                </div>
+                            <div class="mcqs-hero-stat-item">
+                                <div class="mcqs-hero-stat-val" style="color:#10b981;">20–250</div>
+                                <div class="mcqs-hero-stat-lbl">Custom Mock MCQs</div>
+                            </div>
+                            <div class="mcqs-hero-stat-item">
+                                <div class="mcqs-hero-stat-val" style="color:#c084fc;">4 Tiers</div>
+                                <div class="mcqs-hero-stat-lbl">Easy • Med • Hard • Mixed</div>
                             </div>
                         </div>
                     </div>
-                </section>
-            </div>
+
+                    <!-- Right Column: Self-Explanatory Interactive Diagnostic Simulation -->
+                    <div id="mcqsSim1DiagnosticMount"></div>
+                </div>
+            </section>
         `;
 
-        const bottomShowcaseHtml = `
-            <!-- SECTION 2: INTERACTIVE CBT / NTA EXAM CONDITION SIMULATOR (IMAGE 2 STYLE) -->
+        bottomBand.innerHTML = `
             <section class="mcqs-cbt-showcase-section" id="mcqs-cbt-simulator-anchor">
                 <div class="mcqs-cbt-grid">
                     <div>
                         <div class="mcqs-hero-status-pill" style="border-color:rgba(253,184,19,0.5); color:#fdb813;">
-                            <span>🖥️ LIVE INTERACTIVE DEMO</span>
+                            <span>🖥️ LIVE INTERACTIVE CBT SIMULATOR</span>
                         </div>
-                        <h2 style="font-size:clamp(26px, 3.4vw, 40px); font-weight:900; color:#ffffff; margin:0 0 12px 0; line-height:1.15;">
+                        <h2 style="font-size:clamp(26px, 3.2vw, 38px); font-weight:900; color:#ffffff; margin:0 0 12px 0; line-height:1.15;">
                             Practice in real <span style="color:#fdb813;">exam conditions.</span>
                         </h2>
                         <p style="color:#94a3b8; font-size:14.5px; line-height:1.6; margin:0;">
-                            Same pressure. Live per-question timer. Instant NCERT explanations. Test the interactive simulator on the right with live questions from our database!
+                            Same pressure. Live per-question timer. Instant NCERT explanations. Try clicking options on the right to see how our exam engine works!
                         </p>
 
                         <div class="mcqs-cbt-feature-list">
@@ -3891,12 +4420,10 @@ async function handleLiveSearch() {
                         </div>
                     </div>
 
-                    <!-- Right Column: Live Playable Simulator Mount -->
                     <div id="mcqsInteractiveNtaSimMount"></div>
                 </div>
             </section>
 
-            <!-- SECTION 3: WHAT WE PROVIDE ON MCQSPREP (100% SYNCED WITH LIVE FEATURES) -->
             <section class="mcqs-provide-section" id="mcqs-what-we-provide-anchor">
                 <div style="text-align:center; max-width:680px; margin:0 auto 22px auto;">
                     <div class="mcqs-hero-status-pill" style="margin-bottom:10px;">
@@ -3964,15 +4491,20 @@ async function handleLiveSearch() {
             </section>
         `;
 
-        return { topHeroHtml, bottomShowcaseHtml, inv };
+        renderSim1DiagnosticDashboard();
+        renderInteractiveNtaSimulatorCard();
+        startWebSimulatorClock();
+        startHeroDynamicAnimations(inv);
+
+        if (!webSimState.fetchedFromDb) {
+            loadLiveQuestionsIntoWebSimulator('ALL');
+        }
     }
 
     var _heroRotatorInterval = null;
     function startHeroDynamicAnimations(inv) {
         if (_heroRotatorInterval) clearInterval(_heroRotatorInterval);
         let examIdx = 0;
-        let badgeIdx = 0;
-        const pctPool = ['92%', '95%', '89%', '94%', '91%', '96%'];
 
         _heroRotatorInterval = setInterval(() => {
             const rotEl = document.getElementById('mcqsHeroRotatingExam');
@@ -3988,56 +4520,44 @@ async function handleLiveSearch() {
                     }
                 }, 240);
             }
-
-            const badgeEl = document.getElementById('mcqsFloatingSubjectBadge');
-            const pctEl = document.getElementById('mcqsFloatingMasteryPct');
-            if (badgeEl && inv.subjectChapterBadges.length > 1) {
-                badgeIdx = (badgeIdx + 1) % inv.subjectChapterBadges.length;
-                badgeEl.innerText = inv.subjectChapterBadges[badgeIdx];
-                if (pctEl) pctEl.innerText = pctPool[badgeIdx % pctPool.length];
-            }
-        }, 3200);
+        }, 3400);
     }
 
-    // Wrap _renderView non-destructively so your original _renderView runs 100% intact first,
-    // and when on root #/home in Website mode, injects the Hero above & Simulator/Showcase below!
-    const _origRenderViewWebsiteHook = _renderView;
+    // Wrap _renderView non-destructively so original view renders first, then mounts full-width bands on #/home
+    const _origRenderViewV2 = _renderView;
     _renderView = function() {
-        _origRenderViewWebsiteHook();
-        injectWebsiteShowcaseStyles();
+        _origRenderViewV2();
+        injectUnifiedShowcaseStyles();
         syncWebsiteNavbarPills();
 
-        if (isStandaloneInstalledApp()) return;
-        const isRootHome = Array.isArray(currentPath) && currentPath.length === 0;
-        if (!isRootHome) return;
-
         const mc = document.getElementById('dynamic-content');
-        if (!mc) return;
-
-        // Tag the existing category section so "Browse Exam Categories" smooth-scrolls to it
-        const existingCatSection = mc.querySelector('.category-section');
-        if (existingCatSection) {
-            existingCatSection.id = 'mcqs-home-categories-anchor';
+        if (mc) {
+            const existingCatSection = mc.querySelector('.category-section');
+            if (existingCatSection) existingCatSection.id = 'mcqs-home-categories-anchor';
         }
 
-        const { topHeroHtml, bottomShowcaseHtml, inv } = buildWebsiteLandingSections();
-        const transitionWrap = mc.querySelector('.page-transition') || mc;
-
-        if (!document.getElementById('mcqs-cbt-simulator-anchor')) {
-            transitionWrap.insertAdjacentHTML('afterbegin', topHeroHtml);
-            transitionWrap.insertAdjacentHTML('beforeend', bottomShowcaseHtml);
-        }
-
-        renderInteractiveNtaSimulatorCard();
-        startWebSimulatorClock();
-        startHeroDynamicAnimations(inv);
-
-        if (!webSimState.fetchedFromDb) {
-            loadLiveQuestionsIntoWebSimulator('ALL');
-        }
+        mountFullWidthLandingBands();
     };
 
-    // Close navbar courses dropdown when clicking outside
+    // Hide full-width home bands whenever navigating to non-home routes (#/quiz, #/progress, #/leaderboard, #/admin-panel, etc.)
+    window.addEventListener('hashchange', () => {
+        const rawHash = window.location.hash.replace(/^#\/?/, '');
+        const isRootHome = (!rawHash || rawHash === 'home') && Array.isArray(currentPath) && currentPath.length === 0;
+        if (!isRootHome) {
+            const topBand = document.getElementById('mcqs-fullwidth-top-band');
+            const bottomBand = document.getElementById('mcqs-fullwidth-bottom-band');
+            if (topBand) topBand.style.display = 'none';
+            if (bottomBand) bottomBand.style.display = 'none';
+        }
+    });
+
+    window.addEventListener('resize', () => {
+        const rawHash = window.location.hash.replace(/^#\/?/, '');
+        if ((!rawHash || rawHash === 'home') && Array.isArray(currentPath) && currentPath.length === 0) {
+            mountFullWidthLandingBands();
+        }
+    });
+
     window.addEventListener('click', function(e) {
         const drop = document.getElementById('webCoursesDropWrap');
         if (drop && !drop.contains(e.target)) {
@@ -4045,10 +4565,9 @@ async function handleLiveSearch() {
         }
     });
 
-    // Run once if page is already loaded on #/home
     if (document.readyState === 'complete' || document.readyState === 'interactive') {
         setTimeout(() => {
-            injectWebsiteShowcaseStyles();
+            injectUnifiedShowcaseStyles();
             syncWebsiteNavbarPills();
             if (Array.isArray(currentPath) && currentPath.length === 0 && (!window.location.hash || window.location.hash === '#/home')) {
                 _renderView();
