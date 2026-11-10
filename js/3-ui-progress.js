@@ -2671,3 +2671,1388 @@ async function handleLiveSearch() {
     suggestions.innerHTML = html;
     suggestions.style.display = 'block';
 }
+
+// ==========================================
+// 7. PC & MOBILE WEBSITE LANDING HERO, LIVE SIMULATOR & DYNAMIC FEATURE SHOWCASE
+// (100% Additive • Zero Existing Code Altered • Auto-Syncs With Future Admin Updates)
+// ==========================================
+(function initMCQsPrepWebsiteExperience() {
+    if (window._mcqsWebsiteExperienceLoaded) return;
+    window._mcqsWebsiteExperienceLoaded = true;
+
+    function isStandaloneInstalledApp() {
+        return document.documentElement.classList.contains('is-standalone-pwa') ||
+               window.matchMedia('(display-mode: standalone)').matches ||
+               window.matchMedia('(display-mode: fullscreen)').matches ||
+               window.navigator.standalone === true;
+    }
+
+    // Injects clean CSS for the Website Hero, Animated Dashboard, Interactive Simulator & Feature Cards
+    function injectWebsiteShowcaseStyles() {
+        if (document.getElementById('mcqs-website-showcase-styles')) return;
+        const st = document.createElement('style');
+        st.id = 'mcqs-website-showcase-styles';
+        st.textContent = `
+            /* Center Navbar Pills for Website Mode */
+            .web-center-nav-pills {
+                display: inline-flex;
+                align-items: center;
+                gap: 4px;
+                background: rgba(17, 21, 34, 0.92);
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                border-radius: 999px;
+                padding: 5px 8px;
+                box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+                position: relative;
+                z-index: 100;
+            }
+            html.is-standalone-pwa .web-center-nav-pills {
+                display: none !important;
+            }
+            .web-nav-pill-btn {
+                background: transparent;
+                border: none;
+                color: #cbd5e1;
+                font-size: 13px;
+                font-weight: 700;
+                padding: 7px 14px;
+                border-radius: 999px;
+                cursor: pointer;
+                transition: all 0.2s ease;
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+                font-family: inherit;
+                white-space: nowrap;
+            }
+            .web-nav-pill-btn:hover {
+                color: #ffffff;
+                background: rgba(255, 255, 255, 0.07);
+            }
+            .web-nav-pill-cta {
+                background: #fdb813 !important;
+                color: #000000 !important;
+                font-weight: 800 !important;
+                box-shadow: 0 0 18px rgba(253, 184, 19, 0.35);
+            }
+            .web-nav-pill-cta:hover {
+                transform: translateY(-1px);
+                box-shadow: 0 4px 22px rgba(253, 184, 19, 0.55);
+            }
+            .web-courses-dropdown-wrap {
+                position: relative;
+            }
+            .web-courses-dropdown-menu {
+                display: none;
+                position: absolute;
+                top: calc(100% + 10px);
+                left: 0;
+                min-width: 250px;
+                background: #0d1322;
+                border: 1px solid rgba(253, 184, 19, 0.4);
+                border-radius: 14px;
+                padding: 8px;
+                box-shadow: 0 20px 45px rgba(0, 0, 0, 0.85);
+                z-index: 2000;
+            }
+            .web-courses-dropdown-wrap:hover .web-courses-dropdown-menu,
+            .web-courses-dropdown-wrap.open .web-courses-dropdown-menu {
+                display: block;
+            }
+            .web-course-drop-item {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 10px;
+                padding: 10px 12px;
+                border-radius: 10px;
+                color: #f1f5f9;
+                font-size: 13px;
+                font-weight: 700;
+                cursor: pointer;
+                transition: background 0.15s ease;
+            }
+            .web-course-drop-item:hover {
+                background: rgba(253, 184, 19, 0.14);
+                color: #fdb813;
+            }
+
+            /* Architectural Grid & Hero Wrapper */
+            .mcqs-web-landing-wrap {
+                position: relative;
+                margin-bottom: 28px;
+            }
+            .mcqs-web-hero-section {
+                position: relative;
+                background-color: #080b12;
+                background-image:
+                    radial-gradient(circle at 78% 22%, rgba(253, 184, 19, 0.14) 0%, transparent 52%),
+                    radial-gradient(circle at 18% 80%, rgba(56, 189, 248, 0.1) 0%, transparent 48%),
+                    linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                    linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+                background-size: 100% 100%, 100% 100%, 46px 46px, 46px 46px;
+                border: 1px solid rgba(253, 184, 19, 0.25);
+                border-radius: 22px;
+                padding: 38px 34px;
+                margin-bottom: 28px;
+                overflow: hidden;
+                box-shadow: 0 20px 55px rgba(0, 0, 0, 0.65);
+            }
+            .mcqs-hero-grid {
+                display: grid;
+                grid-template-columns: 1.08fr 0.92fr;
+                gap: 34px;
+                align-items: center;
+            }
+            .mcqs-hero-status-pill {
+                display: inline-flex;
+                align-items: center;
+                gap: 8px;
+                background: rgba(255, 255, 255, 0.04);
+                border: 1px solid rgba(253, 184, 19, 0.38);
+                border-radius: 999px;
+                padding: 6px 14px;
+                font-size: 12px;
+                font-weight: 700;
+                color: #e2e8f0;
+                margin-bottom: 18px;
+            }
+            .mcqs-hero-status-dot {
+                width: 8px;
+                height: 8px;
+                border-radius: 50%;
+                background: #fdb813;
+                box-shadow: 0 0 10px #fdb813;
+                animation: mcqsPulseDot 1.6s infinite alternate;
+            }
+            .mcqs-hero-main-title {
+                font-size: clamp(30px, 4.2vw, 52px);
+                font-weight: 900;
+                line-height: 1.08;
+                letter-spacing: -0.8px;
+                color: #ffffff;
+                margin: 0 0 18px 0;
+            }
+            .mcqs-hero-highlight {
+                color: #fdb813;
+                text-shadow: 0 0 28px rgba(253, 184, 19, 0.35);
+                display: inline-block;
+                transition: opacity 0.28s ease, transform 0.28s ease;
+            }
+            .mcqs-hero-subtext {
+                color: #94a3b8;
+                font-size: 15.5px;
+                line-height: 1.65;
+                margin: 0 0 24px 0;
+                max-width: 560px;
+            }
+            .mcqs-hero-cta-row {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 12px;
+                margin-bottom: 26px;
+            }
+            .mcqs-btn-primary-gold {
+                background: linear-gradient(135deg, #fdb813 0%, #f59e0b 100%);
+                color: #000000;
+                border: none;
+                padding: 13px 24px;
+                border-radius: 12px;
+                font-size: 14.5px;
+                font-weight: 900;
+                cursor: pointer;
+                display: inline-flex;
+                align-items: center;
+                gap: 8px;
+                box-shadow: 0 8px 25px rgba(253, 184, 19, 0.35);
+                transition: transform 0.2s ease, box-shadow 0.2s ease;
+            }
+            .mcqs-btn-primary-gold:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 12px 30px rgba(253, 184, 19, 0.5);
+            }
+            .mcqs-btn-secondary-glass {
+                background: rgba(255, 255, 255, 0.05);
+                color: #ffffff;
+                border: 1px solid rgba(255, 255, 255, 0.16);
+                padding: 13px 20px;
+                border-radius: 12px;
+                font-size: 14px;
+                font-weight: 800;
+                cursor: pointer;
+                display: inline-flex;
+                align-items: center;
+                gap: 8px;
+                transition: all 0.2s ease;
+            }
+            .mcqs-btn-secondary-glass:hover {
+                border-color: #38bdf8;
+                background: rgba(56, 189, 248, 0.12);
+                color: #38bdf8;
+            }
+            .mcqs-hero-stats-strip {
+                display: grid;
+                grid-template-columns: repeat(4, 1fr);
+                gap: 10px;
+                padding-top: 18px;
+                border-top: 1px solid rgba(255, 255, 255, 0.08);
+            }
+            .mcqs-hero-stat-item {
+                background: rgba(15, 23, 42, 0.6);
+                border: 1px solid rgba(255, 255, 255, 0.07);
+                border-radius: 10px;
+                padding: 10px 12px;
+            }
+            .mcqs-hero-stat-val {
+                font-size: 18px;
+                font-weight: 900;
+                color: #ffffff;
+            }
+            .mcqs-hero-stat-lbl {
+                font-size: 11px;
+                color: #94a3b8;
+                margin-top: 2px;
+                font-weight: 600;
+            }
+
+            /* Right Column: Animated macOS Analytics Dashboard Mockup (Image 1 Style) */
+            .mcqs-mockup-window {
+                position: relative;
+                background: #10131c;
+                border: 1.5px solid rgba(255, 255, 255, 0.12);
+                border-radius: 18px;
+                padding: 18px;
+                box-shadow: 0 25px 60px rgba(0, 0, 0, 0.8), 0 0 35px rgba(253, 184, 19, 0.12);
+            }
+            .mcqs-floating-mastery-pill {
+                position: absolute;
+                top: -14px;
+                left: 26px;
+                background: #181c28;
+                border: 1px solid rgba(253, 184, 19, 0.55);
+                border-radius: 999px;
+                padding: 6px 14px;
+                font-size: 12px;
+                font-weight: 800;
+                color: #f8fafc;
+                display: inline-flex;
+                align-items: center;
+                gap: 8px;
+                box-shadow: 0 10px 25px rgba(0, 0, 0, 0.75);
+                z-index: 5;
+                animation: mcqsFloatPill 3.2s ease-in-out infinite alternate;
+            }
+            .mcqs-window-topbar {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 14px;
+                padding-top: 4px;
+            }
+            .mcqs-window-dots {
+                display: flex;
+                gap: 6px;
+            }
+            .mcqs-window-dots span {
+                width: 10px;
+                height: 10px;
+                border-radius: 50%;
+                display: inline-block;
+            }
+            .mcqs-mockup-body-grid {
+                display: grid;
+                grid-template-columns: 1.15fr 0.85fr;
+                gap: 12px;
+            }
+            .mcqs-mockup-subcard {
+                background: #161a26;
+                border: 1px solid rgba(255, 255, 255, 0.07);
+                border-radius: 14px;
+                padding: 15px;
+                display: flex;
+                flex-direction: column;
+                justify-content: space-between;
+            }
+            .mcqs-traj-svg-path {
+                stroke-dasharray: 320;
+                stroke-dashoffset: 320;
+                animation: mcqsDrawCurve 2.4s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+            }
+
+            /* Section 2: Interactive CBT / Exam Condition Simulator (Image 2 Style) */
+            .mcqs-cbt-showcase-section {
+                background-color: #080b12;
+                background-image:
+                    radial-gradient(circle at 20% 30%, rgba(253, 184, 19, 0.12) 0%, transparent 50%),
+                    linear-gradient(to right, rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+                    linear-gradient(to bottom, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+                background-size: 100% 100%, 44px 44px, 44px 44px;
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                border-radius: 22px;
+                padding: 36px 32px;
+                margin-top: 28px;
+                margin-bottom: 28px;
+                box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+            }
+            .mcqs-cbt-grid {
+                display: grid;
+                grid-template-columns: 0.9fr 1.1fr;
+                gap: 32px;
+                align-items: center;
+            }
+            .mcqs-cbt-feature-list {
+                display: flex;
+                flex-direction: column;
+                gap: 14px;
+                margin: 22px 0 26px 0;
+            }
+            .mcqs-cbt-feature-row {
+                display: flex;
+                align-items: flex-start;
+                gap: 12px;
+            }
+            .mcqs-cbt-feat-icon {
+                width: 34px;
+                height: 34px;
+                border-radius: 9px;
+                background: rgba(253, 184, 19, 0.12);
+                border: 1px solid rgba(253, 184, 19, 0.4);
+                color: #fdb813;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 16px;
+                flex-shrink: 0;
+            }
+            /* Authentic NTA / Exam Simulator Card */
+            .mcqs-nta-sim-window {
+                background: #ffffff;
+                color: #0f172a;
+                border-radius: 16px;
+                overflow: hidden;
+                box-shadow: 0 24px 60px rgba(0, 0, 0, 0.85);
+                border: 2px solid rgba(253, 184, 19, 0.45);
+                font-family: system-ui, -apple-system, sans-serif;
+            }
+            .mcqs-nta-top-header {
+                background: #f8fafc;
+                border-bottom: 1px solid #e2e8f0;
+                padding: 12px 16px;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                flex-wrap: wrap;
+                gap: 10px;
+            }
+            .mcqs-nta-body {
+                display: grid;
+                grid-template-columns: 1.55fr 0.85fr;
+                min-height: 320px;
+            }
+            .mcqs-nta-q-pane {
+                padding: 16px 18px;
+                border-right: 1px solid #e2e8f0;
+                display: flex;
+                flex-direction: column;
+                justify-content: space-between;
+            }
+            .mcqs-nta-opt-row {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                padding: 8px 11px;
+                border: 1.5px solid #e2e8f0;
+                border-radius: 8px;
+                margin-bottom: 7px;
+                cursor: pointer;
+                font-size: 13px;
+                color: #1e293b;
+                transition: all 0.15s ease;
+                background: #ffffff;
+            }
+            .mcqs-nta-opt-row:hover {
+                border-color: #38bdf8;
+                background: #f0f9ff;
+            }
+            .mcqs-nta-opt-row.selected {
+                border-color: #0284c7;
+                background: #e0f2fe;
+                font-weight: 700;
+            }
+            .mcqs-nta-opt-row.correct {
+                border-color: #16a34a;
+                background: #dcfce7;
+                color: #14532d;
+                font-weight: 700;
+            }
+            .mcqs-nta-opt-row.wrong {
+                border-color: #dc2626;
+                background: #fee2e2;
+                color: #7f1d1d;
+            }
+            .mcqs-nta-palette-pane {
+                background: #f8fafc;
+                padding: 14px;
+                display: flex;
+                flex-direction: column;
+                justify-content: space-between;
+            }
+            .mcqs-nta-palette-grid {
+                display: grid;
+                grid-template-columns: repeat(5, 1fr);
+                gap: 6px;
+                margin-top: 8px;
+            }
+            .mcqs-nta-pal-btn {
+                height: 30px;
+                border-radius: 6px;
+                border: 1px solid #cbd5e1;
+                background: #e2e8f0;
+                color: #334155;
+                font-size: 12px;
+                font-weight: 800;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                transition: 0.15s;
+            }
+            .mcqs-nta-pal-btn.active-q {
+                outline: 2px solid #0f172a;
+                 outline-offset: 1px;
+            }
+            .mcqs-nta-pal-btn.st-answered {
+                background: #16a34a;
+                color: #ffffff;
+                border-color: #15803d;
+            }
+            .mcqs-nta-pal-btn.st-review {
+                background: #7c3aed;
+                color: #ffffff;
+                border-color: #6d28d9;
+                border-radius: 50%;
+            }
+            .mcqs-nta-pal-btn.st-visited {
+                background: #f97316;
+                color: #ffffff;
+                border-color: #ea580c;
+            }
+
+            /* Section 3: What We Provide Feature Matrix */
+            .mcqs-provide-section {
+                margin-top: 28px;
+                margin-bottom: 24px;
+            }
+            .mcqs-provide-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+                gap: 18px;
+                margin-top: 18px;
+            }
+            .mcqs-provide-card {
+                background: linear-gradient(155deg, rgba(20, 26, 42, 0.96), rgba(10, 14, 24, 0.98));
+                border: 1px solid rgba(255, 255, 255, 0.09);
+                border-radius: 16px;
+                padding: 22px;
+                transition: transform 0.22s ease, border-color 0.22s ease, box-shadow 0.22s ease;
+                cursor: pointer;
+                display: flex;
+                flex-direction: column;
+                justify-content: space-between;
+            }
+            .mcqs-provide-card:hover {
+                transform: translateY(-4px);
+                border-color: var(--card-accent, #fdb813);
+                box-shadow: 0 14px 34px rgba(0, 0, 0, 0.65);
+            }
+
+            @keyframes mcqsPulseDot {
+                0% { transform: scale(0.9); opacity: 0.65; }
+                100% { transform: scale(1.25); opacity: 1; }
+            }
+            @keyframes mcqsFloatPill {
+                0% { transform: translateY(0px); }
+                100% { transform: translateY(-4px); }
+            }
+            @keyframes mcqsDrawCurve {
+                to { stroke-dashoffset: 0; }
+            }
+
+            @media (max-width: 960px) {
+                .mcqs-hero-grid, .mcqs-cbt-grid {
+                    grid-template-columns: 1fr;
+                }
+                .mcqs-hero-stats-strip {
+                    grid-template-columns: repeat(2, 1fr);
+                }
+                .mcqs-nta-body {
+                    grid-template-columns: 1fr;
+                }
+                .mcqs-nta-q-pane {
+                    border-right: none;
+                    border-bottom: 1px solid #e2e8f0;
+                }
+                .web-center-nav-pills {
+                    display: none;
+                }
+            }
+            @media (max-width: 560px) {
+                .mcqs-web-hero-section, .mcqs-cbt-showcase-section {
+                    padding: 22px 16px;
+                }
+                .mcqs-mockup-body-grid {
+                    grid-template-columns: 1fr;
+                }
+            }
+        `;
+        document.head.appendChild(st);
+    }
+
+    // Dynamically reads all active Root Exam Categories from appData & customTopicTypes
+    function getLiveActiveExamCategories() {
+        const deletedSet = new Set((typeof topicOverrides !== 'undefined' && topicOverrides && topicOverrides.deletedPaths) || []);
+        const keys = new Set(Object.keys(typeof appData !== 'undefined' ? appData : {}));
+        if (typeof customTopicTypes !== 'undefined') {
+            Object.keys(customTopicTypes).forEach(dbKey => {
+                if (deletedSet.has(dbKey)) return;
+                const root = dbKey.split(' > ')[0];
+                if (root && !deletedSet.has(root)) keys.add(root);
+            });
+        }
+        return Array.from(keys).filter(k => k && k !== 'Daily Quiz Challenge' && !deletedSet.has(k));
+    }
+
+    // Dynamically counts total folders/subtopics & collects real Subject • Chapter pairs for live animations
+    function getLivePlatformInventory() {
+        const exams = getLiveActiveExamCategories();
+        const deletedSet = new Set((typeof topicOverrides !== 'undefined' && topicOverrides && topicOverrides.deletedPaths) || []);
+        let totalSubfolders = 0;
+        const subjectChapterBadges = [];
+
+        function walk(node, trail) {
+            if (!node || typeof node !== 'object' || Array.isArray(node)) return;
+            Object.keys(node).forEach(k => {
+                const nextTrail = [...trail, k];
+                const full = nextTrail.join(' > ');
+                if (deletedSet.has(full)) return;
+                totalSubfolders++;
+                if (nextTrail.length >= 3 && !isCwDifficultyFolder(k)) {
+                    const subj = formatCleanTopicTitle(nextTrail[nextTrail.length - 2]);
+                    const chap = formatCleanTopicTitle(k);
+                    if (subj && chap && subj !== chap) {
+                        subjectChapterBadges.push(`${subj} · ${chap}`);
+                    }
+                }
+                walk(node[k], nextTrail);
+            });
+        }
+
+        exams.forEach(ex => {
+            if (appData && appData[ex]) walk(appData[ex], [ex]);
+        });
+
+        if (typeof customTopicTypes !== 'undefined') {
+            Object.keys(customTopicTypes).forEach(dbKey => {
+                if (deletedSet.has(dbKey)) return;
+                totalSubfolders++;
+                const parts = dbKey.split(' > ').filter(Boolean);
+                if (parts.length >= 3) {
+                    const leaf = parts[parts.length - 1];
+                    const parent = parts[parts.length - 2];
+                    if (!isCwDifficultyFolder(leaf) && !isCwDifficultyFolder(parent)) {
+                        subjectChapterBadges.push(`${formatCleanTopicTitle(parent)} · ${formatCleanTopicTitle(leaf)}`);
+                    }
+                }
+            });
+        }
+
+        if (subjectChapterBadges.length === 0) {
+            subjectChapterBadges.push(
+                'Zoology · Animal Kingdom',
+                'Botany · Biological Classification',
+                'Physics · Laws of Motion',
+                'Chemistry · Chemical Bonding'
+            );
+        }
+
+        return {
+            exams,
+            examCount: Math.max(1, exams.length),
+            totalSubfolders: Math.max(25, totalSubfolders),
+            subjectChapterBadges: Array.from(new Set(subjectChapterBadges))
+        };
+    }
+
+    // Injects the Website Center Navbar Pills (Courses ▾, Simulator, Analytics, What We Provide)
+    function syncWebsiteNavbarPills() {
+        if (isStandaloneInstalledApp()) return;
+        const navbar = document.querySelector('.navbar');
+        const searchWrap = document.getElementById('searchWrapper');
+        if (!navbar || !searchWrap) return;
+
+        let pillBar = document.getElementById('mcqsWebCenterNavPills');
+        if (!pillBar) {
+            pillBar = document.createElement('div');
+            pillBar.id = 'mcqsWebCenterNavPills';
+            pillBar.className = 'web-center-nav-pills';
+            navbar.insertBefore(pillBar, searchWrap);
+        }
+
+        const exams = getLiveActiveExamCategories();
+        let usedColors = new Set();
+        let usedIcons = new Set();
+
+        const dropdownItemsHtml = exams.map((exKey, idx) => {
+            const clean = formatCleanTopicTitle(exKey);
+            const safeKey = exKey.replace(/'/g, "\\'");
+            const tMeta = (typeof customTopicTypes !== 'undefined' && customTopicTypes[exKey]) || null;
+            const cIcon = tMeta ? tMeta.icon : null;
+            const th = getAutoTopicTheme(clean, cIcon, idx, usedColors, '📘', usedIcons, exKey);
+            return `
+                <div class="web-course-drop-item" onclick="jumpToSection(['${safeKey}'])">
+                    <span>${th.i === 'NONE' ? '📘' : th.i} ${clean}</span>
+                    <span style="font-size:11px; opacity:0.75;">Practice &rarr;</span>
+                </div>
+            `;
+        }).join('');
+
+        pillBar.innerHTML = `
+            <div class="web-courses-dropdown-wrap" id="webCoursesDropWrap">
+                <button type="button" class="web-nav-pill-btn" onclick="document.getElementById('webCoursesDropWrap').classList.toggle('open')">
+                    Courses &amp; Exams <span style="font-size:10px;">▾</span>
+                </button>
+                <div class="web-courses-dropdown-menu">
+                    <div style="font-size:10.5px; font-weight:800; color:#94a3b8; text-transform:uppercase; padding:4px 10px 6px 10px; border-bottom:1px solid rgba(255,255,255,0.07); margin-bottom:4px;">Live Exam Categories</div>
+                    ${dropdownItemsHtml}
+                    <div class="web-course-drop-item" style="border-top:1px solid rgba(255,255,255,0.08); margin-top:4px; color:#fdb813;" onclick="forceCwStep1(event)">
+                        <span>🎯 Custom Mock Builder</span>
+                        <span style="font-size:11px;">20–250 MCQs</span>
+                    </div>
+                </div>
+            </div>
+            <button type="button" class="web-nav-pill-btn" onclick="scrollToWebsiteSection('mcqs-cbt-simulator-anchor')">CBT Simulator</button>
+            <button type="button" class="web-nav-pill-btn" onclick="window.location.hash='#/progress'">Results &amp; Analytics</button>
+            <button type="button" class="web-nav-pill-btn" onclick="scrollToWebsiteSection('mcqs-what-we-provide-anchor')">What We Offer</button>
+            <button type="button" class="web-nav-pill-btn web-nav-pill-cta" onclick="scrollToWebsiteSection('mcqs-home-categories-anchor')">Start Practicing</button>
+        `;
+    }
+
+    window.scrollToWebsiteSection = function(anchorId) {
+        const rawHash = window.location.hash.replace(/^#\/?/, '');
+        if (rawHash && rawHash !== 'home') {
+            window.location.hash = '#/home';
+            setTimeout(() => {
+                const el = document.getElementById(anchorId);
+                if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 180);
+            return;
+        }
+        const el = document.getElementById(anchorId);
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    };
+
+    // ==========================================
+    // INTERACTIVE CBT / NTA SIMULATOR ENGINE (PULLS LIVE QUESTIONS FROM FIRESTORE)
+    // ==========================================
+    const FALLBACK_SIM_QUESTIONS = [
+        {
+            exam: 'NEET',
+            path: 'NEET > Zoology > Animal Kingdom',
+            question: 'Match Column I with Column II regarding animal phyla and their characteristic features and select the correct option:',
+            tableHtml: `<div class="mcq-match-table-wrap" style="margin:8px 0;"><table class="mcq-match-table" style="font-size:12.5px;"><thead><tr><th>Column I</th><th>Column II</th></tr></thead><tbody><tr><td><b>(a)</b> Porifera</td><td><b>(i)</b> Water vascular system</td></tr><tr><td><b>(b)</b> Cnidaria</td><td><b>(ii)</b> Canal system &amp; choanocytes</td></tr><tr><td><b>(c)</b> Echinodermata</td><td><b>(iii)</b> Comb plates for locomotion</td></tr><tr><td><b>(d)</b> Ctenophora</td><td><b>(iv)</b> Cnidoblasts for defense</td></tr></tbody></table></div>`,
+            options: {
+                A: '(a)-(ii), (b)-(iv), (c)-(i), (d)-(iii)',
+                B: '(a)-(i), (b)-(iv), (c)-(ii), (d)-(iii)',
+                C: '(a)-(ii), (b)-(iii), (c)-(i), (d)-(iv)',
+                D: '(a)-(iv), (b)-(ii), (c)-(iii), (d)-(i)'
+            },
+            correctAnswers: ['A'],
+            explanation: 'Porifera possesses a water transport / canal system lined by choanocytes (ii). Cnidaria bears cnidoblasts (iv). Echinodermata features a water vascular system (i). Ctenophora has eight external rows of ciliated comb plates (iii).'
+        },
+        {
+            exam: 'NEET / JEE',
+            path: 'Physics > Alternating Current',
+            question: 'In an ideal transformer, the turns ratio is $N_p / N_s = 1 / 2$. The ratio $V_s : V_p$ is equal to (the symbols carry their usual meaning):',
+            tableHtml: '',
+            options: {
+                A: '2 : 1',
+                B: '1 : 1',
+                C: '1 : 4',
+                D: '1 : 2'
+            },
+            correctAnswers: ['A'],
+            explanation: 'For an ideal transformer, $\\frac{V_s}{V_p} = \\frac{N_s}{N_p}$. Since $\\frac{N_p}{N_s} = \\frac{1}{2}$, we get $\\frac{V_s}{V_p} = \\frac{2}{1}$, so $V_s : V_p = 2 : 1$.'
+        },
+        {
+            exam: 'Chemistry',
+            path: 'Chemistry > Chemical Bonding',
+            question: 'Which of the following molecules has a zero net dipole moment ($\mu = 0$) due to symmetrical geometry?',
+            tableHtml: '',
+            options: {
+                A: 'NH₃',
+                B: 'BF₃',
+                C: 'H₂O',
+                D: 'SO₂'
+            },
+            correctAnswers: ['B'],
+            explanation: 'BF₃ has a trigonal planar geometry ($sp^2$ hybridisation) where the three B–F bond dipoles are oriented at $120^\\circ$ and cancel each other out completely ($\mu = 0$).'
+        },
+        {
+            exam: 'General Knowledge',
+            path: 'General Knowledge > Indian Polity',
+            question: 'Which Article of the Constitution of India empowers the Supreme Court to issue writs for the enforcement of Fundamental Rights?',
+            tableHtml: '',
+            options: {
+                A: 'Article 14',
+                B: 'Article 19',
+                C: 'Article 32',
+                D: 'Article 226'
+            },
+            correctAnswers: ['C'],
+            explanation: 'Article 32 (Right to Constitutional Remedies) empowers the Supreme Court to issue writs (Habeas Corpus, Mandamus, Prohibition, Certiorari, and Quo-Warranto) for enforcing Fundamental Rights.'
+        }
+    ];
+
+    var webSimState = {
+        questions: [...FALLBACK_SIM_QUESTIONS],
+        currentIndex: 0,
+        selectedExamFilter: 'ALL',
+        answers: {},
+        reviewMarked: {},
+        visited: { 0: true },
+        showSolution: false,
+        secondsRemaining: 11942, // 03:19:02 just like the NTA screenshot
+        timerId: null,
+        fetchedFromDb: false
+    };
+
+    async function loadLiveQuestionsIntoWebSimulator(examPrefix = '') {
+        if (typeof db === 'undefined') return;
+        try {
+            let queryRef = db.collection('content');
+            if (examPrefix && examPrefix !== 'ALL') {
+                queryRef = queryRef.where('path', '>=', examPrefix).where('path', '<=', examPrefix + '\uf8ff');
+            }
+            const snap = await queryRef.limit(25).get();
+            const fetched = [];
+            snap.forEach(doc => {
+                const d = doc.data();
+                if ((!d.type || d.type === 'mcq') && d.question && d.options && d.options.A && d.options.B) {
+                    fetched.push({
+                        id: doc.id,
+                        exam: (d.path || '').split(' > ')[0] || 'MCQsPrep',
+                        path: d.path || 'Live Question Bank',
+                        question: d.question,
+                        tableHtml: '',
+                        options: d.options,
+                        correctAnswers: Array.isArray(d.correctAnswers) && d.correctAnswers.length ? d.correctAnswers : ['A'],
+                        explanation: d.explanation || 'Step-by-step explanation available in full quiz mode.'
+                    });
+                }
+            });
+
+            if (fetched.length >= 2) {
+                webSimState.questions = fetched.slice(0, 15);
+                webSimState.currentIndex = 0;
+                webSimState.answers = {};
+                webSimState.reviewMarked = {};
+                webSimState.visited = { 0: true };
+                webSimState.showSolution = false;
+                webSimState.fetchedFromDb = true;
+                renderInteractiveNtaSimulatorCard();
+            }
+        } catch (e) {}
+    }
+
+    function formatSimTimer(sec) {
+        const s = Math.max(0, sec);
+        const hrs = String(Math.floor(s / 3600)).padStart(2, '0');
+        const mins = String(Math.floor((s % 3600) / 60)).padStart(2, '0');
+        const secs = String(s % 60).padStart(2, '0');
+        return `${hrs}:${mins}:${secs}`;
+    }
+
+    function startWebSimulatorClock() {
+        if (webSimState.timerId) clearInterval(webSimState.timerId);
+        webSimState.timerId = setInterval(() => {
+            const el = document.getElementById('mcqsSimLiveClock');
+            if (!el) return;
+            webSimState.secondsRemaining = Math.max(0, webSimState.secondsRemaining - 1);
+            el.innerText = formatSimTimer(webSimState.secondsRemaining);
+        }, 1000);
+    }
+
+    window.webSimSelectOption = function(letter) {
+        const idx = webSimState.currentIndex;
+        webSimState.answers[idx] = letter;
+        webSimState.visited[idx] = true;
+        renderInteractiveNtaSimulatorCard();
+    };
+
+    window.webSimAction = function(actionType) {
+        const idx = webSimState.currentIndex;
+        const total = webSimState.questions.length;
+        if (actionType === 'CLEAR') {
+            delete webSimState.answers[idx];
+            delete webSimState.reviewMarked[idx];
+            webSimState.showSolution = false;
+        } else if (actionType === 'REVIEW_NEXT') {
+            webSimState.reviewMarked[idx] = true;
+            webSimState.showSolution = false;
+            webSimState.currentIndex = (idx + 1) % total;
+            webSimState.visited[webSimState.currentIndex] = true;
+        } else if (actionType === 'SAVE_NEXT') {
+            webSimState.showSolution = false;
+            webSimState.currentIndex = (idx + 1) % total;
+            webSimState.visited[webSimState.currentIndex] = true;
+        } else if (actionType === 'PREV') {
+            webSimState.showSolution = false;
+            webSimState.currentIndex = (idx - 1 + total) % total;
+            webSimState.visited[webSimState.currentIndex] = true;
+        } else if (actionType === 'TOGGLE_SOL') {
+            webSimState.showSolution = !webSimState.showSolution;
+        }
+        renderInteractiveNtaSimulatorCard();
+    };
+
+    window.webSimJumpToQuestion = function(qIdx) {
+        webSimState.currentIndex = qIdx;
+        webSimState.visited[qIdx] = true;
+        webSimState.showSolution = false;
+        renderInteractiveNtaSimulatorCard();
+    };
+
+    window.webSimSwitchExamCategory = function(examKey) {
+        webSimState.selectedExamFilter = examKey;
+        loadLiveQuestionsIntoWebSimulator(examKey);
+    };
+
+    function renderInteractiveNtaSimulatorCard() {
+        const container = document.getElementById('mcqsInteractiveNtaSimMount');
+        if (!container) return;
+
+        const qList = webSimState.questions;
+        const idx = Math.min(qList.length - 1, Math.max(0, webSimState.currentIndex));
+        const q = qList[idx];
+        const chosen = webSimState.answers[idx] || null;
+        const candidateName = (typeof currentUser !== 'undefined' && currentUser && currentUser.displayName)
+            ? currentUser.displayName
+            : 'Serious Aspirant';
+
+        const exams = getLiveActiveExamCategories();
+        const examOptionsHtml = [
+            `<option value="ALL" ${webSimState.selectedExamFilter === 'ALL' ? 'selected' : ''}>All Live Exams</option>`,
+            ...exams.map(ex => `<option value="${ex.replace(/"/g, '&quot;')}" ${webSimState.selectedExamFilter === ex ? 'selected' : ''}>${formatCleanTopicTitle(ex)}</option>`)
+        ].join('');
+
+        let answeredCount = Object.keys(webSimState.answers).length;
+        let reviewCount = Object.keys(webSimState.reviewMarked).length;
+        let notVisitedCount = Math.max(0, qList.length - Object.keys(webSimState.visited).length);
+
+        const optLetters = ['A', 'B', 'C', 'D'];
+        const optionsHtml = optLetters.map((letKey, oIdx) => {
+            const optText = q.options?.[letKey];
+            if (!optText) return '';
+            const isSelected = chosen === letKey;
+            const isCorrect = (q.correctAnswers || []).includes(letKey);
+            let stateClass = isSelected ? 'selected' : '';
+            if (chosen) {
+                if (isCorrect) stateClass = 'correct';
+                else if (isSelected && !isCorrect) stateClass = 'wrong';
+            }
+            return `
+                <div class="mcqs-nta-opt-row ${stateClass}" onclick="webSimSelectOption('${letKey}')">
+                    <input type="radio" name="nta_sim_opt" ${isSelected ? 'checked' : ''} style="margin:0; accent-color:#0284c7; pointer-events:none;">
+                    <span style="font-weight:700; min-width:22px;">(${oIdx + 1})</span>
+                    <div style="flex:1;">${optText}</div>
+                    ${chosen && isCorrect ? '<span style="color:#16a34a; font-weight:900; font-size:12px;">✓ Correct</span>' : ''}
+                    ${chosen && isSelected && !isCorrect ? '<span style="color:#dc2626; font-weight:900; font-size:12px;">✕</span>' : ''}
+                </div>
+            `;
+        }).join('');
+
+        const paletteHtml = qList.map((_, pIdx) => {
+            let stClass = '';
+            if (webSimState.reviewMarked[pIdx]) stClass = 'st-review';
+            else if (webSimState.answers[pIdx]) stClass = 'st-answered';
+            else if (webSimState.visited[pIdx]) stClass = 'st-visited';
+            const activeClass = pIdx === idx ? 'active-q' : '';
+            return `<button type="button" class="mcqs-nta-pal-btn ${stClass} ${activeClass}" onclick="webSimJumpToQuestion(${pIdx})">${pIdx + 1}</button>`;
+        }).join('');
+
+        container.innerHTML = `
+            <div class="mcqs-nta-sim-window">
+                <div class="mcqs-nta-top-header">
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <div style="width:38px; height:38px; border-radius:8px; background:#e2e8f0; display:flex; align-items:center; justify-content:center; font-size:20px;">👤</div>
+                        <div style="font-size:11.5px; line-height:1.35; color:#334155;">
+                            <div>Candidate : <b style="color:#ea580c;">${candidateName}</b></div>
+                            <div>Topic : <b style="color:#0f172a;">${formatCleanTopicTitle((q.path || '').split(' > ').pop() || q.exam)}</b></div>
+                            <div>Remaining Time : <span id="mcqsSimLiveClock" style="background:#0284c7; color:#fff; padding:1px 7px; border-radius:999px; font-weight:800; font-size:11px;">${formatSimTimer(webSimState.secondsRemaining)}</span></div>
+                        </div>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <select onchange="webSimSwitchExamCategory(this.value)" style="background:#f59e0b; color:#000; border:none; padding:6px 10px; border-radius:6px; font-size:11.5px; font-weight:800; cursor:pointer;">
+                            ${examOptionsHtml}
+                        </select>
+                    </div>
+                </div>
+
+                <div class="mcqs-nta-body">
+                    <div class="mcqs-nta-q-pane">
+                        <div>
+                            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #e2e8f0; padding-bottom:8px; margin-bottom:10px;">
+                                <b style="font-size:13.5px; color:#0f172a;">Question ${idx + 1} of ${qList.length}:</b>
+                                <span style="font-size:11px; color:#64748b; font-weight:700;">+4 Marks • -1 Negative</span>
+                            </div>
+                            <div style="font-size:13.5px; color:#1e293b; line-height:1.55; margin-bottom:10px;" id="mcqsSimQStem">
+                                ${q.question}
+                                ${q.tableHtml || ''}
+                            </div>
+                            <div>${optionsHtml}</div>
+                            ${(chosen || webSimState.showSolution) ? `
+                                <div style="margin-top:10px; background:#f0fdf4; border-left:4px solid #16a34a; padding:9px 12px; border-radius:6px; font-size:12px; color:#166534; line-height:1.5;" id="mcqsSimExpBox">
+                                    <b>💡 Instant NCERT Solution:</b> ${q.explanation}
+                                </div>
+                            ` : ''}
+                        </div>
+
+                        <div style="border-top:1px solid #e2e8f0; padding-top:10px; margin-top:12px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px;">
+                            <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                                <button type="button" onclick="webSimAction('SAVE_NEXT')" style="background:#16a34a; color:#fff; border:none; padding:6px 11px; border-radius:5px; font-size:11px; font-weight:800; cursor:pointer;">SAVE &amp; NEXT</button>
+                                <button type="button" onclick="webSimAction('CLEAR')" style="background:#fff; color:#334155; border:1px solid #cbd5e1; padding:6px 10px; border-radius:5px; font-size:11px; font-weight:700; cursor:pointer;">CLEAR</button>
+                                <button type="button" onclick="webSimAction('REVIEW_NEXT')" style="background:#f59e0b; color:#fff; border:none; padding:6px 10px; border-radius:5px; font-size:11px; font-weight:800; cursor:pointer;">MARK FOR REVIEW</button>
+                                <button type="button" onclick="webSimAction('TOGGLE_SOL')" style="background:#0284c7; color:#fff; border:none; padding:6px 10px; border-radius:5px; font-size:11px; font-weight:800; cursor:pointer;">👁️ SOLUTION</button>
+                            </div>
+                            <button type="button" onclick="forceCwStep1(event)" style="background:#0f172a; color:#fdb813; border:none; padding:6px 12px; border-radius:5px; font-size:11px; font-weight:800; cursor:pointer;">FULL TEST &rarr;</button>
+                        </div>
+                    </div>
+
+                    <div class="mcqs-nta-palette-pane">
+                        <div>
+                            <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; font-size:11px; color:#475569; padding-bottom:10px; border-bottom:1px dashed #cbd5e1;">
+                                <div><span style="display:inline-block; width:16px; height:16px; background:#16a34a; color:#fff; text-align:center; border-radius:4px; font-weight:800; line-height:16px;">${answeredCount}</span> Answered</div>
+                                <div><span style="display:inline-block; width:16px; height:16px; background:#7c3aed; color:#fff; text-align:center; border-radius:50%; font-weight:800; line-height:16px;">${reviewCount}</span> Review</div>
+                                <div><span style="display:inline-block; width:16px; height:16px; background:#e2e8f0; color:#334155; text-align:center; border-radius:4px; font-weight:800; line-height:16px;">${notVisitedCount}</span> Not Visited</div>
+                                <div><span style="display:inline-block; width:16px; height:16px; background:#f97316; color:#fff; text-align:center; border-radius:4px; font-weight:800; line-height:16px;">${Object.keys(webSimState.visited).length}</span> Visited</div>
+                            </div>
+                            <div style="font-size:11px; font-weight:800; color:#0f172a; margin-top:8px;">Question Palette (Click to Jump):</div>
+                            <div class="mcqs-nta-palette-grid">${paletteHtml}</div>
+                        </div>
+                        <button type="button" onclick="forceCwStep1(event)" style="width:100%; margin-top:12px; background:#16a34a; color:#fff; border:none; padding:9px; border-radius:6px; font-size:12px; font-weight:900; cursor:pointer;">✅ SUBMIT / LAUNCH FULL MOCK</button>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        if (typeof renderMathInElement === 'function') {
+            renderMathInElement(container, {
+                delimiters: [
+                    { left: '$$', right: '$$', display: true },
+                    { left: '$', right: '$', display: false },
+                    { left: '\\(', right: '\\)', display: false },
+                    { left: '\\[', right: '\\]', display: true }
+                ],
+                throwOnError: false
+            });
+        }
+    }
+
+    // Builds the Top Hero + Bottom Interactive Simulator & "What We Provide" sections for #/home
+    function buildWebsiteLandingSections() {
+        const inv = getLivePlatformInventory();
+        const examListText = inv.exams.map(e => formatCleanTopicTitle(e)).join(' • ') || 'NEET • JEE • Boards • GK';
+        const firstExamClean = formatCleanTopicTitle(inv.exams[0] || 'NEET');
+        const firstSubjBadge = inv.subjectChapterBadges[0] || 'Zoology · Animal Kingdom';
+
+        // Dynamic Exam Ecosystem Cards (Automatically renders every active exam category + its live sub-sections)
+        let usedColors = new Set();
+        let usedIcons = new Set();
+        const dynamicExamShowcaseCards = inv.exams.map((exKey, idx) => {
+            const cleanEx = formatCleanTopicTitle(exKey);
+            const safeKey = exKey.replace(/'/g, "\\'");
+            const tMeta = (typeof customTopicTypes !== 'undefined' && customTopicTypes[exKey]) || null;
+            const cIcon = tMeta ? tMeta.icon : null;
+            const th = getAutoTopicTheme(cleanEx, cIcon, idx, usedColors, '📘', usedIcons, exKey);
+
+            const childObj = (appData && appData[exKey]) || {};
+            const childNames = Object.keys(childObj).slice(0, 5).map(c => formatCleanTopicTitle(c));
+            const childTagsHtml = childNames.length
+                ? childNames.map(cn => `<span style="font-size:11px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); padding:3px 9px; border-radius:999px; color:#cbd5e1;">${cn}</span>`).join('')
+                : `<span style="font-size:11px; color:#94a3b8;">MCQs Practice • PYQs • Mock Tests</span>`;
+
+            return `
+                <div class="mcqs-provide-card" style="--card-accent:${th.c}; border-top:3px solid ${th.c};" onclick="jumpToSection(['${safeKey}'])">
+                    <div>
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                            <span style="width:42px; height:42px; border-radius:11px; background:${th.bg}; border:1px solid ${th.border}; display:flex; align-items:center; justify-content:center; font-size:21px;">${th.i === 'NONE' ? '📘' : th.i}</span>
+                            <span style="font-size:11px; font-weight:800; color:${th.c}; background:${th.bg}; padding:4px 10px; border-radius:999px;">LIVE BANK</span>
+                        </div>
+                        <h4 style="margin:0 0 8px 0; font-size:17px; color:#fff; font-weight:800;">${cleanEx} Complete Suite</h4>
+                        <p style="margin:0 0 12px 0; font-size:13px; color:#94a3b8; line-height:1.5;">Chapter-wise MCQs (Easy, Medium, Hard &amp; Mixed), NCERT PDFs, PYQs, and Custom Mock Tests.</p>
+                        <div style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:14px;">${childTagsHtml}</div>
+                    </div>
+                    <div style="font-size:12.5px; font-weight:800; color:${th.c}; display:flex; align-items:center; gap:6px;">Open ${cleanEx} Workspace &rarr;</div>
+                </div>
+            `;
+        }).join('');
+
+        const topHeroHtml = `
+            <div class="mcqs-web-landing-wrap">
+                <section class="mcqs-web-hero-section">
+                    <div class="mcqs-hero-grid">
+                        <!-- Left Column: High-Impact Headline & CTAs -->
+                        <div>
+                            <div class="mcqs-hero-status-pill">
+                                <span class="mcqs-hero-status-dot"></span>
+                                <span>100% Free Active Exam Suite: <b style="color:#fdb813;">${examListText}</b></span>
+                            </div>
+                            <h1 class="mcqs-hero-main-title">
+                                MCQ practice and testing platform for serious <span id="mcqsHeroRotatingExam" class="mcqs-hero-highlight">${firstExamClean} aspirants.</span>
+                            </h1>
+                            <p class="mcqs-hero-subtext">
+                                Practice line-by-line NCERT &amp; PYQ questions across <b>Easy, Medium, Hard &amp; Mixed</b> tiers, build full-length <b>20–250 MCQ custom mock tests</b>, identify weak areas with time-to-accuracy analytics, and resolve doubts 24/7 with our AI Tutor.
+                            </p>
+                            <div class="mcqs-hero-cta-row">
+                                <button type="button" class="mcqs-btn-primary-gold" onclick="forceCwStep1(event)">
+                                    🎯 Build Custom Mock Test (20–250 MCQs)
+                                </button>
+                                <button type="button" class="mcqs-btn-secondary-glass" onclick="scrollToWebsiteSection('mcqs-home-categories-anchor')">
+                                    📂 Browse ${inv.examCount} Exam Categories &darr;
+                                </button>
+                                <button type="button" class="mcqs-btn-secondary-glass" onclick="openAIModal()">
+                                    ✨ Ask AI Tutor
+                                </button>
+                            </div>
+                            <div class="mcqs-hero-stats-strip">
+                                <div class="mcqs-hero-stat-item">
+                                    <div class="mcqs-hero-stat-val" style="color:#fdb813;">${inv.examCount} Exams</div>
+                                    <div class="mcqs-hero-stat-lbl">Live Categories</div>
+                                </div>
+                                <div class="mcqs-hero-stat-item">
+                                    <div class="mcqs-hero-stat-val" style="color:#38bdf8;">${inv.totalSubfolders}+</div>
+                                    <div class="mcqs-hero-stat-lbl">Chapters &amp; Topics</div>
+                                </div>
+                                <div class="mcqs-hero-stat-item">
+                                    <div class="mcqs-hero-stat-val" style="color:#10b981;">20–250</div>
+                                    <div class="mcqs-hero-stat-lbl">Custom Mock MCQs</div>
+                                </div>
+                                <div class="mcqs-hero-stat-item">
+                                    <div class="mcqs-hero-stat-val" style="color:#c084fc;">4 Tiers</div>
+                                    <div class="mcqs-hero-stat-lbl">Easy • Med • Hard • Mixed</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Right Column: Animated Score Trajectory & Revision Queue Mockup (Image 1 Style) -->
+                        <div class="mcqs-mockup-window">
+                            <div class="mcqs-floating-mastery-pill" onclick="window.location.hash='#/progress'" style="cursor:pointer;" title="Click to open Track Progress">
+                                <span style="color:#fdb813;">✔</span>
+                                <span id="mcqsFloatingSubjectBadge">${firstSubjBadge}</span>
+                                <span style="color:#10b981; font-weight:900;" id="mcqsFloatingMasteryPct">92%</span>
+                            </div>
+
+                            <div class="mcqs-window-topbar">
+                                <div class="mcqs-window-dots">
+                                    <span style="background:#ef4444;"></span>
+                                    <span style="background:#f59e0b;"></span>
+                                    <span style="background:#10b981;"></span>
+                                </div>
+                                <div style="font-size:11.5px; color:#94a3b8; font-weight:700;">
+                                    Live Diagnostic Engine • <span style="color:#10b981;">Synced</span>
+                                </div>
+                            </div>
+
+                            <div class="mcqs-mockup-body-grid">
+                                <!-- Left Subcard: Animated Score / Accuracy Trajectory -->
+                                <div class="mcqs-mockup-subcard" onclick="window.location.hash='#/progress'" style="cursor:pointer;">
+                                    <div>
+                                        <div style="font-size:11px; color:#94a3b8; font-weight:700; text-transform:uppercase;">Projected Score &amp; Accuracy</div>
+                                        <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:6px; flex-wrap:wrap;">
+                                            <div style="font-size:40px; font-weight:900; color:#ffffff; letter-spacing:-1px;" id="mcqsAnimatedScoreNum">652</div>
+                                            <div style="display:flex; flex-direction:column; gap:4px;">
+                                                <span style="background:rgba(16,185,129,0.16); color:#10b981; border:1px solid rgba(16,185,129,0.4); font-size:10.5px; font-weight:800; padding:3px 8px; border-radius:6px;">↑ +48 Score Lift</span>
+                                                <span style="background:rgba(253,184,19,0.15); color:#fdb813; border:1px solid rgba(253,184,19,0.4); font-size:10.5px; font-weight:800; padding:3px 8px; border-radius:6px;">★ Time-to-Accuracy</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div style="margin:14px 0 8px 0;">
+                                        <svg viewBox="0 0 240 90" style="width:100%; height:82px; overflow:visible;">
+                                            <defs>
+                                                <linearGradient id="mcqsGoldGrad" x1="0" y1="0" x2="0" y2="1">
+                                                    <stop offset="0%" stop-color="rgba(253, 184, 19, 0.38)"/>
+                                                    <stop offset="100%" stop-color="rgba(253, 184, 19, 0.0)"/>
+                                                </linearGradient>
+                                            </defs>
+                                            <line x1="0" y1="20" x2="240" y2="20" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+                                            <line x1="0" y1="50" x2="240" y2="50" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+                                            <line x1="0" y1="80" x2="240" y2="80" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+                                            <path d="M 6 74 Q 65 62, 115 42 T 232 14 L 232 84 L 6 84 Z" fill="url(#mcqsGoldGrad)"/>
+                                            <path class="mcqs-traj-svg-path" d="M 6 74 Q 65 62, 115 42 T 232 14" fill="none" stroke="#fdb813" stroke-width="3" stroke-linecap="round"/>
+                                            <circle cx="232" cy="14" r="5" fill="#fdb813" stroke="#000" stroke-width="2"/>
+                                        </svg>
+                                    </div>
+
+                                    <div style="display:flex; justify-content:space-between; font-size:11px; color:#94a3b8; border-top:1px solid rgba(255,255,255,0.06); padding-top:8px;">
+                                        <span>⏱️ Avg Correct: <b style="color:#10b981;">28s</b></span>
+                                        <span>Weak-Spot Alert: <b style="color:#fdb813;">Active</b></span>
+                                    </div>
+                                </div>
+
+                                <!-- Right Subcards: Custom Test & Smart Revision Queue -->
+                                <div style="display:flex; flex-direction:column; gap:12px;">
+                                    <div class="mcqs-mockup-subcard" style="flex:1;">
+                                        <div>
+                                            <div style="font-size:10.5px; color:#94a3b8; font-weight:700; text-transform:uppercase;">Next Custom Test</div>
+                                            <div style="font-size:15px; font-weight:800; color:#fff; margin-top:4px;">Full Multi-Chapter Mock</div>
+                                            <div style="font-size:11.5px; color:#94a3b8; margin-top:2px;">Easy • Medium • Hard • Mixed</div>
+                                        </div>
+                                        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:12px; gap:6px;">
+                                            <span style="font-size:10.5px; background:rgba(255,255,255,0.06); color:#cbd5e1; padding:4px 8px; border-radius:6px; font-weight:700;">Up to 250 MCQs</span>
+                                            <button type="button" onclick="forceCwStep1(event)" style="background:#fdb813; color:#000; border:none; width:34px; height:34px; border-radius:8px; font-weight:900; cursor:pointer; display:flex; align-items:center; justify-content:center;" title="Launch Custom Mock">▶</button>
+                                        </div>
+                                    </div>
+
+                                    <div class="mcqs-mockup-subcard" style="flex:1;">
+                                        <div>
+                                            <div style="font-size:10.5px; color:#94a3b8; font-weight:700; text-transform:uppercase;">🔄 Smart Revision Queue</div>
+                                            <div style="display:flex; align-items:baseline; gap:8px; margin-top:4px;">
+                                                <span style="font-size:26px; font-weight:900; color:#fff;">Exclude-Correct</span>
+                                            </div>
+                                            <div style="font-size:11px; color:#94a3b8; margin-top:2px;">Practice only Wrong, Skipped &amp; Bookmarked MCQs</div>
+                                        </div>
+                                        <button type="button" onclick="window.location.hash='#/bookmarks'" style="margin-top:10px; width:100%; background:rgba(255,255,255,0.06); color:#fff; border:1px solid rgba(255,255,255,0.14); padding:7px 12px; border-radius:8px; font-size:11.5px; font-weight:800; cursor:pointer; text-align:left; display:flex; justify-content:space-between; align-items:center;">
+                                            <span>Open Saved &amp; Diary</span>
+                                            <span>&rsaquo;</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        `;
+
+        const bottomShowcaseHtml = `
+            <!-- SECTION 2: INTERACTIVE CBT / NTA EXAM CONDITION SIMULATOR (IMAGE 2 STYLE) -->
+            <section class="mcqs-cbt-showcase-section" id="mcqs-cbt-simulator-anchor">
+                <div class="mcqs-cbt-grid">
+                    <div>
+                        <div class="mcqs-hero-status-pill" style="border-color:rgba(253,184,19,0.5); color:#fdb813;">
+                            <span>🖥️ LIVE INTERACTIVE DEMO</span>
+                        </div>
+                        <h2 style="font-size:clamp(26px, 3.4vw, 40px); font-weight:900; color:#ffffff; margin:0 0 12px 0; line-height:1.15;">
+                            Practice in real <span style="color:#fdb813;">exam conditions.</span>
+                        </h2>
+                        <p style="color:#94a3b8; font-size:14.5px; line-height:1.6; margin:0;">
+                            Same pressure. Live per-question timer. Instant NCERT explanations. Test the interactive simulator on the right with live questions from our database!
+                        </p>
+
+                        <div class="mcqs-cbt-feature-list">
+                            <div class="mcqs-cbt-feature-row">
+                                <div class="mcqs-cbt-feat-icon">📊</div>
+                                <div>
+                                    <div style="font-weight:800; color:#fff; font-size:14px;">Match-the-Column, Multi-Diagram &amp; KaTeX Support</div>
+                                    <div style="font-size:12.5px; color:#94a3b8; margin-top:2px;">Every question supports structured Match Tables, side-by-side high-res diagrams with tap-to-zoom, and chemical reactions.</div>
+                                </div>
+                            </div>
+                            <div class="mcqs-cbt-feature-row">
+                                <div class="mcqs-cbt-feat-icon">⏱️</div>
+                                <div>
+                                    <div style="font-weight:800; color:#fff; font-size:14px;">Per-Question Timer &amp; Anytime Submit</div>
+                                    <div style="font-size:12.5px; color:#94a3b8; margin-top:2px;">Measures exact seconds spent on Correct vs. Wrong answers and lets you save &amp; submit attempted questions anytime.</div>
+                                </div>
+                            </div>
+                            <div class="mcqs-cbt-feature-row">
+                                <div class="mcqs-cbt-feat-icon">🚀</div>
+                                <div>
+                                    <div style="font-weight:800; color:#fff; font-size:14px;">Smart Resume vs. Start New (Exclude Correct)</div>
+                                    <div style="font-size:12.5px; color:#94a3b8; margin-top:2px;">Automatically remembers every question you solved so your next session focuses only on Wrong, Skipped, and Unattempted MCQs.</div>
+                                </div>
+                            </div>
+                            <div class="mcqs-cbt-feature-row">
+                                <div class="mcqs-cbt-feat-icon">🏆</div>
+                                <div>
+                                    <div style="font-weight:800; color:#fff; font-size:14px;">Instant Scorecard &amp; All-India Leaderboard Rank</div>
+                                    <div style="font-size:12.5px; color:#94a3b8; margin-top:2px;">Complete 100+ MCQs in any exam category to unlock your live All-India rank and subject-wise mastery breakdown.</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div style="display:flex; gap:12px; flex-wrap:wrap;">
+                            <button type="button" class="mcqs-btn-primary-gold" onclick="forceCwStep1(event)">
+                                Try a Full Custom Mock &rarr;
+                            </button>
+                            <button type="button" class="mcqs-btn-secondary-glass" onclick="jumpToSection(['Daily Quiz Challenge'])">
+                                📅 Daily Quiz Challenge
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Right Column: Live Playable Simulator Mount -->
+                    <div id="mcqsInteractiveNtaSimMount"></div>
+                </div>
+            </section>
+
+            <!-- SECTION 3: WHAT WE PROVIDE ON MCQSPREP (100% SYNCED WITH LIVE FEATURES) -->
+            <section class="mcqs-provide-section" id="mcqs-what-we-provide-anchor">
+                <div style="text-align:center; max-width:680px; margin:0 auto 22px auto;">
+                    <div class="mcqs-hero-status-pill" style="margin-bottom:10px;">
+                        <span>✨ COMPLETE EXAM ECOSYSTEM</span>
+                    </div>
+                    <h2 style="font-size:clamp(24px, 3vw, 34px); font-weight:900; color:#ffffff; margin:0 0 8px 0;">
+                        Everything We Provide on <span style="color:#fdb813;">MCQsPrep</span>
+                    </h2>
+                    <p style="color:#94a3b8; font-size:14px; margin:0;">
+                        Every exam category, subject, chapter, and tool below is live and automatically updates as new content is added.
+                    </p>
+                </div>
+
+                <div class="mcqs-provide-grid">
+                    ${dynamicExamShowcaseCards}
+
+                    <div class="mcqs-provide-card" style="--card-accent:#fdb813; border-top:3px solid #fdb813;" onclick="forceCwStep1(event)">
+                        <div>
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                                <span style="width:42px; height:42px; border-radius:11px; background:rgba(253,184,19,0.15); border:1px solid rgba(253,184,19,0.5); display:flex; align-items:center; justify-content:center; font-size:21px;">🎯</span>
+                                <span style="font-size:11px; font-weight:800; color:#fdb813; background:rgba(253,184,19,0.15); padding:4px 10px; border-radius:999px;">20 TO 250 MCQS</span>
+                            </div>
+                            <h4 style="margin:0 0 8px 0; font-size:17px; color:#fff; font-weight:800;">Custom Multi-Chapter Mock Builder</h4>
+                            <p style="margin:0 0 14px 0; font-size:13px; color:#94a3b8; line-height:1.5;">Combine multiple subjects and specific chapters, choose Easy, Medium, Hard, or Mixed balance, and generate a custom test up to 250 questions.</p>
+                        </div>
+                        <div style="font-size:12.5px; font-weight:800; color:#fdb813;">Launch Custom Setup &rarr;</div>
+                    </div>
+
+                    <div class="mcqs-provide-card" style="--card-accent:#38bdf8; border-top:3px solid #38bdf8;" onclick="window.location.hash='#/progress'">
+                        <div>
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                                <span style="width:42px; height:42px; border-radius:11px; background:rgba(56,189,248,0.15); border:1px solid rgba(56,189,248,0.5); display:flex; align-items:center; justify-content:center; font-size:21px;">📊</span>
+                                <span style="font-size:11px; font-weight:800; color:#38bdf8; background:rgba(56,189,248,0.15); padding:4px 10px; border-radius:999px;">DIAGNOSTICS</span>
+                            </div>
+                            <h4 style="margin:0 0 8px 0; font-size:17px; color:#fff; font-weight:800;">Deep Performance &amp; Weak-Spot Analytics</h4>
+                            <p style="margin:0 0 14px 0; font-size:13px; color:#94a3b8; line-height:1.5;">Track Subject-Wise Mastery percentages, automatic &lt;50% Weak-Spot alerts, Time-to-Accuracy insights, and longitudinal Accuracy Trajectory graphs.</p>
+                        </div>
+                        <div style="font-size:12.5px; font-weight:800; color:#38bdf8;">View Analytics Dashboard &rarr;</div>
+                    </div>
+
+                    <div class="mcqs-provide-card" style="--card-accent:#10b981; border-top:3px solid #10b981;" onclick="window.location.hash='#/leaderboard'">
+                        <div>
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                                <span style="width:42px; height:42px; border-radius:11px; background:rgba(16,185,129,0.15); border:1px solid rgba(16,185,129,0.5); display:flex; align-items:center; justify-content:center; font-size:21px;">🏆</span>
+                                <span style="font-size:11px; font-weight:800; color:#10b981; background:rgba(16,185,129,0.15); padding:4px 10px; border-radius:999px;">NATIONAL RANK</span>
+                            </div>
+                            <h4 style="margin:0 0 8px 0; font-size:17px; color:#fff; font-weight:800;">All-India Category Leaderboards</h4>
+                            <p style="margin:0 0 14px 0; font-size:13px; color:#94a3b8; line-height:1.5;">Compete with aspirants nationwide across separate leaderboards for each exam category, verified by our 100-MCQ qualification benchmark.</p>
+                        </div>
+                        <div style="font-size:12.5px; font-weight:800; color:#10b981;">Check Live Rankings &rarr;</div>
+                    </div>
+
+                    <div class="mcqs-provide-card" style="--card-accent:#a855f7; border-top:3px solid #a855f7;" onclick="openAIModal()">
+                        <div>
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                                <span style="width:42px; height:42px; border-radius:11px; background:rgba(168,85,247,0.15); border:1px solid rgba(168,85,247,0.5); display:flex; align-items:center; justify-content:center; font-size:21px;">🧠</span>
+                                <span style="font-size:11px; font-weight:800; color:#c084fc; background:rgba(168,85,247,0.15); padding:4px 10px; border-radius:999px;">24/7 AI TUTOR</span>
+                            </div>
+                            <h4 style="margin:0 0 8px 0; font-size:17px; color:#fff; font-weight:800;">NCERT AI Tutor, Bookmarks &amp; Doubt Diary</h4>
+                            <p style="margin:0 0 14px 0; font-size:13px; color:#94a3b8; line-height:1.5;">Upload or crop a photo of any textbook problem for step-by-step solutions, bookmark tricky MCQs, and maintain your personal Doubt Diary.</p>
+                        </div>
+                        <div style="font-size:12.5px; font-weight:800; color:#c084fc;">Ask AI Tutor Now &rarr;</div>
+                    </div>
+                </div>
+            </section>
+        `;
+
+        return { topHeroHtml, bottomShowcaseHtml, inv };
+    }
+
+    var _heroRotatorInterval = null;
+    function startHeroDynamicAnimations(inv) {
+        if (_heroRotatorInterval) clearInterval(_heroRotatorInterval);
+        let examIdx = 0;
+        let badgeIdx = 0;
+        const pctPool = ['92%', '95%', '89%', '94%', '91%', '96%'];
+
+        _heroRotatorInterval = setInterval(() => {
+            const rotEl = document.getElementById('mcqsHeroRotatingExam');
+            if (rotEl && inv.exams.length > 1) {
+                examIdx = (examIdx + 1) % inv.exams.length;
+                rotEl.style.opacity = '0';
+                rotEl.style.transform = 'translateY(6px)';
+                setTimeout(() => {
+                    if (rotEl) {
+                        rotEl.innerText = `${formatCleanTopicTitle(inv.exams[examIdx])} aspirants.`;
+                        rotEl.style.opacity = '1';
+                        rotEl.style.transform = 'translateY(0)';
+                    }
+                }, 240);
+            }
+
+            const badgeEl = document.getElementById('mcqsFloatingSubjectBadge');
+            const pctEl = document.getElementById('mcqsFloatingMasteryPct');
+            if (badgeEl && inv.subjectChapterBadges.length > 1) {
+                badgeIdx = (badgeIdx + 1) % inv.subjectChapterBadges.length;
+                badgeEl.innerText = inv.subjectChapterBadges[badgeIdx];
+                if (pctEl) pctEl.innerText = pctPool[badgeIdx % pctPool.length];
+            }
+        }, 3200);
+    }
+
+    // Wrap _renderView non-destructively so your original _renderView runs 100% intact first,
+    // and when on root #/home in Website mode, injects the Hero above & Simulator/Showcase below!
+    const _origRenderViewWebsiteHook = _renderView;
+    _renderView = function() {
+        _origRenderViewWebsiteHook();
+        injectWebsiteShowcaseStyles();
+        syncWebsiteNavbarPills();
+
+        if (isStandaloneInstalledApp()) return;
+        const isRootHome = Array.isArray(currentPath) && currentPath.length === 0;
+        if (!isRootHome) return;
+
+        const mc = document.getElementById('dynamic-content');
+        if (!mc) return;
+
+        // Tag the existing category section so "Browse Exam Categories" smooth-scrolls to it
+        const existingCatSection = mc.querySelector('.category-section');
+        if (existingCatSection) {
+            existingCatSection.id = 'mcqs-home-categories-anchor';
+        }
+
+        const { topHeroHtml, bottomShowcaseHtml, inv } = buildWebsiteLandingSections();
+        const transitionWrap = mc.querySelector('.page-transition') || mc;
+
+        if (!document.getElementById('mcqs-cbt-simulator-anchor')) {
+            transitionWrap.insertAdjacentHTML('afterbegin', topHeroHtml);
+            transitionWrap.insertAdjacentHTML('beforeend', bottomShowcaseHtml);
+        }
+
+        renderInteractiveNtaSimulatorCard();
+        startWebSimulatorClock();
+        startHeroDynamicAnimations(inv);
+
+        if (!webSimState.fetchedFromDb) {
+            loadLiveQuestionsIntoWebSimulator('ALL');
+        }
+    };
+
+    // Close navbar courses dropdown when clicking outside
+    window.addEventListener('click', function(e) {
+        const drop = document.getElementById('webCoursesDropWrap');
+        if (drop && !drop.contains(e.target)) {
+            drop.classList.remove('open');
+        }
+    });
+
+    // Run once if page is already loaded on #/home
+    if (document.readyState === 'complete' || document.readyState === 'interactive') {
+        setTimeout(() => {
+            injectWebsiteShowcaseStyles();
+            syncWebsiteNavbarPills();
+            if (Array.isArray(currentPath) && currentPath.length === 0 && (!window.location.hash || window.location.hash === '#/home')) {
+                _renderView();
+            }
+        }, 120);
+    }
+})();
