@@ -2673,21 +2673,17 @@ async function handleLiveSearch() {
 }
 
 // ==========================================
-// 7. REAL-DATA DIAGNOSTIC ENGINE, INTERACTIVE CBT SIMULATOR & REMADE HOME UI (PC + MOBILE APP)
+// 7. PRIORITY-FIRST PC & MOBILE WORKSPACE, MISTAKE CLINIC, SPEED AUTOPSY & TRUE DAILY STREAK ENGINE
 // (100% Additive • Zero Existing Code Altered • Connected to Real Student Data)
 // ==========================================
-(function initMCQsPrepRealDataSimulationSuite() {
-    if (window._mcqsRealDataSuiteLoadedV3) return;
-    window._mcqsRealDataSuiteLoadedV3 = true;
+(function initMCQsPrepPriorityWorkspaceV4() {
+    if (window._mcqsPriorityWorkspaceLoadedV4) return;
+    window._mcqsPriorityWorkspaceLoadedV4 = true;
 
-    function isMobileViewport() {
-        return window.innerWidth <= 860;
-    }
-
-    function injectSuiteStyles() {
-        if (document.getElementById('mcqs-real-suite-styles-v3')) return;
+    function injectPriorityWorkspaceStyles() {
+        if (document.getElementById('mcqs-priority-workspace-styles-v4')) return;
         const st = document.createElement('style');
-        st.id = 'mcqs-real-suite-styles-v3';
+        st.id = 'mcqs-priority-workspace-styles-v4';
         st.textContent = `
             /* ==========================================
                1. NAVBAR, WIDE SEARCH BAR & SIGN-IN VISIBILITY
@@ -2748,11 +2744,11 @@ async function handleLiveSearch() {
             .web-center-nav-pills {
                 display: inline-flex;
                 align-items: center;
-                gap: 3px;
+                gap: 4px;
                 background: rgba(15, 20, 32, 0.95);
                 border: 1px solid rgba(255, 255, 255, 0.11);
                 border-radius: 999px;
-                padding: 4px 6px;
+                padding: 4px 7px;
                 box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
                 position: relative;
                 z-index: 100;
@@ -2765,10 +2761,10 @@ async function handleLiveSearch() {
                 color: #cbd5e1;
                 font-size: 12.5px;
                 font-weight: 700;
-                padding: 6px 12px;
+                padding: 6px 13px;
                 border-radius: 999px;
                 cursor: pointer;
-                transition: all 0.2s ease;
+                transition: all 0.18s ease;
                 display: inline-flex;
                 align-items: center;
                 gap: 5px;
@@ -2913,46 +2909,55 @@ async function handleLiveSearch() {
             }
 
             /* ==========================================
-               2. UNIFIED FULL-WIDTH HOME WORKSPACE (PC & MOBILE)
+               2. CLEAN PC & COMPACT PRIORITY-FIRST MOBILE LAYOUT
                ========================================== */
             body.mcqs-on-root-home .container {
                 display: block !important;
                 max-width: 1400px !important;
                 margin: 0 auto !important;
-                padding: 0 28px 90px 28px !important;
+                padding: 0 28px 95px 28px !important;
                 box-sizing: border-box !important;
             }
             body.mcqs-on-root-home #main-sidebar {
                 display: none !important;
             }
-            @media (max-width: 768px) {
-                body.mcqs-on-root-home .container {
-                    padding: 0 12px 100px 12px !important;
-                }
-            }
 
-            /* Architectural Grid Cards */
+            /* Flex container so Mobile can reorder sections by Student Priority without duplicating DOM */
+            .mcqs-home-master-stack {
+                display: flex;
+                flex-direction: column;
+                gap: 22px;
+            }
+            .mcqs-tier-hero { order: 1; }
+            .mcqs-tier-workspaces { order: 2; }
+            .mcqs-tier-studios { order: 3; }
+
+            /* PC Architectural Hero Surface */
             .mcqs-arch-surface {
                 position: relative;
                 background-color: #080b12;
                 background-image:
                     radial-gradient(circle at 78% 20%, rgba(253, 184, 19, 0.13) 0%, transparent 52%),
                     radial-gradient(circle at 16% 82%, rgba(56, 189, 248, 0.09) 0%, transparent 48%),
-                    linear-gradient(to right, rgba(255, 255, 255, 0.028) 1px, transparent 1px),
-                    linear-gradient(to bottom, rgba(255, 255, 255, 0.028) 1px, transparent 1px);
+                    linear-gradient(to right, rgba(255, 255, 255, 0.026) 1px, transparent 1px),
+                    linear-gradient(to bottom, rgba(255, 255, 255, 0.026) 1px, transparent 1px);
                 background-size: 100% 100%, 100% 100%, 46px 46px, 46px 46px;
                 border: 1px solid rgba(253, 184, 19, 0.28);
-                border-radius: 22px;
-                padding: 32px;
-                margin-bottom: 24px;
-                box-shadow: 0 20px 55px rgba(0, 0, 0, 0.68);
+                border-radius: 20px;
+                padding: 28px 30px;
+                box-shadow: 0 18px 50px rgba(0, 0, 0, 0.65);
                 box-sizing: border-box;
             }
             .mcqs-hero-grid {
                 display: grid;
-                grid-template-columns: 1.02fr 0.98fr;
-                gap: 32px;
-                align-items: center;
+                grid-template-columns: 0.96fr 1.04fr;
+                gap: 28px;
+                align-items: stretch;
+            }
+            .mcqs-hero-left-col {
+                display: flex;
+                flex-direction: column;
+                justify-content: space-between;
             }
             .mcqs-status-pill {
                 display: inline-flex;
@@ -2965,7 +2970,8 @@ async function handleLiveSearch() {
                 font-size: 11.5px;
                 font-weight: 800;
                 color: #e2e8f0;
-                margin-bottom: 14px;
+                margin-bottom: 12px;
+                width: fit-content;
             }
             .mcqs-pulse-dot {
                 width: 8px;
@@ -2976,63 +2982,67 @@ async function handleLiveSearch() {
                 animation: mcqsPulseAnim 1.5s infinite alternate;
             }
             .mcqs-hero-title {
-                font-size: clamp(26px, 3.6vw, 48px);
+                font-size: clamp(26px, 3.2vw, 44px);
                 font-weight: 900;
-                line-height: 1.08;
-                letter-spacing: -0.7px;
+                line-height: 1.1;
+                letter-spacing: -0.6px;
                 color: #ffffff;
-                margin: 0 0 14px 0;
+                margin: 0 0 12px 0;
             }
             .mcqs-gold-word {
                 color: #fdb813;
-                text-shadow: 0 0 26px rgba(253, 184, 19, 0.35);
+                text-shadow: 0 0 24px rgba(253, 184, 19, 0.35);
                 display: inline-block;
                 transition: opacity 0.24s ease, transform 0.24s ease;
             }
             .mcqs-hero-desc {
                 color: #94a3b8;
-                font-size: 14.5px;
-                line-height: 1.62;
-                margin: 0 0 20px 0;
-                max-width: 560px;
+                font-size: 14px;
+                line-height: 1.6;
+                margin: 0 0 18px 0;
+                max-width: 540px;
             }
             .mcqs-cta-row {
                 display: flex;
-                flex-wrap: wrap;
+                flex-wrap: nowrap;
                 gap: 10px;
-                margin-bottom: 20px;
+                margin-bottom: 18px;
             }
             .mcqs-btn-gold {
                 background: linear-gradient(135deg, #fdb813 0%, #f59e0b 100%);
                 color: #000000;
                 border: none;
-                padding: 12px 20px;
-                border-radius: 12px;
-                font-size: 13.5px;
+                padding: 11px 18px;
+                border-radius: 11px;
+                font-size: 13px;
                 font-weight: 900;
                 cursor: pointer;
                 display: inline-flex;
                 align-items: center;
-                gap: 8px;
-                box-shadow: 0 8px 24px rgba(253, 184, 19, 0.32);
+                justify-content: center;
+                gap: 7px;
+                white-space: nowrap;
+                box-shadow: 0 8px 22px rgba(253, 184, 19, 0.3);
                 transition: transform 0.18s ease, box-shadow 0.18s ease;
             }
             .mcqs-btn-gold:hover {
                 transform: translateY(-2px);
-                box-shadow: 0 12px 28px rgba(253, 184, 19, 0.48);
+                box-shadow: 0 12px 28px rgba(253, 184, 19, 0.45);
             }
             .mcqs-btn-glass {
                 background: rgba(255, 255, 255, 0.05);
                 color: #ffffff;
                 border: 1px solid rgba(255, 255, 255, 0.16);
-                padding: 12px 16px;
-                border-radius: 12px;
+                padding: 11px 16px;
+                border-radius: 11px;
                 font-size: 13px;
                 font-weight: 800;
                 cursor: pointer;
                 display: inline-flex;
                 align-items: center;
+                justify-content: center;
                 gap: 7px;
+                white-space: nowrap;
                 transition: all 0.18s ease;
             }
             .mcqs-btn-glass:hover {
@@ -3051,43 +3061,48 @@ async function handleLiveSearch() {
                 background: rgba(15, 23, 42, 0.65);
                 border: 1px solid rgba(255, 255, 255, 0.08);
                 border-radius: 10px;
-                padding: 9px 10px;
+                padding: 8px 10px;
             }
             .mcqs-kpi-val {
-                font-size: 15.5px;
+                font-size: 15px;
                 font-weight: 900;
                 color: #ffffff;
             }
             .mcqs-kpi-lbl {
-                font-size: 10.5px;
+                font-size: 10px;
                 color: #94a3b8;
                 margin-top: 2px;
                 font-weight: 600;
             }
 
-            /* Simulation #1: Real-Data Diagnostic Window */
+            /* Live Student Data & Behavioral Autopsy Window */
             .mcqs-diag-window {
                 position: relative;
                 background: #0f131d;
                 border: 1.5px solid rgba(253, 184, 19, 0.38);
-                border-radius: 18px;
-                padding: 18px;
-                box-shadow: 0 22px 55px rgba(0, 0, 0, 0.82), 0 0 32px rgba(253, 184, 19, 0.12);
+                border-radius: 16px;
+                padding: 16px;
+                box-shadow: 0 18px 45px rgba(0, 0, 0, 0.78);
+                height: 100%;
+                box-sizing: border-box;
+                display: flex;
+                flex-direction: column;
+                justify-content: space-between;
             }
             .mcqs-diag-floating-badge {
                 position: absolute;
-                top: -13px;
-                left: 20px;
+                top: -12px;
+                left: 18px;
                 background: #171c2b;
                 border: 1.5px solid #fdb813;
                 border-radius: 999px;
-                padding: 4px 13px;
-                font-size: 11.5px;
+                padding: 3px 12px;
+                font-size: 11px;
                 font-weight: 800;
                 color: #f8fafc;
                 display: inline-flex;
                 align-items: center;
-                gap: 7px;
+                gap: 6px;
                 box-shadow: 0 8px 20px rgba(0, 0, 0, 0.8);
                 z-index: 5;
             }
@@ -3095,8 +3110,8 @@ async function handleLiveSearch() {
                 display: flex;
                 gap: 6px;
                 overflow-x: auto;
-                padding-bottom: 8px;
-                margin: 8px 0 12px 0;
+                padding-bottom: 6px;
+                margin: 6px 0 10px 0;
                 border-bottom: 1px solid rgba(255, 255, 255, 0.08);
                 scrollbar-width: none;
             }
@@ -3105,9 +3120,9 @@ async function handleLiveSearch() {
                 background: rgba(255, 255, 255, 0.05);
                 border: 1px solid rgba(255, 255, 255, 0.12);
                 color: #94a3b8;
-                padding: 5px 12px;
-                border-radius: 8px;
-                font-size: 11.5px;
+                padding: 4px 11px;
+                border-radius: 7px;
+                font-size: 11px;
                 font-weight: 800;
                 cursor: pointer;
                 white-space: nowrap;
@@ -3120,64 +3135,67 @@ async function handleLiveSearch() {
             }
             .mcqs-diag-grid {
                 display: grid;
-                grid-template-columns: 1.12fr 0.88fr;
-                gap: 12px;
+                grid-template-columns: 1.1fr 0.9fr;
+                gap: 10px;
             }
             .mcqs-diag-subcard {
                 background: #151a28;
                 border: 1px solid rgba(255, 255, 255, 0.08);
-                border-radius: 14px;
-                padding: 14px;
+                border-radius: 12px;
+                padding: 12px;
                 display: flex;
                 flex-direction: column;
                 justify-content: space-between;
             }
 
-            /* ==========================================
-               3. REMADE EXAM WORKSPACE CARDS, CUSTOM MOCK STUDIO & QUICK LINKS
-               ========================================== */
+            /* Tier 2: Exam Workspaces (Left) + Quick Links & Essential Practice (Right) */
             .mcqs-home-workspace-grid {
                 display: grid;
-                grid-template-columns: 1.38fr 0.62fr;
-                gap: 22px;
-                margin-bottom: 24px;
-                align-items: start;
+                grid-template-columns: 1.42fr 0.58fr;
+                gap: 20px;
+                align-items: stretch;
             }
             .mcqs-exam-cards-grid {
                 display: grid;
-                grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-                gap: 14px;
+                grid-template-columns: repeat(2, 1fr);
+                gap: 12px;
             }
             .mcqs-modern-exam-card {
                 background: linear-gradient(155deg, rgba(21, 28, 46, 0.96), rgba(11, 15, 26, 0.98));
                 border: 1.5px solid var(--exam-border, rgba(255, 255, 255, 0.12));
                 border-left: 5px solid var(--exam-color, #fdb813);
-                border-radius: 16px;
-                padding: 18px;
-                box-shadow: 0 10px 28px rgba(0, 0, 0, 0.45);
-                transition: transform 0.2s ease, box-shadow 0.2s ease;
+                border-radius: 14px;
+                padding: 15px;
+                box-shadow: 0 8px 24px rgba(0, 0, 0, 0.42);
+                transition: transform 0.18s ease, box-shadow 0.18s ease;
                 display: flex;
                 flex-direction: column;
                 justify-content: space-between;
                 cursor: pointer;
             }
             .mcqs-modern-exam-card:hover {
-                transform: translateY(-3px);
-                box-shadow: 0 14px 34px var(--exam-glow, rgba(253, 184, 19, 0.22));
+                transform: translateY(-2px);
+                box-shadow: 0 12px 28px var(--exam-glow, rgba(253, 184, 19, 0.22));
+            }
+            .mcqs-subfolder-chip-row {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 5px;
             }
             .mcqs-subfolder-chip {
                 background: rgba(255, 255, 255, 0.06);
                 border: 1px solid rgba(255, 255, 255, 0.12);
                 color: #e2e8f0;
-                padding: 4px 10px;
+                padding: 3px 9px;
                 border-radius: 999px;
-                font-size: 11px;
+                font-size: 10.5px;
                 font-weight: 700;
                 cursor: pointer;
                 transition: all 0.15s ease;
                 display: inline-flex;
                 align-items: center;
                 gap: 4px;
+                white-space: nowrap;
             }
             .mcqs-subfolder-chip:hover {
                 background: var(--exam-bg, rgba(253, 184, 19, 0.18));
@@ -3185,40 +3203,12 @@ async function handleLiveSearch() {
                 color: #ffffff;
             }
 
-            /* Remade Custom Mock Studio Card */
-            .mcqs-custom-studio-card {
-                background: linear-gradient(145deg, rgba(253, 184, 19, 0.1) 0%, rgba(15, 21, 35, 0.98) 55%);
-                border: 1.5px solid rgba(253, 184, 19, 0.45);
-                border-radius: 18px;
-                padding: 20px;
-                margin-bottom: 20px;
-                box-shadow: 0 14px 36px rgba(0, 0, 0, 0.55);
-            }
-            .mcqs-studio-pill-group {
+            /* Quick Links & Essential Practice Compact Grid */
+            .mcqs-links-list-grid {
                 display: flex;
-                gap: 6px;
-                flex-wrap: wrap;
-                margin-top: 6px;
+                flex-direction: column;
+                gap: 8px;
             }
-            .mcqs-studio-opt-pill {
-                background: #0d1322;
-                border: 1px solid rgba(255, 255, 255, 0.12);
-                color: #cbd5e1;
-                padding: 6px 12px;
-                border-radius: 8px;
-                font-size: 12px;
-                font-weight: 800;
-                cursor: pointer;
-                transition: 0.15s;
-            }
-            .mcqs-studio-opt-pill.active {
-                background: #fdb813;
-                color: #000000;
-                border-color: #fdb813;
-                box-shadow: 0 0 12px rgba(253, 184, 19, 0.35);
-            }
-
-            /* Remade Quick Links & Essential Practice Cards */
             .mcqs-modern-link-item {
                 display: flex;
                 align-items: center;
@@ -3227,149 +3217,65 @@ async function handleLiveSearch() {
                 background: linear-gradient(145deg, var(--link-bg, rgba(56,189,248,0.12)), rgba(13, 19, 34, 0.96));
                 border: 1px solid var(--link-border, rgba(56,189,248,0.4));
                 border-left: 4px solid var(--link-color, #38bdf8);
-                border-radius: 12px;
-                padding: 11px 14px;
-                margin-bottom: 9px;
+                border-radius: 11px;
+                padding: 10px 12px;
                 cursor: pointer;
                 transition: transform 0.15s ease, box-shadow 0.15s ease;
             }
             .mcqs-modern-link-item:hover {
                 transform: translateX(3px);
-                box-shadow: 0 6px 18px var(--link-glow, rgba(56,189,248,0.22));
+                box-shadow: 0 6px 16px var(--link-glow, rgba(56,189,248,0.22));
             }
 
-            /* ==========================================
-               4. SIMULATION #2: NTA / CBT EXAM SIMULATOR (PC & MOBILE)
-               ========================================== */
-            .mcqs-cbt-grid {
+            /* Tier 3: Side-by-Side Custom Mock Studio & Smart Mistake Clinic (Zero AI Button Overlap!) */
+            .mcqs-studios-split-grid {
                 display: grid;
-                grid-template-columns: 0.86fr 1.14fr;
-                gap: 28px;
-                align-items: center;
+                grid-template-columns: 1fr 1fr;
+                gap: 20px;
+                align-items: stretch;
+                margin-bottom: 20px;
             }
-            .mcqs-nta-sim-window {
-                background: #ffffff;
-                color: #0f172a;
-                border-radius: 16px;
-                overflow: hidden;
-                box-shadow: 0 24px 60px rgba(0, 0, 0, 0.85);
-                border: 2px solid rgba(253, 184, 19, 0.55);
-                font-family: system-ui, -apple-system, sans-serif;
-            }
-            .mcqs-nta-guide-banner {
-                background: #0f172a;
-                color: #f8fafc;
-                padding: 8px 14px;
-                font-size: 11.5px;
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                flex-wrap: wrap;
-                gap: 8px;
-                border-bottom: 1px solid #334155;
-            }
-            .mcqs-nta-top-header {
-                background: #f8fafc;
-                border-bottom: 1px solid #e2e8f0;
-                padding: 10px 14px;
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                flex-wrap: wrap;
-                gap: 8px;
-            }
-            .mcqs-nta-body {
-                display: grid;
-                grid-template-columns: 1.56fr 0.84fr;
-                min-height: 320px;
-            }
-            .mcqs-nta-q-pane {
-                padding: 14px 16px;
-                border-right: 1px solid #e2e8f0;
+            .mcqs-studio-box {
+                background: linear-gradient(150deg, rgba(19, 25, 42, 0.98), rgba(10, 14, 24, 0.99));
+                border: 1.5px solid rgba(253, 184, 19, 0.4);
+                border-radius: 18px;
+                padding: 20px;
+                box-shadow: 0 14px 34px rgba(0, 0, 0, 0.52);
                 display: flex;
                 flex-direction: column;
                 justify-content: space-between;
             }
-            .mcqs-nta-opt-row {
-                display: flex;
-                align-items: center;
-                gap: 10px;
-                padding: 8px 11px;
-                border: 1.5px solid #cbd5e1;
-                border-radius: 8px;
-                margin-bottom: 7px;
-                cursor: pointer;
-                font-size: 13px;
-                color: #1e293b;
-                transition: all 0.15s ease;
-                background: #ffffff;
-            }
-            .mcqs-nta-opt-row:hover {
-                border-color: #0284c7;
-                background: #f0f9ff;
-            }
-            .mcqs-nta-opt-row.selected {
-                border-color: #0284c7;
-                background: #e0f2fe;
-                font-weight: 700;
-            }
-            .mcqs-nta-opt-row.correct {
-                border-color: #16a34a;
-                background: #dcfce7;
-                color: #14532d;
-                font-weight: 700;
-            }
-            .mcqs-nta-opt-row.wrong {
-                border-color: #dc2626;
-                background: #fee2e2;
-                color: #7f1d1d;
-            }
-            .mcqs-nta-palette-pane {
-                background: #f8fafc;
-                padding: 14px;
+            .mcqs-clinic-box {
+                background: linear-gradient(150deg, rgba(16, 28, 44, 0.98), rgba(10, 14, 24, 0.99));
+                border: 1.5px solid rgba(56, 189, 248, 0.42);
+                border-radius: 18px;
+                padding: 20px;
+                box-shadow: 0 14px 34px rgba(0, 0, 0, 0.52);
                 display: flex;
                 flex-direction: column;
                 justify-content: space-between;
             }
-            .mcqs-nta-palette-grid {
-                display: grid;
-                grid-template-columns: repeat(5, 1fr);
+            .mcqs-studio-pill-group {
+                display: flex;
                 gap: 6px;
-                margin-top: 8px;
+                flex-wrap: wrap;
+                margin-top: 5px;
             }
-            .mcqs-nta-pal-btn {
-                height: 30px;
-                border-radius: 6px;
-                border: 1px solid #cbd5e1;
-                background: #e2e8f0;
-                color: #334155;
-                font-size: 12px;
+            .mcqs-studio-opt-pill {
+                background: #0b101d;
+                border: 1px solid rgba(255, 255, 255, 0.12);
+                color: #cbd5e1;
+                padding: 5px 10px;
+                border-radius: 7px;
+                font-size: 11.5px;
                 font-weight: 800;
                 cursor: pointer;
-                display: flex;
-                align-items: center;
-                justify-content: center;
                 transition: 0.15s;
             }
-            .mcqs-nta-pal-btn.active-q {
-                outline: 2px solid #0f172a;
-                outline-offset: 1px;
-            }
-            .mcqs-nta-pal-btn.st-answered {
-                background: #16a34a;
-                color: #ffffff;
-                border-color: #15803d;
-            }
-            .mcqs-nta-pal-btn.st-review {
-                background: #7c3aed;
-                color: #ffffff;
-                border-color: #6d28d9;
-                border-radius: 50%;
-            }
-            .mcqs-nta-pal-btn.st-visited {
-                background: #f97316;
-                color: #ffffff;
-                border-color: #ea580c;
+            .mcqs-studio-opt-pill.active {
+                background: #fdb813;
+                color: #000000;
+                border-color: #fdb813;
             }
 
             @keyframes mcqsPulseAnim {
@@ -3377,23 +3283,77 @@ async function handleLiveSearch() {
                 100% { transform: scale(1.25); opacity: 1; }
             }
 
-            @media (max-width: 980px) {
-                .mcqs-hero-grid, .mcqs-home-workspace-grid, .mcqs-cbt-grid {
-                    grid-template-columns: 1fr;
+            /* ==========================================
+               3. COMPACT MOBILE PRIORITY-FIRST OVERRIDES (<= 860px)
+               ========================================== */
+            @media (max-width: 860px) {
+                body.mcqs-on-root-home .container {
+                    padding: 0 10px 95px 10px !important;
+                }
+                body.mcqs-on-root-home #breadcrumb-text {
+                    display: none !important;
+                }
+                .mcqs-home-master-stack {
+                    gap: 12px;
+                }
+                /* Student Priority Order on Mobile:
+                   1st: Exam Workspaces + Quick Links
+                   2nd: Custom Mock Studio + Smart Mistake Clinic
+                   3rd: Compact Live Student Diagnostic Card */
+                .mcqs-tier-workspaces { order: 1; }
+                .mcqs-tier-studios { order: 2; }
+                .mcqs-tier-hero { order: 3; }
+
+                /* Hide the long marketing left-column on Mobile so there is zero wasted scroll */
+                .mcqs-hero-left-col {
+                    display: none !important;
                 }
                 .mcqs-arch-surface {
-                    padding: 18px 14px;
-                    border-radius: 18px;
+                    padding: 12px !important;
+                    border-radius: 16px !important;
+                    background: #0b0f1a !important;
                 }
-                .mcqs-kpi-strip {
-                    grid-template-columns: repeat(2, 1fr);
+                .mcqs-hero-grid,
+                .mcqs-home-workspace-grid,
+                .mcqs-studios-split-grid,
+                .mcqs-diag-grid {
+                    grid-template-columns: 1fr !important;
+                    gap: 12px !important;
                 }
-                .mcqs-diag-grid, .mcqs-nta-body {
-                    grid-template-columns: 1fr;
+
+                /* Compact 2x2 Exam Cards Grid on Mobile */
+                .mcqs-exam-cards-grid {
+                    grid-template-columns: repeat(2, 1fr) !important;
+                    gap: 8px !important;
                 }
-                .mcqs-nta-q-pane {
-                    border-right: none;
-                    border-bottom: 1px solid #e2e8f0;
+                .mcqs-modern-exam-card {
+                    padding: 11px !important;
+                    border-radius: 12px !important;
+                }
+                .mcqs-modern-exam-card h4 {
+                    font-size: 14px !important;
+                }
+                .mcqs-subfolder-chip-row {
+                    flex-wrap: nowrap !important;
+                    overflow-x: auto !important;
+                    padding-bottom: 2px;
+                    scrollbar-width: none;
+                }
+                .mcqs-subfolder-chip-row::-webkit-scrollbar { display: none; }
+
+                /* Compact 2-Column Quick Links & Essential Practice on Mobile */
+                .mcqs-links-list-grid {
+                    display: grid !important;
+                    grid-template-columns: repeat(2, 1fr) !important;
+                    gap: 7px !important;
+                }
+                .mcqs-modern-link-item {
+                    padding: 8px 9px !important;
+                    border-radius: 10px !important;
+                }
+                .mcqs-studio-box, .mcqs-clinic-box {
+                    padding: 14px !important;
+                    border-radius: 14px !important;
                 }
             }
         `;
@@ -3401,23 +3361,255 @@ async function handleLiveSearch() {
     }
 
     // Search bar open/close hooks
-    if (typeof openSearch === 'function' && !window._origOpenSearchWrappedV3) {
-        window._origOpenSearchWrappedV3 = openSearch;
+    if (typeof openSearch === 'function' && !window._origOpenSearchWrappedV4) {
+        window._origOpenSearchWrappedV4 = openSearch;
         openSearch = function() {
             document.body.classList.add('mcqs-search-open');
-            window._origOpenSearchWrappedV3();
+            window._origOpenSearchWrappedV4();
             const inp = document.getElementById('searchInput');
             if (inp) setTimeout(() => inp.focus(), 30);
         };
     }
-    if (typeof closeSearch === 'function' && !window._origCloseSearchWrappedV3) {
-        window._origCloseSearchWrappedV3 = closeSearch;
+    if (typeof closeSearch === 'function' && !window._origCloseSearchWrappedV4) {
+        window._origCloseSearchWrappedV4 = closeSearch;
         closeSearch = function() {
             document.body.classList.remove('mcqs-search-open');
-            window._origCloseSearchWrappedV3();
+            window._origCloseSearchWrappedV4();
         };
     }
 
+    // ==========================================
+    // TRUE DAILY STREAK VALIDATOR & AUTO-RESET ENGINE (FIXES MISSED-DAY STREAK BUG)
+    // ==========================================
+    var verifiedStreakData = {
+        trueStreak: 0,
+        practicedToday: false,
+        practicedYesterday: false,
+        activeDateSet: new Set(),
+        lastCheckedUid: undefined
+    };
+
+    function toLocalYMD(dateInput) {
+        const d = dateInput instanceof Date ? dateInput : new Date(dateInput);
+        if (isNaN(d.getTime())) return '';
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${y}-${m}-${day}`;
+    }
+
+    function getPastLocalYMD(daysAgo) {
+        const d = new Date();
+        d.setHours(12, 0, 0, 0);
+        d.setDate(d.getDate() - daysAgo);
+        return toLocalYMD(d);
+    }
+
+    async function verifyAndSyncAccurateDailyStreak(firestoreLeaderboardDocs = null) {
+        const uid = (typeof currentUser !== 'undefined' && currentUser && currentUser.uid) ? currentUser.uid : null;
+        const todayYMD = getPastLocalYMD(0);
+        const yesterdayYMD = getPastLocalYMD(1);
+        const dateSet = new Set();
+
+        // 1. Collect dates from local practice records
+        try {
+            const localSavedDates = JSON.parse(localStorage.getItem(`mcqs_practice_dates_${uid || 'guest'}`) || '[]');
+            if (Array.isArray(localSavedDates)) {
+                localSavedDates.forEach(ymd => { if (ymd) dateSet.add(ymd); });
+            }
+        } catch (e) {}
+
+        // 2. Collect dates from local topic progress updatedAt timestamps
+        try {
+            const localMap = JSON.parse(localStorage.getItem(`mcqsprep_topic_progress_v2_${uid || 'guest'}`) || '{}');
+            Object.values(localMap).forEach(rec => {
+                if (rec && rec.inProgress && rec.inProgress.updatedAt) {
+                    const ymd = toLocalYMD(rec.inProgress.updatedAt);
+                    if (ymd) dateSet.add(ymd);
+                }
+            });
+        } catch (e) {}
+
+        // 3. Collect dates from Firestore leaderboards submissions
+        let lbDocs = firestoreLeaderboardDocs;
+        if (!lbDocs && uid && typeof db !== 'undefined') {
+            try {
+                const snap = await db.collection('leaderboards').where('userId', '==', uid).get();
+                lbDocs = [];
+                snap.forEach(doc => lbDocs.push(doc.data()));
+            } catch (e) {
+                lbDocs = [];
+            }
+        }
+        (lbDocs || []).forEach(d => {
+            if (d && d.timestamp && typeof d.timestamp.toDate === 'function') {
+                const ymd = toLocalYMD(d.timestamp.toDate());
+                if (ymd) dateSet.add(ymd);
+            }
+        });
+
+        // 4. Also check users/{uid} document for any explicit date fields (e.g. lastQuizDate / lastStreakDate)
+        let userDocData = null;
+        if (uid && typeof db !== 'undefined') {
+            try {
+                const uDoc = await db.collection('users').doc(uid).get();
+                if (uDoc.exists) {
+                    userDocData = uDoc.data() || {};
+                    ['lastQuizDate', 'lastStreakDate', 'lastPracticeDate', 'streakUpdatedAt'].forEach(field => {
+                        const val = userDocData[field];
+                        if (!val) return;
+                        if (typeof val === 'string' && /^\d{4}-\d{2}-\d{2}/.test(val)) {
+                            dateSet.add(val.slice(0, 10));
+                        } else if (typeof val.toDate === 'function') {
+                            const ymd = toLocalYMD(val.toDate());
+                            if (ymd) dateSet.add(ymd);
+                        }
+                    });
+                }
+            } catch (e) {}
+        }
+
+        // 5. Calculate exact consecutive day streak (Resets to 0 if neither Today nor Yesterday has a completed quiz!)
+        const practicedToday = dateSet.has(todayYMD);
+        const practicedYesterday = dateSet.has(yesterdayYMD);
+        let trueStreak = 0;
+
+        if (practicedToday || practicedYesterday) {
+            let startOffset = practicedToday ? 0 : 1;
+            for (let offset = startOffset; offset < 365; offset++) {
+                const checkYMD = getPastLocalYMD(offset);
+                if (dateSet.has(checkYMD)) {
+                    trueStreak++;
+                } else {
+                    break;
+                }
+            }
+        } else {
+            // Neither today nor yesterday had any quiz activity -> Streak MUST reset to 0!
+            trueStreak = 0;
+        }
+
+        verifiedStreakData = {
+            trueStreak,
+            practicedToday,
+            practicedYesterday,
+            activeDateSet: dateSet,
+            lastCheckedUid: uid
+        };
+
+        // 6. Sync UI & Storage immediately
+        const navStreakEl = document.getElementById('nav-streak-display');
+        if (navStreakEl) navStreakEl.innerText = String(trueStreak);
+
+        const modalStreakEl = document.getElementById('modalStreakCount');
+        if (modalStreakEl) modalStreakEl.innerText = String(trueStreak);
+
+        const homeStreakBadge = document.getElementById('mcqsHomeDailyStreakNum');
+        if (homeStreakBadge) homeStreakBadge.innerText = String(trueStreak);
+
+        if (uid) {
+            localStorage.setItem('mcqs_user_streak_' + uid, String(trueStreak));
+            try {
+                localStorage.setItem(`mcqs_practice_dates_${uid}`, JSON.stringify(Array.from(dateSet).slice(-60)));
+            } catch (e) {}
+
+            // If Firestore had a stale non-zero streak after the student missed a day, overwrite it in Firestore!
+            if (userDocData && Number(userDocData.currentStreak) !== trueStreak) {
+                db.collection('users').doc(uid).set({
+                    currentStreak: trueStreak,
+                    lastValidatedStreakDate: todayYMD
+                }, { merge: true }).catch(() => {});
+            }
+        }
+    }
+
+    // Hook quiz submission so completing a quiz today immediately records today's date & increments the verified streak
+    if (typeof submitQuiz === 'function' && !window._origSubmitQuizStreakHookV4) {
+        window._origSubmitQuizStreakHookV4 = submitQuiz;
+        submitQuiz = async function() {
+            const res = await window._origSubmitQuizStreakHookV4();
+            try {
+                const uid = (typeof currentUser !== 'undefined' && currentUser && currentUser.uid) ? currentUser.uid : 'guest';
+                const todayYMD = getPastLocalYMD(0);
+                const saved = JSON.parse(localStorage.getItem(`mcqs_practice_dates_${uid}`) || '[]');
+                if (!saved.includes(todayYMD)) saved.push(todayYMD);
+                localStorage.setItem(`mcqs_practice_dates_${uid}`, JSON.stringify(saved.slice(-60)));
+                if (uid !== 'guest' && typeof db !== 'undefined') {
+                    await db.collection('users').doc(uid).set({
+                        lastQuizDate: todayYMD
+                    }, { merge: true });
+                }
+                setTimeout(() => {
+                    verifyAndSyncAccurateDailyStreak();
+                    syncRealStudentDiagnostics(true);
+                }, 400);
+            } catch (e) {}
+            return res;
+        };
+    }
+
+    // Upgrade openStreakModal() to show the accurate streak + a 7-Day Visual Activity Calendar
+    if (typeof openStreakModal === 'function' && !window._origOpenStreakModalHookV4) {
+        window._origOpenStreakModalHookV4 = openStreakModal;
+        openStreakModal = function() {
+            window._origOpenStreakModalHookV4();
+            const modalCount = document.getElementById('modalStreakCount');
+            if (modalCount) modalCount.innerText = String(verifiedStreakData.trueStreak);
+
+            const modal = document.getElementById('streakModal');
+            if (!modal) return;
+            const contentBox = modal.querySelector('.modal-content');
+            if (!contentBox) return;
+
+            const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+            const last7Html = [];
+            for (let i = 6; i >= 0; i--) {
+                const d = new Date();
+                d.setHours(12, 0, 0, 0);
+                d.setDate(d.getDate() - i);
+                const ymd = toLocalYMD(d);
+                const done = verifiedStreakData.activeDateSet.has(ymd);
+                const lbl = i === 0 ? 'Today' : dayNames[d.getDay()];
+                last7Html.push(`
+                    <div style="flex:1; background:${done ? 'rgba(255,87,34,0.18)' : '#090d16'}; border:1px solid ${done ? '#FF5722' : '#1e293b'}; border-radius:8px; padding:6px 2px; text-align:center;">
+                        <div style="font-size:14px;">${done ? '🔥' : '⚪'}</div>
+                        <div style="font-size:9.5px; font-weight:800; color:${done ? '#FF5722' : '#64748b'}; margin-top:2px;">${lbl}</div>
+                    </div>
+                `);
+            }
+
+            let statusMsg = '';
+            if (verifiedStreakData.trueStreak === 0) {
+                statusMsg = `<span style="color:#ef4444; font-weight:800;">⚠️ Streak Reset to 0:</span> You missed a day of practice. Complete 1 quiz today to ignite a fresh Day 1 streak!`;
+            } else if (!verifiedStreakData.practicedToday && verifiedStreakData.practicedYesterday) {
+                statusMsg = `<span style="color:#fdb813; font-weight:800;">⏳ Due Today:</span> You practiced yesterday! Complete 1 quiz before midnight to extend your ${verifiedStreakData.trueStreak}-day streak.`;
+            } else {
+                statusMsg = `<span style="color:#10b981; font-weight:800;">✅ Locked In for Today!</span> You've completed today's practice. Come back tomorrow!`;
+            }
+
+            let trackerEl = document.getElementById('mcqsStreak7DayTracker');
+            if (!trackerEl) {
+                trackerEl = document.createElement('div');
+                trackerEl.id = 'mcqsStreak7DayTracker';
+                const btn = contentBox.querySelector('button.btn-exam');
+                if (btn) contentBox.insertBefore(trackerEl, btn);
+                else contentBox.appendChild(trackerEl);
+            }
+            trackerEl.innerHTML = `
+                <div style="margin-bottom:16px; text-align:left;">
+                    <div style="font-size:11px; font-weight:800; color:#94a3b8; text-transform:uppercase; margin-bottom:6px;">Last 7 Days Activity:</div>
+                    <div style="display:flex; gap:5px; margin-bottom:10px;">${last7Html.join('')}</div>
+                    <div style="background:#090d16; border:1px solid #1e293b; border-radius:8px; padding:9px 11px; font-size:12px; color:#cbd5e1; line-height:1.45;">
+                        ${statusMsg}
+                    </div>
+                </div>
+            `;
+        };
+    }
+
+    // ==========================================
+    // PLATFORM INVENTORY & REAL STUDENT DIAGNOSTICS ENGINE
+    // ==========================================
     function getLiveActiveExamCategories() {
         const deletedSet = new Set((typeof topicOverrides !== 'undefined' && topicOverrides && topicOverrides.deletedPaths) || []);
         const keys = new Set(Object.keys(typeof appData !== 'undefined' ? appData : {}));
@@ -3481,13 +3673,12 @@ async function handleLiveSearch() {
         };
     }
 
-    // ==========================================
-    // REAL STUDENT DATA ENGINE (READS FIRESTORE LEADERBOARDS + LOCAL TOPIC PROGRESS)
-    // ==========================================
     var realStudentDiagnosticsCache = {
         loadedUid: undefined,
         loading: false,
-        byExam: {}
+        byExam: {},
+        allWrongIds: [],
+        allSkippedIds: []
     };
 
     function readLocalTopicProgressForCurrentUser() {
@@ -3512,8 +3703,9 @@ async function handleLiveSearch() {
         let totalAvgTimeC = 0, countC = 0;
         let totalAvgTimeW = 0, countW = 0;
         let subjectMap = {};
+        const wrongIdSet = new Set();
+        const skippedIdSet = new Set();
 
-        // 1. Aggregate Firestore leaderboard submissions for this exam
         (firestoreDocs || []).forEach(d => {
             const matchesExam = (d.examCategory === examKey) ||
                 (d.quizPath && (d.quizPath.startsWith(examKey) || d.quizPath.startsWith('Daily Quiz Challenge > ' + examKey)));
@@ -3545,30 +3737,31 @@ async function handleLiveSearch() {
             }
         });
 
-        // 2. Also merge any local topic progress under this examKey (so even offline/local practice shows real numbers!)
         Object.keys(localMap).forEach(pathKey => {
             if (!pathKey.startsWith(examKey)) return;
             const rec = localMap[pathKey] || {};
-            const cLen = Array.isArray(rec.correctIds) ? rec.correctIds.length : 0;
-            const wLen = Array.isArray(rec.wrongIds) ? rec.wrongIds.length : 0;
-            const sLen = Array.isArray(rec.skippedIds) ? rec.skippedIds.length : 0;
-            skippedCount += sLen;
+            const cArr = Array.isArray(rec.correctIds) ? rec.correctIds : [];
+            const wArr = Array.isArray(rec.wrongIds) ? rec.wrongIds : [];
+            const sArr = Array.isArray(rec.skippedIds) ? rec.skippedIds : [];
 
-            // If Firestore had no docs yet, use local correct/wrong counts
-            if (quizzesPlayed === 0 && (cLen + wLen) > 0) {
-                correctCount += cLen;
-                wrongCount += wLen;
-                totalAttempted += (cLen + wLen);
-                totalScore += (cLen * 4) - wLen;
+            wArr.forEach(id => { if (!cArr.includes(id)) wrongIdSet.add(id); });
+            sArr.forEach(id => { if (!cArr.includes(id) && !wArr.includes(id)) skippedIdSet.add(id); });
+
+            if (quizzesPlayed === 0 && (cArr.length + wArr.length) > 0) {
+                correctCount += cArr.length;
+                wrongCount += wArr.length;
+                totalAttempted += (cArr.length + wArr.length);
+                totalScore += (cArr.length * 4) - wArr.length;
 
                 const parts = pathKey.split(' > ').filter(Boolean);
                 const subjGuess = formatCleanTopicTitle(parts[2] || parts[1] || examKey);
                 if (!subjectMap[subjGuess]) subjectMap[subjGuess] = { attempts: 0, correct: 0 };
-                subjectMap[subjGuess].attempts += (cLen + wLen);
-                subjectMap[subjGuess].correct += cLen;
+                subjectMap[subjGuess].attempts += (cArr.length + wArr.length);
+                subjectMap[subjGuess].correct += cArr.length;
             }
         });
 
+        skippedCount = skippedIdSet.size;
         const hasRealData = (totalAttempted > 0) || (quizzesPlayed > 0);
         const overallAccuracy = (correctCount + wrongCount) > 0
             ? Math.round((correctCount / (correctCount + wrongCount)) * 100)
@@ -3597,6 +3790,8 @@ async function handleLiveSearch() {
             correctCount,
             wrongCount,
             skippedCount,
+            wrongIds: Array.from(wrongIdSet),
+            skippedIds: Array.from(skippedIdSet),
             overallAccuracy,
             recentTrend: accuracyTrend.slice(-8),
             avgTimeCorrect: countC > 0 ? Math.round(totalAvgTimeC / countC) : 0,
@@ -3622,29 +3817,41 @@ async function handleLiveSearch() {
             } catch (e) {}
         }
 
+        await verifyAndSyncAccurateDailyStreak(firestoreDocs);
+
         const exams = getLiveActiveExamCategories();
         const map = {};
+        const globalWrong = new Set();
+        const globalSkipped = new Set();
+
         exams.forEach(ex => {
-            map[ex] = computeExamStatsFromRealSources(ex, firestoreDocs);
+            const st = computeExamStatsFromRealSources(ex, firestoreDocs);
+            map[ex] = st;
+            st.wrongIds.forEach(id => globalWrong.add(id));
+            st.skippedIds.forEach(id => globalSkipped.add(id));
         });
 
         realStudentDiagnosticsCache.loadedUid = uid;
         realStudentDiagnosticsCache.byExam = map;
+        realStudentDiagnosticsCache.allWrongIds = Array.from(globalWrong);
+        realStudentDiagnosticsCache.allSkippedIds = Array.from(globalSkipped);
         realStudentDiagnosticsCache.loading = false;
 
         renderSim1DiagnosticDashboard();
         renderExamWorkspaceCardsGrid();
+        renderSmartMistakeClinicCard();
     }
 
     // ==========================================
-    // SIMULATION #1: REAL-DATA DIAGNOSTIC & NEW-USER BLUEPRINT ENGINE
+    // SIMULATION #1: REAL STUDENT DIAGNOSTIC + BEHAVIORAL SPEED AUTOPSY
     // ==========================================
     var sim1ActiveExamIdx = 0;
-    var sim1BlueprintTargetAcc = 85; // Interactive calculator state for new users (75% | 85% | 95%)
+    var sim1BlueprintTargetAcc = 85;
 
     window.selectSim1ExamTab = function(idx) {
         sim1ActiveExamIdx = idx;
         renderSim1DiagnosticDashboard();
+        renderSmartMistakeClinicCard();
     };
 
     window.setSim1BlueprintTargetAcc = function(accVal) {
@@ -3676,45 +3883,53 @@ async function handleLiveSearch() {
             `;
         }).join('');
 
-        // ---------------------------------------------------------
-        // BRANCH A: STUDENT HAS REAL QUIZ DATA IN THIS EXAM CATEGORY
-        // ---------------------------------------------------------
+        // BRANCH A: STUDENT HAS REAL DATA IN THIS EXAM
         if (stats.hasRealData) {
             const topSubj = stats.subjectList[0]
                 ? `${stats.subjectList[0].name} · ${stats.subjectList[0].pct}%`
                 : `${cleanExam} · ${stats.overallAccuracy}% Accuracy`;
 
-            // Build SVG points from real accuracyTrend (or current accuracy)
             const pts = stats.recentTrend.length >= 2
                 ? stats.recentTrend
-                : [Math.max(0, stats.overallAccuracy - 12), stats.overallAccuracy];
-            const svgW = 230, svgH = 62;
+                : [Math.max(0, stats.overallAccuracy - 10), stats.overallAccuracy];
+            const svgW = 230, svgH = 54;
             const coords = pts.map((val, i) => {
                 const x = 10 + (i / Math.max(1, pts.length - 1)) * (svgW - 20);
-                const y = svgH - 8 - (Math.min(100, Math.max(0, val)) / 100) * (svgH - 20);
+                const y = svgH - 7 - (Math.min(100, Math.max(0, val)) / 100) * (svgH - 16);
                 return { x: Math.round(x), y: Math.round(y), val };
             });
             const polyPoints = coords.map(c => `${c.x},${c.y}`).join(' ');
-            const areaPoints = `10,${svgH - 4} ${polyPoints} ${coords[coords.length - 1].x},${svgH - 4}`;
+            const areaPoints = `10,${svgH - 3} ${polyPoints} ${coords[coords.length - 1].x},${svgH - 3}`;
 
             const subjectBarsHtml = stats.subjectList.length > 0
-                ? stats.subjectList.slice(0, 4).map(s => {
+                ? stats.subjectList.slice(0, 3).map(s => {
                     const col = s.pct >= 70 ? '#10b981' : (s.pct >= 50 ? '#fdb813' : '#ef4444');
                     return `
-                        <div style="margin-bottom:7px;">
-                            <div style="display:flex; justify-content:space-between; font-size:11px; font-weight:700; margin-bottom:2px;">
-                                <span style="color:#e2e8f0;">${s.name} ${s.isWeak ? '<span style="color:#ef4444; font-size:10px;">(Weak Spot &lt;50%)</span>' : ''}</span>
-                                <span style="color:${col}; font-weight:800;">${s.pct}% <span style="color:#64748b; font-size:9.5px;">(${s.correct}/${s.attempts})</span></span>
+                        <div style="margin-bottom:6px;">
+                            <div style="display:flex; justify-content:space-between; font-size:10.5px; font-weight:700; margin-bottom:2px;">
+                                <span style="color:#e2e8f0;">${s.name} ${s.isWeak ? '<span style="color:#ef4444;">(&lt;50%)</span>' : ''}</span>
+                                <span style="color:${col}; font-weight:800;">${s.pct}% <span style="color:#64748b; font-size:9px;">(${s.correct}/${s.attempts})</span></span>
                             </div>
-                            <div style="width:100%; height:6px; background:#090d16; border-radius:4px; overflow:hidden;">
-                                <div style="width:${s.pct}%; height:100%; background:${col}; border-radius:4px;"></div>
+                            <div style="width:100%; height:5px; background:#090d16; border-radius:3px; overflow:hidden;">
+                                <div style="width:${s.pct}%; height:100%; background:${col}; border-radius:3px;"></div>
                             </div>
                         </div>
                     `;
                 }).join('')
-                : `<div style="font-size:11.5px; color:#94a3b8;">Attempt chapter quizzes in ${cleanExam} to populate subject mastery bars.</div>`;
+                : `<div style="font-size:11px; color:#94a3b8;">Practice more chapters in ${cleanExam} to unlock subject bars.</div>`;
 
-            const revQueueCount = stats.wrongCount + stats.skippedCount;
+            // Rare Behavioral Speed-vs-Accuracy Autopsy Diagnosis
+            let speedDiagnosisHtml = '';
+            if (stats.avgTimeCorrect > 0 && stats.avgTimeWrong > 0) {
+                if (stats.avgTimeWrong < stats.avgTimeCorrect) {
+                    speedDiagnosisHtml = `<div style="margin-top:6px; background:rgba(245,158,11,0.12); border-left:3px solid #f59e0b; padding:5px 8px; border-radius:4px; font-size:10px; color:#fde68a; line-height:1.35;">⚡ <b>Impulse Trap Detected:</b> You spent <b>${stats.avgTimeWrong}s</b> on Wrong vs <b>${stats.avgTimeCorrect}s</b> on Correct. Pause +5s before locking unsure options!</div>`;
+                } else {
+                    speedDiagnosisHtml = `<div style="margin-top:6px; background:rgba(56,189,248,0.12); border-left:3px solid #38bdf8; padding:5px 8px; border-radius:4px; font-size:10px; color:#bae6fd; line-height:1.35;">🧠 <b>Pacing Insight:</b> You spend <b>${stats.avgTimeWrong}s</b> on Wrong answers. Skip &amp; revisit tough MCQs on 2nd pass!</div>`;
+                }
+            }
+
+            const grossMarks = stats.correctCount * 4;
+            const negLost = stats.wrongCount;
 
             mount.innerHTML = `
                 <div class="mcqs-diag-window">
@@ -3723,9 +3938,9 @@ async function handleLiveSearch() {
                         <span>Live Data: ${topSubj}</span>
                     </div>
 
-                    <div style="display:flex; justify-content:space-between; align-items:center; padding-top:6px; flex-wrap:wrap; gap:6px;">
-                        <span style="font-size:11px; font-weight:800; color:#10b981;">🟢 CONNECTED TO YOUR LIVE STUDENT DATA</span>
-                        <span style="font-size:10.5px; color:#94a3b8; font-weight:700;">${stats.quizzesPlayed} Quiz${stats.quizzesPlayed === 1 ? '' : 'zes'} • ${stats.totalAttempted} MCQs</span>
+                    <div style="display:flex; justify-content:space-between; align-items:center; padding-top:4px; flex-wrap:wrap; gap:6px;">
+                        <span style="font-size:10.5px; font-weight:800; color:#10b981;">🟢 LIVE STUDENT DIAGNOSTICS</span>
+                        <span style="font-size:10px; color:#94a3b8; font-weight:700;">${stats.quizzesPlayed} Quiz${stats.quizzesPlayed === 1 ? '' : 'zes'} • ${stats.totalAttempted} MCQs</span>
                     </div>
 
                     <div class="mcqs-exam-tab-row">${tabsHtml}</div>
@@ -3734,55 +3949,57 @@ async function handleLiveSearch() {
                         <div class="mcqs-diag-subcard" onclick="window.location.hash='#/progress/${encodeURIComponent(activeExam)}'" style="cursor:pointer;">
                             <div>
                                 <div style="display:flex; justify-content:space-between; align-items:center;">
-                                    <span style="font-size:10.5px; color:#94a3b8; font-weight:800; text-transform:uppercase;">Your ${cleanExam} Score &amp; Accuracy</span>
-                                    <span style="font-size:11px; color:#10b981; font-weight:900;">${stats.overallAccuracy}% Accuracy</span>
+                                    <span style="font-size:10px; color:#94a3b8; font-weight:800; text-transform:uppercase;">${cleanExam} Score &amp; Trajectory</span>
+                                    <span style="font-size:10.5px; color:#10b981; font-weight:900;">${stats.overallAccuracy}% Acc</span>
                                 </div>
-                                <div style="display:flex; align-items:baseline; justify-content:space-between; gap:8px; margin-top:4px; flex-wrap:wrap;">
+                                <div style="display:flex; align-items:baseline; justify-content:space-between; gap:6px; margin-top:3px; flex-wrap:wrap;">
                                     <div>
-                                        <span style="font-size:32px; font-weight:900; color:#ffffff;">${stats.totalScore}</span>
-                                        <span style="font-size:11.5px; color:#94a3b8; font-weight:700;">pts (${stats.correctCount} Right • ${stats.wrongCount} Wrong)</span>
+                                        <span style="font-size:28px; font-weight:900; color:#ffffff;">${stats.totalScore}</span>
+                                        <span style="font-size:10.5px; color:#94a3b8; font-weight:700;">pts (${stats.correctCount}✓ • ${stats.wrongCount}✕)</span>
                                     </div>
+                                    <span style="font-size:10px; color:#f43f5e; font-weight:800;">🛡️ −${negLost} Neg Marks</span>
                                 </div>
                             </div>
 
-                            <div style="margin:8px 0;">
-                                <svg viewBox="0 0 ${svgW} ${svgH}" style="width:100%; height:60px; overflow:visible;">
+                            <div style="margin:6px 0;">
+                                <svg viewBox="0 0 ${svgW} ${svgH}" style="width:100%; height:50px; overflow:visible;">
                                     <polygon points="${areaPoints}" fill="rgba(16, 185, 129, 0.16)"/>
-                                    <polyline points="${polyPoints}" fill="none" stroke="#10b981" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>
-                                    ${coords.map(c => `<circle cx="${c.x}" cy="${c.y}" r="3.5" fill="#fdb813" stroke="#000" stroke-width="1.2"/>`).join('')}
+                                    <polyline points="${polyPoints}" fill="none" stroke="#10b981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                    ${coords.map(c => `<circle cx="${c.x}" cy="${c.y}" r="3" fill="#fdb813" stroke="#000" stroke-width="1"/>`).join('')}
                                 </svg>
-                                <div style="display:flex; justify-content:space-between; font-size:9.5px; color:#94a3b8;">
-                                    <span>Start (${coords[0].val}%)</span>
-                                    <span style="color:#10b981; font-weight:800;">Current (${stats.overallAccuracy}%)</span>
-                                </div>
                             </div>
 
-                            <div style="border-top:1px solid rgba(255,255,255,0.07); padding-top:8px;">
-                                <div style="font-size:10px; font-weight:800; color:#94a3b8; text-transform:uppercase; margin-bottom:6px;">Your Real Subject Mastery:</div>
+                            <div style="border-top:1px solid rgba(255,255,255,0.07); padding-top:6px;">
+                                <div style="font-size:9.5px; font-weight:800; color:#94a3b8; text-transform:uppercase; margin-bottom:4px;">Your Subject Mastery:</div>
                                 ${subjectBarsHtml}
                             </div>
                         </div>
 
-                        <div style="display:flex; flex-direction:column; gap:10px;">
-                            <div class="mcqs-diag-subcard" style="padding:12px;">
-                                <div style="font-size:10px; color:#94a3b8; font-weight:800; text-transform:uppercase; margin-bottom:6px;">⏱️ Your Time-to-Accuracy</div>
-                                <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
-                                    <div style="background:rgba(16,185,129,0.1); border:1px solid rgba(16,185,129,0.35); border-radius:8px; padding:7px; text-align:center;">
-                                        <div style="font-size:16px; font-weight:900; color:#10b981;">${stats.avgTimeCorrect ? stats.avgTimeCorrect + 's' : '--'}</div>
-                                        <div style="font-size:9.5px; color:#cbd5e1;">Avg on Correct</div>
+                        <div style="display:flex; flex-direction:column; gap:8px;">
+                            <div class="mcqs-diag-subcard" style="padding:10px;">
+                                <div style="font-size:9.5px; color:#94a3b8; font-weight:800; text-transform:uppercase; margin-bottom:5px;">⏱️ Speed-vs-Accuracy Autopsy</div>
+                                <div style="display:grid; grid-template-columns:1fr 1fr; gap:5px;">
+                                    <div style="background:rgba(16,185,129,0.1); border:1px solid rgba(16,185,129,0.35); border-radius:7px; padding:5px; text-align:center;">
+                                        <div style="font-size:15px; font-weight:900; color:#10b981;">${stats.avgTimeCorrect ? stats.avgTimeCorrect + 's' : '--'}</div>
+                                        <div style="font-size:9px; color:#cbd5e1;">Avg on Correct</div>
                                     </div>
-                                    <div style="background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.35); border-radius:8px; padding:7px; text-align:center;">
-                                        <div style="font-size:16px; font-weight:900; color:#ef4444;">${stats.avgTimeWrong ? stats.avgTimeWrong + 's' : '--'}</div>
-                                        <div style="font-size:9.5px; color:#cbd5e1;">Avg on Wrong</div>
+                                    <div style="background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.35); border-radius:7px; padding:5px; text-align:center;">
+                                        <div style="font-size:15px; font-weight:900; color:#ef4444;">${stats.avgTimeWrong ? stats.avgTimeWrong + 's' : '--'}</div>
+                                        <div style="font-size:9px; color:#cbd5e1;">Avg on Wrong</div>
                                     </div>
                                 </div>
+                                ${speedDiagnosisHtml}
                             </div>
 
-                            <div class="mcqs-diag-subcard" style="padding:12px;">
-                                <div style="font-size:10px; color:#38bdf8; font-weight:800; text-transform:uppercase;">🔄 Your Revision Queue</div>
-                                <div style="font-size:20px; font-weight:900; color:#fff; margin-top:2px;">${revQueueCount} MCQs to Fix</div>
-                                <div style="font-size:10.5px; color:#94a3b8; margin-top:2px;">${stats.wrongCount} Wrong • ${stats.skippedCount} Skipped • ${(typeof userBookmarks !== 'undefined' && userBookmarks) ? userBookmarks.length : 0} Saved</div>
-                                <button type="button" onclick="window.location.hash='#/progress/${encodeURIComponent(activeExam)}'" style="margin-top:8px; width:100%; background:#fdb813; color:#000; border:none; padding:7px 10px; border-radius:8px; font-size:11.5px; font-weight:900; cursor:pointer; display:flex; justify-content:space-between; align-items:center;">
+                            <div class="mcqs-diag-subcard" style="padding:10px;">
+                                <div style="display:flex; justify-content:space-between; align-items:center;">
+                                    <span style="font-size:9.5px; color:#38bdf8; font-weight:800; text-transform:uppercase;">🛡️ Negative-Mark Shield</span>
+                                    <span style="font-size:10px; color:#10b981; font-weight:800;">+${grossMarks} Gross</span>
+                                </div>
+                                <div style="font-size:11px; color:#cbd5e1; margin-top:3px; line-height:1.35;">
+                                    Fixing your <b>${stats.wrongIds.length || stats.wrongCount} Wrong MCQs</b> in the Mistake Clinic below recovers <b>+${(stats.wrongIds.length || stats.wrongCount) * 5} marks</b>!
+                                </div>
+                                <button type="button" onclick="window.location.hash='#/progress/${encodeURIComponent(activeExam)}'" style="margin-top:7px; width:100%; background:#fdb813; color:#000; border:none; padding:6px 10px; border-radius:7px; font-size:11px; font-weight:900; cursor:pointer; display:flex; justify-content:space-between; align-items:center;">
                                     <span>Open Full ${cleanExam} Analytics</span>
                                     <span>&rarr;</span>
                                 </button>
@@ -3794,10 +4011,7 @@ async function handleLiveSearch() {
             return;
         }
 
-        // ---------------------------------------------------------
-        // BRANCH B: NEW USER OR 0 QUIZZES IN THIS EXAM (ZERO FAKE DATA!)
-        // Shows an honest, interactive Score Target Calculator + Real Syllabus Blueprint
-        // ---------------------------------------------------------
+        // BRANCH B: NEW USER OR 0 QUIZZES IN THIS EXAM (ZERO FAKE DATA)
         const realSubjs = (inv.subjectsByExam && inv.subjectsByExam[activeExam]) || [];
         const totalQuestionsBase = cleanExam.toLowerCase().includes('neet') ? 180 : (cleanExam.toLowerCase().includes('jee') ? 75 : 100);
         const maxMarks = totalQuestionsBase * 4;
@@ -3806,84 +4020,71 @@ async function handleLiveSearch() {
         const simNetScore = (simCorrect * 4) - simWrong;
 
         const syllabusPreviewHtml = realSubjs.length > 0
-            ? realSubjs.slice(0, 4).map(s => {
+            ? realSubjs.slice(0, 3).map(s => {
                 const safeSubjPath = s.fullPath.split(' > ').map(encodeURIComponent).join('/');
                 return `
-                    <div onclick="window.location.hash='#/path/${safeSubjPath}'" style="display:flex; justify-content:space-between; align-items:center; background:#0b0f19; border:1px solid rgba(255,255,255,0.07); padding:6px 10px; border-radius:8px; margin-bottom:5px; cursor:pointer; font-size:11.5px;">
+                    <div onclick="window.location.hash='#/path/${safeSubjPath}'" style="display:flex; justify-content:space-between; align-items:center; background:#0b0f19; border:1px solid rgba(255,255,255,0.07); padding:5px 9px; border-radius:7px; margin-bottom:4px; cursor:pointer; font-size:11px;">
                         <span style="color:#e2e8f0; font-weight:700;">📘 ${s.label}</span>
-                        <span style="color:#38bdf8; font-size:10.5px; font-weight:800;">${s.chapterCount > 0 ? `${s.chapterCount} Chapters` : 'Practice'} &rarr;</span>
+                        <span style="color:#38bdf8; font-size:10px; font-weight:800;">${s.chapterCount > 0 ? `${s.chapterCount} Chapters` : 'Open'} &rarr;</span>
                     </div>
                 `;
             }).join('')
-            : `<div style="font-size:11.5px; color:#94a3b8;">Click below to explore ${cleanExam} chapters &amp; unlock your live diagnostic bars.</div>`;
-
-        const isSignedIn = Boolean(typeof currentUser !== 'undefined' && currentUser);
+            : `<div style="font-size:11px; color:#94a3b8;">Tap below to start practicing ${cleanExam}.</div>`;
 
         mount.innerHTML = `
             <div class="mcqs-diag-window">
                 <div class="mcqs-diag-floating-badge">
                     <span style="color:#fdb813;">✨</span>
-                    <span>${cleanExam} Personal Analytics — Ready to Activate</span>
+                    <span>${cleanExam} Live Diagnostics — Ready to Activate</span>
                 </div>
 
-                <div style="display:flex; justify-content:space-between; align-items:center; padding-top:6px; flex-wrap:wrap; gap:6px;">
-                    <span style="font-size:11px; font-weight:800; color:#fdb813;">⚡ 0 ${cleanExam.toUpperCase()} QUIZZES ATTEMPTED YET — INTERACTIVE TARGET SIMULATOR</span>
-                    ${!isSignedIn ? `<span onclick="showAuthModal()" style="font-size:10.5px; color:#38bdf8; font-weight:800; cursor:pointer; text-decoration:underline;">🔑 Sign In to Sync Data</span>` : `<span style="font-size:10.5px; color:#10b981; font-weight:800;">● Signed In (${currentUser.displayName ? currentUser.displayName.split(' ')[0] : 'Student'})</span>`}
+                <div style="display:flex; justify-content:space-between; align-items:center; padding-top:4px; flex-wrap:wrap; gap:6px;">
+                    <span style="font-size:10.5px; font-weight:800; color:#fdb813;">⚡ 0 ${cleanExam.toUpperCase()} QUIZZES ATTEMPTED YET</span>
+                    <span style="font-size:10px; color:#94a3b8;">Take 1 quiz to unlock your live stats</span>
                 </div>
 
                 <div class="mcqs-exam-tab-row">${tabsHtml}</div>
 
                 <div class="mcqs-diag-grid">
-                    <!-- Left Subcard: Interactive Target Score Simulator + Real Syllabus Unlocker -->
                     <div class="mcqs-diag-subcard">
                         <div>
-                            <div style="background:rgba(253,184,19,0.1); border:1px dashed rgba(253,184,19,0.45); border-radius:10px; padding:8px 10px; margin-bottom:10px; font-size:11px; color:#fde68a; line-height:1.45;">
-                                💡 <b>How Your Live Data Works:</b> We never show fake stats. Complete <b>1 quiz</b> in <b>${cleanExam}</b> and this card automatically transforms into your real <b>Score Trajectory, Weak-Spot Bars &amp; Speed Diagnostics</b>!
-                            </div>
-
                             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-                                <span style="font-size:10.5px; color:#94a3b8; font-weight:800; text-transform:uppercase;">🎯 Interactive ${cleanExam} Score Simulator:</span>
+                                <span style="font-size:10px; color:#94a3b8; font-weight:800; text-transform:uppercase;">🎯 ${cleanExam} Target Score Calculator:</span>
                                 <div style="display:flex; gap:4px;">
                                     ${[75, 85, 95].map(acc => `
-                                        <button type="button" onclick="setSim1BlueprintTargetAcc(${acc})" style="background:${sim1BlueprintTargetAcc === acc ? '#fdb813' : '#0b0f19'}; color:${sim1BlueprintTargetAcc === acc ? '#000' : '#94a3b8'}; border:1px solid ${sim1BlueprintTargetAcc === acc ? '#fdb813' : '#334155'}; border-radius:6px; padding:2px 7px; font-size:10.5px; font-weight:800; cursor:pointer;">${acc}% Acc</button>
+                                        <button type="button" onclick="setSim1BlueprintTargetAcc(${acc})" style="background:${sim1BlueprintTargetAcc === acc ? '#fdb813' : '#0b0f19'}; color:${sim1BlueprintTargetAcc === acc ? '#000' : '#94a3b8'}; border:1px solid ${sim1BlueprintTargetAcc === acc ? '#fdb813' : '#334155'}; border-radius:5px; padding:2px 6px; font-size:10px; font-weight:800; cursor:pointer;">${acc}%</button>
                                     `).join('')}
                                 </div>
                             </div>
 
-                            <div style="background:#0b0f19; border:1px solid rgba(255,255,255,0.07); border-radius:10px; padding:10px; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+                            <div style="background:#0b0f19; border:1px solid rgba(255,255,255,0.07); border-radius:9px; padding:8px 10px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
                                 <div>
-                                    <div style="font-size:10px; color:#94a3b8; font-weight:700;">SIMULATED SCORE AT ${sim1BlueprintTargetAcc}% ACCURACY</div>
-                                    <div style="font-size:26px; font-weight:900; color:#10b981;">${simNetScore} <span style="font-size:12px; color:#94a3b8;">/ ${maxMarks} Marks</span></div>
+                                    <div style="font-size:9.5px; color:#94a3b8; font-weight:700;">AT ${sim1BlueprintTargetAcc}% ACCURACY</div>
+                                    <div style="font-size:22px; font-weight:900; color:#10b981;">${simNetScore} <span style="font-size:11px; color:#94a3b8;">/ ${maxMarks}</span></div>
                                 </div>
-                                <div style="font-size:11px; color:#cbd5e1; text-align:right;">
-                                    <div style="color:#10b981; font-weight:800;">✓ ${simCorrect} Correct (+${simCorrect * 4})</div>
-                                    <div style="color:#ef4444; font-weight:800;">✕ ${simWrong} Wrong (-${simWrong})</div>
+                                <div style="font-size:10.5px; text-align:right;">
+                                    <div style="color:#10b981; font-weight:800;">✓ ${simCorrect} (+${simCorrect * 4})</div>
+                                    <div style="color:#ef4444; font-weight:800;">✕ ${simWrong} (−${simWrong})</div>
                                 </div>
                             </div>
                         </div>
 
                         <div>
-                            <div style="font-size:10px; font-weight:800; color:#94a3b8; text-transform:uppercase; margin-bottom:6px;">Tap a Real ${cleanExam} Subject to Unlock Your Stats:</div>
+                            <div style="font-size:9.5px; font-weight:800; color:#94a3b8; text-transform:uppercase; margin-bottom:4px;">${cleanExam} Subjects Ready:</div>
                             ${syllabusPreviewHtml}
                         </div>
                     </div>
 
-                    <!-- Right Subcard: What Unlocks After Your 1st Quiz -->
-                    <div style="display:flex; flex-direction:column; gap:10px;">
-                        <div class="mcqs-diag-subcard" style="padding:12px;">
-                            <div style="font-size:10px; color:#38bdf8; font-weight:800; text-transform:uppercase; margin-bottom:4px;">⏱️ Time-to-Accuracy Tracker</div>
-                            <div style="font-size:11.5px; color:#cbd5e1; line-height:1.45;">Measures your exact seconds per question on <b>Correct vs. Wrong</b> answers as soon as you finish your 1st quiz.</div>
+                    <div style="display:flex; flex-direction:column; gap:8px;">
+                        <div class="mcqs-diag-subcard" style="padding:10px;">
+                            <div style="font-size:10px; color:#38bdf8; font-weight:800; text-transform:uppercase; margin-bottom:3px;">🧬 Zero Fake Data Policy</div>
+                            <div style="font-size:11px; color:#cbd5e1; line-height:1.4;">Complete your 1st quiz in <b>${cleanExam}</b> to unlock your real <b>Score Trajectory, Impulse-Trap Speed Autopsy &amp; Weak-Spot Bars</b>.</div>
                         </div>
 
-                        <div class="mcqs-diag-subcard" style="padding:12px;">
-                            <div style="font-size:10px; color:#ef4444; font-weight:800; text-transform:uppercase; margin-bottom:4px;">🚨 Auto Weak-Spot Detector (&lt;50%)</div>
-                            <div style="font-size:11.5px; color:#cbd5e1; line-height:1.45;">Automatically flags chapters &amp; subjects where your accuracy drops below 50% across PC &amp; Mobile App.</div>
-                        </div>
-
-                        <div class="mcqs-diag-subcard" style="padding:12px;">
-                            <div style="font-size:10px; color:#10b981; font-weight:800; text-transform:uppercase; margin-bottom:4px;">🚀 Ready to See Your Real Data?</div>
-                            <button type="button" onclick="jumpToSection(['${safeExamJs}'])" style="margin-top:4px; width:100%; background:linear-gradient(135deg, #fdb813, #f59e0b); color:#000; border:none; padding:9px 12px; border-radius:9px; font-size:12px; font-weight:900; cursor:pointer; display:flex; justify-content:space-between; align-items:center;">
-                                <span>Start 1st ${cleanExam} Quiz Now</span>
+                        <div class="mcqs-diag-subcard" style="padding:10px;">
+                            <div style="font-size:10px; color:#10b981; font-weight:800; text-transform:uppercase; margin-bottom:4px;">🚀 Unlock Your Live Stats</div>
+                            <button type="button" onclick="jumpToSection(['${safeExamJs}'])" style="width:100%; background:linear-gradient(135deg, #fdb813, #f59e0b); color:#000; border:none; padding:8px 10px; border-radius:8px; font-size:11.5px; font-weight:900; cursor:pointer; display:flex; justify-content:space-between; align-items:center;">
+                                <span>Start 1st ${cleanExam} Quiz</span>
                                 <span>&rarr;</span>
                             </button>
                         </div>
@@ -3894,7 +4095,170 @@ async function handleLiveSearch() {
     }
 
     // ==========================================
-    // REMADE INTERACTIVE CUSTOM MOCK STUDIO & EXAM WORKSPACE CARDS
+    // RARE FEATURE: 🧬 SMART MISTAKE CLINIC & 5-MIN RAPID REFLEX SPRINT
+    // ==========================================
+    var clinicMode = 'WRONG'; // 'WRONG' | 'SKIPPED' | 'BOOKMARKS' | 'SPRINT'
+
+    window.setSmartClinicMode = function(mode) {
+        clinicMode = mode;
+        renderSmartMistakeClinicCard();
+    };
+
+    window.launchSmartMistakeClinicSession = async function() {
+        const inv = getLivePlatformInventory();
+        const exams = inv.exams.length ? inv.exams : ['NEET'];
+        const activeExam = exams[sim1ActiveExamIdx % exams.length];
+        const st = realStudentDiagnosticsCache.byExam?.[activeExam];
+
+        const btn = document.getElementById('btnLaunchSmartClinic');
+        if (btn) { btn.disabled = true; btn.innerText = '⏳ Building Session...'; }
+
+        try {
+            let targetIds = [];
+            let sessionTitle = `${formatCleanTopicTitle(activeExam)} > Smart Clinic`;
+
+            if (clinicMode === 'WRONG') {
+                targetIds = (st && st.wrongIds && st.wrongIds.length > 0) ? st.wrongIds : realStudentDiagnosticsCache.allWrongIds;
+                sessionTitle = `${formatCleanTopicTitle(activeExam)} > Mistake Clinic (Wrong MCQs)`;
+            } else if (clinicMode === 'SKIPPED') {
+                targetIds = (st && st.skippedIds && st.skippedIds.length > 0) ? st.skippedIds : realStudentDiagnosticsCache.allSkippedIds;
+                sessionTitle = `${formatCleanTopicTitle(activeExam)} > Skipped Recovery`;
+            } else if (clinicMode === 'BOOKMARKS') {
+                targetIds = Array.isArray(userBookmarks) ? [...userBookmarks] : [];
+                sessionTitle = `Saved Bookmarks Practice`;
+            }
+
+            let questionsToLaunch = [];
+
+            if (clinicMode !== 'SPRINT' && targetIds.length > 0 && typeof db !== 'undefined') {
+                const sliceIds = targetIds.slice(0, 30);
+                for (let i = 0; i < sliceIds.length; i += 10) {
+                    const chunk = sliceIds.slice(i, i + 10);
+                    const snap = await db.collection('content').where(firebase.firestore.FieldPath.documentId(), 'in', chunk).get();
+                    snap.forEach(doc => {
+                        const d = doc.data();
+                        if (!d.type || d.type === 'mcq') questionsToLaunch.push({ id: doc.id, ...d });
+                    });
+                }
+            }
+
+            // If SPRINT mode or if student has 0 wrong/skipped IDs yet, fetch 10 high-yield live MCQs from activeExam!
+            if (questionsToLaunch.length === 0 && typeof db !== 'undefined') {
+                sessionTitle = `${formatCleanTopicTitle(activeExam)} > ⚡ 5-Min Rapid Sprint`;
+                const snap = await db.collection('content')
+                    .where('path', '>=', activeExam)
+                    .where('path', '<=', activeExam + '\uf8ff')
+                    .limit(40)
+                    .get();
+                const pool = [];
+                snap.forEach(doc => {
+                    const d = doc.data();
+                    if ((!d.type || d.type === 'mcq') && d.question && d.options && d.options.A) {
+                        pool.push({ id: doc.id, ...d });
+                    }
+                });
+                for (let i = pool.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [pool[i], pool[j]] = [pool[j], pool[i]];
+                }
+                questionsToLaunch = pool.slice(0, 10);
+            }
+
+            if (questionsToLaunch.length === 0) {
+                showNotification('⚠️ Select an exam folder to start practicing!');
+                jumpToSection([activeExam]);
+                return;
+            }
+
+            document.body.classList.add('hide-ai-btn');
+            document.body.classList.add('hide-bottom-bar');
+            document.body.classList.remove('mcqs-on-root-home');
+
+            currentQuestions = questionsToLaunch;
+            currentQuizPath = sessionTitle;
+            currentIndex = 0;
+            userAnswers = {};
+            timeSpent = {};
+            window.location.hash = '#/quiz';
+            setTimeout(() => {
+                if (typeof renderQuizInterface === 'function') renderQuizInterface();
+                if (typeof startQuestionTimer === 'function') startQuestionTimer();
+            }, 60);
+        } catch (e) {
+            showNotification('⚠️ Error launching session: ' + e.message);
+        } finally {
+            if (btn) { btn.disabled = false; btn.innerText = '⚡ Launch Selected Clinic Session'; }
+        }
+    };
+
+    function renderSmartMistakeClinicCard() {
+        const mount = document.getElementById('mcqsSmartClinicMount');
+        if (!mount) return;
+
+        const inv = getLivePlatformInventory();
+        const exams = inv.exams.length ? inv.exams : ['NEET'];
+        const activeExam = exams[sim1ActiveExamIdx % exams.length];
+        const cleanExam = formatCleanTopicTitle(activeExam);
+        const st = realStudentDiagnosticsCache.byExam?.[activeExam];
+
+        const wrongCnt = (st && st.wrongIds && st.wrongIds.length > 0) ? st.wrongIds.length : realStudentDiagnosticsCache.allWrongIds.length;
+        const skipCnt = (st && st.skippedIds && st.skippedIds.length > 0) ? st.skippedIds.length : realStudentDiagnosticsCache.allSkippedIds.length;
+        const bmCnt = Array.isArray(userBookmarks) ? userBookmarks.length : 0;
+
+        // Auto-select SPRINT if user has 0 wrong/skipped/bookmarked MCQs yet
+        if (clinicMode === 'WRONG' && wrongCnt === 0 && skipCnt === 0 && bmCnt === 0) {
+            clinicMode = 'SPRINT';
+        }
+
+        const modes = [
+            { id: 'WRONG', icon: '❌', title: 'Fix My Wrong MCQs', count: `${wrongCnt} MCQs`, desc: 'Re-attempt questions you got wrong & turn −1 into +4' },
+            { id: 'SKIPPED', icon: '⏭️', title: 'Clear Skipped Queue', count: `${skipCnt} MCQs`, desc: 'Practice questions you left unattempted in past tests' },
+            { id: 'BOOKMARKS', icon: '🔖', title: 'Saved Bookmarks', count: `${bmCnt} MCQs`, desc: 'Test yourself on your bookmarked high-yield questions' },
+            { id: 'SPRINT', icon: '⚡', title: `5-Min ${cleanExam} Sprint`, count: '10 Rapid MCQs', desc: `Instant 10-question reflex booster from ${cleanExam}` }
+        ];
+
+        const modeCardsHtml = modes.map(m => {
+            const active = clinicMode === m.id;
+            return `
+                <div onclick="setSmartClinicMode('${m.id}')" style="background:${active ? 'rgba(56,189,248,0.15)' : '#0b101d'}; border:1.5px solid ${active ? '#38bdf8' : 'rgba(255,255,255,0.09)'}; border-radius:10px; padding:9px 11px; cursor:pointer; transition:0.15s;">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <span style="font-size:12px; font-weight:800; color:${active ? '#fff' : '#cbd5e1'};">${m.icon} ${m.title}</span>
+                        <span style="font-size:10px; font-weight:900; color:${active ? '#38bdf8' : '#94a3b8'}; background:rgba(255,255,255,0.06); padding:2px 7px; border-radius:999px;">${m.count}</span>
+                    </div>
+                    <div style="font-size:10.5px; color:#94a3b8; margin-top:3px;">${m.desc}</div>
+                </div>
+            `;
+        }).join('');
+
+        mount.innerHTML = `
+            <div class="mcqs-clinic-box" id="mcqs-mistake-clinic-anchor">
+                <div>
+                    <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:8px;">
+                        <span style="background:rgba(56,189,248,0.18); color:#38bdf8; border:1px solid rgba(56,189,248,0.45); font-size:10px; font-weight:900; padding:3px 9px; border-radius:999px;">🧬 EXCLUSIVE ZERO-REPEAT MISTAKE ENGINE</span>
+                        <span style="font-size:11px; color:#94a3b8; font-weight:700;">Active: <b style="color:#fff;">${cleanExam}</b></span>
+                    </div>
+                    <h3 style="margin:0 0 4px 0; font-size:18px; font-weight:900; color:#ffffff;">Smart Mistake Clinic &amp; Rapid Reflex Sprint</h3>
+                    <p style="margin:0 0 12px 0; font-size:12.5px; color:#94a3b8;">Convert your personal weak spots into guaranteed marks or run a 5-minute reflex sprint.</p>
+
+                    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(195px, 1fr)); gap:8px; margin-bottom:14px;">
+                        ${modeCardsHtml}
+                    </div>
+                </div>
+
+                <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                    <button type="button" id="btnLaunchSmartClinic" onclick="launchSmartMistakeClinicSession()" style="flex:2; background:linear-gradient(135deg, #38bdf8, #0284c7); color:#fff; border:none; padding:11px 16px; border-radius:10px; font-size:13px; font-weight:900; cursor:pointer; box-shadow:0 6px 20px rgba(56,189,248,0.3);">
+                        ⚡ Launch Selected Clinic Session &rarr;
+                    </button>
+                    <button type="button" onclick="window.location.hash='#/diary'" style="flex:1; background:rgba(255,255,255,0.06); color:#cbd5e1; border:1px solid rgba(255,255,255,0.14); padding:11px 12px; border-radius:10px; font-size:12px; font-weight:800; cursor:pointer;">
+                        📔 Doubt Diary
+                    </button>
+                </div>
+            </div>
+        `;
+    }
+
+    // ==========================================
+    // CUSTOM MOCK STUDIO & EXAM WORKSPACE CARDS
     // ==========================================
     var homeStudioState = {
         exam: '',
@@ -3950,45 +4314,49 @@ async function handleLiveSearch() {
         }).join('');
 
         const diffPills = [
-            { id: 'Mixed', lbl: '⚡ Mixed (Exam Balance)' },
+            { id: 'Mixed', lbl: '⚡ Mixed' },
             { id: 'Easy', lbl: '🟢 Easy' },
-            { id: 'Medium', lbl: '🟡 Medium' },
+            { id: 'Medium', lbl: '🟡 Med' },
             { id: 'Hard', lbl: '🔴 Hard' }
         ].map(d => `
             <button type="button" class="mcqs-studio-opt-pill ${homeStudioState.diff === d.id ? 'active' : ''}" onclick="setHomeStudioOption('diff', '${d.id}')">${d.lbl}</button>
         `).join('');
 
         const countPills = [25, 45, 90, 180, 250].map(n => `
-            <button type="button" class="mcqs-studio-opt-pill ${Number(homeStudioState.limit) === n ? 'active' : ''}" onclick="setHomeStudioOption('limit', ${n})">${n} MCQs</button>
+            <button type="button" class="mcqs-studio-opt-pill ${Number(homeStudioState.limit) === n ? 'active' : ''}" onclick="setHomeStudioOption('limit', ${n})">${n}</button>
         `).join('');
 
         mount.innerHTML = `
-            <div class="mcqs-custom-studio-card">
-                <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:12px; margin-bottom:14px;">
-                    <div>
-                        <span style="background:#fdb813; color:#000; font-size:10.5px; font-weight:900; padding:4px 10px; border-radius:999px; letter-spacing:0.5px;">🎯 INTERACTIVE CUSTOM MOCK STUDIO</span>
-                        <h3 style="margin:8px 0 4px 0; font-size:20px; font-weight:900; color:#ffffff;">Build Your Tailored Multi-Chapter Test (20–250 MCQs)</h3>
-                        <p style="margin:0; font-size:13px; color:#94a3b8;">Select your target exam, difficulty balance, and question count below, then pick your chapters.</p>
+            <div class="mcqs-studio-box">
+                <div>
+                    <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:8px;">
+                        <span style="background:rgba(253,184,19,0.2); color:#fdb813; border:1px solid rgba(253,184,19,0.5); font-size:10px; font-weight:900; padding:3px 9px; border-radius:999px;">🎯 CUSTOM MOCK BUILDER (20–250 MCQS)</span>
+                        <span style="font-size:11px; color:#94a3b8; font-weight:700;">Multi-Chapter</span>
                     </div>
-                    <button type="button" class="mcqs-btn-gold" onclick="launchCustomStudioWithPreselection()">
-                        Select Chapters &amp; Launch 🚀
-                    </button>
+                    <h3 style="margin:0 0 4px 0; font-size:18px; font-weight:900; color:#ffffff;">Build Tailored Multi-Subject Mock Test</h3>
+                    <p style="margin:0 0 12px 0; font-size:12.5px; color:#94a3b8;">Pick your exam, difficulty tier, and question count, then select chapters.</p>
+
+                    <div style="display:flex; flex-direction:column; gap:10px; margin-bottom:14px;">
+                        <div>
+                            <div style="font-size:10px; font-weight:800; color:#94a3b8; text-transform:uppercase;">1. Target Exam</div>
+                            <div class="mcqs-studio-pill-group">${examPills}</div>
+                        </div>
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                            <div>
+                                <div style="font-size:10px; font-weight:800; color:#94a3b8; text-transform:uppercase;">2. Difficulty</div>
+                                <div class="mcqs-studio-pill-group">${diffPills}</div>
+                            </div>
+                            <div>
+                                <div style="font-size:10px; font-weight:800; color:#94a3b8; text-transform:uppercase;">3. MCQs Count</div>
+                                <div class="mcqs-studio-pill-group">${countPills}</div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
-                <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(210px, 1fr)); gap:14px; padding-top:12px; border-top:1px solid rgba(255,255,255,0.08);">
-                    <div>
-                        <div style="font-size:10.5px; font-weight:800; color:#94a3b8; text-transform:uppercase;">1. Target Exam</div>
-                        <div class="mcqs-studio-pill-group">${examPills}</div>
-                    </div>
-                    <div>
-                        <div style="font-size:10.5px; font-weight:800; color:#94a3b8; text-transform:uppercase;">2. Difficulty Tier</div>
-                        <div class="mcqs-studio-pill-group">${diffPills}</div>
-                    </div>
-                    <div>
-                        <div style="font-size:10.5px; font-weight:800; color:#94a3b8; text-transform:uppercase;">3. Question Count</div>
-                        <div class="mcqs-studio-pill-group">${countPills}</div>
-                    </div>
-                </div>
+                <button type="button" class="mcqs-btn-gold" onclick="launchCustomStudioWithPreselection()" style="width:100%;">
+                    Select Chapters &amp; Launch (${homeStudioState.limit} MCQs) 🚀
+                </button>
             </div>
         `;
     }
@@ -4010,11 +4378,11 @@ async function handleLiveSearch() {
 
             const st = realStudentDiagnosticsCache.byExam?.[exKey];
             const statusBadge = (st && st.hasRealData)
-                ? `<span style="font-size:10.5px; font-weight:800; background:rgba(16,185,129,0.16); color:#10b981; border:1px solid rgba(16,185,129,0.4); padding:3px 9px; border-radius:999px;">🟢 ${st.totalAttempted} Solved • ${st.overallAccuracy}% Acc</span>`
-                : `<span style="font-size:10.5px; font-weight:800; background:${th.bg}; color:${th.c}; border:1px solid ${th.border}; padding:3px 9px; border-radius:999px;">⚡ Ready to Practice</span>`;
+                ? `<span style="font-size:10px; font-weight:800; background:rgba(16,185,129,0.16); color:#10b981; border:1px solid rgba(16,185,129,0.4); padding:2px 8px; border-radius:999px; white-space:nowrap;">${st.totalAttempted} Solved • ${st.overallAccuracy}%</span>`
+                : `<span style="font-size:10px; font-weight:800; background:${th.bg}; color:${th.c}; border:1px solid ${th.border}; padding:2px 8px; border-radius:999px; white-space:nowrap;">Practice</span>`;
 
             const directFolders = inv.directChildrenByExam[exKey] || [];
-            const folderChipsHtml = directFolders.slice(0, 5).map(childKey => {
+            const folderChipsHtml = directFolders.slice(0, 4).map(childKey => {
                 const cleanChild = formatCleanTopicTitle(childKey);
                 const childFull = `${exKey} > ${childKey}`;
                 const cIcon = getAutomaticIconForName(cleanChild, null, childFull);
@@ -4031,27 +4399,24 @@ async function handleLiveSearch() {
             return `
                 <div class="mcqs-modern-exam-card" style="--exam-color:${th.c}; --exam-bg:${th.bg}; --exam-border:${th.border}; --exam-glow:${th.glow};" onclick="jumpToSection(['${safeEx}'])">
                     <div>
-                        <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:12px;">
-                            <div style="display:flex; align-items:center; gap:10px;">
-                                ${th.i === 'NONE' ? '' : `<div style="width:42px; height:42px; border-radius:12px; background:${th.bg}; border:1px solid ${th.border}; color:${th.c}; display:flex; align-items:center; justify-content:center; font-size:21px; box-shadow:0 0 14px ${th.glow};">${th.i}</div>`}
-                                <div>
-                                    <h4 style="margin:0; font-size:17px; font-weight:900; color:#ffffff;">${cleanEx}</h4>
-                                    <div style="font-size:11px; color:#94a3b8; margin-top:2px;">${subjCount > 0 ? `${subjCount} Subjects • ` : ''}${directFolders.length || 'Multiple'} Sections</div>
+                        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:6px; margin-bottom:10px;">
+                            <div style="display:flex; align-items:center; gap:9px; min-width:0;">
+                                ${th.i === 'NONE' ? '' : `<div style="width:36px; height:36px; border-radius:10px; background:${th.bg}; border:1px solid ${th.border}; color:${th.c}; display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0;">${th.i}</div>`}
+                                <div style="min-width:0;">
+                                    <h4 style="margin:0; font-size:15.5px; font-weight:900; color:#ffffff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${cleanEx}</h4>
+                                    <div style="font-size:10.5px; color:#94a3b8;">${subjCount > 0 ? `${subjCount} Subjects` : `${directFolders.length || 'All'} Modules`}</div>
                                 </div>
                             </div>
                             ${statusBadge}
                         </div>
 
                         ${folderChipsHtml ? `
-                            <div style="margin-bottom:14px;">
-                                <div style="font-size:10px; font-weight:800; color:#64748b; text-transform:uppercase; margin-bottom:6px;">Direct Jump Inside ${cleanEx}:</div>
-                                <div style="display:flex; flex-wrap:wrap; gap:6px;">${folderChipsHtml}</div>
-                            </div>
-                        ` : `<p style="font-size:12.5px; color:#94a3b8; margin:0 0 14px 0;">Chapter-wise MCQs, PYQs, NCERT PDFs &amp; Mock Tests.</p>`}
+                            <div class="mcqs-subfolder-chip-row" style="margin-bottom:10px;">${folderChipsHtml}</div>
+                        ` : ''}
                     </div>
 
-                    <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid rgba(255,255,255,0.07); padding-top:10px; font-size:12.5px; font-weight:800; color:${th.c};">
-                        <span>Open ${cleanEx} Workspace</span>
+                    <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid rgba(255,255,255,0.06); padding-top:8px; font-size:11.5px; font-weight:800; color:${th.c};">
+                        <span>Open ${cleanEx}</span>
                         <span>&rarr;</span>
                     </div>
                 </div>
@@ -4064,24 +4429,20 @@ async function handleLiveSearch() {
     function buildRemadeQuickLinksAndEssentialHtml() {
         const quickLinksList = (window.sidebarConfig && Array.isArray(window.sidebarConfig.quickLinks)) ? window.sidebarConfig.quickLinks : [];
         const essentialList = (window.sidebarConfig && Array.isArray(window.sidebarConfig.essentialPractice)) ? window.sidebarConfig.essentialPractice : [];
-        const streakVal = document.getElementById('nav-streak-display')?.innerText || '0';
+        const streakVal = verifiedStreakData.trueStreak || 0;
 
         let usedColorsQ = new Set();
         const qHtml = quickLinksList.map((item, idx) => {
             const displayTitle = formatCleanTopicTitle(item.title || item.path.split(' > ').pop() || '');
-            const parentTag = formatCleanTopicTitle(item.path.split(' > ')[0] || '');
             const encodedPath = encodeURIComponent(item.path);
             const th = getAutoTopicTheme(displayTitle, item.icon || null, idx, usedColorsQ, '📚', null, item.path);
             return `
                 <div class="mcqs-modern-link-item" style="--link-color:${th.c}; --link-bg:${th.bg}; --link-border:${th.border}; --link-glow:${th.glow};" onclick="openSidebarItem('${encodedPath}')">
-                    <div style="display:flex; align-items:center; gap:11px; min-width:0;">
-                        <span style="width:36px; height:36px; border-radius:9px; background:${th.bg}; border:1px solid ${th.border}; display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0;">${th.i}</span>
-                        <div style="min-width:0;">
-                            <div style="font-size:13.5px; font-weight:800; color:#ffffff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${displayTitle}</div>
-                            <div style="font-size:10.5px; color:#94a3b8;">${parentTag} • Instant Access</div>
-                        </div>
+                    <div style="display:flex; align-items:center; gap:9px; min-width:0;">
+                        <span style="font-size:16px; flex-shrink:0;">${th.i}</span>
+                        <div style="font-size:12.5px; font-weight:800; color:#ffffff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${displayTitle}</div>
                     </div>
-                    <span style="color:${th.c}; font-weight:900; font-size:14px;">&rsaquo;</span>
+                    <span style="color:${th.c}; font-weight:900; font-size:13px;">&rsaquo;</span>
                 </div>
             `;
         }).join('');
@@ -4089,382 +4450,54 @@ async function handleLiveSearch() {
         let usedColorsE = new Set(['#fdb813']);
         let eHtml = `
             <div class="mcqs-modern-link-item" style="--link-color:#fdb813; --link-bg:rgba(253,184,19,0.16); --link-border:rgba(253,184,19,0.55); --link-glow:rgba(253,184,19,0.25);" onclick="jumpToSection(['Daily Quiz Challenge'])">
-                <div style="display:flex; align-items:center; gap:11px;">
-                    <span style="width:36px; height:36px; border-radius:9px; background:rgba(253,184,19,0.2); border:1px solid rgba(253,184,19,0.55); display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0;">📅</span>
-                    <div>
-                        <div style="font-size:13.5px; font-weight:900; color:#fdb813;">Daily Quiz Challenge</div>
-                        <div style="font-size:10.5px; color:#cbd5e1;">Keep your 🔥 ${streakVal} Day Streak alive</div>
+                <div style="display:flex; align-items:center; gap:9px; min-width:0;">
+                    <span style="font-size:16px; flex-shrink:0;">📅</span>
+                    <div style="min-width:0;">
+                        <div style="font-size:12.5px; font-weight:900; color:#fdb813; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">Daily Quiz</div>
+                        <div style="font-size:10px; color:#cbd5e1;">🔥 <span id="mcqsHomeDailyStreakNum">${streakVal}</span>d Streak</div>
                     </div>
                 </div>
-                <span style="background:rgba(253,184,19,0.2); color:#fdb813; font-size:10px; font-weight:900; padding:3px 8px; border-radius:999px;">PLAY &rarr;</span>
+                <span style="color:#fdb813; font-weight:900; font-size:13px;">&rsaquo;</span>
             </div>
         `;
 
         essentialList.forEach((item, idx) => {
             if (item.path === 'Daily Quiz Challenge') return;
             const displayTitle = formatCleanTopicTitle(item.title || item.path.split(' > ').pop() || '');
-            const parentTag = formatCleanTopicTitle(item.path.split(' > ')[0] || '');
             const encodedPath = encodeURIComponent(item.path);
             const th = getAutoTopicTheme(displayTitle, item.icon || null, idx + 4, usedColorsE, '📝', null, item.path);
             eHtml += `
                 <div class="mcqs-modern-link-item" style="--link-color:${th.c}; --link-bg:${th.bg}; --link-border:${th.border}; --link-glow:${th.glow};" onclick="openSidebarItem('${encodedPath}')">
-                    <div style="display:flex; align-items:center; gap:11px; min-width:0;">
-                        <span style="width:36px; height:36px; border-radius:9px; background:${th.bg}; border:1px solid ${th.border}; display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0;">${th.i}</span>
-                        <div style="min-width:0;">
-                            <div style="font-size:13.5px; font-weight:800; color:#ffffff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${displayTitle}</div>
-                            <div style="font-size:10.5px; color:#94a3b8;">${parentTag} • High-Yield Practice</div>
-                        </div>
+                    <div style="display:flex; align-items:center; gap:9px; min-width:0;">
+                        <span style="font-size:16px; flex-shrink:0;">${th.i}</span>
+                        <div style="font-size:12.5px; font-weight:800; color:#ffffff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${displayTitle}</div>
                     </div>
-                    <span style="color:${th.c}; font-weight:900; font-size:14px;">&rsaquo;</span>
+                    <span style="color:${th.c}; font-weight:900; font-size:13px;">&rsaquo;</span>
                 </div>
             `;
         });
 
         return `
-            <div style="background:#0d121f; border:1px solid rgba(255,255,255,0.09); border-radius:18px; padding:18px; margin-bottom:16px; box-shadow:0 12px 30px rgba(0,0,0,0.45);">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-                    <h3 style="margin:0; font-size:14px; font-weight:900; color:#fff; text-transform:uppercase; letter-spacing:0.6px; border-left:3px solid #a855f7; padding-left:9px;">📚 Quick Links</h3>
-                    <span style="font-size:10.5px; color:#c084fc; font-weight:800;">Direct Access</span>
-                </div>
-                ${qHtml || '<p style="color:#64748b; font-size:12px; margin:0;">No quick links configured.</p>'}
-            </div>
-
-            <div style="background:#0d121f; border:1px solid rgba(255,255,255,0.09); border-radius:18px; padding:18px; box-shadow:0 12px 30px rgba(0,0,0,0.45);">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-                    <h3 style="margin:0; font-size:14px; font-weight:900; color:#fff; text-transform:uppercase; letter-spacing:0.6px; border-left:3px solid #fdb813; padding-left:9px;">⚡ Essential Practice</h3>
-                    <span style="font-size:10.5px; color:#fdb813; font-weight:800;">Daily &amp; PYQs</span>
-                </div>
-                ${eHtml}
-            </div>
-        `;
-    }
-
-    // ==========================================
-    // SIMULATION #2: UNIFIED CBT / NTA EXAM SIMULATOR (WORKS ON BOTH PC & MOBILE APP!)
-    // ==========================================
-    const CURATED_SIM_QUESTIONS = [
-        {
-            tag: '📊 Match-the-Column',
-            exam: 'NEET',
-            path: 'NEET > Zoology > Animal Kingdom',
-            question: 'Match Column I (Phylum) with Column II (Characteristic Feature) and select the correct option:',
-            tableHtml: `<div class="mcq-match-table-wrap" style="margin:8px 0;"><table class="mcq-match-table" style="font-size:12.5px;"><thead><tr><th>Column I</th><th>Column II</th></tr></thead><tbody><tr><td><b>(a)</b> Porifera</td><td><b>(i)</b> Water vascular system</td></tr><tr><td><b>(b)</b> Cnidaria</td><td><b>(ii)</b> Canal system &amp; choanocytes</td></tr><tr><td><b>(c)</b> Echinodermata</td><td><b>(iii)</b> Comb plates for locomotion</td></tr><tr><td><b>(d)</b> Ctenophora</td><td><b>(iv)</b> Cnidoblasts for defense</td></tr></tbody></table></div>`,
-            options: {
-                A: '(a)-(ii), (b)-(iv), (c)-(i), (d)-(iii)',
-                B: '(a)-(i), (b)-(iv), (c)-(ii), (d)-(iii)',
-                C: '(a)-(ii), (b)-(iii), (c)-(i), (d)-(iv)',
-                D: '(a)-(iv), (b)-(ii), (c)-(iii), (d)-(i)'
-            },
-            correctAnswers: ['A'],
-            explanation: 'Porifera possesses a canal system lined by choanocytes (ii). Cnidaria bears stinging cnidoblasts (iv). Echinodermata features a water vascular system (i). Ctenophora has eight external rows of ciliated comb plates (iii).'
-        },
-        {
-            tag: '⚡ Physics Formula',
-            exam: 'NEET / JEE',
-            path: 'Physics > Alternating Current',
-            question: 'In an ideal transformer, the turns ratio is $N_p / N_s = 1 / 2$. The step-up voltage ratio $V_s : V_p$ is equal to:',
-            tableHtml: '',
-            options: {
-                A: '2 : 1',
-                B: '1 : 1',
-                C: '1 : 4',
-                D: '1 : 2'
-            },
-            correctAnswers: ['A'],
-            explanation: 'For an ideal transformer, $\\frac{V_s}{V_p} = \\frac{N_s}{N_p}$. Given $\\frac{N_p}{N_s} = \\frac{1}{2}$, we get $\\frac{V_s}{V_p} = \\frac{2}{1}$, so $V_s : V_p = 2 : 1$.'
-        },
-        {
-            tag: '🧪 Chemistry Reaction',
-            exam: 'Chemistry',
-            path: 'Chemistry > Chemical Bonding',
-            question: 'Which of the following molecules has a zero net dipole moment ($\\mu = 0$) due to planar symmetrical geometry?',
-            tableHtml: '',
-            options: {
-                A: 'NH₃',
-                B: 'BF₃',
-                C: 'H₂O',
-                D: 'SO₂'
-            },
-            correctAnswers: ['B'],
-            explanation: 'BF₃ has a trigonal planar geometry ($sp^2$ hybridisation) where the three B–F bond vectors are oriented at $120^\\circ$ and cancel each other completely ($\\mu = 0$).'
-        },
-        {
-            tag: '⚖️ GK / Polity',
-            exam: 'General Knowledge',
-            path: 'General Knowledge > Indian Polity',
-            question: 'Which Article of the Constitution of India empowers the Supreme Court to issue writs for the enforcement of Fundamental Rights?',
-            tableHtml: '',
-            options: {
-                A: 'Article 14',
-                B: 'Article 19',
-                C: 'Article 32',
-                D: 'Article 226'
-            },
-            correctAnswers: ['C'],
-            explanation: 'Article 32 (Right to Constitutional Remedies) empowers the Supreme Court to issue writs (Habeas Corpus, Mandamus, Prohibition, Certiorari, and Quo-Warranto) for enforcing Fundamental Rights.'
-        }
-    ];
-
-    var webSimState = {
-        questions: [...CURATED_SIM_QUESTIONS],
-        currentIndex: 0,
-        selectedExamFilter: 'ALL',
-        answers: {},
-        reviewMarked: {},
-        visited: { 0: true },
-        showSolution: false,
-        secondsRemaining: 11942,
-        timerId: null,
-        fetchedFromDb: false
-    };
-
-    async function loadLiveQuestionsIntoWebSimulator(examPrefix = '') {
-        if (typeof db === 'undefined') return;
-        try {
-            let queryRef = db.collection('content');
-            if (examPrefix && examPrefix !== 'ALL') {
-                queryRef = queryRef.where('path', '>=', examPrefix).where('path', '<=', examPrefix + '\uf8ff');
-            }
-            const snap = await queryRef.limit(16).get();
-            const fetched = [];
-            snap.forEach(doc => {
-                const d = doc.data();
-                if ((!d.type || d.type === 'mcq') && d.question && d.options && d.options.A && d.options.B) {
-                    fetched.push({
-                        id: doc.id,
-                        tag: '🔥 Live DB Question',
-                        exam: (d.path || '').split(' > ')[0] || 'MCQsPrep',
-                        path: d.path || 'Live Question Bank',
-                        question: d.question,
-                        tableHtml: '',
-                        options: d.options,
-                        correctAnswers: Array.isArray(d.correctAnswers) && d.correctAnswers.length ? d.correctAnswers : ['A'],
-                        explanation: d.explanation || 'Detailed explanation available in full practice mode.'
-                    });
-                }
-            });
-
-            if (fetched.length >= 1) {
-                webSimState.questions = (examPrefix && examPrefix !== 'ALL')
-                    ? fetched.slice(0, 15)
-                    : [...CURATED_SIM_QUESTIONS, ...fetched].slice(0, 15);
-                webSimState.currentIndex = 0;
-                webSimState.answers = {};
-                webSimState.reviewMarked = {};
-                webSimState.visited = { 0: true };
-                webSimState.showSolution = false;
-                webSimState.fetchedFromDb = true;
-                renderInteractiveNtaSimulatorCard();
-            }
-        } catch (e) {}
-    }
-
-    function formatSimTimer(sec) {
-        const s = Math.max(0, sec);
-        const hrs = String(Math.floor(s / 3600)).padStart(2, '0');
-        const mins = String(Math.floor((s % 3600) / 60)).padStart(2, '0');
-        const secs = String(s % 60).padStart(2, '0');
-        return `${hrs}:${mins}:${secs}`;
-    }
-
-    function startWebSimulatorClock() {
-        if (webSimState.timerId) clearInterval(webSimState.timerId);
-        webSimState.timerId = setInterval(() => {
-            webSimState.secondsRemaining = Math.max(0, webSimState.secondsRemaining - 1);
-            const formatted = formatSimTimer(webSimState.secondsRemaining);
-            const el = document.getElementById('mcqsSimLiveClock');
-            if (el) el.innerText = formatted;
-        }, 1000);
-    }
-
-    window.webSimSelectOption = function(letter) {
-        const idx = webSimState.currentIndex;
-        webSimState.answers[idx] = letter;
-        webSimState.visited[idx] = true;
-        renderInteractiveNtaSimulatorCard();
-    };
-
-    window.webSimAction = function(actionType) {
-        const idx = webSimState.currentIndex;
-        const total = webSimState.questions.length;
-        if (actionType === 'CLEAR') {
-            delete webSimState.answers[idx];
-            delete webSimState.reviewMarked[idx];
-            webSimState.showSolution = false;
-        } else if (actionType === 'REVIEW_NEXT') {
-            webSimState.reviewMarked[idx] = true;
-            webSimState.showSolution = false;
-            webSimState.currentIndex = (idx + 1) % total;
-            webSimState.visited[webSimState.currentIndex] = true;
-        } else if (actionType === 'SAVE_NEXT') {
-            webSimState.showSolution = false;
-            webSimState.currentIndex = (idx + 1) % total;
-            webSimState.visited[webSimState.currentIndex] = true;
-        } else if (actionType === 'TOGGLE_SOL') {
-            webSimState.showSolution = !webSimState.showSolution;
-        }
-        renderInteractiveNtaSimulatorCard();
-    };
-
-    window.webSimJumpToQuestion = function(qIdx) {
-        webSimState.currentIndex = qIdx;
-        webSimState.visited[qIdx] = true;
-        webSimState.showSolution = false;
-        renderInteractiveNtaSimulatorCard();
-    };
-
-    window.webSimSwitchExamCategory = function(examKey) {
-        webSimState.selectedExamFilter = examKey;
-        if (examKey === 'ALL') {
-            webSimState.questions = [...CURATED_SIM_QUESTIONS];
-            webSimState.currentIndex = 0;
-            webSimState.answers = {};
-            webSimState.reviewMarked = {};
-            webSimState.visited = { 0: true };
-            renderInteractiveNtaSimulatorCard();
-        }
-        loadLiveQuestionsIntoWebSimulator(examKey);
-    };
-
-    function renderInteractiveNtaSimulatorCard() {
-        const container = document.getElementById('mcqsInteractiveNtaSimMount');
-        if (!container) return;
-
-        const qList = webSimState.questions;
-        const idx = Math.min(qList.length - 1, Math.max(0, webSimState.currentIndex));
-        const q = qList[idx];
-        const chosen = webSimState.answers[idx] || null;
-        const candidateName = (typeof currentUser !== 'undefined' && currentUser && currentUser.displayName)
-            ? currentUser.displayName
-            : 'Student Aspirant';
-
-        const exams = getLiveActiveExamCategories();
-        const examOptionsHtml = [
-            `<option value="ALL" ${webSimState.selectedExamFilter === 'ALL' ? 'selected' : ''}>All Formats &amp; Exams</option>`,
-            ...exams.map(ex => `<option value="${ex.replace(/"/g, '&quot;')}" ${webSimState.selectedExamFilter === ex ? 'selected' : ''}>${formatCleanTopicTitle(ex)}</option>`)
-        ].join('');
-
-        let answeredCount = Object.keys(webSimState.answers).length;
-        let reviewCount = Object.keys(webSimState.reviewMarked).length;
-        let notVisitedCount = Math.max(0, qList.length - Object.keys(webSimState.visited).length);
-
-        const optLetters = ['A', 'B', 'C', 'D'];
-        const optionsHtml = optLetters.map((letKey, oIdx) => {
-            const optText = q.options?.[letKey];
-            if (!optText) return '';
-            const isSelected = chosen === letKey;
-            const isCorrect = (q.correctAnswers || []).includes(letKey);
-            let stateClass = isSelected ? 'selected' : '';
-            if (chosen) {
-                if (isCorrect) stateClass = 'correct';
-                else if (isSelected && !isCorrect) stateClass = 'wrong';
-            }
-            return `
-                <div class="mcqs-nta-opt-row ${stateClass}" onclick="webSimSelectOption('${letKey}')">
-                    <input type="radio" name="nta_sim_opt" ${isSelected ? 'checked' : ''} style="margin:0; accent-color:#0284c7; pointer-events:none;">
-                    <span style="font-weight:800; min-width:22px;">(${oIdx + 1})</span>
-                    <div style="flex:1;">${optText}</div>
-                    ${chosen && isCorrect ? '<span style="color:#16a34a; font-weight:900; font-size:12px;">✓ Correct (+4)</span>' : ''}
-                    ${chosen && isSelected && !isCorrect ? '<span style="color:#dc2626; font-weight:900; font-size:12px;">✕ Wrong (-1)</span>' : ''}
-                </div>
-            `;
-        }).join('');
-
-        const paletteHtml = qList.map((_, pIdx) => {
-            let stClass = '';
-            if (webSimState.reviewMarked[pIdx]) stClass = 'st-review';
-            else if (webSimState.answers[pIdx]) stClass = 'st-answered';
-            else if (webSimState.visited[pIdx]) stClass = 'st-visited';
-            const activeClass = pIdx === idx ? 'active-q' : '';
-            return `<button type="button" class="mcqs-nta-pal-btn ${stClass} ${activeClass}" onclick="webSimJumpToQuestion(${pIdx})">${pIdx + 1}</button>`;
-        }).join('');
-
-        container.innerHTML = `
-            <div class="mcqs-nta-sim-window">
-                <div class="mcqs-nta-guide-banner">
-                    <span style="color:#fdb813; font-weight:800;">🖥️ LIVE CBT SIMULATOR (PC &amp; MOBILE)</span>
-                    <span style="color:#cbd5e1;">① Select Exam Dropdown &rarr; ② Tap Option (1–4) &rarr; ③ Tap Palette Numbers</span>
-                </div>
-
-                <div class="mcqs-nta-top-header">
-                    <div style="display:flex; align-items:center; gap:10px;">
-                        <div style="width:36px; height:36px; border-radius:8px; background:#e2e8f0; display:flex; align-items:center; justify-content:center; font-size:18px;">👤</div>
-                        <div style="font-size:11.5px; line-height:1.35; color:#334155;">
-                            <div>Candidate : <b style="color:#ea580c;">${candidateName}</b></div>
-                            <div>Topic : <b style="color:#0f172a;">${formatCleanTopicTitle((q.path || '').split(' > ').pop() || q.exam)}</b></div>
-                            <div>Remaining Time : <span id="mcqsSimLiveClock" style="background:#0284c7; color:#fff; padding:1px 7px; border-radius:999px; font-weight:800; font-size:11px;">${formatSimTimer(webSimState.secondsRemaining)}</span></div>
-                        </div>
+            <div style="background:#0d121f; border:1px solid rgba(255,255,255,0.09); border-radius:16px; padding:15px; height:100%; box-sizing:border-box; display:flex; flex-direction:column; justify-content:space-between; gap:14px;">
+                <div>
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:9px;">
+                        <h3 style="margin:0; font-size:13px; font-weight:900; color:#fff; text-transform:uppercase; letter-spacing:0.5px; border-left:3px solid #a855f7; padding-left:8px;">📚 Quick Links</h3>
+                        <span style="font-size:10px; color:#c084fc; font-weight:800;"> Instant PDF &amp; Tests</span>
                     </div>
-                    <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
-                        <span style="font-size:11px; background:#fef3c7; color:#b45309; border:1px solid #f59e0b; padding:4px 8px; border-radius:6px; font-weight:800;">${q.tag || '📝 Live MCQ'}</span>
-                        <select onchange="webSimSwitchExamCategory(this.value)" style="background:#0f172a; color:#fdb813; border:none; padding:6px 10px; border-radius:6px; font-size:11.5px; font-weight:800; cursor:pointer;">
-                            ${examOptionsHtml}
-                        </select>
-                    </div>
+                    <div class="mcqs-links-list-grid">${qHtml || '<span style="color:#64748b; font-size:11.5px;">No quick links added.</span>'}</div>
                 </div>
 
-                <div class="mcqs-nta-body">
-                    <div class="mcqs-nta-q-pane">
-                        <div>
-                            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #e2e8f0; padding-bottom:8px; margin-bottom:10px;">
-                                <b style="font-size:13.5px; color:#0f172a;">Question ${idx + 1} of ${qList.length}:</b>
-                                <span style="font-size:11px; color:#16a34a; font-weight:800;">+4 Marks • -1 Negative</span>
-                            </div>
-                            <div style="font-size:13.5px; color:#1e293b; line-height:1.55; margin-bottom:10px;">
-                                ${q.question}
-                                ${q.tableHtml || ''}
-                            </div>
-                            <div>${optionsHtml}</div>
-                            ${(chosen || webSimState.showSolution) ? `
-                                <div style="margin-top:10px; background:#f0fdf4; border-left:4px solid #16a34a; padding:9px 12px; border-radius:6px; font-size:12px; color:#166534; line-height:1.5;">
-                                    <b>💡 Instant NCERT Solution:</b> ${q.explanation}
-                                </div>
-                            ` : `<div style="font-size:11.5px; color:#64748b; margin-top:6px;">👆 Tap any option (1–4) above to check your answer &amp; view the NCERT explanation!</div>`}
-                        </div>
-
-                        <div style="border-top:1px solid #e2e8f0; padding-top:10px; margin-top:12px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px;">
-                            <div style="display:flex; gap:6px; flex-wrap:wrap;">
-                                <button type="button" onclick="webSimAction('SAVE_NEXT')" style="background:#16a34a; color:#fff; border:none; padding:6px 11px; border-radius:5px; font-size:11px; font-weight:800; cursor:pointer;">SAVE &amp; NEXT</button>
-                                <button type="button" onclick="webSimAction('CLEAR')" style="background:#fff; color:#334155; border:1px solid #cbd5e1; padding:6px 10px; border-radius:5px; font-size:11px; font-weight:700; cursor:pointer;">CLEAR</button>
-                                <button type="button" onclick="webSimAction('REVIEW_NEXT')" style="background:#f59e0b; color:#fff; border:none; padding:6px 10px; border-radius:5px; font-size:11px; font-weight:800; cursor:pointer;">MARK FOR REVIEW</button>
-                                <button type="button" onclick="webSimAction('TOGGLE_SOL')" style="background:#0284c7; color:#fff; border:none; padding:6px 10px; border-radius:5px; font-size:11px; font-weight:800; cursor:pointer;">👁️ SOLUTION</button>
-                            </div>
-                            <button type="button" onclick="launchCustomStudioWithPreselection()" style="background:#0f172a; color:#fdb813; border:none; padding:6px 12px; border-radius:5px; font-size:11px; font-weight:800; cursor:pointer;">✅ SUBMIT (${answeredCount}/${qList.length})</button>
-                        </div>
+                <div>
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:9px;">
+                        <h3 style="margin:0; font-size:13px; font-weight:900; color:#fff; text-transform:uppercase; letter-spacing:0.5px; border-left:3px solid #fdb813; padding-left:8px;">⚡ Essential Practice</h3>
+                        <span style="font-size:10px; color:#fdb813; font-weight:800;">Daily &amp; PYQs</span>
                     </div>
-
-                    <div class="mcqs-nta-palette-pane">
-                        <div>
-                            <div style="font-size:10.5px; font-weight:800; color:#475569; text-transform:uppercase; margin-bottom:6px;">Live Question Status:</div>
-                            <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; font-size:11px; color:#475569; padding-bottom:10px; border-bottom:1px dashed #cbd5e1;">
-                                <div><span style="display:inline-block; width:16px; height:16px; background:#16a34a; color:#fff; text-align:center; border-radius:4px; font-weight:800; line-height:16px;">${answeredCount}</span> Answered</div>
-                                <div><span style="display:inline-block; width:16px; height:16px; background:#7c3aed; color:#fff; text-align:center; border-radius:50%; font-weight:800; line-height:16px;">${reviewCount}</span> Review</div>
-                                <div><span style="display:inline-block; width:16px; height:16px; background:#e2e8f0; color:#334155; text-align:center; border-radius:4px; font-weight:800; line-height:16px;">${notVisitedCount}</span> Not Visited</div>
-                                <div><span style="display:inline-block; width:16px; height:16px; background:#f97316; color:#fff; text-align:center; border-radius:4px; font-weight:800; line-height:16px;">${Object.keys(webSimState.visited).length}</span> Visited</div>
-                            </div>
-                            <div style="font-size:11px; font-weight:800; color:#0f172a; margin-top:8px;">Question Palette (Tap to Jump):</div>
-                            <div class="mcqs-nta-palette-grid">${paletteHtml}</div>
-                        </div>
-                        <button type="button" onclick="launchCustomStudioWithPreselection()" style="width:100%; margin-top:12px; background:#16a34a; color:#fff; border:none; padding:9px; border-radius:6px; font-size:12px; font-weight:900; cursor:pointer;">🚀 LAUNCH FULL CUSTOM MOCK</button>
-                    </div>
+                    <div class="mcqs-links-list-grid">${eHtml}</div>
                 </div>
             </div>
         `;
-
-        if (typeof renderMathInElement === 'function') {
-            renderMathInElement(container, {
-                delimiters: [
-                    { left: '$$', right: '$$', display: true },
-                    { left: '$', right: '$', display: false },
-                    { left: '\\(', right: '\\)', display: false },
-                    { left: '\\[', right: '\\]', display: true }
-                ],
-                throwOnError: false
-            });
-        }
     }
 
-    // Syncs the center pill bar in the Navbar on PC Website & PC Installed App
     function syncWebsiteNavbarPills() {
         const navbar = document.querySelector('.navbar');
         const searchWrap = document.getElementById('searchWrapper');
@@ -4510,9 +4543,9 @@ async function handleLiveSearch() {
                     </div>
                 </div>
             </div>
-            <button type="button" class="web-nav-pill-btn" onclick="scrollToWebsiteSection('mcqs-cbt-simulator-anchor')">CBT Simulator</button>
-            <button type="button" class="web-nav-pill-btn" onclick="window.location.hash='#/progress'">Analytics</button>
-            <button type="button" class="web-nav-pill-btn" onclick="showLeaderboardOptions()">Leaderboard</button>
+            <button type="button" class="web-nav-pill-btn" onclick="scrollToWebsiteSection('mcqs-mistake-clinic-anchor')">🧬 Mistake Clinic</button>
+            <button type="button" class="web-nav-pill-btn" onclick="window.location.hash='#/progress'">📊 Analytics</button>
+            <button type="button" class="web-nav-pill-btn" onclick="showLeaderboardOptions()">🏆 Leaderboard</button>
             <button type="button" class="web-nav-pill-btn web-nav-pill-cta" onclick="scrollToWebsiteSection('mcqs-home-categories-anchor')">Start Practicing</button>
         `;
     }
@@ -4553,12 +4586,10 @@ async function handleLiveSearch() {
         }, 3400);
     }
 
-    // Builds the complete, remade Simulation-Driven Home Workspace inside #dynamic-content across ALL versions (PC & Mobile)
-    function renderUnifiedSimulationHomeWorkspace() {
+    function renderPriorityHomeWorkspace() {
         const mc = document.getElementById('dynamic-content');
         if (!mc) return;
 
-        // Clean up any legacy bands if present
         document.getElementById('mcqs-fullwidth-top-band')?.remove();
         document.getElementById('mcqs-fullwidth-bottom-band')?.remove();
 
@@ -4567,32 +4598,35 @@ async function handleLiveSearch() {
         const firstExamClean = formatCleanTopicTitle(inv.exams[0] || 'NEET');
 
         mc.innerHTML = `
-            <div class="page-transition">
-                <!-- 1. HERO & REAL-DATA PERSONAL DIAGNOSTIC ENGINE -->
-                <section class="mcqs-arch-surface">
+            <div class="page-transition mcqs-home-master-stack">
+                <!-- TIER 1 (PC Top / Mobile 3rd): HERO & LIVE STUDENT DIAGNOSTIC + SPEED AUTOPSY -->
+                <section class="mcqs-arch-surface mcqs-tier-hero">
                     <div class="mcqs-hero-grid">
-                        <div>
-                            <div class="mcqs-status-pill">
-                                <span class="mcqs-pulse-dot"></span>
-                                <span>Live Exam Suite: <b style="color:#fdb813;">${examListText}</b></span>
+                        <div class="mcqs-hero-left-col">
+                            <div>
+                                <div class="mcqs-status-pill">
+                                    <span class="mcqs-pulse-dot"></span>
+                                    <span>Live Exam Suite: <b style="color:#fdb813;">${examListText}</b></span>
+                                </div>
+                                <h1 class="mcqs-hero-title">
+                                    Smart MCQ practice &amp; testing for serious <span id="mcqsHeroRotatingExam" class="mcqs-gold-word">${firstExamClean} aspirants.</span>
+                                </h1>
+                                <p class="mcqs-hero-desc">
+                                    Master line-by-line NCERT &amp; PYQ questions across <b>Easy, Medium, Hard &amp; Mixed</b> tiers, build full-length <b>20–250 MCQ custom mock tests</b>, fix mistakes with our Speed-vs-Accuracy Autopsy, and solve doubts 24/7 with AI Tutor.
+                                </p>
+                                <div class="mcqs-cta-row">
+                                    <button type="button" class="mcqs-btn-gold" onclick="scrollToWebsiteSection('mcqs-home-categories-anchor')">
+                                        📂 Explore Exam Workspaces &darr;
+                                    </button>
+                                    <button type="button" class="mcqs-btn-glass" onclick="scrollToWebsiteSection('mcqs-mistake-clinic-anchor')">
+                                        🧬 Mistake Clinic &amp; Sprint
+                                    </button>
+                                    <button type="button" class="mcqs-btn-glass" onclick="openAIModal()">
+                                        ✨ Ask AI
+                                    </button>
+                                </div>
                             </div>
-                            <h1 class="mcqs-hero-title">
-                                Smart MCQ practice &amp; testing for serious <span id="mcqsHeroRotatingExam" class="mcqs-gold-word">${firstExamClean} aspirants.</span>
-                            </h1>
-                            <p class="mcqs-hero-desc">
-                                Master line-by-line NCERT &amp; PYQ questions across <b>Easy, Medium, Hard &amp; Mixed</b> tiers, build full-length <b>20–250 MCQ custom mock tests</b>, track real-time weak spots, and solve doubts 24/7 with our AI Tutor.
-                            </p>
-                            <div class="mcqs-cta-row">
-                                <button type="button" class="mcqs-btn-gold" onclick="scrollToWebsiteSection('mcqs-home-categories-anchor')">
-                                    📂 Explore Exam Workspaces &darr;
-                                </button>
-                                <button type="button" class="mcqs-btn-glass" onclick="scrollToWebsiteSection('mcqs-cbt-simulator-anchor')">
-                                    🖥️ Try Live CBT Simulator
-                                </button>
-                                <button type="button" class="mcqs-btn-glass" onclick="openAIModal()">
-                                    ✨ Ask AI Tutor
-                                </button>
-                            </div>
+
                             <div class="mcqs-kpi-strip">
                                 <div class="mcqs-kpi-box">
                                     <div class="mcqs-kpi-val" style="color:#fdb813;">${inv.examCount} Exams</div>
@@ -4613,25 +4647,21 @@ async function handleLiveSearch() {
                             </div>
                         </div>
 
-                        <!-- Right Column: Real Student Data Diagnostic Engine (or Honest Blueprint for New Users) -->
                         <div id="mcqsSim1DiagnosticMount"></div>
                     </div>
                 </section>
 
-                <!-- 2. REMADE INTERACTIVE CUSTOM MOCK STUDIO (Replaces Old Yellow Box) -->
-                <div id="mcqsCustomStudioMount"></div>
-
-                <!-- 3. REMADE EXAM WORKSPACES + QUICK LINKS & ESSENTIAL PRACTICE HUB -->
-                <section id="mcqs-home-categories-anchor" class="mcqs-home-workspace-grid">
-                    <div style="background:#0d121f; border:1px solid rgba(255,255,255,0.09); border-radius:18px; padding:20px; box-shadow:0 14px 35px rgba(0,0,0,0.5);">
-                        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:16px; border-bottom:1px solid rgba(255,255,255,0.07); padding-bottom:12px;">
+                <!-- TIER 2 (Mobile Priority #1 Top of Screen / PC Middle): EXAM WORKSPACES + QUICK LINKS & ESSENTIAL PRACTICE -->
+                <section id="mcqs-home-categories-anchor" class="mcqs-home-workspace-grid mcqs-tier-workspaces">
+                    <div style="background:#0d121f; border:1px solid rgba(255,255,255,0.09); border-radius:16px; padding:16px; box-shadow:0 12px 30px rgba(0,0,0,0.48);">
+                        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:12px; border-bottom:1px solid rgba(255,255,255,0.07); padding-bottom:10px;">
                             <div>
-                                <h2 style="margin:0; font-size:18px; font-weight:900; color:#ffffff; display:flex; align-items:center; gap:8px;">
+                                <h2 style="margin:0; font-size:16.5px; font-weight:900; color:#ffffff; display:flex; align-items:center; gap:7px;">
                                     <span style="color:#fdb813;">▎</span> Select Exam Workspace
                                 </h2>
-                                <span style="font-size:12px; color:#94a3b8;">Tap any exam card or jump directly to its internal sections below</span>
+                                <span style="font-size:11.5px; color:#94a3b8;">Tap any exam or jump directly to MCQs, NCERT Books &amp; PYQs</span>
                             </div>
-                            <button type="button" onclick="window.location.hash='#/progress'" style="background:rgba(56,189,248,0.14); color:#38bdf8; border:1px solid rgba(56,189,248,0.4); padding:6px 12px; border-radius:8px; font-size:11.5px; font-weight:800; cursor:pointer;">📊 View My Analytics &rarr;</button>
+                            <button type="button" onclick="window.location.hash='#/progress'" style="background:rgba(56,189,248,0.14); color:#38bdf8; border:1px solid rgba(56,189,248,0.4); padding:5px 11px; border-radius:7px; font-size:11px; font-weight:800; cursor:pointer;">📊 My Analytics &rarr;</button>
                         </div>
                         <div id="mcqsExamWorkspacesMount"></div>
                     </div>
@@ -4641,76 +4671,25 @@ async function handleLiveSearch() {
                     </div>
                 </section>
 
-                <!-- 4. INTERACTIVE NTA / CBT EXAM CONDITION SIMULATOR (WORKS ON BOTH PC & MOBILE APP) -->
-                <section class="mcqs-arch-surface" id="mcqs-cbt-simulator-anchor" style="margin-bottom:10px;">
-                    <div class="mcqs-cbt-grid">
-                        <div>
-                            <div class="mcqs-status-pill" style="border-color:rgba(253,184,19,0.5); color:#fdb813;">
-                                <span>🖥️ INTERACTIVE EXAM SIMULATOR</span>
-                            </div>
-                            <h2 style="font-size:clamp(22px, 3vw, 36px); font-weight:900; color:#ffffff; margin:0 0 10px 0; line-height:1.15;">
-                                Practice in exact <span style="color:#fdb813;">exam conditions.</span>
-                            </h2>
-                            <p style="color:#94a3b8; font-size:14px; line-height:1.6; margin:0 0 18px 0;">
-                                Switch exams using the dropdown, tap options (1–4), test the live countdown clock, and jump across questions using the palette!
-                            </p>
-
-                            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:18px;">
-                                <div style="background:#111728; border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:11px;">
-                                    <div style="font-size:16px; margin-bottom:4px;">📊</div>
-                                    <div style="font-size:12.5px; font-weight:800; color:#fff;">Match-Tables &amp; Diagrams</div>
-                                    <div style="font-size:11px; color:#94a3b8; margin-top:2px;">Multi-diagram zoom &amp; KaTeX formulas</div>
-                                </div>
-                                <div style="background:#111728; border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:11px;">
-                                    <div style="font-size:16px; margin-bottom:4px;">🚀</div>
-                                    <div style="font-size:12.5px; font-weight:800; color:#fff;">Exclude-Correct Mode</div>
-                                    <div style="font-size:11px; color:#94a3b8; margin-top:2px;">Skips solved MCQs on your next run</div>
-                                </div>
-                                <div style="background:#111728; border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:11px;">
-                                    <div style="font-size:16px; margin-bottom:4px;">⏱️</div>
-                                    <div style="font-size:12.5px; font-weight:800; color:#fff;">Anytime Submit</div>
-                                    <div style="font-size:11px; color:#94a3b8; margin-top:2px;">Save &amp; submit attempted MCQs anytime</div>
-                                </div>
-                                <div style="background:#111728; border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:11px;">
-                                    <div style="font-size:16px; margin-bottom:4px;">🏆</div>
-                                    <div style="font-size:12.5px; font-weight:800; color:#fff;">All-India Rank</div>
-                                    <div style="font-size:11px; color:#94a3b8; margin-top:2px;">100-MCQ benchmark leaderboards</div>
-                                </div>
-                            </div>
-
-                            <div class="mcqs-cta-row" style="margin-bottom:0;">
-                                <button type="button" class="mcqs-btn-gold" onclick="launchCustomStudioWithPreselection()">
-                                    Launch Full Custom Mock &rarr;
-                                </button>
-                                <button type="button" class="mcqs-btn-glass" onclick="window.location.hash='#/leaderboard'">
-                                    🏆 View Leaderboards
-                                </button>
-                            </div>
-                        </div>
-
-                        <div id="mcqsInteractiveNtaSimMount"></div>
-                    </div>
+                <!-- TIER 3 (Mobile Priority #2 / PC Bottom Split): CUSTOM MOCK STUDIO + SMART MISTAKE CLINIC -->
+                <section class="mcqs-studios-split-grid mcqs-tier-studios">
+                    <div id="mcqsCustomStudioMount"></div>
+                    <div id="mcqsSmartClinicMount"></div>
                 </section>
             </div>
         `;
 
         renderSim1DiagnosticDashboard();
-        renderCustomMockStudioCard();
         renderExamWorkspaceCardsGrid();
-        renderInteractiveNtaSimulatorCard();
-        startWebSimulatorClock();
+        renderCustomMockStudioCard();
+        renderSmartMistakeClinicCard();
         startHeroDynamicAnimations(inv);
         syncRealStudentDiagnostics(false);
-
-        if (!webSimState.fetchedFromDb) {
-            loadLiveQuestionsIntoWebSimulator('ALL');
-        }
     }
 
-    // Wrap _renderView non-destructively so inner paths render normally and Root Home renders the new Simulation Workspace
-    const _origRenderViewV3 = _renderView;
+    const _origRenderViewV4 = _renderView;
     _renderView = function() {
-        injectSuiteStyles();
+        injectPriorityWorkspaceStyles();
         syncWebsiteNavbarPills();
 
         const rawHash = window.location.hash.replace(/^#\/?/, '');
@@ -4720,20 +4699,19 @@ async function handleLiveSearch() {
             document.body.classList.add('mcqs-on-root-home');
             const bc = document.getElementById('breadcrumb-text');
             if (bc) bc.innerText = 'Home';
-            renderUnifiedSimulationHomeWorkspace();
+            renderPriorityHomeWorkspace();
             window.scrollTo({ top: 0, behavior: 'smooth' });
             return;
         }
 
         document.body.classList.remove('mcqs-on-root-home');
-        _origRenderViewV3();
+        _origRenderViewV4();
     };
 
-    // Also refresh Quick Links & Essential Practice inside the new Home Workspace whenever updateSidebarLinks() is called
-    if (typeof updateSidebarLinks === 'function' && !window._origUpdateSidebarLinksWrappedV3) {
-        window._origUpdateSidebarLinksWrappedV3 = updateSidebarLinks;
+    if (typeof updateSidebarLinks === 'function' && !window._origUpdateSidebarLinksWrappedV4) {
+        window._origUpdateSidebarLinksWrappedV4 = updateSidebarLinks;
         updateSidebarLinks = function() {
-            window._origUpdateSidebarLinksWrappedV3();
+            window._origUpdateSidebarLinksWrappedV4();
             const rawHash = window.location.hash.replace(/^#\/?/, '');
             const isRootHome = (!rawHash || rawHash === 'home') && Array.isArray(currentPath) && currentPath.length === 0;
             if (isRootHome) {
@@ -4761,8 +4739,9 @@ async function handleLiveSearch() {
 
     if (document.readyState === 'complete' || document.readyState === 'interactive') {
         setTimeout(() => {
-            injectSuiteStyles();
+            injectPriorityWorkspaceStyles();
             syncWebsiteNavbarPills();
+            verifyAndSyncAccurateDailyStreak();
             if (Array.isArray(currentPath) && currentPath.length === 0 && (!window.location.hash || window.location.hash === '#/home')) {
                 _renderView();
             }
