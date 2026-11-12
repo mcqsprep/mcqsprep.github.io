@@ -2673,116 +2673,175 @@ async function handleLiveSearch() {
 }
 
 // ==========================================
-// 7. COMPLETE ARCHITECTURAL UI SUITE (FIXED FLOATING NAVBAR, ZERO-COLLISION FLEX SEARCH,
-//    HOME & INNER FOLDERS, 2x2 MISTAKE CLINIC, QUIZ NAVIGATOR & ANALYTICS/LEADERBOARDS)
+// 7. COMPLETE ARCHITECTURAL UI SUITE (FLOATING CENTER PILL NAV, ANTI-CHEAT AI HIDER,
+//    COLOR-CODED DIAGNOSTIC SYMBOLS, HOME & INNER FOLDERS, MISTAKE CLINIC & STREAK ENGINE)
 // ==========================================
-(function initMCQsPrepCompleteModernSuiteV7() {
-    if (window._mcqsCompleteModernSuiteLoadedV7) return;
-    window._mcqsCompleteModernSuiteLoadedV7 = true;
+(function initMCQsPrepCompleteModernSuiteV8() {
+    if (window._mcqsCompleteModernSuiteLoadedV8) return;
+    window._mcqsCompleteModernSuiteLoadedV8 = true;
 
     function injectCompleteModernSuiteStyles() {
-        if (document.getElementById('mcqs-complete-modern-styles-v7')) return;
+        if (document.getElementById('mcqs-complete-modern-styles-v8')) return;
         const st = document.createElement('style');
-        st.id = 'mcqs-complete-modern-styles-v7';
+        st.id = 'mcqs-complete-modern-styles-v8';
         st.textContent = `
             /* ==========================================
-               1. PERMANENTLY FLOATING TOP NAVBAR & ZERO-COLLISION FLEX LAYOUT
+               1. GLOBAL OVERFLOW GUARD & ANTI-CHEAT AI BUTTON HIDER
                ========================================== */
-            body {
+            html, body {
+                max-width: 100vw !important;
                 overflow-x: hidden !important;
-                padding-top: 68px !important;
                 box-sizing: border-box !important;
             }
             *, *::before, *::after {
                 box-sizing: border-box;
             }
 
-            /* Fixed Floating Top Navbar (Always stays pinned at top of screen when scrolling!) */
-            .navbar {
-                position: fixed !important;
-                top: 0 !important;
-                left: 0 !important;
-                right: 0 !important;
-                width: 100% !important;
-                height: 62px !important;
-                z-index: 9500 !important;
-                display: flex !important;
-                align-items: center !important;
-                justify-content: space-between !important;
-                gap: 10px !important;
-                padding: 0 20px !important;
-                background: rgba(7, 10, 19, 0.92) !important;
-                backdrop-filter: blur(18px) !important;
-                -webkit-backdrop-filter: blur(18px) !important;
-                border-bottom: 1px solid rgba(253, 184, 19, 0.22) !important;
-                box-shadow: 0 8px 28px rgba(0, 0, 0, 0.65) !important;
-                box-sizing: border-box !important;
+            /* Strictly hide Ask AI button during any Quiz, MCQ Practice, Practice Paper, or Mock Test */
+            body.hide-ai-btn #ai-floating-btn,
+            body.mcqs-anti-cheat-active #ai-floating-btn,
+            html.is-standalone-pwa body.hide-ai-btn #ai-floating-btn,
+            html.is-standalone-pwa body.mcqs-anti-cheat-active #ai-floating-btn {
+                display: none !important;
+                visibility: hidden !important;
+                opacity: 0 !important;
+                pointer-events: none !important;
             }
-            .nav-left {
-                display: flex !important;
-                align-items: center !important;
-                gap: 8px !important;
-                flex-shrink: 0 !important;
-                min-width: 0 !important;
-            }
-            .nav-badges-group {
-                display: flex !important;
-                align-items: center !important;
-                gap: 6px !important;
-                flex-shrink: 0 !important;
-            }
-            .nav-right {
-                display: flex !important;
-                align-items: center !important;
-                gap: 8px !important;
-                flex-shrink: 0 !important;
+            body.mcqs-anti-cheat-active .ai-tab-inner {
+                opacity: 0.25 !important;
+                pointer-events: none !important;
             }
 
+            /* ==========================================
+               2. NORMAL SCROLLING TOP BAR + FLOATING CENTER PILL BAR ONLY (FIXES IMAGE 2)
+               ========================================== */
             @media (min-width: 861px) {
+                body {
+                    padding-top: 0 !important;
+                }
+                /* Main navbar scrolls normally with the page so left & right top space opens up on scroll */
+                .navbar {
+                    position: relative !important;
+                    top: auto !important;
+                    left: auto !important;
+                    right: auto !important;
+                    z-index: 4000 !important;
+                    display: flex !important;
+                    align-items: center !important;
+                    justify-content: space-between !important;
+                    gap: 10px !important;
+                    height: 62px !important;
+                    padding: 0 22px !important;
+                    width: 100% !important;
+                    background: rgba(7, 10, 19, 0.92) !important;
+                    border-bottom: 1px solid rgba(255, 255, 255, 0.07) !important;
+                }
+                .nav-left, .nav-right {
+                    display: flex !important;
+                    align-items: center !important;
+                    gap: 8px !important;
+                    flex-shrink: 0 !important;
+                }
+                .nav-badges-group {
+                    display: flex !important;
+                    align-items: center !important;
+                    gap: 6px !important;
+                    flex-shrink: 0 !important;
+                }
                 .nav-right > .nav-link-item {
                     display: none !important;
                 }
                 html.is-standalone-pwa .navbar .hide-in-app-mode:not(.nav-link-item):not(#installAppBtn),
-                html.is-standalone-pwa #ai-floating-btn {
+                html.is-standalone-pwa body:not(.hide-ai-btn):not(.mcqs-anti-cheat-active) #ai-floating-btn {
                     display: inline-flex !important;
+                }
+
+                /* Invisible center spacer inside .navbar so left & right items never collide with the floating center pill bar at the top */
+                #mcqsCenterNavSpacer {
+                    width: 530px;
+                    max-width: 44vw;
+                    height: 1px;
+                    flex-shrink: 1;
+                    pointer-events: none;
+                }
+
+                /* ONLY THE PINK-CIRCLED CENTER PILL BAR FLOATS ON SCROLL! */
+                .web-center-nav-pills {
+                    position: fixed !important;
+                    top: 10px !important;
+                    left: 50% !important;
+                    transform: translateX(-50%) !important;
+                    z-index: 9600 !important;
+                    display: inline-flex !important;
+                    align-items: center !important;
+                    gap: 3px !important;
+                    background: rgba(13, 18, 30, 0.94) !important;
+                    backdrop-filter: blur(18px) !important;
+                    -webkit-backdrop-filter: blur(18px) !important;
+                    border: 1.5px solid rgba(253, 184, 19, 0.38) !important;
+                    border-radius: 999px !important;
+                    padding: 4px 7px !important;
+                    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.8), 0 0 20px rgba(253, 184, 19, 0.14) !important;
+                    white-space: nowrap !important;
+                    transition: opacity 0.18s ease, transform 0.18s ease !important;
+                }
+                body.admin-mode .web-center-nav-pills {
+                    display: none !important;
+                }
+                /* When Search is opened on smaller/medium screens, smoothly hide the floating pill bar so they never overlap */
+                @media (max-width: 1320px) {
+                    body.mcqs-search-open .web-center-nav-pills {
+                        opacity: 0 !important;
+                        pointer-events: none !important;
+                        transform: translateX(-50%) translateY(-8px) !important;
+                    }
                 }
             }
 
-            /* Center Pill Bar in True Flex Flow (Physically impossible to overlap Streak or Search!) */
-            .web-center-nav-pills {
-                position: relative !important;
-                top: auto !important;
-                left: auto !important;
-                transform: none !important;
-                margin: 0 auto !important;
-                display: inline-flex !important;
-                align-items: center !important;
-                gap: 2px !important;
-                background: rgba(15, 21, 35, 0.96) !important;
-                border: 1px solid rgba(253, 184, 19, 0.32) !important;
-                border-radius: 999px !important;
-                padding: 4px 6px !important;
-                box-shadow: 0 4px 18px rgba(0, 0, 0, 0.5) !important;
-                white-space: nowrap !important;
-                flex-shrink: 0 !important;
-                z-index: 100 !important;
+            /* Mobile Navbar Safety */
+            @media (max-width: 860px) {
+                body {
+                    padding-top: 0 !important;
+                }
+                .navbar {
+                    position: sticky !important;
+                    top: 0 !important;
+                    z-index: 4000 !important;
+                    width: 100% !important;
+                    max-width: 100vw !important;
+                    height: 56px !important;
+                    padding: 0 12px !important;
+                    gap: 6px !important;
+                    background: rgba(6, 9, 17, 0.95) !important;
+                    backdrop-filter: blur(14px) !important;
+                }
+                .nav-left {
+                    min-width: 0 !important;
+                    flex-shrink: 1 !important;
+                    gap: 6px !important;
+                }
+                .nav-right {
+                    flex-shrink: 0 !important;
+                    gap: 6px !important;
+                }
+                .web-center-nav-pills, #mcqsCenterNavSpacer {
+                    display: none !important;
+                }
             }
-            body.admin-mode .web-center-nav-pills {
-                display: none !important;
-            }
+
             .web-nav-pill-btn {
                 background: transparent;
                 border: none;
                 color: #cbd5e1;
                 font-size: 12px;
                 font-weight: 700;
-                padding: 5px 10px;
+                padding: 5px 11px;
                 border-radius: 999px;
                 cursor: pointer;
                 transition: all 0.18s ease;
                 display: inline-flex;
                 align-items: center;
-                gap: 4px;
+                gap: 5px;
                 font-family: inherit;
                 white-space: nowrap;
             }
@@ -2794,8 +2853,8 @@ async function handleLiveSearch() {
                 background: linear-gradient(135deg, #fdb813, #f59e0b) !important;
                 color: #000000 !important;
                 font-weight: 800 !important;
-                padding: 5px 12px !important;
-                box-shadow: 0 0 14px rgba(253, 184, 19, 0.32);
+                padding: 5px 13px !important;
+                box-shadow: 0 0 14px rgba(253, 184, 19, 0.35);
             }
             .web-courses-dropdown-wrap {
                 position: relative;
@@ -2836,7 +2895,7 @@ async function handleLiveSearch() {
             }
 
             /* ==========================================
-               2. CLEAN, SINGLE-BORDER, NON-OVERLAPPING SEARCH BAR
+               3. COMPACT, SINGLE-BORDER SEARCH BAR
                ========================================== */
             #searchWrapper {
                 position: relative !important;
@@ -2865,12 +2924,12 @@ async function handleLiveSearch() {
                 transform: none !important;
                 display: inline-flex !important;
                 align-items: center !important;
-                width: 220px !important;
-                height: 35px !important;
+                width: 210px !important;
+                height: 34px !important;
                 background: #0d1322 !important;
                 border: 1.5px solid #fdb813 !important;
                 border-radius: 999px !important;
-                padding: 0 6px 0 13px !important;
+                padding: 0 6px 0 12px !important;
                 margin: 0 !important;
                 box-shadow: 0 4px 16px rgba(0, 0, 0, 0.55) !important;
                 box-sizing: border-box !important;
@@ -2897,15 +2956,15 @@ async function handleLiveSearch() {
                 background: rgba(239, 68, 68, 0.18) !important;
                 color: #ef4444 !important;
                 border: 1px solid rgba(239, 68, 68, 0.38) !important;
-                width: 22px !important;
-                height: 22px !important;
+                width: 21px !important;
+                height: 21px !important;
                 border-radius: 50% !important;
                 display: inline-flex !important;
                 align-items: center !important;
                 justify-content: center !important;
                 cursor: pointer !important;
                 flex-shrink: 0 !important;
-                font-size: 11px !important;
+                font-size: 10.5px !important;
                 padding: 0 !important;
                 margin: 0 !important;
             }
@@ -2924,29 +2983,7 @@ async function handleLiveSearch() {
                 overflow-y: auto !important;
                 z-index: 9999 !important;
             }
-
-            /* On smaller laptop windows (861px–1220px), hide the center pills while typing in search so there is 0 crowding */
-            @media (min-width: 861px) and (max-width: 1220px) {
-                body.mcqs-search-open .web-center-nav-pills {
-                    display: none !important;
-                }
-                #searchWrapper.active .search-input-container {
-                    width: 300px !important;
-                }
-            }
-
             @media (max-width: 860px) {
-                body {
-                    padding-top: 60px !important;
-                }
-                .navbar {
-                    height: 56px !important;
-                    padding: 0 12px !important;
-                    gap: 6px !important;
-                }
-                .web-center-nav-pills {
-                    display: none !important;
-                }
                 #searchWrapper.active {
                     position: fixed !important;
                     top: 9px !important;
@@ -2990,7 +3027,7 @@ async function handleLiveSearch() {
             }
 
             /* ==========================================
-               3. CONTAINER & HOME / INNER WORKSPACE LAYOUT
+               4. CONTAINER & HOME / INNER WORKSPACE LAYOUT
                ========================================== */
             .container {
                 width: 100% !important;
@@ -3238,7 +3275,7 @@ async function handleLiveSearch() {
             }
             .mcqs-diag-grid {
                 display: grid;
-                grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+                grid-template-columns: minmax(0, 1.12fr) minmax(0, 0.88fr);
                 gap: 10px;
                 width: 100%;
             }
@@ -3295,8 +3332,8 @@ async function handleLiveSearch() {
             }
             .mcqs-subfolder-chip {
                 background: rgba(255, 255, 255, 0.06);
-                border: 1px solid rgba(255, 255, 255, 0.13);
-                color: #e2e8f0;
+                border: 1px solid rgba(255, 255, 255, 0.14);
+                color: #f1f5f9;
                 padding: 5px 10px;
                 border-radius: 8px;
                 font-size: 11px;
@@ -3394,7 +3431,7 @@ async function handleLiveSearch() {
             }
 
             /* ==========================================
-               4. INNER FOLDER COMMAND HEADER & SUBTOPIC CARDS
+               5. INNER FOLDER COMMAND HEADER & SUBTOPIC CARDS
                ========================================== */
             .mcqs-inner-command-header {
                 background-color: #080b12;
@@ -3472,7 +3509,7 @@ async function handleLiveSearch() {
             }
 
             /* ==========================================
-               5. MODERNIZED MCQ PRACTICE QUESTION PRESENTATION (#/quiz)
+               6. MODERNIZED MCQ PRACTICE QUESTION PRESENTATION (#/quiz)
                ========================================== */
             .mcqs-quiz-nav-strip {
                 display: flex;
@@ -3623,21 +3660,55 @@ async function handleLiveSearch() {
         document.head.appendChild(st);
     }
 
+    // ==========================================
+    // ANTI-CHEAT AI BUTTON CONTROLLER (HIDES ASK AI IN ALL MCQ PRACTICE & PRACTICE PAPERS)
+    // ==========================================
+    function isAntiCheatProtectedContext() {
+        const rawHash = decodeURIComponent(window.location.hash.replace(/^#\/?/, '')).toLowerCase();
+        if (rawHash === 'quiz' || rawHash === 'custom-setup' || rawHash === 'admin' || rawHash === 'admin-panel') {
+            return true;
+        }
+        const pathStr = (Array.isArray(currentPath) ? currentPath.join(' > ') : '').toLowerCase();
+        const combined = `${rawHash} ${pathStr}`;
+        if (/mcq|practice paper|mock test|test series|sample paper|model paper|daily quiz|custom practice/.test(combined)) {
+            return true;
+        }
+        const dyn = document.getElementById('dynamic-content');
+        if (dyn && (dyn.querySelector('#mcqsModernQuizNavStrip') || dyn.querySelector('.option-btn') || dyn.querySelector('.quiz-option'))) {
+            return true;
+        }
+        return false;
+    }
+
+    function syncAntiCheatAiButtonVisibility() {
+        const shouldHide = isAntiCheatProtectedContext();
+        const aiBtn = document.getElementById('ai-floating-btn');
+        if (shouldHide) {
+            document.body.classList.add('mcqs-anti-cheat-active');
+            document.body.classList.add('hide-ai-btn');
+            if (aiBtn) aiBtn.style.setProperty('display', 'none', 'important');
+        } else {
+            document.body.classList.remove('mcqs-anti-cheat-active');
+            document.body.classList.remove('hide-ai-btn');
+            if (aiBtn) aiBtn.style.removeProperty('display');
+        }
+    }
+
     // Search bar open/close hooks
-    if (typeof openSearch === 'function' && !window._origOpenSearchWrappedV7) {
-        window._origOpenSearchWrappedV7 = openSearch;
+    if (typeof openSearch === 'function' && !window._origOpenSearchWrappedV8) {
+        window._origOpenSearchWrappedV8 = openSearch;
         openSearch = function() {
             document.body.classList.add('mcqs-search-open');
-            window._origOpenSearchWrappedV7();
+            window._origOpenSearchWrappedV8();
             const inp = document.getElementById('searchInput');
             if (inp) setTimeout(() => inp.focus(), 30);
         };
     }
-    if (typeof closeSearch === 'function' && !window._origCloseSearchWrappedV7) {
-        window._origCloseSearchWrappedV7 = closeSearch;
+    if (typeof closeSearch === 'function' && !window._origCloseSearchWrappedV8) {
+        window._origCloseSearchWrappedV8 = closeSearch;
         closeSearch = function() {
             document.body.classList.remove('mcqs-search-open');
-            window._origCloseSearchWrappedV7();
+            window._origCloseSearchWrappedV8();
         };
     }
 
@@ -3817,10 +3888,10 @@ async function handleLiveSearch() {
         }
     }
 
-    if (typeof submitQuiz === 'function' && !window._origSubmitQuizStreakHookV7) {
-        window._origSubmitQuizStreakHookV7 = submitQuiz;
+    if (typeof submitQuiz === 'function' && !window._origSubmitQuizStreakHookV8) {
+        window._origSubmitQuizStreakHookV8 = submitQuiz;
         submitQuiz = async function() {
-            const res = await window._origSubmitQuizStreakHookV7();
+            const res = await window._origSubmitQuizStreakHookV8();
             try {
                 const uid = (typeof currentUser !== 'undefined' && currentUser && currentUser.uid) ? currentUser.uid : 'guest';
                 const todayYMD = getPastLocalYMD(0);
@@ -3841,10 +3912,10 @@ async function handleLiveSearch() {
         };
     }
 
-    if (typeof openStreakModal === 'function' && !window._origOpenStreakModalHookV7) {
-        window._origOpenStreakModalHookV7 = openStreakModal;
+    if (typeof openStreakModal === 'function' && !window._origOpenStreakModalHookV8) {
+        window._origOpenStreakModalHookV8 = openStreakModal;
         openStreakModal = function() {
-            window._origOpenStreakModalHookV7();
+            window._origOpenStreakModalHookV8();
             const modalCount = document.getElementById('modalStreakCount');
             if (modalCount) modalCount.innerText = String(verifiedStreakData.trueStreak);
 
@@ -4212,7 +4283,7 @@ async function handleLiveSearch() {
     }
 
     // ==========================================
-    // SIMULATION #1: REAL STUDENT DIAGNOSTIC + SPEED AUTOPSY
+    // SIMULATION #1: REAL STUDENT DIAGNOSTIC WITH VIBRANT COLOR-CODED SYMBOLS (FIXES IMAGE 3)
     // ==========================================
     var sim1ActiveExamIdx = 0;
     var sim1BlueprintTargetAcc = 85;
@@ -4272,13 +4343,23 @@ async function handleLiveSearch() {
             const subjectBarsHtml = stats.subjectList.length > 0
                 ? stats.subjectList.slice(0, 3).map(s => {
                     const col = s.pct >= 70 ? '#10b981' : (s.pct >= 50 ? '#fdb813' : '#ef4444');
+                    const sIcon = getAutomaticIconForName(s.name, null, `${activeExam} > ${s.name}`);
                     return `
-                        <div style="margin-bottom:6px;">
-                            <div style="display:flex; justify-content:space-between; font-size:11px; font-weight:700; margin-bottom:2px;">
-                                <span style="color:#e2e8f0;">${s.name} ${s.isWeak ? '<span style="color:#ef4444;">(&lt;50%)</span>' : ''}</span>
-                                <span style="color:${col}; font-weight:800;">${s.pct}% <span style="color:#64748b; font-size:9.5px;">(${s.correct}/${s.attempts})</span></span>
+                        <div style="margin-bottom:7px;">
+                            <div style="display:flex; justify-content:space-between; align-items:center; font-size:11.5px; font-weight:800; margin-bottom:3px;">
+                                <span style="color:#f8fafc; display:inline-flex; align-items:center; gap:5px;">
+                                    <span>${sIcon}</span>
+                                    <span>${s.name}</span>
+                                    ${s.isWeak ? '<span style="color:#ef4444; font-size:10px;">(&lt;50% Weak)</span>' : ''}
+                                </span>
+                                <span style="display:inline-flex; align-items:center; gap:6px;">
+                                    <span style="color:${col}; font-weight:900;">${s.pct}%</span>
+                                    <span style="background:rgba(16,185,129,0.14); color:#cbd5e1; border:1px solid rgba(16,185,129,0.35); padding:1px 6px; border-radius:6px; font-size:9.5px; font-weight:800;">
+                                        <span style="color:#10b981;">✔</span> ${s.correct}/${s.attempts}
+                                    </span>
+                                </span>
                             </div>
-                            <div style="width:100%; height:5px; background:#090d16; border-radius:3px; overflow:hidden;">
+                            <div style="width:100%; height:6px; background:#090d16; border-radius:3px; overflow:hidden;">
                                 <div style="width:${s.pct}%; height:100%; background:${col}; border-radius:3px;"></div>
                             </div>
                         </div>
@@ -4301,13 +4382,16 @@ async function handleLiveSearch() {
             mount.innerHTML = `
                 <div class="mcqs-diag-window">
                     <div class="mcqs-diag-floating-badge" onclick="window.location.hash='#/progress/${encodeURIComponent(activeExam)}'" style="cursor:pointer;">
-                        <span style="color:#10b981;">✔</span>
-                        <span>Live Data: ${topSubj}</span>
+                        <span style="color:#10b981; font-weight:900;">✔</span>
+                        <span>Live Data: <b style="color:#fdb813;">${topSubj}</b></span>
                     </div>
 
                     <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px;">
                         <span style="font-size:10.5px; font-weight:800; color:#10b981;">🟢 LIVE STUDENT DIAGNOSTICS</span>
-                        <span style="font-size:10.5px; color:#94a3b8; font-weight:700;">${stats.quizzesPlayed} Quiz${stats.quizzesPlayed === 1 ? '' : 'zes'} • ${stats.totalAttempted} MCQs</span>
+                        <div style="display:inline-flex; align-items:center; gap:6px; font-size:10.5px; font-weight:800;">
+                            <span style="background:rgba(253,184,19,0.14); color:#fdb813; border:1px solid rgba(253,184,19,0.35); padding:2px 8px; border-radius:999px;">📋 ${stats.quizzesPlayed} Quiz${stats.quizzesPlayed === 1 ? '' : 'zes'}</span>
+                            <span style="background:rgba(56,189,248,0.14); color:#38bdf8; border:1px solid rgba(56,189,248,0.35); padding:2px 8px; border-radius:999px;">📝 ${stats.totalAttempted} MCQs</span>
+                        </div>
                     </div>
 
                     <div class="mcqs-exam-tab-row">${tabsHtml}</div>
@@ -4316,43 +4400,58 @@ async function handleLiveSearch() {
                         <div class="mcqs-diag-subcard" onclick="window.location.hash='#/progress/${encodeURIComponent(activeExam)}'" style="cursor:pointer;">
                             <div>
                                 <div style="display:flex; justify-content:space-between; align-items:center; gap:6px;">
-                                    <span style="font-size:10px; color:#94a3b8; font-weight:800; text-transform:uppercase;">${cleanExam} Score &amp; Trajectory</span>
-                                    <span style="font-size:11px; color:#10b981; font-weight:900;">${stats.overallAccuracy}% Acc</span>
+                                    <span style="font-size:10.5px; color:#38bdf8; font-weight:900; text-transform:uppercase;">📈 ${cleanExam} Score &amp; Trajectory</span>
+                                    <span style="background:rgba(16,185,129,0.16); color:#10b981; border:1px solid rgba(16,185,129,0.4); padding:2px 8px; border-radius:999px; font-size:10.5px; font-weight:900;">🎯 ${stats.overallAccuracy}% Acc</span>
                                 </div>
-                                <div style="display:flex; align-items:baseline; justify-content:space-between; gap:6px; margin-top:4px; flex-wrap:wrap;">
-                                    <div>
-                                        <span style="font-size:28px; font-weight:900; color:#ffffff;">${stats.totalScore}</span>
-                                        <span style="font-size:11px; color:#94a3b8; font-weight:700;">pts (${stats.correctCount}✓ • ${stats.wrongCount}✕)</span>
+
+                                <div style="display:flex; align-items:center; justify-content:space-between; gap:6px; margin-top:6px; flex-wrap:wrap;">
+                                    <div style="display:flex; align-items:baseline; gap:4px;">
+                                        <span style="font-size:30px; font-weight:900; color:#fdb813; text-shadow:0 0 16px rgba(253,184,19,0.28);">${stats.totalScore}</span>
+                                        <span style="font-size:11.5px; color:#e2e8f0; font-weight:800;">pts</span>
                                     </div>
-                                    <span style="font-size:10.5px; color:#f43f5e; font-weight:800;">🛡️ −${negLost} Neg Marks</span>
+                                    <span style="background:rgba(244,63,94,0.14); color:#f43f5e; border:1px solid rgba(244,63,94,0.38); padding:2px 8px; border-radius:7px; font-size:10px; font-weight:900;">🛡️ −${negLost} Neg Marks</span>
+                                </div>
+
+                                <!-- HIGH-CONTRAST COLOR-CODED CORRECT (✔) AND WRONG (✖) PILLS (FIXES IMAGE 3) -->
+                                <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin-top:6px;">
+                                    <span style="background:rgba(16,185,129,0.16); border:1px solid rgba(16,185,129,0.45); color:#10b981; padding:3px 9px; border-radius:7px; font-size:11px; font-weight:900; display:inline-flex; align-items:center; gap:4px;">
+                                        <span style="color:#10b981; font-size:12px;">✔</span> ${stats.correctCount} Correct (+${grossMarks})
+                                    </span>
+                                    <span style="background:rgba(239,68,68,0.16); border:1px solid rgba(239,68,68,0.45); color:#ef4444; padding:3px 9px; border-radius:7px; font-size:11px; font-weight:900; display:inline-flex; align-items:center; gap:4px;">
+                                        <span style="color:#ef4444; font-size:12px;">✖</span> ${stats.wrongCount} Wrong (−${negLost})
+                                    </span>
                                 </div>
                             </div>
 
-                            <div style="margin:6px 0;">
+                            <div style="margin:8px 0 6px 0;">
                                 <svg viewBox="0 0 ${svgW} ${svgH}" style="width:100%; height:50px; overflow:visible;">
                                     <polygon points="${areaPoints}" fill="rgba(16, 185, 129, 0.16)"/>
                                     <polyline points="${polyPoints}" fill="none" stroke="#10b981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-                                    ${coords.map(c => `<circle cx="${c.x}" cy="${c.y}" r="3" fill="#fdb813" stroke="#000" stroke-width="1"/>`).join('')}
+                                    ${coords.map((c, idxC) => `<circle cx="${c.x}" cy="${c.y}" r="3.5" fill="${idxC === coords.length - 1 ? '#10b981' : '#fdb813'}" stroke="#000" stroke-width="1"/>`).join('')}
                                 </svg>
+                                <div style="display:flex; justify-content:space-between; font-size:9.5px; font-weight:800; margin-top:2px;">
+                                    <span style="color:#fdb813;">● Start: ${coords[0].val}%</span>
+                                    <span style="color:#10b981;">● Latest: ${stats.overallAccuracy}% Acc</span>
+                                </div>
                             </div>
 
-                            <div style="border-top:1px solid rgba(255,255,255,0.07); padding-top:6px;">
-                                <div style="font-size:10px; font-weight:800; color:#94a3b8; text-transform:uppercase; margin-bottom:4px;">Your Subject Mastery:</div>
+                            <div style="border-top:1px solid rgba(255,255,255,0.08); padding-top:7px;">
+                                <div style="font-size:10px; font-weight:800; color:#cbd5e1; text-transform:uppercase; margin-bottom:5px;">📚 Your Subject Mastery:</div>
                                 ${subjectBarsHtml}
                             </div>
                         </div>
 
                         <div style="display:flex; flex-direction:column; gap:8px;">
                             <div class="mcqs-diag-subcard" style="padding:10px;">
-                                <div style="font-size:10px; color:#94a3b8; font-weight:800; text-transform:uppercase; margin-bottom:5px;">⏱️ Speed-vs-Accuracy Autopsy</div>
+                                <div style="font-size:10px; color:#fdb813; font-weight:800; text-transform:uppercase; margin-bottom:5px;">⏱️ Speed-vs-Accuracy Autopsy</div>
                                 <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
-                                    <div style="background:rgba(16,185,129,0.1); border:1px solid rgba(16,185,129,0.35); border-radius:7px; padding:6px; text-align:center;">
-                                        <div style="font-size:15px; font-weight:900; color:#10b981;">${stats.avgTimeCorrect ? stats.avgTimeCorrect + 's' : '--'}</div>
-                                        <div style="font-size:9.5px; color:#cbd5e1;">Avg on Correct</div>
+                                    <div style="background:rgba(16,185,129,0.12); border:1px solid rgba(16,185,129,0.4); border-radius:7px; padding:6px; text-align:center;">
+                                        <div style="font-size:15px; font-weight:900; color:#10b981;">✔ ${stats.avgTimeCorrect ? stats.avgTimeCorrect + 's' : '--'}</div>
+                                        <div style="font-size:9.5px; color:#e2e8f0; font-weight:700;">Avg on Correct</div>
                                     </div>
-                                    <div style="background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.35); border-radius:7px; padding:6px; text-align:center;">
-                                        <div style="font-size:15px; font-weight:900; color:#ef4444;">${stats.avgTimeWrong ? stats.avgTimeWrong + 's' : '--'}</div>
-                                        <div style="font-size:9.5px; color:#cbd5e1;">Avg on Wrong</div>
+                                    <div style="background:rgba(239,68,68,0.12); border:1px solid rgba(239,68,68,0.4); border-radius:7px; padding:6px; text-align:center;">
+                                        <div style="font-size:15px; font-weight:900; color:#ef4444;">✖ ${stats.avgTimeWrong ? stats.avgTimeWrong + 's' : '--'}</div>
+                                        <div style="font-size:9.5px; color:#e2e8f0; font-weight:700;">Avg on Wrong</div>
                                     </div>
                                 </div>
                                 ${speedDiagnosisHtml}
@@ -4361,10 +4460,10 @@ async function handleLiveSearch() {
                             <div class="mcqs-diag-subcard" style="padding:10px;">
                                 <div style="display:flex; justify-content:space-between; align-items:center;">
                                     <span style="font-size:10px; color:#38bdf8; font-weight:800; text-transform:uppercase;">🛡️ Negative-Mark Shield</span>
-                                    <span style="font-size:10px; color:#10b981; font-weight:800;">+${grossMarks} Gross</span>
+                                    <span style="font-size:10.5px; color:#10b981; font-weight:900;">+${grossMarks} Gross</span>
                                 </div>
                                 <div style="font-size:11px; color:#cbd5e1; margin-top:3px; line-height:1.35;">
-                                    Fixing your <b>${stats.wrongIds.length || stats.wrongCount} Wrong MCQs</b> in the Mistake Clinic recovers <b>+${(stats.wrongIds.length || stats.wrongCount) * 5} marks</b>!
+                                    Fixing your <b style="color:#ef4444;">${stats.wrongIds.length || stats.wrongCount} Wrong MCQs</b> in the Mistake Clinic recovers <b style="color:#10b981;">+${(stats.wrongIds.length || stats.wrongCount) * 5} marks</b>!
                                 </div>
                                 <button type="button" onclick="window.location.hash='#/progress/${encodeURIComponent(activeExam)}'" style="margin-top:8px; width:100%; background:#fdb813; color:#000; border:none; padding:7px 10px; border-radius:8px; font-size:11.5px; font-weight:900; cursor:pointer; display:flex; justify-content:space-between; align-items:center;">
                                     <span>Open Full ${cleanExam} Analytics</span>
@@ -4429,8 +4528,8 @@ async function handleLiveSearch() {
                                     <div style="font-size:22px; font-weight:900; color:#10b981;">${simNetScore} <span style="font-size:11px; color:#94a3b8;">/ ${maxMarks}</span></div>
                                 </div>
                                 <div style="font-size:10.5px; text-align:right;">
-                                    <div style="color:#10b981; font-weight:800;">✓ ${simCorrect} (+${simCorrect * 4})</div>
-                                    <div style="color:#ef4444; font-weight:800;">✕ ${simWrong} (−${simWrong})</div>
+                                    <div style="color:#10b981; font-weight:800;">✔ ${simCorrect} (+${simCorrect * 4})</div>
+                                    <div style="color:#ef4444; font-weight:800;">✖ ${simWrong} (−${simWrong})</div>
                                 </div>
                             </div>
                         </div>
@@ -4461,7 +4560,7 @@ async function handleLiveSearch() {
     }
 
     // ==========================================
-    // SMART MISTAKE CLINIC (SYMMETRICAL 2x2 GRID)
+    // SMART MISTAKE CLINIC (SYMMETRICAL 2x2 GRID WITH COLOR-CODED BADGES)
     // ==========================================
     var clinicMode = 'WRONG';
 
@@ -4536,6 +4635,7 @@ async function handleLiveSearch() {
             }
 
             document.body.classList.add('hide-ai-btn');
+            document.body.classList.add('mcqs-anti-cheat-active');
             document.body.classList.add('hide-bottom-bar');
             document.body.classList.remove('mcqs-on-root-home');
 
@@ -4548,6 +4648,7 @@ async function handleLiveSearch() {
             setTimeout(() => {
                 if (typeof renderQuizInterface === 'function') renderQuizInterface();
                 if (typeof startQuestionTimer === 'function') startQuestionTimer();
+                syncAntiCheatAiButtonVisibility();
             }, 60);
         } catch (e) {
             showNotification('⚠️ Error launching session: ' + e.message);
@@ -4575,19 +4676,19 @@ async function handleLiveSearch() {
         }
 
         const modes = [
-            { id: 'WRONG', icon: '❌', title: 'Fix My Wrong MCQs', count: `${wrongCnt} MCQs`, desc: 'Re-attempt questions you got wrong & turn −1 into +4' },
-            { id: 'SKIPPED', icon: '⏭️', title: 'Clear Skipped Queue', count: `${skipCnt} MCQs`, desc: 'Practice questions you left unattempted in past tests' },
-            { id: 'BOOKMARKS', icon: '🔖', title: 'Saved Bookmarks', count: `${bmCnt} MCQs`, desc: 'Test yourself on your bookmarked high-yield questions' },
-            { id: 'SPRINT', icon: '⚡', title: `5-Min ${cleanExam} Sprint`, count: '10 Rapid MCQs', desc: `Instant 10-question reflex booster from ${cleanExam}` }
+            { id: 'WRONG', icon: '❌', color: '#ef4444', bg: 'rgba(239,68,68,0.16)', title: 'Fix My Wrong MCQs', count: `${wrongCnt} MCQs`, desc: 'Re-attempt questions you got wrong & turn −1 into +4' },
+            { id: 'SKIPPED', icon: '⏭️', color: '#eab308', bg: 'rgba(234,179,8,0.16)', title: 'Clear Skipped Queue', count: `${skipCnt} MCQs`, desc: 'Practice questions you left unattempted in past tests' },
+            { id: 'BOOKMARKS', icon: '🔖', color: '#c084fc', bg: 'rgba(168,85,247,0.16)', title: 'Saved Bookmarks', count: `${bmCnt} MCQs`, desc: 'Test yourself on your bookmarked high-yield questions' },
+            { id: 'SPRINT', icon: '⚡', color: '#38bdf8', bg: 'rgba(56,189,248,0.16)', title: `5-Min ${cleanExam} Sprint`, count: '10 Rapid MCQs', desc: `Instant 10-question reflex booster from ${cleanExam}` }
         ];
 
         const modeCardsHtml = modes.map(m => {
             const active = clinicMode === m.id;
             return `
-                <div onclick="setSmartClinicMode('${m.id}')" style="background:${active ? 'rgba(56,189,248,0.15)' : '#0b101d'}; border:1.5px solid ${active ? '#38bdf8' : 'rgba(255,255,255,0.09)'}; border-radius:10px; padding:10px 12px; cursor:pointer; transition:0.15s;">
+                <div onclick="setSmartClinicMode('${m.id}')" style="background:${active ? m.bg : '#0b101d'}; border:1.5px solid ${active ? m.color : 'rgba(255,255,255,0.09)'}; border-radius:10px; padding:10px 12px; cursor:pointer; transition:0.15s;">
                     <div style="display:flex; justify-content:space-between; align-items:center; gap:6px; flex-wrap:wrap;">
-                        <span style="font-size:12.5px; font-weight:800; color:${active ? '#fff' : '#cbd5e1'};">${m.icon} ${m.title}</span>
-                        <span style="font-size:10.5px; font-weight:900; color:${active ? '#38bdf8' : '#94a3b8'}; background:rgba(255,255,255,0.06); padding:2px 8px; border-radius:999px;">${m.count}</span>
+                        <span style="font-size:12.5px; font-weight:800; color:#fff;">${m.icon} ${m.title}</span>
+                        <span style="font-size:10.5px; font-weight:900; color:${m.color}; background:${m.bg}; border:1px solid ${m.color}; padding:2px 8px; border-radius:999px;">${m.count}</span>
                     </div>
                     <div style="font-size:11px; color:#94a3b8; margin-top:4px; line-height:1.35;">${m.desc}</div>
                 </div>
@@ -4599,7 +4700,7 @@ async function handleLiveSearch() {
                 <div>
                     <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:8px;">
                         <span style="background:rgba(56,189,248,0.18); color:#38bdf8; border:1px solid rgba(56,189,248,0.45); font-size:10px; font-weight:900; padding:3px 9px; border-radius:999px;">🧬 ZERO-REPEAT MISTAKE CLINIC</span>
-                        <span style="font-size:11px; color:#94a3b8; font-weight:700;">Active: <b style="color:#fff;">${cleanExam}</b></span>
+                        <span style="font-size:11px; color:#94a3b8; font-weight:700;">Active: <b style="color:#fdb813;">${cleanExam}</b></span>
                     </div>
                     <h3 style="margin:0 0 4px 0; font-size:18px; font-weight:900; color:#ffffff;">Smart Mistake Clinic &amp; Rapid Sprint</h3>
                     <p style="margin:0 0 12px 0; font-size:12.5px; color:#94a3b8;">Convert your personal weak spots into guaranteed marks or run a 5-minute reflex sprint.</p>
@@ -4748,23 +4849,23 @@ async function handleLiveSearch() {
             const directFolders = inv.directChildrenByExam[exKey] || [];
             let folderChipsHtml = '';
             if (directFolders.length > 0) {
-                folderChipsHtml = directFolders.map(childKey => {
+                let chipColorSet = new Set();
+                folderChipsHtml = directFolders.map((childKey, cIdx) => {
                     const cleanChild = formatCleanTopicTitle(childKey);
                     const childFull = `${exKey} > ${childKey}`;
-                    const cIcon = getAutomaticIconForName(cleanChild, null, childFull);
+                    const chipTheme = getAutoTopicTheme(cleanChild, null, cIdx, chipColorSet, '📘', null, childFull);
                     const safeChild = childKey.replace(/'/g, "\\'");
                     return `
-                        <span class="mcqs-subfolder-chip" onclick="event.stopPropagation(); jumpToSection(['${safeEx}', '${safeChild}'])">
-                            ${cIcon} ${cleanChild}
+                        <span class="mcqs-subfolder-chip" style="border-color:${chipTheme.border}; background:${chipTheme.bg};" onclick="event.stopPropagation(); jumpToSection(['${safeEx}', '${safeChild}'])">
+                            <span style="color:${chipTheme.c};">${chipTheme.i}</span> <span>${cleanChild}</span>
                         </span>
                     `;
                 }).join('');
             } else {
-                // Fallback action chips so cards like JEE never look empty!
                 folderChipsHtml = `
-                    <span class="mcqs-subfolder-chip" onclick="event.stopPropagation(); jumpToSection(['${safeEx}'])">📝 Practice MCQs</span>
-                    <span class="mcqs-subfolder-chip" onclick="event.stopPropagation(); launchCustomStudioWithPreselection('${safeEx}')">🎯 Custom ${cleanEx} Mock</span>
-                    <span class="mcqs-subfolder-chip" onclick="event.stopPropagation(); window.location.hash='#/progress/${encodeURIComponent(exKey)}'">📊 ${cleanEx} Analytics</span>
+                    <span class="mcqs-subfolder-chip" style="border-color:rgba(6,182,212,0.5); background:rgba(6,182,212,0.12);" onclick="event.stopPropagation(); jumpToSection(['${safeEx}'])">📝 Practice MCQs</span>
+                    <span class="mcqs-subfolder-chip" style="border-color:rgba(253,184,19,0.5); background:rgba(253,184,19,0.12);" onclick="event.stopPropagation(); launchCustomStudioWithPreselection('${safeEx}')">🎯 Custom ${cleanEx} Mock</span>
+                    <span class="mcqs-subfolder-chip" style="border-color:rgba(16,185,129,0.5); background:rgba(16,185,129,0.12);" onclick="event.stopPropagation(); window.location.hash='#/progress/${encodeURIComponent(exKey)}'">📊 ${cleanEx} Analytics</span>
                 `;
             }
 
@@ -4785,7 +4886,7 @@ async function handleLiveSearch() {
                         </div>
 
                         <div style="margin-bottom:12px;">
-                            <div style="font-size:10px; font-weight:800; color:#64748b; text-transform:uppercase; margin-bottom:6px;">Direct Jump Inside ${cleanEx}:</div>
+                            <div style="font-size:10px; font-weight:800; color:#94a3b8; text-transform:uppercase; margin-bottom:6px;">Direct Jump Inside ${cleanEx}:</div>
                             <div class="mcqs-subfolder-chip-row">${folderChipsHtml}</div>
                         </div>
                     </div>
@@ -4874,7 +4975,7 @@ async function handleLiveSearch() {
     }
 
     // ==========================================
-    // MODERNIZED INNER FOLDER VIEW (STRICTLY RESPECTS SUBTOPIC SEARCH CONFIG!)
+    // MODERNIZED INNER FOLDER VIEW
     // ==========================================
     function classifySubtopicModuleBadge(cleanName, fullCheckPath, typeValue, childKeys) {
         const lower = cleanName.toLowerCase();
@@ -4996,13 +5097,14 @@ async function handleLiveSearch() {
                     }).join('');
                     nestedChipsHtml = `<div style="display:flex; flex-wrap:wrap; gap:6px; margin-top:10px;">${pills}</div>`;
                 } else {
-                    const previewChips = grandChildren.slice(0, 4).map(gk => {
+                    let subChipColors = new Set();
+                    const previewChips = grandChildren.slice(0, 4).map((gk, gIdx) => {
                         const cleanG = formatCleanTopicTitle(gk);
-                        const gIcon = getAutomaticIconForName(cleanG, null, `${fullChildPath} > ${gk}`);
+                        const gTheme = getAutoTopicTheme(cleanG, null, gIdx, subChipColors, '📘', null, `${fullChildPath} > ${gk}`);
                         const safeGk = gk.replace(/'/g, "\\'");
                         return `
-                            <span class="mcqs-subfolder-chip" onclick="event.stopPropagation(); jumpToSection([${currentTrailJs}, '${safeKey}', '${safeGk}'])">
-                                ${gIcon} ${cleanG}
+                            <span class="mcqs-subfolder-chip" style="border-color:${gTheme.border}; background:${gTheme.bg};" onclick="event.stopPropagation(); jumpToSection([${currentTrailJs}, '${safeKey}', '${safeGk}'])">
+                                <span style="color:${gTheme.c};">${gTheme.i}</span> <span>${cleanG}</span>
                             </span>
                         `;
                     }).join('');
@@ -5048,7 +5150,7 @@ async function handleLiveSearch() {
                             <div style="min-width:0;">
                                 <h1 style="margin:0; font-size:clamp(20px, 2.6vw, 28px); font-weight:900; color:#ffffff; line-height:1.15;">${folderClean}</h1>
                                 <div style="font-size:12.5px; color:#94a3b8; margin-top:3px;">
-                                    <b style="color:#fdb813;">${keysArr.length} Modules</b> available${pathStats.solved > 0 ? ` • Your Progress: <b style="color:#10b981;">${pathStats.solved} Solved (${pathStats.acc}% Accuracy)</b>` : ''}
+                                    <b style="color:#fdb813;">${keysArr.length} Modules</b> available${pathStats.solved > 0 ? ` • Your Progress: <b style="color:#10b981;">✔ ${pathStats.solved} Solved (${pathStats.acc}% Accuracy)</b>` : ''}
                                 </div>
                             </div>
                         </div>
@@ -5128,8 +5230,8 @@ async function handleLiveSearch() {
                         ${st.hasRealData ? `
                             <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:8px; background:#090d16; border:1px solid rgba(255,255,255,0.07); border-radius:10px; padding:8px; text-align:center;">
                                 <div><div style="font-size:14px; font-weight:900; color:#fdb813;">${st.totalScore}</div><div style="font-size:9.5px; color:#94a3b8;">Score</div></div>
-                                <div><div style="font-size:14px; font-weight:900; color:#10b981;">${st.correctCount}</div><div style="font-size:9.5px; color:#94a3b8;">Correct</div></div>
-                                <div><div style="font-size:14px; font-weight:900; color:#ef4444;">${st.wrongCount}</div><div style="font-size:9.5px; color:#94a3b8;">Wrong</div></div>
+                                <div><div style="font-size:14px; font-weight:900; color:#10b981;">✔ ${st.correctCount}</div><div style="font-size:9.5px; color:#94a3b8;">Correct</div></div>
+                                <div><div style="font-size:14px; font-weight:900; color:#ef4444;">✖ ${st.wrongCount}</div><div style="font-size:9.5px; color:#94a3b8;">Wrong</div></div>
                             </div>
                         ` : `<div style="font-size:12px; color:#94a3b8;">Complete 1 quiz in ${cleanKey} to unlock deep performance diagnostics.</div>`}
                     </div>
@@ -5202,11 +5304,12 @@ async function handleLiveSearch() {
             const subjectBarsHtml = st.subjectList.length > 0
                 ? st.subjectList.map(s => {
                     const col = s.pct >= 70 ? '#10b981' : (s.pct >= 50 ? '#fdb813' : '#ef4444');
+                    const sIcon = getAutomaticIconForName(s.name, null, `${category} > ${s.name}`);
                     return `
                         <div style="background:#0d1322; border:1px solid rgba(255,255,255,0.07); border-radius:10px; padding:11px 14px; margin-bottom:10px;">
                             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; font-size:13px; font-weight:800;">
-                                <span style="color:#fff;">${s.name}</span>
-                                <span style="color:${col};">${s.pct}% <span style="color:#94a3b8; font-size:11px; font-weight:600;">(${s.correct}/${s.attempts} Correct)</span></span>
+                                <span style="color:#fff;">${sIcon} ${s.name}</span>
+                                <span style="color:${col};">${s.pct}% <span style="color:#cbd5e1; font-size:11px; font-weight:700;">(<span style="color:#10b981;">✔ ${s.correct}</span> / ${s.attempts})</span></span>
                             </div>
                             <div style="width:100%; height:8px; background:#070a12; border-radius:4px; overflow:hidden;">
                                 <div style="width:${s.pct}%; height:100%; background:${col}; border-radius:4px;"></div>
@@ -5244,12 +5347,12 @@ async function handleLiveSearch() {
                             <div style="font-size:28px; font-weight:900; color:#38bdf8; margin-top:4px;">${st.totalAttempted}</div>
                         </div>
                         <div style="background:#0d1322; border:1px solid rgba(16,185,129,0.4); border-radius:14px; padding:16px; text-align:center;">
-                            <div style="font-size:11px; color:#94a3b8; font-weight:800; text-transform:uppercase;">✅ Correct (+4)</div>
-                            <div style="font-size:28px; font-weight:900; color:#10b981; margin-top:4px;">${st.correctCount}</div>
+                            <div style="font-size:11px; color:#94a3b8; font-weight:800; text-transform:uppercase;">✔ Correct (+4)</div>
+                            <div style="font-size:28px; font-weight:900; color:#10b981; margin-top:4px;">✔ ${st.correctCount}</div>
                         </div>
                         <div style="background:#0d1322; border:1px solid rgba(239,68,68,0.4); border-radius:14px; padding:16px; text-align:center;">
-                            <div style="font-size:11px; color:#94a3b8; font-weight:800; text-transform:uppercase;">❌ Wrong (−1)</div>
-                            <div style="font-size:28px; font-weight:900; color:#ef4444; margin-top:4px;">${st.wrongCount}</div>
+                            <div style="font-size:11px; color:#94a3b8; font-weight:800; text-transform:uppercase;">✖ Wrong (−1)</div>
+                            <div style="font-size:28px; font-weight:900; color:#ef4444; margin-top:4px;">✖ ${st.wrongCount}</div>
                         </div>
                         <div style="background:#0d1322; border:1px solid rgba(253,184,19,0.45); border-radius:14px; padding:16px; text-align:center;">
                             <div style="font-size:11px; color:#94a3b8; font-weight:800; text-transform:uppercase;">⭐ Net Score</div>
@@ -5269,11 +5372,11 @@ async function handleLiveSearch() {
                         </h3>
                         <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:12px;">
                             <div style="background:rgba(16,185,129,0.1); border:1px solid rgba(16,185,129,0.4); border-radius:12px; padding:14px; text-align:center;">
-                                <div style="font-size:26px; font-weight:900; color:#10b981;">${st.avgTimeCorrect}s</div>
+                                <div style="font-size:26px; font-weight:900; color:#10b981;">✔ ${st.avgTimeCorrect}s</div>
                                 <div style="font-size:12px; color:#cbd5e1; font-weight:700; margin-top:4px;">Avg Time on Correct Answers</div>
                             </div>
                             <div style="background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.4); border-radius:12px; padding:14px; text-align:center;">
-                                <div style="font-size:26px; font-weight:900; color:#ef4444;">${st.avgTimeWrong}s</div>
+                                <div style="font-size:26px; font-weight:900; color:#ef4444;">✖ ${st.avgTimeWrong}s</div>
                                 <div style="font-size:12px; color:#cbd5e1; font-weight:700; margin-top:4px;">Avg Time on Wrong Answers</div>
                             </div>
                         </div>
@@ -5384,9 +5487,9 @@ async function handleLiveSearch() {
         `;
     };
 
-    const _origFetchLiveLeaderboardV7 = fetchLiveLeaderboard;
+    const _origFetchLiveLeaderboardV8 = fetchLiveLeaderboard;
     fetchLiveLeaderboard = async function(category) {
-        await _origFetchLiveLeaderboardV7(category);
+        await _origFetchLiveLeaderboardV8(category);
         const mc = document.getElementById('dynamic-content');
         if (!mc) return;
         const cleanCategory = formatCleanTopicTitle(category);
@@ -5408,7 +5511,7 @@ async function handleLiveSearch() {
     };
 
     // ==========================================
-    // MODERNIZED MCQ PRACTICE QUESTION PRESENTING STYLE (ENHANCES renderQuizInterface)
+    // MODERNIZED MCQ PRACTICE QUESTION PRESENTING STYLE (NO ASK AI BUTTON DURING QUIZ!)
     // ==========================================
     window.jumpToQuizQuestionIndex = function(targetIdx) {
         if (typeof currentQuestions === 'undefined' || !Array.isArray(currentQuestions)) return;
@@ -5417,10 +5520,11 @@ async function handleLiveSearch() {
         if (typeof renderQuizInterface === 'function') renderQuizInterface();
     };
 
-    if (typeof renderQuizInterface === 'function' && !window._origRenderQuizInterfaceModernV7) {
-        window._origRenderQuizInterfaceModernV7 = renderQuizInterface;
+    if (typeof renderQuizInterface === 'function' && !window._origRenderQuizInterfaceModernV8) {
+        window._origRenderQuizInterfaceModernV8 = renderQuizInterface;
         renderQuizInterface = function() {
-            window._origRenderQuizInterfaceModernV7();
+            window._origRenderQuizInterfaceModernV8();
+            syncAntiCheatAiButtonVisibility();
 
             const mc = document.getElementById('dynamic-content');
             if (!mc || typeof currentQuestions === 'undefined' || !Array.isArray(currentQuestions) || !currentQuestions.length) return;
@@ -5459,9 +5563,10 @@ async function handleLiveSearch() {
                         <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
                             <span style="background:rgba(253,184,19,0.16); color:#fdb813; border:1px solid rgba(253,184,19,0.45); font-size:11px; font-weight:900; padding:3px 10px; border-radius:999px;">Question ${idx + 1} of ${total}</span>
                             <span style="background:rgba(255,255,255,0.05); color:${lCol}; border:1px solid ${lCol}; font-size:11px; font-weight:800; padding:3px 9px; border-radius:999px;">● ${lvl}</span>
-                            <span style="font-size:11px; color:#10b981; font-weight:800;">+4 Marks • −1 Neg</span>
+                            <span style="background:rgba(16,185,129,0.14); color:#10b981; border:1px solid rgba(16,185,129,0.35); padding:2px 8px; border-radius:999px; font-size:10.5px; font-weight:800;">✔ +4 Marks</span>
+                            <span style="background:rgba(239,68,68,0.14); color:#ef4444; border:1px solid rgba(239,68,68,0.35); padding:2px 8px; border-radius:999px; font-size:10.5px; font-weight:800;">✖ −1 Neg</span>
                         </div>
-                        <button type="button" onclick="openAIModal()" style="background:rgba(168,85,247,0.16); color:#c084fc; border:1px solid rgba(168,85,247,0.45); padding:4px 11px; border-radius:999px; font-size:11px; font-weight:800; cursor:pointer;">✨ Ask AI Tutor</button>
+                        <span style="font-size:11px; color:#94a3b8; font-weight:700;">🔒 AI Disabled During Practice</span>
                     </div>
                     <div class="mcqs-quiz-nav-strip" id="mcqsModernQuizNavStrip">${pillsHtml}</div>
                 `;
@@ -5482,6 +5587,13 @@ async function handleLiveSearch() {
         const navbar = document.querySelector('.navbar');
         const searchWrap = document.getElementById('searchWrapper');
         if (!navbar || !searchWrap) return;
+
+        let spacer = document.getElementById('mcqsCenterNavSpacer');
+        if (!spacer) {
+            spacer = document.createElement('div');
+            spacer.id = 'mcqsCenterNavSpacer';
+            navbar.insertBefore(spacer, searchWrap);
+        }
 
         let pillBar = document.getElementById('mcqsWebCenterNavPills');
         if (!pillBar) {
@@ -5667,10 +5779,11 @@ async function handleLiveSearch() {
         syncRealStudentDiagnostics(false);
     }
 
-    const _origRenderViewV7 = _renderView;
+    const _origRenderViewV8 = _renderView;
     _renderView = function() {
         injectCompleteModernSuiteStyles();
         syncWebsiteNavbarPills();
+        syncAntiCheatAiButtonVisibility();
 
         const rawHash = window.location.hash.replace(/^#\/?/, '');
         const isRootHome = (!rawHash || rawHash === 'home') && Array.isArray(currentPath) && currentPath.length === 0;
@@ -5681,6 +5794,7 @@ async function handleLiveSearch() {
             const bc = document.getElementById('breadcrumb-text');
             if (bc) bc.innerText = 'Home';
             renderPriorityHomeWorkspace();
+            syncAntiCheatAiButtonVisibility();
             window.scrollTo({ top: 0, behavior: 'smooth' });
             return;
         }
@@ -5692,16 +5806,25 @@ async function handleLiveSearch() {
 
         const handledModernFolder = renderModernizedInnerFolderView();
         if (!handledModernFolder) {
-            _origRenderViewV7();
+            _origRenderViewV8();
         } else {
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
+        setTimeout(syncAntiCheatAiButtonVisibility, 60);
     };
 
-    if (typeof updateSidebarLinks === 'function' && !window._origUpdateSidebarLinksWrappedV7) {
-        window._origUpdateSidebarLinksWrappedV7 = updateSidebarLinks;
+    if (typeof updateBottomNav === 'function' && !window._origUpdateBottomNavWrappedV8) {
+        window._origUpdateBottomNavWrappedV8 = updateBottomNav;
+        updateBottomNav = function(hash) {
+            window._origUpdateBottomNavWrappedV8(hash);
+            syncAntiCheatAiButtonVisibility();
+        };
+    }
+
+    if (typeof updateSidebarLinks === 'function' && !window._origUpdateSidebarLinksWrappedV8) {
+        window._origUpdateSidebarLinksWrappedV8 = updateSidebarLinks;
         updateSidebarLinks = function() {
-            window._origUpdateSidebarLinksWrappedV7();
+            window._origUpdateSidebarLinksWrappedV8();
             const sidebar = document.getElementById('main-sidebar');
             if (sidebar) sidebar.style.display = 'none';
         };
@@ -5713,6 +5836,8 @@ async function handleLiveSearch() {
         if (!isRootHome) {
             document.body.classList.remove('mcqs-on-root-home');
         }
+        syncAntiCheatAiButtonVisibility();
+        setTimeout(syncAntiCheatAiButtonVisibility, 250);
     });
 
     window.addEventListener('click', function(e) {
@@ -5727,6 +5852,7 @@ async function handleLiveSearch() {
             injectCompleteModernSuiteStyles();
             syncWebsiteNavbarPills();
             verifyAndSyncAccurateDailyStreak();
+            syncAntiCheatAiButtonVisibility();
             if (typeof _renderView === 'function' && (!window.location.hash || window.location.hash === '#/home' || window.location.hash.startsWith('#/path/'))) {
                 _renderView();
             }
