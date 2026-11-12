@@ -2673,52 +2673,72 @@ async function handleLiveSearch() {
 }
 
 // ==========================================
-// 7. COMPLETE ARCHITECTURAL UI SUITE (HOME, INNER FOLDERS, FLOATING NAV, COMPACT SEARCH,
-//    MODERN MCQ QUIZ ENGINE, ANALYTICS DASHBOARD & PODIUM LEADERBOARDS)
+// 7. COMPLETE ARCHITECTURAL UI SUITE (FIXED FLOATING NAVBAR, ZERO-COLLISION FLEX SEARCH,
+//    HOME & INNER FOLDERS, 2x2 MISTAKE CLINIC, QUIZ NAVIGATOR & ANALYTICS/LEADERBOARDS)
 // ==========================================
-(function initMCQsPrepCompleteModernSuiteV6() {
-    if (window._mcqsCompleteModernSuiteLoadedV6) return;
-    window._mcqsCompleteModernSuiteLoadedV6 = true;
+(function initMCQsPrepCompleteModernSuiteV7() {
+    if (window._mcqsCompleteModernSuiteLoadedV7) return;
+    window._mcqsCompleteModernSuiteLoadedV7 = true;
 
     function injectCompleteModernSuiteStyles() {
-        if (document.getElementById('mcqs-complete-modern-styles-v6')) return;
+        if (document.getElementById('mcqs-complete-modern-styles-v7')) return;
         const st = document.createElement('style');
-        st.id = 'mcqs-complete-modern-styles-v6';
+        st.id = 'mcqs-complete-modern-styles-v7';
         st.textContent = `
             /* ==========================================
-               1. GLOBAL OVERFLOW GUARD & STICKY HEADER
+               1. PERMANENTLY FLOATING TOP NAVBAR & ZERO-COLLISION FLEX LAYOUT
                ========================================== */
-            html, body {
-                max-width: 100vw !important;
+            body {
                 overflow-x: hidden !important;
+                padding-top: 68px !important;
                 box-sizing: border-box !important;
             }
             *, *::before, *::after {
                 box-sizing: border-box;
             }
 
-            /* PC Navbar & Fixed Floating Center Pill Bar (Fixes Image 2 & Image 3) */
+            /* Fixed Floating Top Navbar (Always stays pinned at top of screen when scrolling!) */
+            .navbar {
+                position: fixed !important;
+                top: 0 !important;
+                left: 0 !important;
+                right: 0 !important;
+                width: 100% !important;
+                height: 62px !important;
+                z-index: 9500 !important;
+                display: flex !important;
+                align-items: center !important;
+                justify-content: space-between !important;
+                gap: 10px !important;
+                padding: 0 20px !important;
+                background: rgba(7, 10, 19, 0.92) !important;
+                backdrop-filter: blur(18px) !important;
+                -webkit-backdrop-filter: blur(18px) !important;
+                border-bottom: 1px solid rgba(253, 184, 19, 0.22) !important;
+                box-shadow: 0 8px 28px rgba(0, 0, 0, 0.65) !important;
+                box-sizing: border-box !important;
+            }
+            .nav-left {
+                display: flex !important;
+                align-items: center !important;
+                gap: 8px !important;
+                flex-shrink: 0 !important;
+                min-width: 0 !important;
+            }
+            .nav-badges-group {
+                display: flex !important;
+                align-items: center !important;
+                gap: 6px !important;
+                flex-shrink: 0 !important;
+            }
+            .nav-right {
+                display: flex !important;
+                align-items: center !important;
+                gap: 8px !important;
+                flex-shrink: 0 !important;
+            }
+
             @media (min-width: 861px) {
-                .navbar {
-                    position: sticky !important;
-                    top: 0 !important;
-                    z-index: 4000 !important;
-                    display: flex !important;
-                    align-items: center !important;
-                    justify-content: space-between !important;
-                    gap: 12px !important;
-                    padding: 10px 24px !important;
-                    width: 100% !important;
-                    background: rgba(6, 9, 17, 0.88) !important;
-                    backdrop-filter: blur(16px) !important;
-                    border-bottom: 1px solid rgba(255, 255, 255, 0.07) !important;
-                }
-                .nav-left, .nav-right {
-                    display: flex !important;
-                    align-items: center !important;
-                    gap: 10px !important;
-                    flex-shrink: 0 !important;
-                }
                 .nav-right > .nav-link-item {
                     display: none !important;
                 }
@@ -2726,94 +2746,43 @@ async function handleLiveSearch() {
                 html.is-standalone-pwa #ai-floating-btn {
                     display: inline-flex !important;
                 }
-
-                /* FLOATING FIXED CENTER NAVIGATION BAR ON PC (Stays in place when scrolling!) */
-                .web-center-nav-pills {
-                    position: fixed !important;
-                    top: 9px !important;
-                    left: 50% !important;
-                    transform: translateX(-50%) !important;
-                    z-index: 4500 !important;
-                    display: inline-flex !important;
-                    align-items: center !important;
-                    gap: 4px !important;
-                    background: rgba(13, 18, 30, 0.92) !important;
-                    backdrop-filter: blur(18px) !important;
-                    -webkit-backdrop-filter: blur(18px) !important;
-                    border: 1px solid rgba(253, 184, 19, 0.32) !important;
-                    border-radius: 999px !important;
-                    padding: 4px 7px !important;
-                    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.75), 0 0 18px rgba(253, 184, 19, 0.12) !important;
-                    white-space: nowrap !important;
-                }
-                body.admin-mode .web-center-nav-pills {
-                    display: none !important;
-                }
             }
 
-            /* Mobile Navbar Safety */
-            @media (max-width: 860px) {
-                .navbar {
-                    position: sticky !important;
-                    top: 0 !important;
-                    z-index: 4000 !important;
-                    width: 100% !important;
-                    max-width: 100vw !important;
-                    padding: 8px 12px !important;
-                    gap: 6px !important;
-                    background: rgba(6, 9, 17, 0.94) !important;
-                    backdrop-filter: blur(14px) !important;
-                }
-                .nav-left {
-                    min-width: 0 !important;
-                    flex-shrink: 1 !important;
-                    gap: 6px !important;
-                }
-                .nav-right {
-                    flex-shrink: 0 !important;
-                    gap: 6px !important;
-                }
-                .web-center-nav-pills {
-                    display: none !important;
-                }
-            }
-
-            #loginNavBtn {
+            /* Center Pill Bar in True Flex Flow (Physically impossible to overlap Streak or Search!) */
+            .web-center-nav-pills {
+                position: relative !important;
+                top: auto !important;
+                left: auto !important;
+                transform: none !important;
+                margin: 0 auto !important;
+                display: inline-flex !important;
+                align-items: center !important;
+                gap: 2px !important;
+                background: rgba(15, 21, 35, 0.96) !important;
+                border: 1px solid rgba(253, 184, 19, 0.32) !important;
+                border-radius: 999px !important;
+                padding: 4px 6px !important;
+                box-shadow: 0 4px 18px rgba(0, 0, 0, 0.5) !important;
                 white-space: nowrap !important;
                 flex-shrink: 0 !important;
-                padding: 7px 14px !important;
-                border-radius: 999px !important;
-                font-weight: 800 !important;
-                font-size: 12.5px !important;
-                background: #fdb813 !important;
-                color: #000000 !important;
-                border: none !important;
-                box-shadow: 0 4px 14px rgba(253, 184, 19, 0.35) !important;
-                align-items: center !important;
-                gap: 6px !important;
-                cursor: pointer !important;
+                z-index: 100 !important;
             }
-            #loginNavBtn img {
-                width: 15px !important;
-                height: 15px !important;
-                background: #fff;
-                border-radius: 50%;
-                padding: 2px;
+            body.admin-mode .web-center-nav-pills {
+                display: none !important;
             }
-
             .web-nav-pill-btn {
                 background: transparent;
                 border: none;
                 color: #cbd5e1;
-                font-size: 12.5px;
+                font-size: 12px;
                 font-weight: 700;
-                padding: 6px 12px;
+                padding: 5px 10px;
                 border-radius: 999px;
                 cursor: pointer;
                 transition: all 0.18s ease;
                 display: inline-flex;
                 align-items: center;
-                gap: 5px;
+                gap: 4px;
                 font-family: inherit;
                 white-space: nowrap;
             }
@@ -2825,7 +2794,8 @@ async function handleLiveSearch() {
                 background: linear-gradient(135deg, #fdb813, #f59e0b) !important;
                 color: #000000 !important;
                 font-weight: 800 !important;
-                box-shadow: 0 0 15px rgba(253, 184, 19, 0.35);
+                padding: 5px 12px !important;
+                box-shadow: 0 0 14px rgba(253, 184, 19, 0.32);
             }
             .web-courses-dropdown-wrap {
                 position: relative;
@@ -2840,8 +2810,8 @@ async function handleLiveSearch() {
                 border: 1px solid rgba(253, 184, 19, 0.45);
                 border-radius: 14px;
                 padding: 8px;
-                box-shadow: 0 20px 45px rgba(0, 0, 0, 0.9);
-                z-index: 5000;
+                box-shadow: 0 20px 45px rgba(0, 0, 0, 0.92);
+                z-index: 9999;
             }
             .web-courses-dropdown-wrap:hover .web-courses-dropdown-menu,
             .web-courses-dropdown-wrap.open .web-courses-dropdown-menu {
@@ -2866,68 +2836,70 @@ async function handleLiveSearch() {
             }
 
             /* ==========================================
-               2. ORGANIZED, COMPACT & PROPORTIONATE SEARCH BAR (FIXES IMAGE 3)
+               2. CLEAN, SINGLE-BORDER, NON-OVERLAPPING SEARCH BAR
                ========================================== */
             #searchWrapper {
                 position: relative !important;
+                display: flex !important;
+                align-items: center !important;
+                background: transparent !important;
+                border: none !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                box-shadow: none !important;
+                width: auto !important;
                 flex-shrink: 0 !important;
-                margin-left: auto !important;
-            }
-            @media (min-width: 861px) {
-                #searchWrapper.active {
-                    width: 270px !important;
-                    max-width: 28vw !important;
-                    flex: 0 0 auto !important;
-                    z-index: 4600 !important;
-                }
-            }
-            /* Hide the center pill bar ONLY on smaller laptops (861px-1180px) when search is open so they never overlap */
-            @media (min-width: 861px) and (max-width: 1180px) {
-                body.mcqs-search-open .web-center-nav-pills {
-                    opacity: 0 !important;
-                    pointer-events: none !important;
-                }
             }
             #searchWrapper.active .search-icon-btn {
                 display: none !important;
             }
+            #searchWrapper:not(.active) .search-input-container {
+                display: none !important;
+            }
             #searchWrapper.active .search-input-container {
-                display: flex !important;
-                align-items: center !important;
-                width: 100% !important;
-                height: 36px !important;
                 position: relative !important;
+                top: auto !important;
+                right: auto !important;
+                left: auto !important;
+                bottom: auto !important;
+                transform: none !important;
+                display: inline-flex !important;
+                align-items: center !important;
+                width: 220px !important;
+                height: 35px !important;
                 background: #0d1322 !important;
-                border: 1.5px solid rgba(253, 184, 19, 0.65) !important;
-                border-radius: 10px !important;
-                padding: 0 8px 0 12px !important;
-                box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6), 0 0 12px rgba(253, 184, 19, 0.18) !important;
+                border: 1.5px solid #fdb813 !important;
+                border-radius: 999px !important;
+                padding: 0 6px 0 13px !important;
+                margin: 0 !important;
+                box-shadow: 0 4px 16px rgba(0, 0, 0, 0.55) !important;
                 box-sizing: border-box !important;
             }
             #searchWrapper.active #searchInput {
+                flex: 1 1 auto !important;
                 width: 100% !important;
                 min-width: 0 !important;
-                height: 32px !important;
+                height: 100% !important;
                 background: transparent !important;
                 border: none !important;
                 outline: none !important;
+                box-shadow: none !important;
                 color: #ffffff !important;
-                font-size: 13px !important;
+                font-size: 12.5px !important;
                 font-weight: 500 !important;
                 padding: 0 6px 0 0 !important;
                 margin: 0 !important;
-                display: block !important;
-                box-shadow: none !important;
+                border-radius: 0 !important;
             }
             #searchWrapper.active .search-close-btn {
                 position: static !important;
                 transform: none !important;
-                background: rgba(239, 68, 68, 0.16) !important;
+                background: rgba(239, 68, 68, 0.18) !important;
                 color: #ef4444 !important;
-                border: 1px solid rgba(239, 68, 68, 0.35) !important;
+                border: 1px solid rgba(239, 68, 68, 0.38) !important;
                 width: 22px !important;
                 height: 22px !important;
-                border-radius: 6px !important;
+                border-radius: 50% !important;
                 display: inline-flex !important;
                 align-items: center !important;
                 justify-content: center !important;
@@ -2935,12 +2907,14 @@ async function handleLiveSearch() {
                 flex-shrink: 0 !important;
                 font-size: 11px !important;
                 padding: 0 !important;
+                margin: 0 !important;
             }
             #searchWrapper.active #searchSuggestions {
+                position: absolute !important;
                 top: calc(100% + 8px) !important;
                 right: 0 !important;
                 left: auto !important;
-                width: 340px !important;
+                width: 330px !important;
                 max-width: 92vw !important;
                 background: #0d1527 !important;
                 border: 1px solid rgba(253, 184, 19, 0.45) !important;
@@ -2948,21 +2922,71 @@ async function handleLiveSearch() {
                 box-shadow: 0 18px 45px rgba(0, 0, 0, 0.92) !important;
                 max-height: 350px !important;
                 overflow-y: auto !important;
+                z-index: 9999 !important;
             }
+
+            /* On smaller laptop windows (861px–1220px), hide the center pills while typing in search so there is 0 crowding */
+            @media (min-width: 861px) and (max-width: 1220px) {
+                body.mcqs-search-open .web-center-nav-pills {
+                    display: none !important;
+                }
+                #searchWrapper.active .search-input-container {
+                    width: 300px !important;
+                }
+            }
+
             @media (max-width: 860px) {
+                body {
+                    padding-top: 60px !important;
+                }
+                .navbar {
+                    height: 56px !important;
+                    padding: 0 12px !important;
+                    gap: 6px !important;
+                }
+                .web-center-nav-pills {
+                    display: none !important;
+                }
                 #searchWrapper.active {
                     position: fixed !important;
-                    top: 8px !important;
+                    top: 9px !important;
                     left: 12px !important;
                     right: 12px !important;
                     width: calc(100vw - 24px) !important;
                     z-index: 99999 !important;
+                }
+                #searchWrapper.active .search-input-container {
+                    width: 100% !important;
+                    height: 38px !important;
                 }
                 #searchWrapper.active #searchSuggestions {
                     left: 0 !important;
                     right: 0 !important;
                     width: 100% !important;
                 }
+            }
+
+            #loginNavBtn {
+                white-space: nowrap !important;
+                flex-shrink: 0 !important;
+                padding: 7px 14px !important;
+                border-radius: 999px !important;
+                font-weight: 800 !important;
+                font-size: 12.5px !important;
+                background: #fdb813 !important;
+                color: #000000 !important;
+                border: none !important;
+                box-shadow: 0 4px 14px rgba(253, 184, 19, 0.35) !important;
+                align-items: center !important;
+                gap: 6px !important;
+                cursor: pointer !important;
+            }
+            #loginNavBtn img {
+                width: 15px !important;
+                height: 15px !important;
+                background: #fff;
+                border-radius: 50%;
+                padding: 2px;
             }
 
             /* ==========================================
@@ -3058,7 +3082,7 @@ async function handleLiveSearch() {
                 animation: mcqsPulseAnim 1.5s infinite alternate;
             }
             .mcqs-hero-title {
-                font-size: clamp(24px, 3.2vw, 42px);
+                font-size: clamp(24px, 3.1vw, 42px);
                 font-weight: 900;
                 line-height: 1.1;
                 letter-spacing: -0.6px;
@@ -3073,29 +3097,30 @@ async function handleLiveSearch() {
             }
             .mcqs-hero-desc {
                 color: #94a3b8;
-                font-size: 14px;
+                font-size: 13.8px;
                 line-height: 1.6;
                 margin: 0 0 18px 0;
             }
             .mcqs-cta-row {
                 display: flex;
-                flex-wrap: wrap;
-                gap: 10px;
+                flex-wrap: nowrap;
+                gap: 8px;
                 margin-bottom: 18px;
             }
             .mcqs-btn-gold {
                 background: linear-gradient(135deg, #fdb813 0%, #f59e0b 100%);
                 color: #000000;
                 border: none;
-                padding: 11px 18px;
+                padding: 10px 15px;
                 border-radius: 11px;
-                font-size: 13px;
+                font-size: 12.5px;
                 font-weight: 900;
                 cursor: pointer;
                 display: inline-flex;
                 align-items: center;
                 justify-content: center;
-                gap: 7px;
+                gap: 6px;
+                white-space: nowrap;
                 box-shadow: 0 8px 22px rgba(253, 184, 19, 0.3);
                 transition: transform 0.18s ease, box-shadow 0.18s ease;
             }
@@ -3107,15 +3132,16 @@ async function handleLiveSearch() {
                 background: rgba(255, 255, 255, 0.05);
                 color: #ffffff;
                 border: 1px solid rgba(255, 255, 255, 0.16);
-                padding: 11px 16px;
+                padding: 10px 14px;
                 border-radius: 11px;
-                font-size: 13px;
+                font-size: 12.5px;
                 font-weight: 800;
                 cursor: pointer;
                 display: inline-flex;
                 align-items: center;
                 justify-content: center;
-                gap: 7px;
+                gap: 6px;
+                white-space: nowrap;
                 transition: all 0.18s ease;
             }
             .mcqs-btn-glass:hover {
@@ -3155,7 +3181,7 @@ async function handleLiveSearch() {
                 background: #0f131d;
                 border: 1.5px solid rgba(253, 184, 19, 0.38);
                 border-radius: 16px;
-                padding: 16px;
+                padding: 20px 16px 16px 16px;
                 box-shadow: 0 18px 45px rgba(0, 0, 0, 0.78);
                 height: 100%;
                 min-width: 0;
@@ -3314,6 +3340,7 @@ async function handleLiveSearch() {
                 box-shadow: 0 6px 16px var(--link-glow, rgba(56,189,248,0.22));
             }
 
+            /* Custom Mock Studio & Smart Mistake Clinic Split Grid */
             .mcqs-studios-split-grid {
                 display: grid;
                 grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -3336,6 +3363,12 @@ async function handleLiveSearch() {
             }
             .mcqs-clinic-box {
                 border-color: rgba(56, 189, 248, 0.42);
+            }
+            .mcqs-clinic-modes-grid {
+                display: grid;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 10px;
+                margin-bottom: 14px;
             }
             .mcqs-studio-pill-group {
                 display: flex;
@@ -3489,13 +3522,7 @@ async function handleLiveSearch() {
                 border-color: #ef4444 !important;
                 color: #ef4444 !important;
             }
-            .mcqs-quiz-nav-pill.q-answered {
-                background: rgba(56, 189, 248, 0.2) !important;
-                border-color: #38bdf8 !important;
-                color: #38bdf8 !important;
-            }
 
-            /* Modernize Quiz Card, Question Stem & Options inside #dynamic-content */
             .quiz-header {
                 background: #0b0f1a !important;
                 border: 1px solid rgba(253, 184, 19, 0.28) !important;
@@ -3544,38 +3571,6 @@ async function handleLiveSearch() {
                 box-shadow: 0 10px 28px rgba(0, 0, 0, 0.45) !important;
             }
 
-            /* ==========================================
-               6. PODIUM LEADERBOARDS & ANALYTICS DASHBOARD CARDS
-               ========================================== */
-            .mcqs-podium-grid {
-                display: grid;
-                grid-template-columns: repeat(3, minmax(0, 1fr));
-                gap: 14px;
-                margin-bottom: 22px;
-                align-items: end;
-            }
-            .mcqs-podium-card {
-                background: linear-gradient(160deg, rgba(22, 30, 50, 0.96), rgba(10, 14, 24, 0.99));
-                border: 1.5px solid rgba(255, 255, 255, 0.12);
-                border-radius: 16px;
-                padding: 18px 14px;
-                text-align: center;
-                position: relative;
-                box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5);
-            }
-            .mcqs-podium-card.rank-1 {
-                border-color: #fdb813;
-                background: linear-gradient(160deg, rgba(253, 184, 19, 0.16), rgba(12, 17, 29, 0.99));
-                box-shadow: 0 16px 38px rgba(253, 184, 19, 0.22);
-                transform: translateY(-6px);
-            }
-            .mcqs-podium-card.rank-2 {
-                border-color: #94a3b8;
-            }
-            .mcqs-podium-card.rank-3 {
-                border-color: #f97316;
-            }
-
             @keyframes mcqsPulseAnim {
                 0% { transform: scale(0.9); opacity: 0.65; }
                 100% { transform: scale(1.25); opacity: 1; }
@@ -3605,14 +3600,11 @@ async function handleLiveSearch() {
                 .mcqs-home-workspace-grid,
                 .mcqs-exam-cards-grid,
                 .mcqs-studios-split-grid,
+                .mcqs-clinic-modes-grid,
                 .mcqs-diag-grid,
-                .mcqs-inner-subtopics-grid,
-                .mcqs-podium-grid {
+                .mcqs-inner-subtopics-grid {
                     grid-template-columns: 1fr !important;
                     gap: 12px !important;
-                }
-                .mcqs-podium-card.rank-1 {
-                    transform: none;
                 }
                 .mcqs-modern-exam-card {
                     padding: 15px !important;
@@ -3632,32 +3624,31 @@ async function handleLiveSearch() {
     }
 
     // Search bar open/close hooks
-    if (typeof openSearch === 'function' && !window._origOpenSearchWrappedV6) {
-        window._origOpenSearchWrappedV6 = openSearch;
+    if (typeof openSearch === 'function' && !window._origOpenSearchWrappedV7) {
+        window._origOpenSearchWrappedV7 = openSearch;
         openSearch = function() {
             document.body.classList.add('mcqs-search-open');
-            window._origOpenSearchWrappedV6();
+            window._origOpenSearchWrappedV7();
             const inp = document.getElementById('searchInput');
             if (inp) setTimeout(() => inp.focus(), 30);
         };
     }
-    if (typeof closeSearch === 'function' && !window._origCloseSearchWrappedV6) {
-        window._origCloseSearchWrappedV6 = closeSearch;
+    if (typeof closeSearch === 'function' && !window._origCloseSearchWrappedV7) {
+        window._origCloseSearchWrappedV7 = closeSearch;
         closeSearch = function() {
             document.body.classList.remove('mcqs-search-open');
-            window._origCloseSearchWrappedV6();
+            window._origCloseSearchWrappedV7();
         };
     }
 
     // ==========================================
-    // STRICT SUBTOPIC SEARCH BAR CHECKER (FIXES IMAGE 1: RESPECTS ADMIN DISABLES 100%)
+    // STRICT SUBTOPIC SEARCH BAR CHECKER (RESPECTS ADMIN DISABLES 100%)
     // ==========================================
     isSubtopicSearchEnabledForPath = function(checkPath, childCount = 0) {
         if (!checkPath) return false;
         const cfg = window.subtopicSearchConfig || { enabledPaths: {}, autoThreshold: 8 };
         const map = cfg.enabledPaths || {};
 
-        // 1. Direct explicit setting on this exact path in Admin Panel
         if (map[checkPath] !== undefined) {
             if (typeof map[checkPath] === 'object') {
                 return map[checkPath].enabled === true;
@@ -3665,8 +3656,6 @@ async function handleLiveSearch() {
             return Boolean(map[checkPath]);
         }
 
-        // 2. Walk up parent folders: if a parent explicitly disabled search, return false!
-        //    If a parent explicitly enabled "includeChildren", return true!
         const parts = checkPath.split(' > ').filter(Boolean);
         for (let i = parts.length - 1; i >= 1; i--) {
             const parentKey = parts.slice(0, i).join(' > ');
@@ -3681,10 +3670,8 @@ async function handleLiveSearch() {
             }
         }
 
-        // 3. Never auto-show search bar on root exam folders (depth 1 like "NEET", "JEE", "Board") unless explicitly enabled in Step 1!
         if (parts.length <= 1) return false;
 
-        // 4. Only auto-enable for deep folders if threshold > 0 and childCount >= threshold
         const threshold = cfg.autoThreshold !== undefined ? Number(cfg.autoThreshold) : 0;
         if (threshold > 0 && childCount >= threshold) {
             return true;
@@ -3830,10 +3817,10 @@ async function handleLiveSearch() {
         }
     }
 
-    if (typeof submitQuiz === 'function' && !window._origSubmitQuizStreakHookV6) {
-        window._origSubmitQuizStreakHookV6 = submitQuiz;
+    if (typeof submitQuiz === 'function' && !window._origSubmitQuizStreakHookV7) {
+        window._origSubmitQuizStreakHookV7 = submitQuiz;
         submitQuiz = async function() {
-            const res = await window._origSubmitQuizStreakHookV6();
+            const res = await window._origSubmitQuizStreakHookV7();
             try {
                 const uid = (typeof currentUser !== 'undefined' && currentUser && currentUser.uid) ? currentUser.uid : 'guest';
                 const todayYMD = getPastLocalYMD(0);
@@ -3854,10 +3841,10 @@ async function handleLiveSearch() {
         };
     }
 
-    if (typeof openStreakModal === 'function' && !window._origOpenStreakModalHookV6) {
-        window._origOpenStreakModalHookV6 = openStreakModal;
+    if (typeof openStreakModal === 'function' && !window._origOpenStreakModalHookV7) {
+        window._origOpenStreakModalHookV7 = openStreakModal;
         openStreakModal = function() {
-            window._origOpenStreakModalHookV6();
+            window._origOpenStreakModalHookV7();
             const modalCount = document.getElementById('modalStreakCount');
             if (modalCount) modalCount.innerText = String(verifiedStreakData.trueStreak);
 
@@ -4318,7 +4305,7 @@ async function handleLiveSearch() {
                         <span>Live Data: ${topSubj}</span>
                     </div>
 
-                    <div style="display:flex; justify-content:space-between; align-items:center; padding-top:4px; flex-wrap:wrap; gap:6px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px;">
                         <span style="font-size:10.5px; font-weight:800; color:#10b981;">🟢 LIVE STUDENT DIAGNOSTICS</span>
                         <span style="font-size:10.5px; color:#94a3b8; font-weight:700;">${stats.quizzesPlayed} Quiz${stats.quizzesPlayed === 1 ? '' : 'zes'} • ${stats.totalAttempted} MCQs</span>
                     </div>
@@ -4417,7 +4404,7 @@ async function handleLiveSearch() {
                     <span>${cleanExam} Live Diagnostics — Ready to Activate</span>
                 </div>
 
-                <div style="display:flex; justify-content:space-between; align-items:center; padding-top:4px; flex-wrap:wrap; gap:6px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px;">
                     <span style="font-size:10.5px; font-weight:800; color:#fdb813;">⚡ 0 ${cleanExam.toUpperCase()} QUIZZES ATTEMPTED YET</span>
                     <span style="font-size:10px; color:#94a3b8;">Take 1 quiz to unlock your live stats</span>
                 </div>
@@ -4474,7 +4461,7 @@ async function handleLiveSearch() {
     }
 
     // ==========================================
-    // SMART MISTAKE CLINIC & 5-MIN RAPID REFLEX SPRINT
+    // SMART MISTAKE CLINIC (SYMMETRICAL 2x2 GRID)
     // ==========================================
     var clinicMode = 'WRONG';
 
@@ -4617,7 +4604,7 @@ async function handleLiveSearch() {
                     <h3 style="margin:0 0 4px 0; font-size:18px; font-weight:900; color:#ffffff;">Smart Mistake Clinic &amp; Rapid Sprint</h3>
                     <p style="margin:0 0 12px 0; font-size:12.5px; color:#94a3b8;">Convert your personal weak spots into guaranteed marks or run a 5-minute reflex sprint.</p>
 
-                    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(190px, 1fr)); gap:8px; margin-bottom:14px;">
+                    <div class="mcqs-clinic-modes-grid">
                         ${modeCardsHtml}
                     </div>
                 </div>
@@ -4759,17 +4746,27 @@ async function handleLiveSearch() {
                 : `<span style="font-size:10.5px; font-weight:800; background:${th.bg}; color:${th.c}; border:1px solid ${th.border}; padding:3px 9px; border-radius:999px;">⚡ Open Suite</span>`;
 
             const directFolders = inv.directChildrenByExam[exKey] || [];
-            const folderChipsHtml = directFolders.map(childKey => {
-                const cleanChild = formatCleanTopicTitle(childKey);
-                const childFull = `${exKey} > ${childKey}`;
-                const cIcon = getAutomaticIconForName(cleanChild, null, childFull);
-                const safeChild = childKey.replace(/'/g, "\\'");
-                return `
-                    <span class="mcqs-subfolder-chip" onclick="event.stopPropagation(); jumpToSection(['${safeEx}', '${safeChild}'])">
-                        ${cIcon} ${cleanChild}
-                    </span>
+            let folderChipsHtml = '';
+            if (directFolders.length > 0) {
+                folderChipsHtml = directFolders.map(childKey => {
+                    const cleanChild = formatCleanTopicTitle(childKey);
+                    const childFull = `${exKey} > ${childKey}`;
+                    const cIcon = getAutomaticIconForName(cleanChild, null, childFull);
+                    const safeChild = childKey.replace(/'/g, "\\'");
+                    return `
+                        <span class="mcqs-subfolder-chip" onclick="event.stopPropagation(); jumpToSection(['${safeEx}', '${safeChild}'])">
+                            ${cIcon} ${cleanChild}
+                        </span>
+                    `;
+                }).join('');
+            } else {
+                // Fallback action chips so cards like JEE never look empty!
+                folderChipsHtml = `
+                    <span class="mcqs-subfolder-chip" onclick="event.stopPropagation(); jumpToSection(['${safeEx}'])">📝 Practice MCQs</span>
+                    <span class="mcqs-subfolder-chip" onclick="event.stopPropagation(); launchCustomStudioWithPreselection('${safeEx}')">🎯 Custom ${cleanEx} Mock</span>
+                    <span class="mcqs-subfolder-chip" onclick="event.stopPropagation(); window.location.hash='#/progress/${encodeURIComponent(exKey)}'">📊 ${cleanEx} Analytics</span>
                 `;
-            }).join('');
+            }
 
             const subjCount = (inv.subjectsByExam[exKey] || []).length;
 
@@ -4781,18 +4778,16 @@ async function handleLiveSearch() {
                                 ${th.i === 'NONE' ? '' : `<div style="width:40px; height:40px; border-radius:11px; background:${th.bg}; border:1px solid ${th.border}; color:${th.c}; display:flex; align-items:center; justify-content:center; font-size:20px; flex-shrink:0;">${th.i}</div>`}
                                 <div style="min-width:0;">
                                     <h4 style="margin:0; font-size:16.5px; font-weight:900; color:#ffffff;">${cleanEx}</h4>
-                                    <div style="font-size:11px; color:#94a3b8; margin-top:1px;">${subjCount > 0 ? `${subjCount} Subjects • ` : ''}${directFolders.length || 'All'} Sections</div>
+                                    <div style="font-size:11px; color:#94a3b8; margin-top:1px;">${subjCount > 0 ? `${subjCount} Subjects • ` : ''}${directFolders.length || 'Complete'} Suite</div>
                                 </div>
                             </div>
                             ${statusBadge}
                         </div>
 
-                        ${folderChipsHtml ? `
-                            <div style="margin-bottom:12px;">
-                                <div style="font-size:10px; font-weight:800; color:#64748b; text-transform:uppercase; margin-bottom:6px;">Direct Jump Inside ${cleanEx}:</div>
-                                <div class="mcqs-subfolder-chip-row">${folderChipsHtml}</div>
-                            </div>
-                        ` : ''}
+                        <div style="margin-bottom:12px;">
+                            <div style="font-size:10px; font-weight:800; color:#64748b; text-transform:uppercase; margin-bottom:6px;">Direct Jump Inside ${cleanEx}:</div>
+                            <div class="mcqs-subfolder-chip-row">${folderChipsHtml}</div>
+                        </div>
                     </div>
 
                     <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid rgba(255,255,255,0.07); padding-top:9px; font-size:12px; font-weight:800; color:${th.c};">
@@ -4942,7 +4937,6 @@ async function handleLiveSearch() {
             crumbsHtml += `<span class="mcqs-crumb-pill ${isLast ? 'active' : ''}" onclick="jumpToSection([${subTrail}])">${cleanSeg}</span>`;
         });
 
-        // STRICTLY check isSubtopicSearchEnabledForPath without any forced fallback!
         let subSearchHtml = '';
         if (isSubtopicSearchEnabledForPath(checkPath, keysArr.length)) {
             const placeholderText = getSubtopicSearchPlaceholder(checkPath, folderClean).replace(/"/g, '&quot;');
@@ -5244,7 +5238,6 @@ async function handleLiveSearch() {
                         </div>
                     </div>
 
-                    <!-- 5 Modern KPI Cards -->
                     <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(150px, 1fr)); gap:12px; margin-bottom:18px;">
                         <div style="background:#0d1322; border:1px solid rgba(56,189,248,0.35); border-radius:14px; padding:16px; text-align:center;">
                             <div style="font-size:11px; color:#94a3b8; font-weight:800; text-transform:uppercase;">📝 Attempted</div>
@@ -5270,7 +5263,6 @@ async function handleLiveSearch() {
 
                     ${weakBannerHtml}
 
-                    <!-- Speed-vs-Accuracy Autopsy Card -->
                     <div style="background:#0c111d; border:1px solid rgba(255,255,255,0.09); border-radius:16px; padding:18px; margin-bottom:18px;">
                         <h3 style="margin:0 0 12px 0; font-size:15px; font-weight:900; color:#fff; display:flex; align-items:center; gap:8px;">
                             <span>⏱️</span> <span>Time-to-Accuracy Behavioral Autopsy</span>
@@ -5392,10 +5384,9 @@ async function handleLiveSearch() {
         `;
     };
 
-    const _origFetchLiveLeaderboardV6 = fetchLiveLeaderboard;
+    const _origFetchLiveLeaderboardV7 = fetchLiveLeaderboard;
     fetchLiveLeaderboard = async function(category) {
-        await _origFetchLiveLeaderboardV6(category);
-        // Enhance the rendered leaderboard with a modernized Command Header if unlocked
+        await _origFetchLiveLeaderboardV7(category);
         const mc = document.getElementById('dynamic-content');
         if (!mc) return;
         const cleanCategory = formatCleanTopicTitle(category);
@@ -5426,10 +5417,10 @@ async function handleLiveSearch() {
         if (typeof renderQuizInterface === 'function') renderQuizInterface();
     };
 
-    if (typeof renderQuizInterface === 'function' && !window._origRenderQuizInterfaceModernV6) {
-        window._origRenderQuizInterfaceModernV6 = renderQuizInterface;
+    if (typeof renderQuizInterface === 'function' && !window._origRenderQuizInterfaceModernV7) {
+        window._origRenderQuizInterfaceModernV7 = renderQuizInterface;
         renderQuizInterface = function() {
-            window._origRenderQuizInterfaceModernV6();
+            window._origRenderQuizInterfaceModernV7();
 
             const mc = document.getElementById('dynamic-content');
             if (!mc || typeof currentQuestions === 'undefined' || !Array.isArray(currentQuestions) || !currentQuestions.length) return;
@@ -5438,7 +5429,6 @@ async function handleLiveSearch() {
             const idx = typeof currentIndex !== 'undefined' ? currentIndex : 0;
             const qObj = currentQuestions[idx] || {};
 
-            // Inject Question Navigator Strip at the top of the quiz card
             const quizCard = mc.querySelector('.card') || mc.firstElementChild;
             if (quizCard && !document.getElementById('mcqsModernQuizNavStrip')) {
                 quizCard.style.background = '#090d16';
@@ -5606,10 +5596,10 @@ async function handleLiveSearch() {
                                 </p>
                                 <div class="mcqs-cta-row">
                                     <button type="button" class="mcqs-btn-gold" onclick="scrollToWebsiteSection('mcqs-home-categories-anchor')">
-                                        📂 Explore Exam Workspaces &darr;
+                                        📂 Explore Workspaces &darr;
                                     </button>
                                     <button type="button" class="mcqs-btn-glass" onclick="scrollToWebsiteSection('mcqs-mistake-clinic-anchor')">
-                                        🧬 Mistake Clinic &amp; Sprint
+                                        🧬 Mistake Clinic
                                     </button>
                                     <button type="button" class="mcqs-btn-glass" onclick="openAIModal()">
                                         ✨ Ask AI
@@ -5677,7 +5667,7 @@ async function handleLiveSearch() {
         syncRealStudentDiagnostics(false);
     }
 
-    const _origRenderViewV6 = _renderView;
+    const _origRenderViewV7 = _renderView;
     _renderView = function() {
         injectCompleteModernSuiteStyles();
         syncWebsiteNavbarPills();
@@ -5702,16 +5692,16 @@ async function handleLiveSearch() {
 
         const handledModernFolder = renderModernizedInnerFolderView();
         if (!handledModernFolder) {
-            _origRenderViewV6();
+            _origRenderViewV7();
         } else {
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
     };
 
-    if (typeof updateSidebarLinks === 'function' && !window._origUpdateSidebarLinksWrappedV6) {
-        window._origUpdateSidebarLinksWrappedV6 = updateSidebarLinks;
+    if (typeof updateSidebarLinks === 'function' && !window._origUpdateSidebarLinksWrappedV7) {
+        window._origUpdateSidebarLinksWrappedV7 = updateSidebarLinks;
         updateSidebarLinks = function() {
-            window._origUpdateSidebarLinksWrappedV6();
+            window._origUpdateSidebarLinksWrappedV7();
             const sidebar = document.getElementById('main-sidebar');
             if (sidebar) sidebar.style.display = 'none';
         };
