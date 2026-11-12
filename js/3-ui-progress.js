@@ -2673,17 +2673,17 @@ async function handleLiveSearch() {
 }
 
 // ==========================================
-// 7. COMPLETE ARCHITECTURAL UI SUITE (BODY-LEVEL FLOATING CENTER PILL BAR, DISTRACTION-FREE
-//    QUESTION PRACTICE MODE, ANTI-CHEAT AI HIDER, COLOR-CODED DIAGNOSTICS & STREAK ENGINE)
+// 7. COMPLETE ARCHITECTURAL UI SUITE (QUIZ BACK-BAR, MODERNIZED ANALYTICS & LEADERBOARDS,
+//    FLOATING CENTER PILL NAV, ANTI-CHEAT AI HIDER, COLOR-CODED DIAGNOSTICS & STREAK ENGINE)
 // ==========================================
-(function initMCQsPrepCompleteModernSuiteV9() {
-    if (window._mcqsCompleteModernSuiteLoadedV9) return;
-    window._mcqsCompleteModernSuiteLoadedV9 = true;
+(function initMCQsPrepCompleteModernSuiteV10() {
+    if (window._mcqsCompleteModernSuiteLoadedV10) return;
+    window._mcqsCompleteModernSuiteLoadedV10 = true;
 
     function injectCompleteModernSuiteStyles() {
-        if (document.getElementById('mcqs-complete-modern-styles-v9')) return;
+        if (document.getElementById('mcqs-complete-modern-styles-v10')) return;
         const st = document.createElement('style');
-        st.id = 'mcqs-complete-modern-styles-v9';
+        st.id = 'mcqs-complete-modern-styles-v10';
         st.textContent = `
             /* ==========================================
                1. GLOBAL OVERFLOW GUARD & VIEWPORT FIXED RESET
@@ -2692,7 +2692,6 @@ async function handleLiveSearch() {
                 max-width: 100vw !important;
                 overflow-x: hidden !important;
                 box-sizing: border-box !important;
-                /* Ensure nothing on html/body traps position:fixed elements */
                 transform: none !important;
                 perspective: none !important;
                 filter: none !important;
@@ -2703,7 +2702,7 @@ async function handleLiveSearch() {
             }
 
             /* ==========================================
-               2. QUESTION PRACTICE PAGE: HIDE ALL TOP NAV BARS & ASK AI (FIXES IMAGE 1)
+               2. QUESTION PRACTICE PAGE: HIDE MAIN NAVBAR & ASK AI, SHOW QUIZ BACK BAR (FIXES IMAGE 1)
                ========================================== */
             body.mcqs-quiz-screen-active .navbar,
             body.mcqs-quiz-screen-active #mcqsWebCenterNavPills,
@@ -2718,10 +2717,45 @@ async function handleLiveSearch() {
                 pointer-events: none !important;
             }
             body.mcqs-quiz-screen-active .container {
-                padding-top: 18px !important;
+                padding-top: 14px !important;
             }
 
-            /* Also hide Ask AI button in any Practice Paper / Mock Test folder */
+            /* Dedicated Quiz Top Navigation & Back Bar */
+            .mcqs-quiz-top-backbar {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                flex-wrap: wrap;
+                gap: 10px;
+                background: linear-gradient(145deg, #0f1629, #090d18);
+                border: 1.5px solid rgba(253, 184, 19, 0.38);
+                border-radius: 14px;
+                padding: 10px 16px;
+                margin-bottom: 14px;
+                box-shadow: 0 10px 28px rgba(0, 0, 0, 0.6);
+            }
+            .mcqs-quiz-exit-btn {
+                background: rgba(253, 184, 19, 0.16);
+                color: #fdb813;
+                border: 1.5px solid rgba(253, 184, 19, 0.55);
+                padding: 7px 14px;
+                border-radius: 999px;
+                font-size: 12.5px;
+                font-weight: 900;
+                cursor: pointer;
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+                transition: all 0.18s ease;
+                font-family: inherit;
+            }
+            .mcqs-quiz-exit-btn:hover {
+                background: #fdb813;
+                color: #000000;
+                transform: translateX(-2px);
+            }
+
+            /* Hide Ask AI button in any Practice Paper / Mock Test folder */
             body.hide-ai-btn #ai-floating-btn,
             body.mcqs-anti-cheat-active #ai-floating-btn,
             html.is-standalone-pwa body.hide-ai-btn #ai-floating-btn,
@@ -2737,13 +2771,12 @@ async function handleLiveSearch() {
             }
 
             /* ==========================================
-               3. NORMAL SCROLLING TOP BAR + BODY-LEVEL FLOATING CENTER PILL BAR (FIXES IMAGE 2)
+               3. NORMAL SCROLLING TOP BAR + BODY-LEVEL FLOATING CENTER PILL BAR
                ========================================== */
             @media (min-width: 861px) {
                 body {
                     padding-top: 0 !important;
                 }
-                /* Main navbar scrolls normally with the page so left & right top space opens up on scroll */
                 .navbar {
                     position: relative !important;
                     top: auto !important;
@@ -2780,25 +2813,26 @@ async function handleLiveSearch() {
                     display: inline-flex !important;
                 }
 
-                /* Mounted directly on document.body (outside .navbar) so it floats 100% of the time on scroll! */
+                /* Mounted directly on document.body so it floats 100% of the time on scroll */
                 #mcqsWebCenterNavPills {
                     position: fixed !important;
                     top: 11px !important;
                     left: 50%;
-                    transform: translateX(-50%) !important;
+                    transform: translateX(-50%);
+                    transform-origin: center center;
                     z-index: 99990 !important;
                     display: inline-flex !important;
                     align-items: center !important;
-                    gap: 3px !important;
-                    background: rgba(13, 18, 30, 0.94) !important;
+                    gap: 2px !important;
+                    background: rgba(13, 18, 30, 0.95) !important;
                     backdrop-filter: blur(18px) !important;
                     -webkit-backdrop-filter: blur(18px) !important;
                     border: 1.5px solid rgba(253, 184, 19, 0.42) !important;
                     border-radius: 999px !important;
-                    padding: 4px 7px !important;
+                    padding: 4px 6px !important;
                     box-shadow: 0 12px 32px rgba(0, 0, 0, 0.85), 0 0 20px rgba(253, 184, 19, 0.16) !important;
                     white-space: nowrap !important;
-                    transition: left 0.15s ease, opacity 0.18s ease !important;
+                    transition: left 0.12s ease, transform 0.12s ease, opacity 0.18s ease !important;
                 }
                 body.admin-mode #mcqsWebCenterNavPills {
                     display: none !important;
@@ -2848,13 +2882,13 @@ async function handleLiveSearch() {
                 color: #cbd5e1;
                 font-size: 12px;
                 font-weight: 700;
-                padding: 5px 11px;
+                padding: 5px 10px;
                 border-radius: 999px;
                 cursor: pointer;
                 transition: all 0.18s ease;
                 display: inline-flex;
                 align-items: center;
-                gap: 5px;
+                gap: 4px;
                 font-family: inherit;
                 white-space: nowrap;
             }
@@ -2866,7 +2900,7 @@ async function handleLiveSearch() {
                 background: linear-gradient(135deg, #fdb813, #f59e0b) !important;
                 color: #000000 !important;
                 font-weight: 800 !important;
-                padding: 5px 13px !important;
+                padding: 5px 12px !important;
                 box-shadow: 0 0 14px rgba(253, 184, 19, 0.35);
             }
             .web-courses-dropdown-wrap {
@@ -3524,55 +3558,6 @@ async function handleLiveSearch() {
             /* ==========================================
                7. MODERNIZED MCQ PRACTICE QUESTION PRESENTATION (#/quiz)
                ========================================== */
-            .mcqs-quiz-nav-strip {
-                display: flex;
-                align-items: center;
-                gap: 6px;
-                overflow-x: auto;
-                padding: 10px 12px;
-                margin-bottom: 14px;
-                background: #0b0f1a;
-                border: 1px solid rgba(255, 255, 255, 0.08);
-                border-radius: 14px;
-                scrollbar-width: thin;
-            }
-            .mcqs-quiz-nav-pill {
-                min-width: 34px;
-                height: 34px;
-                border-radius: 9px;
-                border: 1px solid rgba(255, 255, 255, 0.14);
-                background: #13192a;
-                color: #94a3b8;
-                font-size: 12px;
-                font-weight: 800;
-                cursor: pointer;
-                display: inline-flex;
-                align-items: center;
-                justify-content: center;
-                flex-shrink: 0;
-                transition: all 0.15s ease;
-            }
-            .mcqs-quiz-nav-pill:hover {
-                border-color: #fdb813;
-                color: #ffffff;
-            }
-            .mcqs-quiz-nav-pill.q-current {
-                border: 2px solid #fdb813 !important;
-                color: #fdb813 !important;
-                background: rgba(253, 184, 19, 0.14) !important;
-                box-shadow: 0 0 12px rgba(253, 184, 19, 0.28);
-            }
-            .mcqs-quiz-nav-pill.q-correct {
-                background: rgba(16, 185, 129, 0.2) !important;
-                border-color: #10b981 !important;
-                color: #10b981 !important;
-            }
-            .mcqs-quiz-nav-pill.q-wrong {
-                background: rgba(239, 68, 68, 0.2) !important;
-                border-color: #ef4444 !important;
-                color: #ef4444 !important;
-            }
-
             .quiz-header {
                 background: #0b0f1a !important;
                 border: 1px solid rgba(253, 184, 19, 0.28) !important;
@@ -3674,7 +3659,7 @@ async function handleLiveSearch() {
     }
 
     // ==========================================
-    // DYNAMIC FLOATING PILL BAR ALIGNMENT & QUIZ SCREEN DETECTOR
+    // COLLISION-PROOF FLOATING CENTER PILL BAR ALIGNMENT
     // ==========================================
     function alignFloatingCenterPillBar() {
         const pillBar = document.getElementById('mcqsWebCenterNavPills');
@@ -3691,45 +3676,127 @@ async function handleLiveSearch() {
         if (!navbar || !navLeft || !navRight) return;
 
         const navRect = navbar.getBoundingClientRect();
-        // When navbar has scrolled off the top of the screen, center the floating pill bar at 50% of the viewport!
-        if (navRect.bottom <= 12) {
+        // When user scrolls down past .navbar, center the floating pill bar at 50% of the screen
+        if (navRect.bottom <= 14) {
             pillBar.style.left = '50%';
+            pillBar.style.transform = 'translateX(-50%) scale(1)';
             return;
         }
 
-        // When navbar is visible at the top, center the pill bar in the exact empty gap between .nav-left and Search/.nav-right so it NEVER touches Streak or Search!
+        // When at the top of the page, measure the exact empty space between .nav-left (including < back button and 🔥 streak) and Search/.nav-right
         const leftEdge = navLeft.getBoundingClientRect().right + 14;
         const rightAnchor = (searchWrap && searchWrap.offsetWidth > 0) ? searchWrap : navRight;
         const rightEdge = rightAnchor.getBoundingClientRect().left - 14;
-        const availableWidth = rightEdge - leftEdge;
+        const availableGap = rightEdge - leftEdge;
+        const naturalWidth = pillBar.offsetWidth || 500;
 
-        if (availableWidth > 260) {
-            const centerPx = Math.round((leftEdge + rightEdge) / 2);
-            pillBar.style.left = centerPx + 'px';
+        if (availableGap > 200) {
+            const midpointPx = Math.round((leftEdge + rightEdge) / 2);
+            pillBar.style.left = midpointPx + 'px';
+            if (naturalWidth > availableGap) {
+                const scaleFactor = Math.max(0.78, (availableGap - 8) / naturalWidth);
+                pillBar.style.transform = `translateX(-50%) scale(${scaleFactor.toFixed(3)})`;
+            } else {
+                pillBar.style.transform = 'translateX(-50%) scale(1)';
+            }
         } else {
             pillBar.style.left = '50%';
+            pillBar.style.transform = 'translateX(-50%) scale(1)';
         }
     }
 
     window.addEventListener('scroll', alignFloatingCenterPillBar, { passive: true, capture: true });
     window.addEventListener('resize', alignFloatingCenterPillBar, { passive: true });
 
-    // Detects both active Quiz screens (to hide ALL top nav bars + Ask AI) and Practice Paper folders (to hide Ask AI)
+    // ==========================================
+    // SMART QUIZ EXIT FUNCTION & GUARANTEED QUIZ TOP BACK-BAR INJECTOR (FIXES IMAGE 1)
+    // ==========================================
+    window.exitActiveQuizPractice = function() {
+        if (typeof currentTimer !== 'undefined' && currentTimer) clearInterval(currentTimer);
+        if (typeof window.saveLiveQuizSessionProgress === 'function') {
+            try { window.saveLiveQuizSessionProgress(); } catch (e) {}
+        }
+        document.body.classList.remove('mcqs-quiz-screen-active');
+        document.body.classList.remove('mcqs-anti-cheat-active');
+        document.body.classList.remove('hide-ai-btn');
+        document.body.classList.remove('hide-bottom-bar');
+
+        if (Array.isArray(currentPath) && currentPath.length > 0) {
+            const lastSeg = formatCleanTopicTitle(currentPath[currentPath.length - 1]).toLowerCase();
+            // If currentPath ends with a leaf difficulty or quiz folder (like Easy, Medium, Hard, Mixed), step up to the parent chapter folder so it doesn't auto-relaunch the quiz!
+            if (currentPath.length > 1) {
+                const parentTrail = currentPath.slice(0, -1);
+                jumpToSection(parentTrail);
+                return;
+            }
+        }
+        goHome();
+    };
+
+    function ensureQuizTopBackBarInjected() {
+        const dyn = document.getElementById('dynamic-content');
+        if (!dyn) return false;
+
+        const hasActiveQuizOptions = Boolean(
+            dyn.querySelector('.option-btn') ||
+            dyn.querySelector('.quiz-option') ||
+            dyn.querySelector('.quiz-header')
+        );
+        const hasWelcomeResumeCard = Boolean(dyn.querySelector('#btnResumeTopicPractice'));
+
+        if (!hasActiveQuizOptions && !hasWelcomeResumeCard) {
+            return false;
+        }
+
+        // If the Welcome/Resume card is showing, inject a Back button inside it if missing
+        if (hasWelcomeResumeCard && !dyn.querySelector('#mcqsWelcomeBackExitBtn')) {
+            const resumeCard = dyn.querySelector('#btnResumeTopicPractice')?.closest('.admin-panel-card');
+            if (resumeCard) {
+                resumeCard.insertAdjacentHTML('afterbegin', `
+                    <div style="margin-bottom:14px;">
+                        <button type="button" id="mcqsWelcomeBackExitBtn" class="mcqs-quiz-exit-btn" onclick="exitActiveQuizPractice()">
+                            ❮ Back to Chapter
+                        </button>
+                    </div>
+                `);
+            }
+        }
+
+        // If an active MCQ question is on screen, guarantee the Top Back Bar is mounted right at the top!
+        if (hasActiveQuizOptions && !document.getElementById('mcqsGuaranteedQuizBackBar')) {
+            const rawQuizTitle = (typeof currentQuizPath !== 'undefined' && currentQuizPath)
+                ? currentQuizPath
+                : (Array.isArray(currentPath) && currentPath.length ? currentPath.join(' > ') : 'Practice Session');
+            const cleanTrail = rawQuizTitle.split(' > ').map(s => formatCleanTopicTitle(s)).join(' › ');
+
+            const backBarHtml = `
+                <div id="mcqsGuaranteedQuizBackBar" class="mcqs-quiz-top-backbar">
+                    <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap; min-width:0;">
+                        <button type="button" class="mcqs-quiz-exit-btn" onclick="exitActiveQuizPractice()" title="Save &amp; Exit to Chapter">
+                            ❮ Back to Chapter
+                        </button>
+                        <div style="min-width:0;">
+                            <div style="font-size:10px; font-weight:800; color:#94a3b8; text-transform:uppercase; letter-spacing:0.5px;">Active Practice Session</div>
+                            <div style="font-size:13px; font-weight:800; color:#f8fafc; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:55vw;">${cleanTrail}</div>
+                        </div>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+                        <span style="background:rgba(16,185,129,0.14); color:#10b981; border:1px solid rgba(16,185,129,0.38); padding:4px 9px; border-radius:999px; font-size:11px; font-weight:800;">✔ +4 Correct</span>
+                        <span style="background:rgba(239,68,68,0.14); color:#ef4444; border:1px solid rgba(239,68,68,0.38); padding:4px 9px; border-radius:999px; font-size:11px; font-weight:800;">✖ −1 Negative</span>
+                        <span style="background:rgba(255,255,255,0.05); color:#94a3b8; border:1px solid rgba(255,255,255,0.12); padding:4px 9px; border-radius:999px; font-size:11px; font-weight:700;">🔒 Anti-Cheat</span>
+                    </div>
+                </div>
+            `;
+            dyn.insertAdjacentHTML('afterbegin', backBarHtml);
+        }
+
+        return true;
+    }
+
     function syncQuizScreenAndAntiCheatState() {
         const rawHash = decodeURIComponent(window.location.hash.replace(/^#\/?/, '')).toLowerCase();
-        const dyn = document.getElementById('dynamic-content');
-
-        const hasActiveQuizDom = Boolean(
-            dyn && (
-                dyn.querySelector('#mcqsModernQuizNavStrip') ||
-                dyn.querySelector('.option-btn') ||
-                dyn.querySelector('.quiz-option') ||
-                dyn.querySelector('.quiz-header') ||
-                dyn.querySelector('#btnResumeTopicPractice')
-            )
-        );
-
-        const isQuizRoute = (rawHash === 'quiz') || hasActiveQuizDom;
+        const isQuizDomMounted = ensureQuizTopBackBarInjected();
+        const isQuizRoute = (rawHash === 'quiz') || isQuizDomMounted;
 
         if (isQuizRoute) {
             document.body.classList.add('mcqs-quiz-screen-active');
@@ -3756,25 +3823,37 @@ async function handleLiveSearch() {
             if (aiBtn) aiBtn.style.removeProperty('display');
         }
 
-        setTimeout(alignFloatingCenterPillBar, 20);
+        setTimeout(alignFloatingCenterPillBar, 25);
+    }
+
+    // Observe #dynamic-content so whenever js/4-quiz-engine.js or js/6-admin.js renders a question, the Back Bar mounts immediately!
+    function attachDynamicContentObserver() {
+        const dyn = document.getElementById('dynamic-content');
+        if (!dyn || window._mcqsDynObserverAttachedV10) return;
+        window._mcqsDynObserverAttachedV10 = true;
+
+        const obs = new MutationObserver(() => {
+            syncQuizScreenAndAntiCheatState();
+        });
+        obs.observe(dyn, { childList: true });
     }
 
     // Search bar open/close hooks
-    if (typeof openSearch === 'function' && !window._origOpenSearchWrappedV9) {
-        window._origOpenSearchWrappedV9 = openSearch;
+    if (typeof openSearch === 'function' && !window._origOpenSearchWrappedV10) {
+        window._origOpenSearchWrappedV10 = openSearch;
         openSearch = function() {
             document.body.classList.add('mcqs-search-open');
-            window._origOpenSearchWrappedV9();
+            window._origOpenSearchWrappedV10();
             setTimeout(alignFloatingCenterPillBar, 20);
             const inp = document.getElementById('searchInput');
             if (inp) setTimeout(() => inp.focus(), 30);
         };
     }
-    if (typeof closeSearch === 'function' && !window._origCloseSearchWrappedV9) {
-        window._origCloseSearchWrappedV9 = closeSearch;
+    if (typeof closeSearch === 'function' && !window._origCloseSearchWrappedV10) {
+        window._origCloseSearchWrappedV10 = closeSearch;
         closeSearch = function() {
             document.body.classList.remove('mcqs-search-open');
-            window._origCloseSearchWrappedV9();
+            window._origCloseSearchWrappedV10();
             setTimeout(alignFloatingCenterPillBar, 20);
         };
     }
@@ -3955,34 +4034,10 @@ async function handleLiveSearch() {
         }
     }
 
-    if (typeof submitQuiz === 'function' && !window._origSubmitQuizStreakHookV9) {
-        window._origSubmitQuizStreakHookV9 = submitQuiz;
-        submitQuiz = async function() {
-            const res = await window._origSubmitQuizStreakHookV9();
-            try {
-                const uid = (typeof currentUser !== 'undefined' && currentUser && currentUser.uid) ? currentUser.uid : 'guest';
-                const todayYMD = getPastLocalYMD(0);
-                const saved = JSON.parse(localStorage.getItem(`mcqs_practice_dates_${uid}`) || '[]');
-                if (!saved.includes(todayYMD)) saved.push(todayYMD);
-                localStorage.setItem(`mcqs_practice_dates_${uid}`, JSON.stringify(saved.slice(-60)));
-                if (uid !== 'guest' && typeof db !== 'undefined') {
-                    await db.collection('users').doc(uid).set({
-                        lastQuizDate: todayYMD
-                    }, { merge: true });
-                }
-                setTimeout(() => {
-                    verifyAndSyncAccurateDailyStreak();
-                    syncRealStudentDiagnostics(true);
-                }, 400);
-            } catch (e) {}
-            return res;
-        };
-    }
-
-    if (typeof openStreakModal === 'function' && !window._origOpenStreakModalHookV9) {
-        window._origOpenStreakModalHookV9 = openStreakModal;
+    if (typeof openStreakModal === 'function' && !window._origOpenStreakModalHookV10) {
+        window._origOpenStreakModalHookV10 = openStreakModal;
         openStreakModal = function() {
-            window._origOpenStreakModalHookV9();
+            window._origOpenStreakModalHookV10();
             const modalCount = document.getElementById('modalStreakCount');
             if (modalCount) modalCount.innerText = String(verifiedStreakData.trueStreak);
 
@@ -5246,78 +5301,342 @@ async function handleLiveSearch() {
     }
 
     // ==========================================
-    // MODERNIZED MCQ PRACTICE QUESTION PRESENTING STYLE (WITH BUILT-IN BACK/EXIT BUTTON)
+    // MODERNIZED ANALYTICS SELECTION & DASHBOARD (#/progress — FIXES IMAGE 3)
     // ==========================================
-    window.jumpToQuizQuestionIndex = function(targetIdx) {
-        if (typeof currentQuestions === 'undefined' || !Array.isArray(currentQuestions)) return;
-        if (targetIdx < 0 || targetIdx >= currentQuestions.length) return;
-        currentIndex = targetIdx;
-        if (typeof renderQuizInterface === 'function') renderQuizInterface();
+    _renderProgressSelection = function() {
+        const mc = document.getElementById('dynamic-content');
+        if (!mc) return;
+
+        if (!currentUser) {
+            mc.innerHTML = `
+                <div class="mcqs-arch-surface page-transition" style="text-align:center; max-width:540px; margin:20px auto;">
+                    <div style="font-size:44px; margin-bottom:10px;">📊</div>
+                    <h2 style="margin:0 0 8px 0; color:#fff; font-size:22px; font-weight:900;">Sign In to View Personal Analytics</h2>
+                    <p style="color:#94a3b8; font-size:14px; line-height:1.6; margin-bottom:22px;">Track your subject-wise mastery, speed-vs-accuracy autopsy, and longitudinal score trajectory across all exams.</p>
+                    <button class="mcqs-btn-gold" onclick="showAuthModal()">🔑 Sign In with Google</button>
+                </div>`;
+            return;
+        }
+
+        document.getElementById('breadcrumb-text').innerText = 'Home / Profile / Track Progress';
+        syncRealStudentDiagnostics(false);
+
+        const rootKeys = getLiveActiveExamCategories();
+        let usedColors = new Set();
+        let usedIcons = new Set();
+
+        const cardsHtml = rootKeys.map((k, idx) => {
+            const cleanKey = formatCleanTopicTitle(k);
+            const topicType = customTopicTypes[k];
+            const customIcon = topicType ? (typeof topicType === 'object' ? topicType.icon : null) : null;
+            const th = getAutoTopicTheme(cleanKey, customIcon, idx, usedColors, '📊', usedIcons, k);
+            const st = realStudentDiagnosticsCache.byExam?.[k] || computeExamStatsFromRealSources(k, realStudentDiagnosticsCache.rawFirestoreDocs || []);
+
+            return `
+                <div class="mcqs-modern-subtopic-card" style="--topic-color:${th.c}; --topic-bg:${th.bg}; --topic-border:${th.border}; --topic-glow:${th.glow};" onclick="window.location.hash='#/progress/${encodeURIComponent(k)}'">
+                    <div>
+                        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px; margin-bottom:12px;">
+                            <div style="display:flex; align-items:center; gap:12px;">
+                                <div style="width:44px; height:44px; border-radius:12px; background:${th.bg}; border:1px solid ${th.border}; color:${th.c}; display:flex; align-items:center; justify-content:center; font-size:22px; box-shadow:0 0 14px ${th.glow};">${th.i === 'NONE' ? '📊' : th.i}</div>
+                                <div>
+                                    <div style="font-size:17px; font-weight:900; color:#fff;">${cleanKey} Analytics</div>
+                                    <div style="font-size:11.5px; color:#94a3b8; margin-top:2px;">${st.hasRealData ? `📋 ${st.quizzesPlayed} Quizzes • 📝 ${st.totalAttempted} MCQs` : '0 Quizzes Attempted Yet'}</div>
+                                </div>
+                            </div>
+                            ${st.hasRealData
+                                ? `<span style="background:rgba(16,185,129,0.16); color:#10b981; border:1px solid rgba(16,185,129,0.4); font-size:11px; font-weight:900; padding:3px 10px; border-radius:999px;">🎯 ${st.overallAccuracy}% Acc</span>`
+                                : `<span style="background:rgba(255,255,255,0.06); color:#94a3b8; font-size:10.5px; font-weight:800; padding:3px 9px; border-radius:999px;">Ready to Activate</span>`
+                            }
+                        </div>
+
+                        ${st.hasRealData ? `
+                            <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:8px; background:#090d16; border:1px solid rgba(255,255,255,0.07); border-radius:10px; padding:8px; text-align:center;">
+                                <div><div style="font-size:14px; font-weight:900; color:#fdb813;">${st.totalScore} pts</div><div style="font-size:9.5px; color:#94a3b8;">Net Score</div></div>
+                                <div><div style="font-size:14px; font-weight:900; color:#10b981;">✔ ${st.correctCount}</div><div style="font-size:9.5px; color:#94a3b8;">Correct</div></div>
+                                <div><div style="font-size:14px; font-weight:900; color:#ef4444;">✖ ${st.wrongCount}</div><div style="font-size:9.5px; color:#94a3b8;">Wrong</div></div>
+                            </div>
+                        ` : `<div style="font-size:12px; color:#94a3b8;">Complete 1 quiz in ${cleanKey} to unlock deep performance diagnostics.</div>`}
+                    </div>
+
+                    <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid rgba(255,255,255,0.06); padding-top:10px; margin-top:12px; font-size:12px; font-weight:800; color:${th.c};">
+                        <span>Open Diagnostic Report</span>
+                        <span>&rarr;</span>
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        mc.innerHTML = `
+            <div class="page-transition">
+                <div class="mcqs-inner-command-header">
+                    <div class="mcqs-crumb-bar">
+                        <span class="mcqs-crumb-pill" onclick="goHome()">🏠 Home</span>
+                        <span style="color:#475569;">›</span>
+                        <span class="mcqs-crumb-pill active">📊 Analytics Command Center</span>
+                    </div>
+                    <h1 style="margin:0; font-size:clamp(20px, 2.6vw, 28px); font-weight:900; color:#fff;">📊 Select Exam Analytics Dashboard</h1>
+                    <p style="margin:4px 0 0 0; font-size:13px; color:#94a3b8;">Choose an exam suite below to inspect your subject-wise mastery, weak-spot alerts (&lt;50%), speed autopsy, and accuracy trajectory.</p>
+                </div>
+                <div class="mcqs-inner-subtopics-grid">${cardsHtml}</div>
+            </div>
+        `;
     };
 
-    if (typeof renderQuizInterface === 'function' && !window._origRenderQuizInterfaceModernV9) {
-        window._origRenderQuizInterfaceModernV9 = renderQuizInterface;
-        renderQuizInterface = function() {
-            window._origRenderQuizInterfaceModernV9();
-            syncQuizScreenAndAntiCheatState();
+    _renderProgressDashboard = async function(category) {
+        if (!currentUser) { _renderProgressSelection(); return; }
+        const displayCategory = formatCleanTopicTitle(category);
+        const safeCatJs = category.replace(/'/g, "\\'");
+        document.getElementById('breadcrumb-text').innerText = `Home / Profile / Progress / ${displayCategory}`;
+        const mc = document.getElementById('dynamic-content');
+        mc.innerHTML = `<div class="mcqs-arch-surface page-transition" style="text-align:center; padding:45px;"><h2>📊 Compiling ${displayCategory} Diagnostics...</h2></div>`;
 
-            const mc = document.getElementById('dynamic-content');
-            if (!mc || typeof currentQuestions === 'undefined' || !Array.isArray(currentQuestions) || !currentQuestions.length) return;
+        try {
+            const snap = await db.collection('leaderboards').where('userId', '==', currentUser.uid).get();
+            const tempDocs = [];
+            snap.forEach(doc => tempDocs.push(doc.data()));
+            tempDocs.sort((a, b) => (a.timestamp?.toMillis() || 0) - (b.timestamp?.toMillis() || 0));
 
-            const total = currentQuestions.length;
-            const idx = typeof currentIndex !== 'undefined' ? currentIndex : 0;
-            const qObj = currentQuestions[idx] || {};
+            const st = computeExamStatsFromRealSources(category, tempDocs);
 
-            const quizCard = mc.querySelector('.card') || mc.firstElementChild;
-            if (quizCard && !document.getElementById('mcqsModernQuizNavStrip')) {
-                quizCard.style.background = '#090d16';
-                quizCard.style.border = '1px solid rgba(253, 184, 19, 0.28)';
-                quizCard.style.borderRadius = '18px';
-                quizCard.style.padding = '18px';
-
-                const pillsHtml = currentQuestions.map((qItem, qIdx) => {
-                    const uAns = (typeof userAnswers !== 'undefined' && userAnswers) ? userAnswers[qItem.id] : undefined;
-                    const hasAns = uAns !== undefined && uAns !== null && (!Array.isArray(uAns) || uAns.length > 0);
-                    let stateCls = '';
-                    if (qIdx === idx) stateCls = 'q-current';
-                    else if (hasAns) {
-                        const corrArr = Array.isArray(qItem.correctAnswers) ? qItem.correctAnswers : [qItem.correctAnswer || 'A'];
-                        const uArr = Array.isArray(uAns) ? uAns : [uAns];
-                        const isCorr = uArr.every(a => corrArr.includes(a)) && corrArr.every(a => uArr.includes(a));
-                        stateCls = isCorr ? 'q-correct' : 'q-wrong';
-                    }
-                    return `<button type="button" class="mcqs-quiz-nav-pill ${stateCls}" onclick="jumpToQuizQuestionIndex(${qIdx})">${qIdx + 1}</button>`;
-                }).join('');
-
-                const lvl = (qObj.level || 'Mixed').trim();
-                const lvlColors = { Easy: '#10b981', Medium: '#eab308', Hard: '#f43f5e', Mixed: '#a855f7' };
-                const lCol = lvlColors[lvl] || '#38bdf8';
-
-                const topStripHtml = `
-                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:10px;">
-                        <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-                            <button type="button" onclick="if(typeof goBack==='function') goBack(); else window.history.back();" style="background:#131a2c; color:#f8fafc; border:1px solid rgba(255,255,255,0.18); padding:5px 12px; border-radius:999px; font-size:11.5px; font-weight:800; cursor:pointer; display:inline-flex; align-items:center; gap:5px;" title="Exit Practice">❮ Exit Practice</button>
-                            <span style="background:rgba(253,184,19,0.16); color:#fdb813; border:1px solid rgba(253,184,19,0.45); font-size:11px; font-weight:900; padding:4px 10px; border-radius:999px;">Question ${idx + 1} of ${total}</span>
-                            <span style="background:rgba(255,255,255,0.05); color:${lCol}; border:1px solid ${lCol}; font-size:11px; font-weight:800; padding:3px 9px; border-radius:999px;">● ${lvl}</span>
-                            <span style="background:rgba(16,185,129,0.14); color:#10b981; border:1px solid rgba(16,185,129,0.35); padding:3px 8px; border-radius:999px; font-size:10.5px; font-weight:800;">✔ +4 Marks</span>
-                            <span style="background:rgba(239,68,68,0.14); color:#ef4444; border:1px solid rgba(239,68,68,0.35); padding:3px 8px; border-radius:999px; font-size:10.5px; font-weight:800;">✖ −1 Neg</span>
+            if (!st.hasRealData) {
+                mc.innerHTML = `
+                    <div class="mcqs-arch-surface page-transition" style="text-align:center; max-width:560px; margin:20px auto; padding:40px 24px;">
+                        <div style="font-size:46px; margin-bottom:10px;">📈</div>
+                        <h2 style="margin:0 0 8px 0; color:#fff;">No ${displayCategory} Quizzes Attempted Yet</h2>
+                        <p style="color:#94a3b8; font-size:14px; line-height:1.6; margin-bottom:24px;">Complete your first practice quiz in <b>${displayCategory}</b> to unlock your live score trajectory, weak-spot detection, and speed-vs-accuracy autopsy.</p>
+                        <div style="display:flex; justify-content:center; gap:10px; flex-wrap:wrap;">
+                            <button class="mcqs-btn-glass" onclick="window.location.hash='#/progress'">❮ Back to Analytics</button>
+                            <button class="mcqs-btn-gold" onclick="jumpToSection(['${safeCatJs}'])">🚀 Start First ${displayCategory} Quiz</button>
                         </div>
-                        <span style="font-size:11px; color:#94a3b8; font-weight:700;">🔒 Distraction-Free Exam Mode</span>
                     </div>
-                    <div class="mcqs-quiz-nav-strip" id="mcqsModernQuizNavStrip">${pillsHtml}</div>
                 `;
-                quizCard.insertAdjacentHTML('afterbegin', topStripHtml);
-
-                const activePill = document.querySelector('#mcqsModernQuizNavStrip .q-current');
-                if (activePill && typeof activePill.scrollIntoView === 'function') {
-                    activePill.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
-                }
+                return;
             }
-        };
-    }
+
+            const weakSubjects = st.subjectList.filter(s => s.isWeak).map(s => `${s.name} (${s.pct}%)`);
+            const weakBannerHtml = weakSubjects.length > 0
+                ? `<div style="background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.4); border-left:4px solid #ef4444; border-radius:12px; padding:14px 16px; margin-bottom:18px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+                        <div>
+                            <div style="font-size:11px; font-weight:900; color:#ef4444; text-transform:uppercase;">🚨 Priority Weak-Spot Alert (&lt;50% Accuracy)</div>
+                            <div style="font-size:13.5px; color:#f1f5f9; font-weight:700; margin-top:3px;">${weakSubjects.join(' • ')}</div>
+                        </div>
+                        <button type="button" onclick="launchCustomStudioWithPreselection('${safeCatJs}')" style="background:#ef4444; color:#fff; border:none; padding:8px 14px; border-radius:8px; font-size:12px; font-weight:800; cursor:pointer;">🎯 Practice Weak Chapters</button>
+                   </div>`
+                : `<div style="background:rgba(16,185,129,0.1); border:1px solid rgba(16,185,129,0.4); border-left:4px solid #10b981; border-radius:12px; padding:12px 16px; margin-bottom:18px; font-size:13px; color:#d1fae5; font-weight:700;">
+                        ✅ Strong Mastery! All practiced subjects in ${displayCategory} are at 50% accuracy or above.
+                   </div>`;
+
+            const subjectBarsHtml = st.subjectList.length > 0
+                ? st.subjectList.map(s => {
+                    const col = s.pct >= 70 ? '#10b981' : (s.pct >= 50 ? '#fdb813' : '#ef4444');
+                    const sIcon = getAutomaticIconForName(s.name, null, `${category} > ${s.name}`);
+                    return `
+                        <div style="background:#0d1322; border:1px solid rgba(255,255,255,0.07); border-radius:10px; padding:11px 14px; margin-bottom:10px;">
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; font-size:13px; font-weight:800;">
+                                <span style="color:#fff;">${sIcon} ${s.name}</span>
+                                <span style="color:${col};">${s.pct}% <span style="color:#cbd5e1; font-size:11px; font-weight:700;">(<span style="color:#10b981;">✔ ${s.correct}</span> / ${s.attempts})</span></span>
+                            </div>
+                            <div style="width:100%; height:8px; background:#070a12; border-radius:4px; overflow:hidden;">
+                                <div style="width:${s.pct}%; height:100%; background:${col}; border-radius:4px;"></div>
+                            </div>
+                        </div>
+                    `;
+                }).join('')
+                : `<p style="color:#94a3b8; font-size:13px;">Complete chapter-wise quizzes to generate subject breakdown bars.</p>`;
+
+            mc.innerHTML = `
+                <div class="page-transition">
+                    <div class="mcqs-inner-command-header">
+                        <div class="mcqs-crumb-bar">
+                            <span class="mcqs-crumb-pill" onclick="goHome()">🏠 Home</span>
+                            <span style="color:#475569;">›</span>
+                            <span class="mcqs-crumb-pill" onclick="window.location.hash='#/progress'">📊 Analytics</span>
+                            <span style="color:#475569;">›</span>
+                            <span class="mcqs-crumb-pill active">${displayCategory}</span>
+                        </div>
+                        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+                            <div>
+                                <h1 style="margin:0; font-size:clamp(20px, 2.6vw, 28px); font-weight:900; color:#fff;">📊 ${displayCategory} Diagnostic Command Center</h1>
+                                <div style="font-size:12.5px; color:#94a3b8; margin-top:3px;">Compiled from <b style="color:#fdb813;">${st.quizzesPlayed} completed quizzes</b> and <b style="color:#38bdf8;">${st.totalAttempted} attempted MCQs</b></div>
+                            </div>
+                            <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                                <button type="button" class="mcqs-btn-gold" onclick="launchCustomStudioWithPreselection('${safeCatJs}')" style="padding:9px 15px; font-size:12px;">🎯 Custom ${displayCategory} Mock</button>
+                                <button type="button" class="mcqs-btn-glass" onclick="window.location.hash='#/board/${encodeURIComponent(category)}'" style="padding:9px 14px; font-size:12px;">🏆 ${displayCategory} Leaderboard</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(150px, 1fr)); gap:12px; margin-bottom:18px;">
+                        <div style="background:#0d1322; border:1px solid rgba(56,189,248,0.35); border-radius:14px; padding:16px; text-align:center;">
+                            <div style="font-size:11px; color:#94a3b8; font-weight:800; text-transform:uppercase;">📝 Attempted</div>
+                            <div style="font-size:28px; font-weight:900; color:#38bdf8; margin-top:4px;">${st.totalAttempted}</div>
+                        </div>
+                        <div style="background:#0d1322; border:1px solid rgba(16,185,129,0.4); border-radius:14px; padding:16px; text-align:center;">
+                            <div style="font-size:11px; color:#94a3b8; font-weight:800; text-transform:uppercase;">✔ Correct (+4)</div>
+                            <div style="font-size:28px; font-weight:900; color:#10b981; margin-top:4px;">✔ ${st.correctCount}</div>
+                        </div>
+                        <div style="background:#0d1322; border:1px solid rgba(239,68,68,0.4); border-radius:14px; padding:16px; text-align:center;">
+                            <div style="font-size:11px; color:#94a3b8; font-weight:800; text-transform:uppercase;">✖ Wrong (−1)</div>
+                            <div style="font-size:28px; font-weight:900; color:#ef4444; margin-top:4px;">✖ ${st.wrongCount}</div>
+                        </div>
+                        <div style="background:#0d1322; border:1px solid rgba(253,184,19,0.45); border-radius:14px; padding:16px; text-align:center;">
+                            <div style="font-size:11px; color:#94a3b8; font-weight:800; text-transform:uppercase;">⭐ Net Score</div>
+                            <div style="font-size:28px; font-weight:900; color:#fdb813; margin-top:4px;">${st.totalScore}</div>
+                        </div>
+                        <div style="background:#0d1322; border:1px solid rgba(168,85,247,0.4); border-radius:14px; padding:16px; text-align:center;">
+                            <div style="font-size:11px; color:#94a3b8; font-weight:800; text-transform:uppercase;">🎯 Accuracy</div>
+                            <div style="font-size:28px; font-weight:900; color:#c084fc; margin-top:4px;">${st.overallAccuracy}%</div>
+                        </div>
+                    </div>
+
+                    ${weakBannerHtml}
+
+                    <div style="background:#0c111d; border:1px solid rgba(255,255,255,0.09); border-radius:16px; padding:18px; margin-bottom:18px;">
+                        <h3 style="margin:0 0 12px 0; font-size:15px; font-weight:900; color:#fff; display:flex; align-items:center; gap:8px;">
+                            <span>⏱️</span> <span>Time-to-Accuracy Behavioral Autopsy</span>
+                        </h3>
+                        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:12px;">
+                            <div style="background:rgba(16,185,129,0.1); border:1px solid rgba(16,185,129,0.4); border-radius:12px; padding:14px; text-align:center;">
+                                <div style="font-size:26px; font-weight:900; color:#10b981;">✔ ${st.avgTimeCorrect}s</div>
+                                <div style="font-size:12px; color:#cbd5e1; font-weight:700; margin-top:4px;">Avg Time on Correct Answers</div>
+                            </div>
+                            <div style="background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.4); border-radius:12px; padding:14px; text-align:center;">
+                                <div style="font-size:26px; font-weight:900; color:#ef4444;">✖ ${st.avgTimeWrong}s</div>
+                                <div style="font-size:12px; color:#cbd5e1; font-weight:700; margin-top:4px;">Avg Time on Wrong Answers</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(300px, 1fr)); gap:18px;">
+                        <div style="background:#0c111d; border:1px solid rgba(255,255,255,0.09); border-radius:16px; padding:18px;">
+                            <h3 style="margin:0 0 14px 0; font-size:15px; font-weight:900; color:#fff;">📚 Subject-Wise Mastery</h3>
+                            ${subjectBarsHtml}
+                        </div>
+                        <div style="background:#0c111d; border:1px solid rgba(255,255,255,0.09); border-radius:16px; padding:18px;">
+                            <h3 style="margin:0 0 14px 0; font-size:15px; font-weight:900; color:#fff;">📈 Accuracy Trajectory (Last ${st.recentTrend.length} Tests)</h3>
+                            <canvas id="accuracyChart" style="width:100%; height:180px;"></canvas>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            setTimeout(() => { if (typeof drawAccuracyChart === 'function') drawAccuracyChart(st.recentTrend); }, 60);
+        } catch (e) {
+            mc.innerHTML = `<div class="card"><p style="color:#ef4444;">Error loading analytics: ${e.message}</p></div>`;
+        }
+    };
 
     // ==========================================
-    // BODY-LEVEL FLOATING CENTER NAVBAR PILLS (OUTSIDE .navbar SO IT FLOATS 100% ON SCROLL!)
+    // MODERNIZED GLOBAL LEADERBOARDS (#/leaderboard & #/board/... — FIXES IMAGE 2)
+    // ==========================================
+    _renderLeaderboardOptions = function() {
+        document.getElementById('breadcrumb-text').innerText = 'Home / Leaderboard';
+        const mc = document.getElementById('dynamic-content');
+        if (!mc) return;
+
+        if (!currentUser) {
+            mc.innerHTML = `
+                <div class="mcqs-arch-surface page-transition" style="text-align:center; max-width:520px; margin:20px auto; padding:42px 24px;">
+                    <div style="font-size:44px; margin-bottom:10px;">🏆</div>
+                    <h2 style="margin:0 0 8px 0; color:#fff;">Sign In to View All-India Leaderboards</h2>
+                    <p style="color:#94a3b8; font-size:14px; line-height:1.6; margin-bottom:24px;">Only signed-in aspirants with at least <b>100 MCQs attempted</b> in an exam category can unlock official national rankings.</p>
+                    <button class="mcqs-btn-gold" onclick="showAuthModal()">🔑 Sign In with Google</button>
+                </div>`;
+            return;
+        }
+
+        syncRealStudentDiagnostics(false);
+        const rootKeys = getLiveActiveExamCategories();
+        let usedColors = new Set();
+        let usedIcons = new Set();
+
+        const cardsHtml = rootKeys.map((k, idx) => {
+            const cleanKey = formatCleanTopicTitle(k);
+            const topicType = customTopicTypes[k];
+            const customIcon = topicType ? (typeof topicType === 'object' ? topicType.icon : null) : null;
+            const th = getAutoTopicTheme(cleanKey, customIcon, idx, usedColors, '🏆', usedIcons, k);
+            const st = realStudentDiagnosticsCache.byExam?.[k] || { totalAttempted: 0 };
+            const attempted = st.totalAttempted || 0;
+            const pct = Math.min(100, Math.round((attempted / 100) * 100));
+            const unlocked = attempted >= 100;
+
+            return `
+                <div class="mcqs-modern-subtopic-card" style="--topic-color:${th.c}; --topic-bg:${th.bg}; --topic-border:${th.border}; --topic-glow:${th.glow};" onclick="window.location.hash='#/board/${encodeURIComponent(k)}'">
+                    <div>
+                        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px; margin-bottom:12px;">
+                            <div style="display:flex; align-items:center; gap:12px;">
+                                <div style="width:44px; height:44px; border-radius:12px; background:${th.bg}; border:1px solid ${th.border}; color:${th.c}; display:flex; align-items:center; justify-content:center; font-size:22px;">${th.i === 'NONE' ? '🏆' : th.i}</div>
+                                <div>
+                                    <div style="font-size:17px; font-weight:900; color:#fff;">${cleanKey} Leaderboard</div>
+                                    <div style="font-size:11.5px; color:#94a3b8; margin-top:2px;">100-MCQ Qualification Benchmark</div>
+                                </div>
+                            </div>
+                            ${unlocked
+                                ? `<span style="background:rgba(16,185,129,0.16); color:#10b981; border:1px solid rgba(16,185,129,0.4); font-size:10.5px; font-weight:900; padding:3px 9px; border-radius:999px;">🔓 Unlocked</span>`
+                                : `<span style="background:rgba(253,184,19,0.14); color:#fdb813; border:1px solid rgba(253,184,19,0.4); font-size:10.5px; font-weight:800; padding:3px 9px; border-radius:999px;">🔒 ${attempted}/100 MCQs</span>`
+                            }
+                        </div>
+
+                        <div style="background:#090d16; border:1px solid rgba(255,255,255,0.06); border-radius:10px; padding:9px 11px;">
+                            <div style="display:flex; justify-content:space-between; font-size:11px; font-weight:700; margin-bottom:5px;">
+                                <span style="color:#cbd5e1;">Your Eligibility Progress</span>
+                                <span style="color:${unlocked ? '#10b981' : '#fdb813'};">${pct}%</span>
+                            </div>
+                            <div style="width:100%; height:6px; background:#161e31; border-radius:3px; overflow:hidden;">
+                                <div style="width:${pct}%; height:100%; background:${unlocked ? '#10b981' : '#fdb813'};"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid rgba(255,255,255,0.06); padding-top:10px; margin-top:12px; font-size:12px; font-weight:800; color:${th.c};">
+                        <span>${unlocked ? 'View National Rankings' : `Solve ${Math.max(0, 100 - attempted)} More MCQs to Unlock`}</span>
+                        <span>&rarr;</span>
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        mc.innerHTML = `
+            <div class="page-transition">
+                <div class="mcqs-inner-command-header">
+                    <div class="mcqs-crumb-bar">
+                        <span class="mcqs-crumb-pill" onclick="goHome()">🏠 Home</span>
+                        <span style="color:#475569;">›</span>
+                        <span class="mcqs-crumb-pill active">🏆 Global Leaderboards</span>
+                    </div>
+                    <h1 style="margin:0; font-size:clamp(20px, 2.6vw, 28px); font-weight:900; color:#fff;">🏆 All-India Exam Leaderboards</h1>
+                    <p style="margin:4px 0 0 0; font-size:13px; color:#94a3b8;">Complete 100+ MCQs in any exam category to unlock your live national rank and compete with top performers.</p>
+                </div>
+                <div class="mcqs-inner-subtopics-grid">${cardsHtml}</div>
+            </div>
+        `;
+    };
+
+    const _origFetchLiveLeaderboardV10 = fetchLiveLeaderboard;
+    fetchLiveLeaderboard = async function(category) {
+        await _origFetchLiveLeaderboardV10(category);
+        const mc = document.getElementById('dynamic-content');
+        if (!mc) return;
+        const cleanCategory = formatCleanTopicTitle(category);
+        const card = mc.querySelector('.card');
+        if (card && !card.querySelector('.mcqs-crumb-bar')) {
+            card.style.background = '#0b0f1a';
+            card.style.border = '1px solid rgba(253, 184, 19, 0.3)';
+            card.style.borderRadius = '18px';
+            card.insertAdjacentHTML('afterbegin', `
+                <div class="mcqs-crumb-bar" style="margin-bottom:14px;">
+                    <span class="mcqs-crumb-pill" onclick="goHome()">🏠 Home</span>
+                    <span style="color:#475569;">›</span>
+                    <span class="mcqs-crumb-pill" onclick="window.location.hash='#/leaderboard'">🏆 Leaderboards</span>
+                    <span style="color:#475569;">›</span>
+                    <span class="mcqs-crumb-pill active">${cleanCategory}</span>
+                </div>
+            `);
+        }
+    };
+
+    // ==========================================
+    // BODY-LEVEL FLOATING CENTER NAVBAR PILLS & HOME RENDERER
     // ==========================================
     function syncWebsiteNavbarPills() {
         let pillBar = document.getElementById('mcqsWebCenterNavPills');
@@ -5368,7 +5687,7 @@ async function handleLiveSearch() {
             <button type="button" class="web-nav-pill-btn web-nav-pill-cta" onclick="scrollToWebsiteSection('mcqs-home-categories-anchor')">Start Practicing</button>
         `;
 
-        setTimeout(alignFloatingCenterPillBar, 10);
+        setTimeout(alignFloatingCenterPillBar, 15);
     }
 
     window.scrollToWebsiteSection = function(anchorId) {
@@ -5508,10 +5827,11 @@ async function handleLiveSearch() {
         syncRealStudentDiagnostics(false);
     }
 
-    const _origRenderViewV9 = _renderView;
+    const _origRenderViewV10 = _renderView;
     _renderView = function() {
         injectCompleteModernSuiteStyles();
         syncWebsiteNavbarPills();
+        attachDynamicContentObserver();
 
         const rawHash = window.location.hash.replace(/^#\/?/, '');
         const isRootHome = (!rawHash || rawHash === 'home') && Array.isArray(currentPath) && currentPath.length === 0;
@@ -5535,7 +5855,7 @@ async function handleLiveSearch() {
 
         const handledModernFolder = renderModernizedInnerFolderView();
         if (!handledModernFolder) {
-            _origRenderViewV9();
+            _origRenderViewV10();
         } else {
             document.body.classList.remove('mcqs-quiz-screen-active');
             window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -5544,18 +5864,18 @@ async function handleLiveSearch() {
         setTimeout(syncQuizScreenAndAntiCheatState, 400);
     };
 
-    if (typeof updateBottomNav === 'function' && !window._origUpdateBottomNavWrappedV9) {
-        window._origUpdateBottomNavWrappedV9 = updateBottomNav;
+    if (typeof updateBottomNav === 'function' && !window._origUpdateBottomNavWrappedV10) {
+        window._origUpdateBottomNavWrappedV10 = updateBottomNav;
         updateBottomNav = function(hash) {
-            window._origUpdateBottomNavWrappedV9(hash);
+            window._origUpdateBottomNavWrappedV10(hash);
             syncQuizScreenAndAntiCheatState();
         };
     }
 
-    if (typeof updateSidebarLinks === 'function' && !window._origUpdateSidebarLinksWrappedV9) {
-        window._origUpdateSidebarLinksWrappedV9 = updateSidebarLinks;
+    if (typeof updateSidebarLinks === 'function' && !window._origUpdateSidebarLinksWrappedV10) {
+        window._origUpdateSidebarLinksWrappedV10 = updateSidebarLinks;
         updateSidebarLinks = function() {
-            window._origUpdateSidebarLinksWrappedV9();
+            window._origUpdateSidebarLinksWrappedV10();
             const sidebar = document.getElementById('main-sidebar');
             if (sidebar) sidebar.style.display = 'none';
         };
@@ -5568,8 +5888,8 @@ async function handleLiveSearch() {
             document.body.classList.remove('mcqs-on-root-home');
         }
         syncQuizScreenAndAntiCheatState();
-        setTimeout(syncQuizScreenAndAntiCheatState, 250);
-        setTimeout(syncQuizScreenAndAntiCheatState, 700);
+        setTimeout(syncQuizScreenAndAntiCheatState, 200);
+        setTimeout(syncQuizScreenAndAntiCheatState, 650);
     });
 
     window.addEventListener('click', function(e) {
@@ -5579,10 +5899,17 @@ async function handleLiveSearch() {
         }
     });
 
+    window.addEventListener('load', () => {
+        attachDynamicContentObserver();
+        syncQuizScreenAndAntiCheatState();
+        alignFloatingCenterPillBar();
+    });
+
     if (document.readyState === 'complete' || document.readyState === 'interactive') {
         setTimeout(() => {
             injectCompleteModernSuiteStyles();
             syncWebsiteNavbarPills();
+            attachDynamicContentObserver();
             verifyAndSyncAccurateDailyStreak();
             syncQuizScreenAndAntiCheatState();
             if (typeof _renderView === 'function' && (!window.location.hash || window.location.hash === '#/home' || window.location.hash.startsWith('#/path/'))) {
