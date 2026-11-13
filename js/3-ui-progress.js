@@ -5937,15 +5937,15 @@ async function handleLiveSearch() {
 })();
 
 // ==========================================
-// 8. INSTALLED MOBILE APP EXCLUSIVE: GOOGLE PLAY STORE UI, CONTINUOUS EXAM CAROUSEL,
-//    3-ROW SWIPEABLE SHELVES, OFFLINE MCQ VAULT, 60s BLITZ & DAILY GOAL RING
+// 8. INSTALLED MOBILE APP EXCLUSIVE: STUDY-OPTIMIZED CONTINUOUS EXAM CAROUSEL,
+//    ADMIN-UPLOADED MODULE EXPLORER, SMART WEAK-SPOT DOCTOR, ORGANIZED 60s BLITZ,
+//    FLOATING ICON DOCK & ZERO-BLEED MODERN SEARCH
 // (Strictly Scoped to Installed Mobile PWA • Zero Impact on PC or Mobile Website)
 // ==========================================
-(function initPlayStoreInstalledMobileAppV1() {
-    if (window._mcqsPlayStoreMobileAppLoadedV1) return;
-    window._mcqsPlayStoreMobileAppLoadedV1 = true;
+(function initStudyInstalledMobileAppV2() {
+    if (window._mcqsStudyMobileAppLoadedV2) return;
+    window._mcqsStudyMobileAppLoadedV2 = true;
 
-    // Strictly detects Installed Mobile PWA (Standalone/Fullscreen on mobile viewport)
     function isInstalledMobileAppMode() {
         const isStandalone = document.documentElement.classList.contains('is-standalone-pwa') ||
                              window.matchMedia('(display-mode: standalone)').matches ||
@@ -5956,400 +5956,502 @@ async function handleLiveSearch() {
         return isStandalone && window.innerWidth <= 860;
     }
 
-    function injectPlayStoreMobileAppStyles() {
-        if (document.getElementById('mcqs-playstore-mobile-app-styles')) return;
+    function injectStudyMobileAppStyles() {
+        if (document.getElementById('mcqs-study-mobile-app-styles-v2')) return;
         const st = document.createElement('style');
-        st.id = 'mcqs-playstore-mobile-app-styles';
+        st.id = 'mcqs-study-mobile-app-styles-v2';
         st.textContent = `
             /* ==========================================
-               PLAY STORE INSTALLED MOBILE APP THEME
+               1. MODERNIZED SEARCH BUTTON & ZERO-BLEED MOBILE SEARCH BAR (FIXES IMAGE 4)
                ========================================== */
-            body.mcqs-playstore-app-active {
-                background-color: #0b0e14 !important;
+            .navbar .search-icon-btn {
+                background: rgba(255, 255, 255, 0.06) !important;
+                border: 1.5px solid rgba(253, 184, 19, 0.38) !important;
+                color: #f8fafc !important;
+                border-radius: 999px !important;
+                padding: 7px 12px !important;
+                display: inline-flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+                gap: 6px !important;
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4) !important;
+                cursor: pointer !important;
+                transition: all 0.18s ease !important;
             }
-            body.mcqs-playstore-app-active .container {
-                padding: 0 0 105px 0 !important;
+            .navbar .search-icon-btn:hover {
+                border-color: #fdb813 !important;
+                background: rgba(253, 184, 19, 0.12) !important;
+            }
+
+            /* On Mobile: Completely hide Logo, Rating, Streak & Profile behind Search when open! */
+            @media (max-width: 860px) {
+                body.mcqs-search-open .navbar .nav-left,
+                body.mcqs-search-open .navbar .nav-right {
+                    opacity: 0 !important;
+                    visibility: hidden !important;
+                    pointer-events: none !important;
+                }
+                #searchWrapper.active {
+                    position: fixed !important;
+                    top: 0 !important;
+                    left: 0 !important;
+                    right: 0 !important;
+                    width: 100vw !important;
+                    height: 56px !important;
+                    background: #080b12 !important;
+                    padding: 8px 12px !important;
+                    margin: 0 !important;
+                    z-index: 99999 !important;
+                    display: flex !important;
+                    align-items: center !important;
+                    border-bottom: 1px solid rgba(253, 184, 19, 0.35) !important;
+                    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.85) !important;
+                }
+                #searchWrapper.active .search-input-container {
+                    width: 100% !important;
+                    height: 40px !important;
+                    background: #111726 !important;
+                    border: 1.5px solid #fdb813 !important;
+                    border-radius: 999px !important;
+                    padding: 0 8px 0 14px !important;
+                    display: flex !important;
+                    align-items: center !important;
+                    box-shadow: 0 0 16px rgba(253, 184, 19, 0.2) !important;
+                }
+                #searchWrapper.active #searchInput {
+                    font-size: 14px !important;
+                    color: #ffffff !important;
+                }
+                #searchWrapper.active #searchSuggestions {
+                    top: 56px !important;
+                    left: 8px !important;
+                    right: 8px !important;
+                    width: calc(100vw - 16px) !important;
+                    border-radius: 14px !important;
+                }
+            }
+
+            /* ==========================================
+               2. FLOATING BOTTOM NAVIGATION DOCK WITH GUARANTEED VISIBLE SVG LOGOS (FIXES POINT 3)
+               ========================================== */
+            @media (max-width: 860px) {
+                #mobileAppDock {
+                    position: fixed !important;
+                    bottom: max(12px, env(safe-area-inset-bottom)) !important;
+                    left: 12px !important;
+                    right: 12px !important;
+                    width: calc(100vw - 24px) !important;
+                    max-width: 460px !important;
+                    margin: 0 auto !important;
+                    height: 64px !important;
+                    background: rgba(14, 19, 32, 0.96) !important;
+                    backdrop-filter: blur(20px) !important;
+                    -webkit-backdrop-filter: blur(20px) !important;
+                    border: 1.5px solid rgba(253, 184, 19, 0.42) !important;
+                    border-radius: 22px !important;
+                    padding: 6px 8px !important;
+                    display: flex !important;
+                    align-items: center !important;
+                    justify-content: space-around !important;
+                    box-shadow: 0 14px 36px rgba(0, 0, 0, 0.9), 0 0 22px rgba(253, 184, 19, 0.16) !important;
+                    z-index: 9400 !important;
+                }
+                #mobileAppDock .app-tab {
+                    flex: 1 !important;
+                    display: flex !important;
+                    flex-direction: column !important;
+                    align-items: center !important;
+                    justify-content: center !important;
+                    gap: 3px !important;
+                    cursor: pointer !important;
+                    padding: 2px 0 !important;
+                    color: #94a3b8 !important;
+                    min-width: 0 !important;
+                }
+                /* Explicit dimensions & zero padding so SVG icons NEVER collapse! */
+                #mobileAppDock .app-tab:not(.ai-tab-inner) .app-tab-icon {
+                    width: 44px !important;
+                    height: 26px !important;
+                    padding: 0 !important;
+                    margin: 0 !important;
+                    border-radius: 999px !important;
+                    display: flex !important;
+                    align-items: center !important;
+                    justify-content: center !important;
+                    background: transparent !important;
+                    transition: all 0.2s ease !important;
+                }
+                #mobileAppDock .app-tab:not(.ai-tab-inner) .app-tab-icon svg {
+                    width: 21px !important;
+                    height: 21px !important;
+                    min-width: 21px !important;
+                    min-height: 21px !important;
+                    display: block !important;
+                    fill: #94a3b8 !important;
+                    transition: fill 0.2s ease, transform 0.2s ease !important;
+                }
+                #mobileAppDock .app-tab.active:not(.ai-tab-inner) .app-tab-icon {
+                    background: rgba(253, 184, 19, 0.2) !important;
+                    border: 1px solid rgba(253, 184, 19, 0.45) !important;
+                }
+                #mobileAppDock .app-tab.active:not(.ai-tab-inner) .app-tab-icon svg {
+                    fill: #fdb813 !important;
+                    transform: scale(1.06) !important;
+                }
+                #mobileAppDock .app-tab .app-tab-label {
+                    font-size: 10.5px !important;
+                    font-weight: 700 !important;
+                    color: #94a3b8 !important;
+                    line-height: 1 !important;
+                    white-space: nowrap !important;
+                }
+                #mobileAppDock .app-tab.active:not(.ai-tab-inner) .app-tab-label {
+                    color: #fdb813 !important;
+                    font-weight: 900 !important;
+                }
+                /* Center Ask AI Pill inside Floating Dock */
+                #mobileAppDock .app-tab.ai-tab-inner {
+                    background: linear-gradient(135deg, #fdb813, #f59e0b) !important;
+                    color: #000000 !important;
+                    border-radius: 16px !important;
+                    padding: 6px 12px !important;
+                    margin: 0 4px !important;
+                    flex: 0 0 auto !important;
+                    box-shadow: 0 6px 18px rgba(253, 184, 19, 0.4) !important;
+                }
+                #mobileAppDock .app-tab.ai-tab-inner .app-tab-icon {
+                    width: 22px !important;
+                    height: 22px !important;
+                    padding: 0 !important;
+                    display: flex !important;
+                    align-items: center !important;
+                    justify-content: center !important;
+                }
+                #mobileAppDock .app-tab.ai-tab-inner .app-tab-icon svg {
+                    width: 20px !important;
+                    height: 20px !important;
+                    fill: #000000 !important;
+                    display: block !important;
+                }
+                #mobileAppDock .app-tab.ai-tab-inner .app-tab-label {
+                    color: #000000 !important;
+                    font-weight: 900 !important;
+                    font-size: 10.5px !important;
+                }
+            }
+
+            /* ==========================================
+               3. INSTALLED MOBILE APP STUDY WORKSPACE
+               ========================================== */
+            body.mcqs-study-app-active {
+                background-color: #080b12 !important;
+            }
+            body.mcqs-study-app-active .container {
+                padding: 0 0 110px 0 !important;
                 max-width: 100vw !important;
             }
-            body.mcqs-playstore-app-active #breadcrumb-text {
+            body.mcqs-study-app-active #breadcrumb-text {
                 display: none !important;
             }
 
-            /* 1. Play Store Top Horizontal Filter Chips */
-            .ps-top-chips-bar {
+            /* Continuous Auto-Sliding Exam Suite Carousel (Top of Screen) */
+            .sa-carousel-section {
+                padding: 12px 0 6px 0;
+            }
+            .sa-carousel-track {
                 display: flex;
-                align-items: center;
-                gap: 8px;
-                overflow-x: auto;
-                padding: 10px 16px 12px 16px;
-                background: #0b0e14;
-                border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-                scrollbar-width: none;
-                -webkit-overflow-scrolling: touch;
-            }
-            .ps-top-chips-bar::-webkit-scrollbar { display: none; }
-            .ps-filter-chip {
-                background: #1b202c;
-                border: 1px solid rgba(255, 255, 255, 0.1);
-                color: #e2e8f0;
-                padding: 8px 15px;
-                border-radius: 999px;
-                font-size: 13px;
-                font-weight: 700;
-                white-space: nowrap;
-                display: inline-flex;
-                align-items: center;
-                gap: 7px;
-                cursor: pointer;
-                flex-shrink: 0;
-                transition: all 0.2s ease;
-            }
-            .ps-filter-chip.active {
-                background: #a8c7fa;
-                color: #062e6f;
-                border-color: #a8c7fa;
-                font-weight: 800;
-                box-shadow: 0 4px 14px rgba(168, 199, 250, 0.28);
-            }
-
-            /* 2. Play Store Continuous Hero Spotlight Carousel (88% Peeking Cards) */
-            .ps-hero-carousel-wrap {
-                position: relative;
-                padding: 14px 0 8px 0;
-            }
-            .ps-hero-carousel-track {
-                display: flex;
-                gap: 14px;
+                gap: 12px;
                 overflow-x: auto;
                 scroll-snap-type: x mandatory;
                 scroll-behavior: smooth;
-                padding: 0 16px 10px 16px;
+                padding: 0 14px 8px 14px;
                 scrollbar-width: none;
                 -webkit-overflow-scrolling: touch;
             }
-            .ps-hero-carousel-track::-webkit-scrollbar { display: none; }
-            .ps-hero-slide {
-                flex: 0 0 88%;
-                max-width: 88%;
+            .sa-carousel-track::-webkit-scrollbar { display: none; }
+            .sa-exam-slide {
+                flex: 0 0 90%;
+                max-width: 90%;
                 scroll-snap-align: center;
-                display: flex;
-                flex-direction: column;
-                gap: 12px;
-                cursor: pointer;
                 user-select: none;
             }
-            .ps-hero-artwork-card {
+            .sa-exam-banner-card {
                 position: relative;
-                height: 205px;
-                border-radius: 18px;
+                min-height: 215px;
+                border-radius: 20px;
                 overflow: hidden;
-                padding: 18px;
+                padding: 16px;
                 display: flex;
                 flex-direction: column;
                 justify-content: space-between;
-                border: 1px solid var(--ps-accent-border, rgba(255, 255, 255, 0.16));
-                background: var(--ps-hero-bg, linear-gradient(135deg, #1e1b4b, #0f172a));
-                box-shadow: 0 14px 32px rgba(0, 0, 0, 0.65);
+                border: 1.5px solid var(--sa-border, rgba(253, 184, 19, 0.4));
+                background: var(--sa-grad, linear-gradient(140deg, #1e1b4b, #090d16));
+                box-shadow: 0 14px 34px rgba(0, 0, 0, 0.7);
             }
-            .ps-hero-sim-wave {
+            .sa-banner-wave {
                 position: absolute;
                 left: 0;
                 right: 0;
                 bottom: 0;
-                height: 95px;
+                height: 80px;
                 pointer-events: none;
-                opacity: 0.85;
+                opacity: 0.75;
             }
-            .ps-hero-orb {
+            .sa-banner-orb {
                 position: absolute;
-                top: -25px;
+                top: -30px;
                 right: -25px;
-                width: 140px;
-                height: 140px;
+                width: 130px;
+                height: 130px;
                 border-radius: 50%;
-                background: var(--ps-orb-color, rgba(253, 184, 19, 0.28));
-                filter: blur(22px);
+                background: var(--sa-orb, rgba(253, 184, 19, 0.25));
+                filter: blur(24px);
                 pointer-events: none;
-                animation: psOrbFloat 3.6s ease-in-out infinite alternate;
             }
-            .ps-hero-bottom-meta {
+            .sa-uploaded-chips-wrap {
+                position: relative;
+                z-index: 2;
                 display: flex;
-                align-items: center;
-                justify-content: space-between;
-                gap: 12px;
-                padding: 2px 4px;
+                flex-wrap: wrap;
+                gap: 6px;
+                margin: 10px 0;
             }
-            .ps-hero-app-icon {
-                width: 52px;
-                height: 52px;
-                border-radius: 14px;
-                background: var(--ps-icon-bg, #1e293b);
-                border: 1.5px solid var(--ps-accent-border, rgba(255,255,255,0.2));
-                display: flex;
+            .sa-uploaded-chip {
+                background: rgba(9, 13, 22, 0.72);
+                backdrop-filter: blur(8px);
+                border: 1px solid rgba(255, 255, 255, 0.18);
+                color: #f8fafc;
+                padding: 5px 10px;
+                border-radius: 9px;
+                font-size: 11px;
+                font-weight: 700;
+                display: inline-flex;
                 align-items: center;
-                justify-content: center;
-                font-size: 26px;
-                flex-shrink: 0;
-                box-shadow: 0 6px 16px rgba(0, 0, 0, 0.5);
-            }
-            .ps-try-btn {
-                background: #a8c7fa;
-                color: #062e6f;
-                border: none;
-                padding: 9px 22px;
-                border-radius: 999px;
-                font-size: 13.5px;
-                font-weight: 800;
+                gap: 5px;
                 cursor: pointer;
-                flex-shrink: 0;
-                box-shadow: 0 4px 12px rgba(168, 199, 250, 0.25);
             }
-            .ps-carousel-dots {
+            .sa-uploaded-chip:active {
+                transform: scale(0.96);
+            }
+            .sa-carousel-dots {
                 display: flex;
                 justify-content: center;
                 gap: 6px;
-                margin-top: 2px;
+                margin-top: 4px;
             }
-            .ps-carousel-dot {
+            .sa-carousel-dot {
                 width: 6px;
                 height: 6px;
                 border-radius: 999px;
                 background: rgba(255, 255, 255, 0.22);
                 transition: all 0.25s ease;
             }
-            .ps-carousel-dot.active {
-                width: 18px;
-                background: #a8c7fa;
+            .sa-carousel-dot.active {
+                width: 20px;
+                background: #fdb813;
             }
 
-            /* 3. Play Store Section Headers */
-            .ps-shelf-section {
-                margin-top: 18px;
+            /* Section Headers & Category Filter Pills */
+            .sa-section-block {
+                margin-top: 16px;
+                padding: 0 14px;
             }
-            .ps-shelf-header {
+            .sa-section-header {
                 display: flex;
                 align-items: center;
                 justify-content: space-between;
-                padding: 0 16px;
-                margin-bottom: 12px;
+                gap: 8px;
+                margin-bottom: 10px;
             }
-            .ps-shelf-title {
-                font-size: 17.5px;
-                font-weight: 800;
-                color: #f1f5f9;
+            .sa-section-title {
+                font-size: 16.5px;
+                font-weight: 900;
+                color: #ffffff;
                 margin: 0;
-                letter-spacing: -0.2px;
+                display: flex;
+                align-items: center;
+                gap: 7px;
             }
-            .ps-shelf-arrow-btn {
-                width: 32px;
-                height: 32px;
-                border-radius: 50%;
-                background: #1b202c;
+            .sa-cat-tabs-row {
+                display: flex;
+                gap: 6px;
+                overflow-x: auto;
+                padding-bottom: 10px;
+                scrollbar-width: none;
+                -webkit-overflow-scrolling: touch;
+            }
+            .sa-cat-tabs-row::-webkit-scrollbar { display: none; }
+            .sa-cat-tab-btn {
+                background: #121826;
                 border: 1px solid rgba(255, 255, 255, 0.1);
-                color: #e2e8f0;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                font-size: 15px;
-                cursor: pointer;
-            }
-
-            /* 4. Play Store "Suggested for You" 3-Row Stacked Horizontal Shelf */
-            .ps-triple-stack-track {
-                display: flex;
-                gap: 14px;
-                overflow-x: auto;
-                scroll-snap-type: x mandatory;
-                padding: 0 16px 8px 16px;
-                scrollbar-width: none;
-                -webkit-overflow-scrolling: touch;
-            }
-            .ps-triple-stack-track::-webkit-scrollbar { display: none; }
-            .ps-triple-column {
-                flex: 0 0 86%;
-                max-width: 86%;
-                scroll-snap-align: start;
-                display: flex;
-                flex-direction: column;
-                gap: 14px;
-            }
-            .ps-app-list-row {
-                display: flex;
-                align-items: center;
-                gap: 14px;
-                cursor: pointer;
-                padding: 4px 2px;
-                border-radius: 12px;
-                transition: background 0.15s ease;
-            }
-            .ps-app-list-row:active {
-                background: rgba(255, 255, 255, 0.06);
-            }
-            .ps-row-squircle {
-                width: 58px;
-                height: 58px;
-                border-radius: 15px;
-                background: var(--row-bg, #1e293b);
-                border: 1.5px solid var(--row-border, rgba(255, 255, 255, 0.18));
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                font-size: 26px;
-                flex-shrink: 0;
-                box-shadow: 0 6px 16px rgba(0, 0, 0, 0.45);
-            }
-            .ps-row-info {
-                flex: 1;
-                min-width: 0;
-            }
-            .ps-row-title {
-                font-size: 15px;
-                font-weight: 700;
-                color: #f8fafc;
-                overflow: hidden;
-                text-overflow: ellipsis;
-                white-space: nowrap;
-                margin-bottom: 3px;
-            }
-            .ps-row-sub {
-                font-size: 12px;
                 color: #94a3b8;
-                overflow: hidden;
-                text-overflow: ellipsis;
+                padding: 6px 13px;
+                border-radius: 999px;
+                font-size: 12px;
+                font-weight: 800;
                 white-space: nowrap;
-                margin-bottom: 4px;
+                cursor: pointer;
+                flex-shrink: 0;
+                transition: 0.18s;
             }
-            .ps-row-meta {
-                display: flex;
-                align-items: center;
-                gap: 10px;
-                font-size: 11.5px;
-                color: #cbd5e1;
-                font-weight: 600;
+            .sa-cat-tab-btn.active {
+                background: rgba(253, 184, 19, 0.18);
+                border-color: #fdb813;
+                color: #fdb813;
             }
 
-            /* 5. Play Store Horizontal Feature Cards Shelf ("Recommended for you") */
-            .ps-horiz-cards-track {
+            /* Organised Swipeable Study Module Columns (3-Row Cards with Full Borders) */
+            .sa-modules-Redesign-track {
                 display: flex;
                 gap: 12px;
                 overflow-x: auto;
                 scroll-snap-type: x mandatory;
-                padding: 0 16px 10px 16px;
+                padding-bottom: 6px;
                 scrollbar-width: none;
                 -webkit-overflow-scrolling: touch;
             }
-            .ps-horiz-cards-track::-webkit-scrollbar { display: none; }
-            .ps-feature-media-card {
-                flex: 0 0 74%;
-                max-width: 74%;
+            .sa-modules-Redesign-track::-webkit-scrollbar { display: none; }
+            .sa-module-column {
+                flex: 0 0 88%;
+                max-width: 88%;
                 scroll-snap-align: start;
-                background: #141824;
-                border: 1px solid rgba(255, 255, 255, 0.09);
-                border-radius: 16px;
-                padding: 14px;
                 display: flex;
                 flex-direction: column;
+                gap: 10px;
+            }
+            .sa-module- column-single {
+                flex: 0 0 100%;
+                max-width: 100%;
+            }
+            .sa-study-row-card {
+                background: linear-gradient(145deg, #131929, #0c101c);
+                border: 1px solid rgba(255, 255, 255, 0.09);
+                border-left: 4px solid var(--mod-color, #fdb813);
+                border-radius: 14px;
+                padding: 11px 12px;
+                display: flex;
+                align-items: center;
                 justify-content: space-between;
-                gap: 12px;
+                gap: 11px;
                 cursor: pointer;
-                box-shadow: 0 10px 24px rgba(0, 0, 0, 0.5);
+                box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4);
+            }
+            .sa-study-row-icon {
+                width: 46px;
+                height: 46px;
+                border-radius: 12px;
+                background: var(--mod-bg, rgba(253, 184, 19, 0.15));
+                border: 1px solid var(--mod-border, rgba(253, 184, 19, 0.4));
+                color: var(--mod-color, #fdb813);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 22px;
+                flex-shrink: 0;
             }
 
-            /* 6. App-Exclusive Power Hub Cards (Offline Vault, 60s Blitz, Daily Ring) */
-            .ps-exclusive-strip {
-                display: flex;
-                gap: 12px;
-                overflow-x: auto;
-                scroll-snap-type: x mandatory;
-                padding: 0 16px 10px 16px;
-                scrollbar-width: none;
-                -webkit-overflow-scrolling: touch;
-            }
-            .ps-exclusive-strip::-webkit-scrollbar { display: none; }
-            .ps-exclusive-card {
-                flex: 0 0 85%;
-                max-width: 85%;
-                scroll-snap-align: start;
-                background: linear-gradient(150deg, #161c2e 0%, #0e1320 100%);
-                border: 1.5px solid var(--exc-border, rgba(168, 199, 250, 0.35));
+            /* Full-Width Detailed Student Feature Cards (Smart Weak-Spot Doctor & Organized 60s Blitz) */
+            .sa-feature-full-card {
+                background: linear-gradient(155deg, #131a2c 0%, #0b0f1a 100%);
+                border: 1.5px solid rgba(255, 255, 255, 0.11);
                 border-radius: 18px;
                 padding: 16px;
-                box-shadow: 0 12px 28px rgba(0, 0, 0, 0.6);
+                margin-bottom: 14px;
+                box-shadow: 0 12px 30px rgba(0, 0, 0, 0.55);
+            }
+
+            /* Horizontal Essential & Quick Links Shelf */
+            .sa-quick-horiz-track {
+                display: flex;
+                gap: 10px;
+                overflow-x: auto;
+                scroll-snap-type: x mandatory;
+                padding-bottom: 6px;
+                scrollbar-width: none;
+                -webkit-overflow-scrolling: touch;
+            }
+            .sa-quick-horiz-track::-webkit-scrollbar { display: none; }
+            .sa-quick-card {
+                flex: 0 0 68%;
+                max-width: 68%;
+                scroll-snap-align: start;
+                background: linear-gradient(145deg, #13192a, #0b0f19);
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                border-radius: 15px;
+                padding: 13px;
                 display: flex;
                 flex-direction: column;
                 justify-content: space-between;
-                gap: 12px;
-            }
-
-            /* 7. Play Store Styled Bottom Navigation Bar (#mobileAppDock) */
-            body.mcqs-playstore-app-active #mobileAppDock {
-                background: #13161f !important;
-                border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
-                height: 66px !important;
-                padding: 6px 8px max(6px, env(safe-area-inset-bottom)) 8px !important;
-                border-radius: 0 !important;
-                bottom: 0 !important;
-                left: 0 !important;
-                right: 0 !important;
-                width: 100vw !important;
-                max-width: 100vw !important;
-                box-shadow: 0 -8px 25px rgba(0, 0, 0, 0.7) !important;
-            }
-            body.mcqs-playstore-app-active #mobileAppDock .app-tab {
-                position: relative;
-                display: flex !important;
-                flex-direction: column !important;
-                align-items: center !important;
-                justify-content: center !important;
-                gap: 3px !important;
-            }
-            body.mcqs-playstore-app-active #mobileAppDock .app-tab:not(.ai-tab-inner) .app-tab-icon {
-                padding: 3px 18px !important;
-                border-radius: 999px !important;
-                transition: background 0.2s ease !important;
-            }
-            body.mcqs-playstore-app-active #mobileAppDock .app-tab.active:not(.ai-tab-inner) .app-tab-icon {
-                background: rgba(168, 199, 250, 0.22) !important;
-            }
-            body.mcqs-playstore-app-active #mobileAppDock .app-tab.active:not(.ai-tab-inner) .app-tab-icon svg {
-                fill: #a8c7fa !important;
-            }
-            body.mcqs-playstore-app-active #mobileAppDock .app-tab.active:not(.ai-tab-inner) .app-tab-label {
-                color: #a8c7fa !important;
-                font-weight: 800 !important;
-            }
-
-            @keyframes psOrbFloat {
-                0% { transform: translate(0, 0) scale(0.95); }
-                100% { transform: translate(-14px, 12px) scale(1.1); }
+                gap: 10px;
+                cursor: pointer;
             }
         `;
         document.head.appendChild(st);
     }
 
+    // Modernize the top navbar Search button icon into a crisp SVG magnifying glass
+    function upgradeNavbarSearchButtonLogo() {
+        const searchBtn = document.querySelector('.navbar .search-icon-btn');
+        if (!searchBtn || searchBtn.dataset.modernSvgApplied) return;
+        searchBtn.dataset.modernSvgApplied = 'true';
+        searchBtn.innerHTML = `
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fdb813" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <span class="hide-on-mobile" style="font-size:12.5px; font-weight:800; color:#f8fafc;">Search</span>
+        `;
+    }
+
+    // Guarantee SVG icons inside #mobileAppDock are always present and visible
+    function repairAndEnhanceMobileAppDock() {
+        const dock = document.getElementById('mobileAppDock');
+        if (!dock) return;
+        const tabs = dock.querySelectorAll('.app-tab');
+        const svgPaths = [
+            'M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z', // Home
+            'M19 5h-2V3H7v2H5c-1.1 0-2 .9-2 2v1c0 2.55 1.92 4.63 4.39 4.94A5.01 5.01 0 0011 15.9V19H7v2h10v-2h-4v-3.1a5.01 5.01 0 003.61-2.96C19.08 12.63 21 10.55 21 8V7c0-1.1-.9-2-2-2zM7 10.82C5.84 10.4 5 9.3 5 8V7h2v3.82zM19 8c0 1.3-.84 2.4-2 2.82V7h2v1z', // Rank
+            'M19 9l1.25-2.75L23 5l-2.75-1.25L19 1l-1.25 2.75L15 5l2.75 1.25L19 9zm-7.5.5L9 4 6.5 9.5 1 12l5.5 2.5L9 20l2.5-5.5L17 12l-5.5-2.5zM19 15l-1.25 2.75L15 19l2.75 1.25L19 23l1.25-2.75L23 19l-2.75-1.25L19 15z', // Ask AI
+            'M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z', // Stats
+            'M17 3H7c-1.1 0-1.99.9-1.99 2L5 21l7-3 7 3V5c0-1.1-.9-2-2-2z' // Saved
+        ];
+        const tabLabels = ['Home', 'Ranks', 'Ask AI', 'Stats', 'Saved'];
+
+        tabs.forEach((tab, idx) => {
+            let iconBox = tab.querySelector('.app-tab-icon');
+            if (!iconBox) {
+                iconBox = document.createElement('div');
+                iconBox.className = 'app-tab-icon';
+                tab.prepend(iconBox);
+            }
+            if (!iconBox.querySelector('svg') && svgPaths[idx]) {
+                iconBox.innerHTML = `<svg viewBox="0 0 24 24"><path d="${svgPaths[idx]}"/></svg>`;
+            }
+            const lbl = tab.querySelector('.app-tab-label');
+            if (lbl && tabLabels[idx]) {
+                if (idx === 4 && Array.isArray(userBookmarks) && userBookmarks.length > 0) {
+                    lbl.innerText = `Saved (${userBookmarks.length})`;
+                } else {
+                    lbl.innerText = tabLabels[idx];
+                }
+            }
+        });
+    }
+
     // ==========================================
-    // STATE FOR PLAY STORE MOBILE APP
+    // STATE & ADMIN-PANEL DATA READERS FOR INSTALLED MOBILE APP
     // ==========================================
-    var psAppState = {
+    var saState = {
         selectedCategory: 'ALL',
         activeSlideIdx: 0,
         carouselTimer: null,
         isTouchingCarousel: false,
-        dailyGoalTarget: Number(localStorage.getItem('mcqs_app_daily_goal_v1') || 30),
-        offlinePackCount: 0,
-        blitzBestScore: Number(localStorage.getItem('mcqs_app_blitz_best_v1') || 0)
+        blitzExam: '',
+        blitzBestScore: Number(localStorage.getItem('mcqs_app_blitz_best_v1') || 0),
+        blitzBestAcc: Number(localStorage.getItem('mcqs_app_blitz_best_acc_v1') || 0)
     };
 
-    function getOfflineVaultQuestions() {
-        try {
-            const raw = localStorage.getItem('mcqs_offline_vault_mcqs_v1');
-            return raw ? JSON.parse(raw) : [];
-        } catch (e) {
-            return [];
-        }
-    }
-
-    function getActiveExamCategoriesForApp() {
+    function getActiveExamCategoriesFromAdmin() {
         const deletedSet = new Set((typeof topicOverrides !== 'undefined' && topicOverrides && topicOverrides.deletedPaths) || []);
         const keys = new Set(Object.keys(typeof appData !== 'undefined' ? appData : {}));
         if (typeof customTopicTypes !== 'undefined') {
@@ -6362,7 +6464,7 @@ async function handleLiveSearch() {
         return Array.from(keys).filter(k => k && k !== 'Daily Quiz Challenge' && !deletedSet.has(k));
     }
 
-    function getDirectChildFolders(pathArr) {
+    function getDirectChildKeysFromAdmin(pathArr) {
         const deletedSet = new Set((typeof topicOverrides !== 'undefined' && topicOverrides && topicOverrides.deletedPaths) || []);
         const fullPrefix = pathArr.join(' > ');
         let currNode = typeof appData !== 'undefined' ? appData : {};
@@ -6398,77 +6500,115 @@ async function handleLiveSearch() {
         return Array.from(childSet);
     }
 
-    // Generates rich Play Store banner copy & artwork theme for ANY current or future Exam Category
-    function getPlayStoreBannerMetaForExam(examKey, idx) {
+    // Reads real student progress for any exam or folder from localStorage
+    function getStudentProgressSummaryForApp(examPrefix = '') {
+        try {
+            const uid = (typeof currentUser !== 'undefined' && currentUser && currentUser.uid) ? currentUser.uid : 'guest';
+            const localMap = JSON.parse(localStorage.getItem(`mcqsprep_topic_progress_v2_${uid}`) || '{}');
+            const corrSet = new Set();
+            const wrongSet = new Set();
+            const skipSet = new Set();
+            let lastActivePath = '';
+            let lastActiveTime = 0;
+
+            Object.keys(localMap).forEach(pathKey => {
+                const rec = localMap[pathKey] || {};
+                if (rec.inProgress && rec.inProgress.updatedAt && rec.inProgress.updatedAt > lastActiveTime) {
+                    lastActiveTime = rec.inProgress.updatedAt;
+                    lastActivePath = pathKey;
+                }
+                if (examPrefix && !pathKey.startsWith(examPrefix)) return;
+                (rec.correctIds || []).forEach(id => corrSet.add(id));
+                (rec.wrongIds || []).forEach(id => { if (!corrSet.has(id)) wrongSet.add(id); });
+                (rec.skippedIds || []).forEach(id => { if (!corrSet.has(id) && !wrongSet.has(id)) skipSet.add(id); });
+            });
+
+            const solved = corrSet.size + wrongSet.size;
+            const acc = solved > 0 ? Math.round((corrSet.size / solved) * 100) : 0;
+            return {
+                solved,
+                correct: corrSet.size,
+                wrong: wrongSet.size,
+                skipped: skipSet.size,
+                acc,
+                lastActivePath
+            };
+        } catch (e) {
+            return { solved: 0, correct: 0, wrong: 0, skipped: 0, acc: 0, lastActivePath: '' };
+        }
+    }
+
+    // Builds 100% Admin-Panel-driven metadata for each Exam Category slide
+    function getAdminDrivenExamSlideData(examKey, idx) {
         const clean = formatCleanTopicTitle(examKey);
-        const lower = clean.toLowerCase();
         const tMeta = (typeof customTopicTypes !== 'undefined' && customTopicTypes[examKey]) || null;
         const cIcon = tMeta ? tMeta.icon : null;
         const th = getAutoTopicTheme(clean, cIcon, idx, null, '📘', null, examKey);
 
+        const directModules = getDirectChildKeysFromAdmin([examKey]);
+        const subTopicsList = [];
+        directModules.forEach(mKey => {
+            const children = getDirectChildKeysFromAdmin([examKey, mKey]);
+            children.forEach(ch => {
+                const cleanCh = formatCleanTopicTitle(ch);
+                if (!['easy', 'medium', 'hard', 'mixed'].includes(cleanCh.toLowerCase())) {
+                    subTopicsList.push(cleanCh);
+                }
+            });
+        });
+
+        const uniqueSubTopics = Array.from(new Set(subTopicsList));
+        const prog = getStudentProgressSummaryForApp(examKey);
+
         const bannerGradients = [
-            'linear-gradient(135deg, #2e1065 0%, #0f172a 55%, #064e3b 100%)',
-            'linear-gradient(135deg, #0c4a6e 0%, #0f172a 55%, #3b0764 100%)',
-            'linear-gradient(135deg, #4c0519 0%, #111827 55%, #1e3a8a 100%)',
-            'linear-gradient(135deg, #14532d 0%, #0f172a 55%, #7c2d12 100%)',
-            'linear-gradient(135deg, #312e81 0%, #090d16 55%, #701a75 100%)'
+            'linear-gradient(140deg, #271352 0%, #0d1324 58%, #073b32 100%)',
+            'linear-gradient(140deg, #0c3b5e 0%, #0d1324 58%, #341056 100%)',
+            'linear-gradient(140deg, #430a22 0%, #0d1324 58%, #172e6e 100%)',
+            'linear-gradient(140deg, #113e28 0%, #0d1324 58%, #5b2210 100%)'
         ];
 
-        let headline = `Master ${clean} Line-by-Line MCQs & Mock Series`;
-        let tagLine = 'NCERT • PYQs • 4-Tier Difficulty';
-        if (lower.includes('neet')) {
-            headline = 'Crack NEET-UG with NCERT Line-by-Line & Diagram MCQs';
-            tagLine = 'Biology • Chemistry • Physics • 180-Q Mock';
-        } else if (lower.includes('jee')) {
-            headline = 'Master JEE Main Physics, Chemistry & Calculus Problems';
-            tagLine = 'PYQ Archives • Formula Sheets • Speed Tests';
-        } else if (lower.includes('board')) {
-            headline = 'Score 95%+ in Class 9–12 State & Central Board Exams';
-            tagLine = 'CBSE • AHSEC • SEBA • Chapter-Wise Banks';
-        } else if (lower.includes('general') || lower.includes('gk')) {
-            headline = 'Conquer Competitive GK, Indian Polity, History & Science';
-            tagLine = 'Current Affairs • Static GK • Exam PYQs';
-        }
-
         return {
+            examKey,
             cleanName: clean,
             icon: th.i === 'NONE' ? '📘' : th.i,
             color: th.c,
             bg: th.bg,
             border: th.border,
-            heroGrad: bannerGradients[idx % bannerGradients.length],
-            headline,
-            tagLine
+            grad: bannerGradients[idx % bannerGradients.length],
+            directModules,
+            uniqueSubTopics,
+            prog
         };
     }
 
-    // Collects all swipeable modules & subtopics for the selected category (or all categories)
-    function collectPlayStoreModulesForCategory(selectedCat) {
-        const exams = getActiveExamCategoriesForApp();
+    // Collects real uploaded modules & nested subjects for the Category-Wise Study Modules shelf
+    function collectUploadedStudyModules(selectedCat) {
+        const exams = getActiveExamCategoriesFromAdmin();
         const targetExams = (selectedCat && selectedCat !== 'ALL') ? [selectedCat] : exams;
         const items = [];
         let colorCounter = 0;
 
         targetExams.forEach(exKey => {
             const cleanEx = formatCleanTopicTitle(exKey);
-            const directChildren = getDirectChildFolders([exKey]);
+            const directChildren = getDirectChildKeysFromAdmin([exKey]);
 
             directChildren.forEach(childKey => {
                 const fullPath = `${exKey} > ${childKey}`;
                 const cleanChild = formatCleanTopicTitle(childKey);
                 const tMeta = (typeof customTopicTypes !== 'undefined' && customTopicTypes[fullPath]) || null;
-                const cIcon = tMeta ? tMeta.icon : null;
-                const th = getAutoTopicTheme(cleanChild, cIcon, colorCounter++, null, '📘', null, fullPath);
-                const grandChildren = getDirectChildFolders([exKey, childKey]);
+                const th = getAutoTopicTheme(cleanChild, tMeta?.icon || null, colorCounter++, null, '📘', null, fullPath);
+                const grandChildren = getDirectChildKeysFromAdmin([exKey, childKey]);
+                const modProg = getStudentProgressSummaryForApp(fullPath);
 
                 items.push({
-                    title: `${cleanChild} (${cleanEx})`,
-                    shortTitle: cleanChild,
-                    examName: cleanEx,
+                    title: selectedCat === 'ALL' ? `${cleanChild} (${cleanEx})` : cleanChild,
                     subtitle: grandChildren.length > 0
-                        ? `${cleanEx} • ${grandChildren.slice(0, 3).map(g => formatCleanTopicTitle(g)).join(' • ')}`
-                        : `${cleanEx} • Full Practice Suite`,
-                    badge: grandChildren.length > 0 ? `${grandChildren.length} Modules` : 'Instant Launch',
+                        ? grandChildren.slice(0, 4).map(g => formatCleanTopicTitle(g)).join(' • ')
+                        : `${cleanEx} Uploaded Module`,
+                    statusBadge: modProg.solved > 0
+                        ? `✔ ${modProg.solved} Solved (${modProg.acc}%)`
+                        : (grandChildren.length > 0 ? `${grandChildren.length} Sections` : 'Open Module'),
+                    statusColor: modProg.solved > 0 ? '#10b981' : th.c,
                     icon: th.i === 'NONE' ? '📘' : th.i,
                     color: th.c,
                     bg: th.bg,
@@ -6476,20 +6616,23 @@ async function handleLiveSearch() {
                     pathArr: [exKey, childKey]
                 });
 
-                // Also add 2nd-level subjects (e.g., Botany, Zoology, Physics, Class 11, Class 12) so the shelf is rich!
                 grandChildren.slice(0, 6).forEach(gKey => {
                     const gFull = `${fullPath} > ${gKey}`;
                     const cleanG = formatCleanTopicTitle(gKey);
+                    if (['easy', 'medium', 'hard', 'mixed'].includes(cleanG.toLowerCase())) return;
                     const gMeta = (typeof customTopicTypes !== 'undefined' && customTopicTypes[gFull]) || null;
                     const gTh = getAutoTopicTheme(cleanG, gMeta?.icon || null, colorCounter++, null, '📘', null, gFull);
-                    const leafChildren = getDirectChildFolders([exKey, childKey, gKey]);
+                    const leafChildren = getDirectChildKeysFromAdmin([exKey, childKey, gKey])
+                        .filter(lk => !['easy', 'medium', 'hard', 'mixed'].includes(formatCleanTopicTitle(lk).toLowerCase()));
+                    const gProg = getStudentProgressSummaryForApp(gFull);
 
                     items.push({
-                        title: `${cleanG} — ${cleanEx}`,
-                        shortTitle: cleanG,
-                        examName: cleanEx,
-                        subtitle: `${cleanEx} › ${cleanChild} • ${leafChildren.length > 0 ? `${leafChildren.length} Chapters` : 'MCQs & PDFs'}`,
-                        badge: leafChildren.length > 0 ? `${leafChildren.length} Topics` : '4.9 ★',
+                        title: cleanG,
+                        subtitle: `${cleanEx} › ${cleanChild}${leafChildren.length > 0 ? ` • ${leafChildren.slice(0, 2).map(l => formatCleanTopicTitle(l)).join(', ')}` : ''}`,
+                        statusBadge: gProg.solved > 0
+                            ? `✔ ${gProg.solved} Solved (${gProg.acc}%)`
+                            : (leafChildren.length > 0 ? `${leafChildren.length} Chapters` : 'Practice MCQs'),
+                        statusColor: gProg.solved > 0 ? '#10b981' : gTh.c,
                         icon: gTh.i === 'NONE' ? '📘' : gTh.i,
                         color: gTh.c,
                         bg: gTh.bg,
@@ -6504,38 +6647,43 @@ async function handleLiveSearch() {
     }
 
     // ==========================================
-    // CONTINUOUS HERO CAROUSEL CONTROLLER (AUTO-SLIDES LEFT TO RIGHT + PAUSES ON TOUCH)
+    // CONTINUOUS HERO CAROUSEL CONTROLLER
     // ==========================================
-    function startContinuousHeroCarousel() {
-        if (psAppState.carouselTimer) clearInterval(psAppState.carouselTimer);
-        psAppState.carouselTimer = setInterval(() => {
-            if (psAppState.isTouchingCarousel) return;
-            const track = document.getElementById('psHeroCarouselTrack');
+    function startStudyHeroCarousel() {
+        if (saState.carouselTimer) clearInterval(saState.carouselTimer);
+        saState.carouselTimer = setInterval(() => {
+            if (saState.isTouchingCarousel) return;
+            const track = document.getElementById('saHeroCarouselTrack');
             if (!track) return;
-            const slides = track.querySelectorAll('.ps-hero-slide');
+            const slides = track.querySelectorAll('.sa-exam-slide');
             if (slides.length <= 1) return;
 
-            psAppState.activeSlideIdx = (psAppState.activeSlideIdx + 1) % slides.length;
-            const targetSlide = slides[psAppState.activeSlideIdx];
+            saState.activeSlideIdx = (saState.activeSlideIdx + 1) % slides.length;
+            const targetSlide = slides[saState.activeSlideIdx];
             if (targetSlide) {
-                const scrollTarget = targetSlide.offsetLeft - 16;
-                track.scrollTo({ left: scrollTarget, behavior: 'smooth' });
+                track.scrollTo({ left: targetSlide.offsetLeft - 14, behavior: 'smooth' });
             }
-            updateCarouselDotsUI(psAppState.activeSlideIdx);
-        }, 3400);
+            updateSaCarouselDots(saState.activeSlideIdx);
+        }, 3600);
     }
 
-    function updateCarouselDotsUI(activeIdx) {
-        const dots = document.querySelectorAll('.ps-carousel-dot');
+    function updateSaCarouselDots(activeIdx) {
+        const dots = document.querySelectorAll('.sa-carousel-dot');
         dots.forEach((d, i) => d.classList.toggle('active', i === activeIdx));
     }
 
-    window.psSelectFilterCategory = function(catKey) {
-        psAppState.selectedCategory = catKey;
-        renderPlayStoreMobileAppHome();
+    window.saSelectModuleCategory = function(catKey) {
+        saState.selectedCategory = catKey;
+        renderStudyMobileAppHome();
     };
 
-    window.psJumpToPathEncoded = function(encodedJsonArr) {
+    window.saSelectBlitzExam = function(examKey) {
+        saState.blitzExam = examKey;
+        renderStudyMobileAppHome();
+    };
+
+    window.saJumpToPathEncoded = function(encodedJsonArr, ev) {
+        if (ev) ev.stopPropagation();
         try {
             const arr = JSON.parse(decodeURIComponent(encodedJsonArr));
             if (Array.isArray(arr) && arr.length > 0) {
@@ -6545,98 +6693,35 @@ async function handleLiveSearch() {
     };
 
     // ==========================================
-    // APP-EXCLUSIVE SUPERPOWER 1: OFFLINE QUESTION PACK VAULT (PRACTICE WITHOUT INTERNET!)
+    // ORGANIZED 60-SECOND SPEED BLITZ ENGINE (FIXES POINT 7 & IMAGE 3)
     // ==========================================
-    window.downloadAppOfflineQuestionPack = async function() {
-        const exams = getActiveExamCategoriesForApp();
-        const targetExam = (psAppState.selectedCategory && psAppState.selectedCategory !== 'ALL')
-            ? psAppState.selectedCategory
-            : (exams[0] || 'NEET');
-        const cleanEx = formatCleanTopicTitle(targetExam);
-
-        const btn = document.getElementById('btnDownloadOfflinePack');
-        if (btn) { btn.disabled = true; btn.innerText = '⏳ Caching Pack...'; }
-
-        try {
-            if (typeof db === 'undefined') throw new Error('Database not connected');
-            const snap = await db.collection('content')
-                .where('path', '>=', targetExam)
-                .where('path', '<=', targetExam + '\uf8ff')
-                .limit(65)
-                .get();
-
-            const pack = [];
-            snap.forEach(doc => {
-                const d = doc.data();
-                if ((!d.type || d.type === 'mcq') && d.question && d.options && d.options.A) {
-                    pack.push({ id: doc.id, ...d });
-                }
-            });
-
-            if (pack.length === 0) {
-                showNotification(`⚠️ No MCQs found in ${cleanEx} to cache yet.`);
-            } else {
-                localStorage.setItem('mcqs_offline_vault_mcqs_v1', JSON.stringify(pack.slice(0, 60)));
-                localStorage.setItem('mcqs_offline_vault_exam_v1', cleanEx);
-                showNotification(`📴 Cached ${Math.min(60, pack.length)} ${cleanEx} MCQs for Offline Practice!`);
-                renderPlayStoreMobileAppHome();
-            }
-        } catch (e) {
-            showNotification('⚠️ Connect to internet once to download Offline Pack.');
-        } finally {
-            if (btn) { btn.disabled = false; btn.innerText = '⬇️ Sync Offline Pack'; }
-        }
-    };
-
-    window.launchAppOfflineVaultQuiz = function() {
-        const pack = getOfflineVaultQuestions();
-        const savedExam = localStorage.getItem('mcqs_offline_vault_exam_v1') || 'Offline Vault';
-        if (!pack.length) {
-            window.downloadAppOfflineQuestionPack();
-            return;
-        }
-        const shuffled = [...pack].sort(() => Math.random() - 0.5).slice(0, 25);
-        document.body.classList.add('hide-ai-btn');
-        document.body.classList.add('mcqs-quiz-screen-active');
-        document.body.classList.add('hide-bottom-bar');
-
-        currentQuestions = shuffled;
-        currentQuizPath = `${savedExam} > 📴 Offline App Vault`;
-        currentIndex = 0;
-        userAnswers = {};
-        timeSpent = {};
-        window.location.hash = '#/quiz';
-        setTimeout(() => {
-            if (typeof renderQuizInterface === 'function') renderQuizInterface();
-            if (typeof startQuestionTimer === 'function') startQuestionTimer();
-        }, 60);
-    };
-
-    // ==========================================
-    // APP-EXCLUSIVE SUPERPOWER 2: 60-SECOND RAPID BLITZ MINI-GAME MODAL
-    // ==========================================
-    var blitzState = {
+    var saBlitzGame = {
         questions: [],
+        examName: '',
         idx: 0,
         score: 0,
+        correct: 0,
+        attempted: 0,
         streak: 0,
         timeLeft: 60,
         timer: null
     };
 
-    window.openAppRapidBlitzModal = async function() {
-        let pool = getOfflineVaultQuestions();
-        const exams = getActiveExamCategoriesForApp();
-        const targetExam = (psAppState.selectedCategory && psAppState.selectedCategory !== 'ALL')
-            ? psAppState.selectedCategory
-            : (exams[0] || 'NEET');
+    window.launchOrganized60sBlitz = async function() {
+        const exams = getActiveExamCategoriesFromAdmin();
+        const targetExam = saState.blitzExam || exams[0] || 'NEET';
+        const cleanEx = formatCleanTopicTitle(targetExam);
 
-        if (pool.length < 10 && typeof db !== 'undefined') {
-            try {
+        const btn = document.getElementById('btnStartOrganizedBlitz');
+        if (btn) { btn.disabled = true; btn.innerText = `⏳ Loading ${cleanEx} Blitz...`; }
+
+        let pool = [];
+        try {
+            if (typeof db !== 'undefined') {
                 const snap = await db.collection('content')
                     .where('path', '>=', targetExam)
                     .where('path', '<=', targetExam + '\uf8ff')
-                    .limit(35)
+                    .limit(45)
                     .get();
                 snap.forEach(doc => {
                     const d = doc.data();
@@ -6644,466 +6729,481 @@ async function handleLiveSearch() {
                         pool.push({ id: doc.id, ...d });
                     }
                 });
-            } catch (e) {}
-        }
+            }
+        } catch (e) {}
+
+        if (btn) { btn.disabled = false; btn.innerText = `⚡ Start 60s ${cleanEx} Blitz Now`; }
 
         if (pool.length === 0) {
-            showNotification('⚠️ Open an exam category first to load questions!');
+            showNotification(`⚠️ Open ${cleanEx} workspace to practice!`);
+            jumpToSection([targetExam]);
             return;
         }
 
-        blitzState.questions = [...pool].sort(() => Math.random() - 0.5);
-        blitzState.idx = 0;
-        blitzState.score = 0;
-        blitzState.streak = 0;
-        blitzState.timeLeft = 60;
+        saBlitzGame.questions = pool.sort(() => Math.random() - 0.5);
+        saBlitzGame.examName = cleanEx;
+        saBlitzGame.idx = 0;
+        saBlitzGame.score = 0;
+        saBlitzGame.correct = 0;
+        saBlitzGame.attempted = 0;
+        saBlitzGame.streak = 0;
+        saBlitzGame.timeLeft = 60;
 
-        let modal = document.getElementById('psRapidBlitzModal');
+        let modal = document.getElementById('saRapidBlitzModal');
         if (!modal) {
             modal = document.createElement('div');
-            modal.id = 'psRapidBlitzModal';
-            modal.style.cssText = 'position:fixed; inset:0; background:rgba(6,9,17,0.97); z-index:99999; display:flex; flex-direction:column; justify-content:space-between; padding:18px; box-sizing:border-box;';
+            modal.id = 'saRapidBlitzModal';
+            modal.style.cssText = 'position:fixed; inset:0; background:rgba(7,10,18,0.98); z-index:99999; display:flex; flex-direction:column; justify-content:space-between; padding:16px; box-sizing:border-box;';
             document.body.appendChild(modal);
         }
         modal.style.display = 'flex';
-        renderBlitzQuestionFrame();
+        renderSaBlitzFrame();
 
-        if (blitzState.timer) clearInterval(blitzState.timer);
-        blitzState.timer = setInterval(() => {
-            blitzState.timeLeft--;
-            const tEl = document.getElementById('psBlitzTimerBadge');
-            if (tEl) tEl.innerText = `⏱️ ${blitzState.timeLeft}s`;
-            if (blitzState.timeLeft <= 0) {
-                finishAppRapidBlitz();
+        if (saBlitzGame.timer) clearInterval(saBlitzGame.timer);
+        saBlitzGame.timer = setInterval(() => {
+            saBlitzGame.timeLeft--;
+            const tEl = document.getElementById('saBlitzClockPill');
+            if (tEl) tEl.innerText = `⏱️ ${saBlitzGame.timeLeft}s`;
+            if (saBlitzGame.timeLeft <= 0) {
+                finishSaBlitzGame();
             }
         }, 1000);
     };
 
-    window.closeAppRapidBlitzModal = function() {
-        if (blitzState.timer) clearInterval(blitzState.timer);
-        const modal = document.getElementById('psRapidBlitzModal');
+    window.closeSaBlitzModal = function() {
+        if (saBlitzGame.timer) clearInterval(saBlitzGame.timer);
+        const modal = document.getElementById('saRapidBlitzModal');
         if (modal) modal.style.display = 'none';
-        renderPlayStoreMobileAppHome();
+        renderStudyMobileAppHome();
     };
 
-    function finishAppRapidBlitz() {
-        if (blitzState.timer) clearInterval(blitzState.timer);
-        if (blitzState.score > psAppState.blitzBestScore) {
-            psAppState.blitzBestScore = blitzState.score;
-            localStorage.setItem('mcqs_app_blitz_best_v1', String(blitzState.score));
+    function finishSaBlitzGame() {
+        if (saBlitzGame.timer) clearInterval(saBlitzGame.timer);
+        const acc = saBlitzGame.attempted > 0 ? Math.round((saBlitzGame.correct / saBlitzGame.attempted) * 100) : 0;
+        if (saBlitzGame.score > saState.blitzBestScore) {
+            saState.blitzBestScore = saBlitzGame.score;
+            localStorage.setItem('mcqs_app_blitz_best_v1', String(saBlitzGame.score));
         }
-        const modal = document.getElementById('psRapidBlitzModal');
+        if (acc > saState.blitzBestAcc) {
+            saState.blitzBestAcc = acc;
+            localStorage.setItem('mcqs_app_blitz_best_acc_v1', String(acc));
+        }
+
+        const modal = document.getElementById('saRapidBlitzModal');
         if (!modal) return;
         modal.innerHTML = `
-            <div style="margin:auto; text-align:center; max-width:340px; background:#141a29; border:1.5px solid #fdb813; border-radius:20px; padding:28px 20px;">
-                <div style="font-size:48px; margin-bottom:8px;">⚡</div>
-                <h2 style="margin:0 0 6px 0; color:#fff; font-size:22px; font-weight:900;">60s Blitz Complete!</h2>
-                <div style="font-size:36px; font-weight:900; color:#fdb813; margin:10px 0;">${blitzState.score} pts</div>
-                <div style="font-size:13px; color:#94a3b8; margin-bottom:20px;">Personal Best in App: <b style="color:#10b981;">${psAppState.blitzBestScore} pts</b></div>
+            <div style="margin:auto; width:100%; max-width:360px; background:#121828; border:1.5px solid #fdb813; border-radius:20px; padding:24px 18px; text-align:center;">
+                <div style="font-size:44px; margin-bottom:6px;">🏆</div>
+                <h2 style="margin:0; color:#fff; font-size:21px; font-weight:900;">${saBlitzGame.examName} 60s Blitz Complete!</h2>
+                <div style="font-size:36px; font-weight:900; color:#fdb813; margin:10px 0;">${saBlitzGame.score} pts</div>
+
+                <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:8px; background:#090d16; border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:10px; margin-bottom:18px;">
+                    <div><div style="font-size:15px; font-weight:900; color:#10b981;">✔ ${saBlitzGame.correct}</div><div style="font-size:10px; color:#94a3b8;">Correct</div></div>
+                    <div><div style="font-size:15px; font-weight:900; color:#38bdf8;">${acc}%</div><div style="font-size:10px; color:#94a3b8;">Accuracy</div></div>
+                    <div><div style="font-size:15px; font-weight:900; color:#fdb813;">${saState.blitzBestScore}</div><div style="font-size:10px; color:#94a3b8;">Best Score</div></div>
+                </div>
+
                 <div style="display:flex; gap:10px;">
-                    <button type="button" onclick="openAppRapidBlitzModal()" style="flex:1; background:#fdb813; color:#000; border:none; padding:11px; border-radius:999px; font-weight:900; font-size:13px;">🔄 Play Again</button>
-                    <button type="button" onclick="closeAppRapidBlitzModal()" style="flex:1; background:#1e293b; color:#fff; border:none; padding:11px; border-radius:999px; font-weight:800; font-size:13px;">✕ Done</button>
+                    <button type="button" onclick="launchOrganized60sBlitz()" style="flex:1; background:#fdb813; color:#000; border:none; padding:11px; border-radius:12px; font-weight:900; font-size:13px;">🔄 Play Again</button>
+                    <button type="button" onclick="closeSaBlitzModal()" style="flex:1; background:#1e293b; color:#fff; border:none; padding:11px; border-radius:12px; font-weight:800; font-size:13px;">✓ Done</button>
                 </div>
             </div>
         `;
     }
 
-    window.answerBlitzOption = function(letter) {
-        const q = blitzState.questions[blitzState.idx % blitzState.questions.length];
+    window.answerSaBlitzOption = function(letter) {
+        const q = saBlitzGame.questions[saBlitzGame.idx % saBlitzGame.questions.length];
         const corr = Array.isArray(q.correctAnswers) ? q.correctAnswers : ['A'];
+        saBlitzGame.attempted++;
         if (corr.includes(letter)) {
-            blitzState.streak++;
-            const mult = blitzState.streak >= 3 ? 2 : 1;
-            blitzState.score += (10 * mult);
+            saBlitzGame.correct++;
+            saBlitzGame.streak++;
+            const mult = saBlitzGame.streak >= 3 ? 2 : 1;
+            saBlitzGame.score += (10 * mult);
         } else {
-            blitzState.streak = 0;
-            blitzState.score = Math.max(0, blitzState.score - 2);
+            saBlitzGame.streak = 0;
+            saBlitzGame.score = Math.max(0, saBlitzGame.score - 2);
         }
-        blitzState.idx++;
-        renderBlitzQuestionFrame();
+        saBlitzGame.idx++;
+        renderSaBlitzFrame();
     };
 
-    function renderBlitzQuestionFrame() {
-        const modal = document.getElementById('psRapidBlitzModal');
+    function renderSaBlitzFrame() {
+        const modal = document.getElementById('saRapidBlitzModal');
         if (!modal) return;
-        const q = blitzState.questions[blitzState.idx % blitzState.questions.length];
-        const multBadge = blitzState.streak >= 3 ? `<span style="background:#f59e0b; color:#000; padding:3px 9px; border-radius:999px; font-size:11px; font-weight:900;">🔥 2x COMBO</span>` : '';
+        const q = saBlitzGame.questions[saBlitzGame.idx % saBlitzGame.questions.length];
+        const multBadge = saBlitzGame.streak >= 3
+            ? `<span style="background:#f59e0b; color:#000; padding:3px 9px; border-radius:999px; font-size:11px; font-weight:900;">🔥 2x COMBO</span>`
+            : `<span style="background:rgba(56,189,248,0.15); color:#38bdf8; padding:3px 9px; border-radius:999px; font-size:11px; font-weight:800;">✔ ${saBlitzGame.correct}/${saBlitzGame.attempted}</span>`;
 
         modal.innerHTML = `
-            <div style="display:flex; justify-content:space-between; align-items:center; padding-bottom:12px; border-bottom:1px solid rgba(255,255,255,0.1);">
-                <div style="display:flex; align-items:center; gap:8px;">
-                    <span id="psBlitzTimerBadge" style="background:#ef4444; color:#fff; padding:5px 12px; border-radius:999px; font-size:13px; font-weight:900;">⏱️ ${blitzState.timeLeft}s</span>
-                    <span style="color:#fdb813; font-size:15px; font-weight:900;">⚡ ${blitzState.score} pts</span>
+            <div style="display:flex; justify-content:space-between; align-items:center; padding-bottom:10px; border-bottom:1px solid rgba(255,255,255,0.1);">
+                <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                    <span id="saBlitzClockPill" style="background:#ef4444; color:#fff; padding:5px 11px; border-radius:999px; font-size:13px; font-weight:900;">⏱️ ${saBlitzGame.timeLeft}s</span>
+                    <span style="color:#fdb813; font-size:15px; font-weight:900;">⚡ ${saBlitzGame.score} pts</span>
                     ${multBadge}
                 </div>
-                <button type="button" onclick="closeAppRapidBlitzModal()" style="background:rgba(255,255,255,0.1); color:#fff; border:none; width:34px; height:34px; border-radius:50%; font-size:16px; font-weight:800;">✕</button>
+                <button type="button" onclick="closeSaBlitzModal()" style="background:rgba(255,255,255,0.1); color:#fff; border:none; width:32px; height:32px; border-radius:50%; font-size:15px; font-weight:800;">✕</button>
             </div>
 
-            <div style="my:auto; overflow-y:auto; padding:14px 0;">
-                <div style="font-size:11px; color:#a8c7fa; font-weight:800; text-transform:uppercase; margin-bottom:6px;">App-Exclusive 60s Reflex Sprint • Q#${blitzState.idx + 1}</div>
-                <div style="font-size:15.5px; color:#fff; font-weight:700; line-height:1.5; margin-bottom:16px;">${q.question}</div>
-                <div style="display:flex; flex-direction:column; gap:10px;">
+            <div style="flex:1; overflow-y:auto; padding:14px 0;">
+                <div style="font-size:11px; color:#fdb813; font-weight:800; text-transform:uppercase; margin-bottom:6px;">${saBlitzGame.examName} Speed Challenge • Q #${saBlitzGame.idx + 1}</div>
+                <div style="font-size:15px; color:#fff; font-weight:700; line-height:1.5; margin-bottom:14px; background:#111728; border-left:3px solid #fdb813; padding:12px; border-radius:10px;">${q.question}</div>
+                <div style="display:flex; flex-direction:column; gap:9px;">
                     ${['A', 'B', 'C', 'D'].map(letKey => q.options?.[letKey] ? `
-                        <button type="button" onclick="answerBlitzOption('${letKey}')" style="background:#161c2c; border:1.5px solid rgba(168,199,250,0.3); color:#f8fafc; padding:13px 15px; border-radius:14px; text-align:left; font-size:14px; font-weight:600; display:flex; align-items:center; gap:10px;">
-                            <span style="width:26px; height:26px; border-radius:8px; background:rgba(168,199,250,0.18); color:#a8c7fa; display:inline-flex; align-items:center; justify-content:center; font-weight:900; font-size:12px; flex-shrink:0;">${letKey}</span>
-                            <span>${q.options[letKey]}</span>
+                        <button type="button" onclick="answerSaBlitzOption('${letKey}')" style="background:#151c2e; border:1.5px solid rgba(255,255,255,0.14); color:#f8fafc; padding:12px 14px; border-radius:12px; text-align:left; font-size:13.5px; font-weight:600; display:flex; align-items:center; gap:10px;">
+                            <span style="width:26px; height:26px; border-radius:7px; background:rgba(253,184,19,0.18); color:#fdb813; display:inline-flex; align-items:center; justify-content:center; font-weight:900; font-size:12px; flex-shrink:0;">${letKey}</span>
+                            <span style="flex:1;">${q.options[letKey]}</span>
                         </button>
                     ` : '').join('')}
                 </div>
             </div>
 
-            <div style="text-align:center; font-size:11.5px; color:#64748b;">Tap the fastest correct option • 3 in a row activates 2x Combo!</div>
+            <div style="text-align:center; font-size:11px; color:#64748b; padding-top:8px; border-top:1px solid rgba(255,255,255,0.06);">Tap the correct option • 3 Correct in a row activates 🔥 2x Points!</div>
         `;
-    }
 
-    // ==========================================
-    // APP-EXCLUSIVE SUPERPOWER 3: DAILY GOAL RING CYCLER
-    // ==========================================
-    window.cycleAppDailyGoalTarget = function() {
-        const targets = [20, 40, 60, 100];
-        const nextIdx = (targets.indexOf(psAppState.dailyGoalTarget) + 1) % targets.length;
-        psAppState.dailyGoalTarget = targets[nextIdx];
-        localStorage.setItem('mcqs_app_daily_goal_v1', String(psAppState.dailyGoalTarget));
-        renderPlayStoreMobileAppHome();
-    };
-
-    // Polish #mobileAppDock labels & saved badge for Installed Mobile App
-    function enhanceMobileAppBottomDock() {
-        if (!isInstalledMobileAppMode()) return;
-        const dock = document.getElementById('mobileAppDock');
-        if (!dock) return;
-        const tabs = dock.querySelectorAll('.app-tab');
-        if (tabs[0]) {
-            const lbl = tabs[0].querySelector('.app-tab-label');
-            if (lbl) lbl.innerText = 'For You';
-        }
-        if (tabs[1]) {
-            const lbl = tabs[1].querySelector('.app-tab-label');
-            if (lbl) lbl.innerText = 'Ranks';
-        }
-        if (tabs[4]) {
-            const lbl = tabs[4].querySelector('.app-tab-label');
-            const bmCnt = Array.isArray(userBookmarks) ? userBookmarks.length : 0;
-            if (lbl) lbl.innerText = bmCnt > 0 ? `Saved (${bmCnt})` : 'Saved';
+        if (typeof renderMathInElement === 'function') {
+            renderMathInElement(modal, {
+                delimiters: [
+                    { left: '$$', right: '$$', display: true },
+                    { left: '$', right: '$', display: false },
+                    { left: '\\(', right: '\\)', display: false },
+                    { left: '\\[', right: '\\]', display: true }
+                ],
+                throwOnError: false
+            });
         }
     }
 
     // ==========================================
-    // MAIN PLAY STORE INSTALLED MOBILE APP RENDERER
+    // MAIN STUDY-OPTIMIZED INSTALLED MOBILE APP RENDERER
     // ==========================================
-    function renderPlayStoreMobileAppHome() {
+    function renderStudyMobileAppHome() {
         if (!isInstalledMobileAppMode()) return false;
         const mc = document.getElementById('dynamic-content');
         if (!mc) return false;
 
-        document.body.classList.add('mcqs-playstore-app-active');
-        enhanceMobileAppBottomDock();
+        document.body.classList.add('mcqs-study-app-active');
+        upgradeNavbarSearchButtonLogo();
+        repairAndEnhanceMobileAppDock();
 
-        const exams = getActiveExamCategoriesForApp();
-        const activeCat = psAppState.selectedCategory || 'ALL';
+        const exams = getActiveExamCategoriesFromAdmin();
+        const activeCat = saState.selectedCategory || 'ALL';
+        if (!saState.blitzExam || !exams.includes(saState.blitzExam)) {
+            saState.blitzExam = exams[0] || 'NEET';
+        }
 
-        // 1. Build Top Play Store Filter Chips (All Exams + Dynamic Exam Categories + Offline Vault + 60s Blitz)
-        const filterChipsHtml = [
-            `<button type="button" class="ps-filter-chip ${activeCat === 'ALL' ? 'active' : ''}" onclick="psSelectFilterCategory('ALL')">🔥 For You (All)</button>`,
-            ...exams.map((exKey, i) => {
-                const meta = getPlayStoreBannerMetaForExam(exKey, i);
-                const safeEx = exKey.replace(/'/g, "\\'");
-                return `<button type="button" class="ps-filter-chip ${activeCat === exKey ? 'active' : ''}" onclick="psSelectFilterCategory('${safeEx}')">${meta.icon} ${meta.cleanName}</button>`;
-            }),
-            `<button type="button" class="ps-filter-chip" onclick="launchAppOfflineVaultQuiz()">📴 Offline Vault</button>`,
-            `<button type="button" class="ps-filter-chip" onclick="openAppRapidBlitzModal()">⚡ 60s Blitz</button>`
-        ].join('');
-
-        // 2. Build Continuous Auto-Sliding Play Store Hero Spotlight Cards (One for every Exam Category + Custom Mock)
-        const heroExamsList = (activeCat !== 'ALL' && exams.includes(activeCat))
-            ? [activeCat, ...exams.filter(e => e !== activeCat)]
-            : exams;
-
-        const heroSlidesHtml = heroExamsList.map((exKey, idx) => {
-            const meta = getPlayStoreBannerMetaForExam(exKey, idx);
+        // 1. CONTINUOUS SLIDING EXAM CATEGORY BANNERS (100% Driven by Admin Panel Uploads — No Play Store Open/Ratings/180Q!)
+        const heroSlidesHtml = exams.map((exKey, idx) => {
+            const slide = getAdminDrivenExamSlideData(exKey, idx);
             const encodedExArr = encodeURIComponent(JSON.stringify([exKey]));
-            const directCount = getDirectChildFolders([exKey]).length;
+
+            // Real uploaded folders inside this exam category from Admin Panel
+            const uploadedChipsHtml = slide.directModules.slice(0, 6).map(mKey => {
+                const cleanM = formatCleanTopicTitle(mKey);
+                const mIcon = getAutomaticIconForName(cleanM, null, `${exKey} > ${mKey}`);
+                const encodedModArr = encodeURIComponent(JSON.stringify([exKey, mKey]));
+                return `
+                    <span class="sa-uploaded-chip" onclick="saJumpToPathEncoded('${encodedModArr}', event)">
+                        <span>${mIcon}</span>
+                        <span>${cleanM}</span>
+                    </span>
+                `;
+            }).join('');
+
+            const subTopicsLine = slide.uniqueSubTopics.length > 0
+                ? slide.uniqueSubTopics.slice(0, 5).join(' • ')
+                : (slide.directModules.map(m => formatCleanTopicTitle(m)).join(' • ') || 'Complete Study & Practice Suite');
+
+            const progressPill = slide.prog.solved > 0
+                ? `<span style="background:rgba(16,185,129,0.22); color:#10b981; border:1px solid rgba(16,185,129,0.5); padding:4px 10px; border-radius:999px; font-size:10.5px; font-weight:900;">✔ ${slide.prog.solved} Solved • ${slide.prog.acc}%</span>`
+                : `<span style="background:rgba(255,255,255,0.1); color:#f8fafc; border:1px solid rgba(255,255,255,0.2); padding:4px 10px; border-radius:999px; font-size:10.5px; font-weight:800;">📂 ${slide.directModules.length} Uploaded Sections</span>`;
 
             return `
-                <div class="ps-hero-slide" onclick="psJumpToPathEncoded('${encodedExArr}')">
-                    <div class="ps-hero-artwork-card" style="--ps-hero-bg:${meta.heroGrad}; --ps-accent-border:${meta.border}; --ps-orb-color:${meta.bg};">
-                        <div class="ps-hero-orb"></div>
+                <div class="sa-exam-slide" onclick="saJumpToPathEncoded('${encodedExArr}', event)">
+                    <div class="sa-exam-banner-card" style="--sa-grad:${slide.grad}; --sa-border:${slide.border}; --sa-orb:${slide.bg};">
+                        <div class="sa-banner-orb"></div>
 
-                        <!-- Animated SVG Simulation Wave Inside Banner -->
-                        <svg class="ps-hero-sim-wave" viewBox="0 0 320 90" preserveAspectRatio="none">
+                        <!-- Live Animated SVG Study Trajectory Wave -->
+                        <svg class="sa-banner-wave" viewBox="0 0 320 80" preserveAspectRatio="none">
                             <defs>
-                                <linearGradient id="psWaveGrad_${idx}" x1="0" y1="0" x2="0" y2="1">
-                                    <stop offset="0%" stop-color="${meta.color}" stop-opacity="0.36"/>
-                                    <stop offset="100%" stop-color="${meta.color}" stop-opacity="0.0"/>
+                                <linearGradient id="saWave_${idx}" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="0%" stop-color="${slide.color}" stop-opacity="0.38"/>
+                                    <stop offset="100%" stop-color="${slide.color}" stop-opacity="0.0"/>
                                 </linearGradient>
                             </defs>
-                            <path d="M 0 68 Q 75 30, 155 52 T 320 18 L 320 90 L 0 90 Z" fill="url(#psWaveGrad_${idx})"/>
-                            <path d="M 0 68 Q 75 30, 155 52 T 320 18" fill="none" stroke="${meta.color}" stroke-width="2.5" stroke-linecap="round"/>
+                            <path d="M 0 62 Q 80 24, 160 46 T 320 14 L 320 80 L 0 80 Z" fill="url(#saWave_${idx})"/>
+                            <path d="M 0 62 Q 80 24, 160 46 T 320 14" fill="none" stroke="${slide.color}" stroke-width="2.5" stroke-linecap="round"/>
                         </svg>
 
-                        <div style="position:relative; z-index:2; display:flex; justify-content:space-between; align-items:center;">
-                            <span style="background:rgba(0,0,0,0.45); backdrop-filter:blur(8px); color:#fff; border:1px solid ${meta.border}; padding:4px 10px; border-radius:999px; font-size:10.5px; font-weight:800; letter-spacing:0.4px;">
-                                ● LIVE EXAM SUITE • ${directCount || 'ALL'} MODULES
-                            </span>
-                            <span style="background:rgba(16,185,129,0.2); color:#10b981; border:1px solid rgba(16,185,129,0.45); padding:3px 9px; border-radius:999px; font-size:10.5px; font-weight:900;">
-                                ✔ +4 / −1 Sim
-                            </span>
-                        </div>
-
-                        <div style="position:relative; z-index:2; margin-top:auto;">
-                            <div style="font-size:11px; color:#cbd5e1; font-weight:700; margin-bottom:4px;">${meta.tagLine}</div>
-                            <h2 style="margin:0; font-size:19px; font-weight:900; color:#ffffff; line-height:1.22; text-shadow:0 4px 14px rgba(0,0,0,0.7);">
-                                ${meta.headline}
-                            </h2>
-                        </div>
-                    </div>
-
-                    <!-- Play Store App Row Underneath Banner -->
-                    <div class="ps-hero-bottom-meta">
-                        <div style="display:flex; align-items:center; gap:12px; min-width:0;">
-                            <div class="ps-hero-app-icon" style="--ps-icon-bg:${meta.bg}; --ps-accent-border:${meta.border}; color:${meta.color};">
-                                ${meta.icon}
-                            </div>
-                            <div style="min-width:0;">
-                                <div style="font-size:15.5px; font-weight:800; color:#f8fafc; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${meta.cleanName} Complete Suite</div>
-                                <div style="font-size:12px; color:#94a3b8; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">MCQs • NCERT PDFs • PYQs • Custom Mock</div>
-                                <div style="font-size:11px; color:#cbd5e1; margin-top:2px; display:flex; align-items:center; gap:6px;">
-                                    <span style="background:#e2e8f0; color:#0f172a; font-weight:900; font-size:9.5px; padding:1px 4px; border-radius:3px;">4 TIERS</span>
-                                    <span>Easy • Medium • Hard • Mixed</span>
+                        <!-- Top Header of Exam Slide -->
+                        <div style="position:relative; z-index:2; display:flex; justify-content:space-between; align-items:flex-start; gap:8px;">
+                            <div style="display:flex; align-items:center; gap:10px; min-width:0;">
+                                <div style="width:44px; height:44px; border-radius:13px; background:rgba(9,13,22,0.75); border:1.5px solid ${slide.border}; color:${slide.color}; display:flex; align-items:center; justify-content:center; font-size:23px; flex-shrink:0; box-shadow:0 6px 16px rgba(0,0,0,0.5);">
+                                    ${slide.icon}
+                                </div>
+                                <div style="min-width:0;">
+                                    <h2 style="margin:0; font-size:19px; font-weight:900; color:#ffffff; line-height:1.15;">${slide.cleanName}</h2>
+                                    <div style="font-size:11px; color:#cbd5e1; margin-top:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${subTopicsLine}</div>
                                 </div>
                             </div>
+                            ${progressPill}
                         </div>
-                        <button type="button" class="ps-try-btn">Open</button>
+
+                        <!-- Middle: Real Admin-Uploaded Folders (Tap any chip to open directly!) -->
+                        <div class="sa-uploaded-chips-wrap">
+                            ${uploadedChipsHtml}
+                        </div>
+
+                        <!-- Bottom Footer Bar -->
+                        <div style="position:relative; z-index:2; display:flex; justify-content:space-between; align-items:center; border-top:1px solid rgba(255,255,255,0.12); padding-top:8px; font-size:12px; font-weight:800; color:${slide.color};">
+                            <span>Tap any module above or open ${slide.cleanName}</span>
+                            <span>Explore &rarr;</span>
+                        </div>
                     </div>
                 </div>
             `;
         }).join('');
 
-        const dotsHtml = heroExamsList.map((_, i) => `<span class="ps-carousel-dot ${i === 0 ? 'active' : ''}"></span>`).join('');
+        const dotsHtml = exams.map((_, i) => `<span class="sa-carousel-dot ${i === 0 ? 'active' : ''}"></span>`).join('');
 
-        // 3. Build Play Store "Suggested for You" 3-Row Stacked Horizontal Shelf (Grouped in columns of 3)
-        const allModules = collectPlayStoreModulesForCategory(activeCat);
-        const tripleColumns = [];
+        // 2. ORGANISED CATEGORY-WISE STUDY MODULES SHELF (Replaces "Suggested for You" — Zero Fake Star Ratings!)
+        const catTabsHtml = [
+            `<button type="button" class="sa-cat-tab-btn ${activeCat === 'ALL' ? 'active' : ''}" onclick="saSelectModuleCategory('ALL')">All Categories</button>`,
+            ...exams.map(exKey => {
+                const clean = formatCleanTopicTitle(exKey);
+                const safeEx = exKey.replace(/'/g, "\\'");
+                return `<button type="button" class="sa-cat-tab-btn ${activeCat === exKey ? 'active' : ''}" onclick="saSelectModuleCategory('${safeEx}')">${clean}</button>`;
+            })
+        ].join('');
+
+        const allModules = collectUploadedStudyModules(activeCat);
+        const moduleColumns = [];
+        const colClass = allModules.length <= 3 ? 'sa-module-column sa-module-column-single' : 'sa-module-column';
         for (let i = 0; i < allModules.length; i += 3) {
             const slice = allModules.slice(i, i + 3);
             const rowsHtml = slice.map(item => {
                 const encodedArr = encodeURIComponent(JSON.stringify(item.pathArr));
                 return `
-                    <div class="ps-app-list-row" onclick="psJumpToPathEncoded('${encodedArr}')">
-                        <div class="ps-row-squircle" style="--row-bg:${item.bg}; --row-border:${item.border}; color:${item.color};">
-                            ${item.icon}
-                        </div>
-                        <div class="ps-row-info">
-                            <div class="ps-row-title">${item.title}</div>
-                            <div class="ps-row-sub">${item.subtitle}</div>
-                            <div class="ps-row-meta">
-                                <span>5.0 ★</span>
-                                <span style="color:${item.color}; font-weight:800;">● ${item.badge}</span>
+                    <div class="sa-study-row-card" style="--mod-color:${item.color}; --mod-bg:${item.bg}; --mod-border:${item.border};" onclick="saJumpToPathEncoded('${encodedArr}', event)">
+                        <div style="display:flex; align-items:center; gap:11px; min-width:0; flex:1;">
+                            <div class="sa-study-row-icon">${item.icon}</div>
+                            <div style="min-width:0; flex:1;">
+                                <div style="font-size:14.5px; font-weight:800; color:#ffffff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${item.title}</div>
+                                <div style="font-size:11.5px; color:#94a3b8; margin-top:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${item.subtitle}</div>
+                                <div style="font-size:10.5px; font-weight:800; color:${item.statusColor}; margin-top:3px;">● ${item.statusBadge}</div>
                             </div>
                         </div>
-                        <span style="color:#94a3b8; font-size:18px; font-weight:700; padding-left:4px;">›</span>
+                        <span style="color:${item.color}; font-size:18px; font-weight:900; flex-shrink:0;">&rsaquo;</span>
                     </div>
                 `;
             }).join('');
-            tripleColumns.push(`<div class="ps-triple-column">${rowsHtml}</div>`);
+            moduleColumns.push(`<div class="${colClass}">${rowsHtml}</div>`);
         }
 
-        // 4. Build App-Exclusive Superpowers Strip (Only in Installed Mobile App!)
-        const offlineCached = getOfflineVaultQuestions();
-        const cachedExamName = localStorage.getItem('mcqs_offline_vault_exam_v1') || formatCleanTopicTitle(exams[0] || 'NEET');
+        // 3. BENEFICIAL STUDENT FEATURE #1: SMART REVISION & WEAK-SPOT DOCTOR (Replaces Offline Practice — Point 6)
+        const globalProg = getStudentProgressSummaryForApp('');
+        const bmCount = Array.isArray(userBookmarks) ? userBookmarks.length : 0;
+        const lastPathClean = globalProg.lastActivePath
+            ? globalProg.lastActivePath.split(' > ').map(s => formatCleanTopicTitle(s)).slice(-2).join(' › ')
+            : '';
+        const lastPathEncoded = globalProg.lastActivePath
+            ? encodeURIComponent(JSON.stringify(globalProg.lastActivePath.split(' > ').filter(Boolean)))
+            : '';
 
-        // Calculate today's solved MCQs for the Daily Goal Ring
-        let todaySolved = 0;
-        try {
-            const uid = (typeof currentUser !== 'undefined' && currentUser && currentUser.uid) ? currentUser.uid : 'guest';
-            const localMap = JSON.parse(localStorage.getItem(`mcqsprep_topic_progress_v2_${uid}`) || '{}');
-            Object.values(localMap).forEach(rec => {
-                if (rec && Array.isArray(rec.correctIds)) todaySolved += rec.correctIds.length;
-                if (rec && Array.isArray(rec.wrongIds)) todaySolved += rec.wrongIds.length;
-            });
-        } catch (e) {}
-        const ringPct = Math.min(100, Math.round((todaySolved / Math.max(1, psAppState.dailyGoalTarget)) * 100));
-        const ringDash = Math.round((ringPct / 100) * 138);
+        // 4. BENEFICIAL STUDENT FEATURE #2: PROPERLY ORGANIZED 60-SECOND SPEED BLITZ CARD (Fixes Point 7 & Image 3)
+        const blitzExamPillsHtml = exams.map(exKey => {
+            const clean = formatCleanTopicTitle(exKey);
+            const isSel = saState.blitzExam === exKey;
+            const safeEx = exKey.replace(/'/g, "\\'");
+            return `
+                <button type="button" onclick="saSelectBlitzExam('${safeEx}')" style="background:${isSel ? '#fdb813' : '#0b0f19'}; color:${isSel ? '#000' : '#cbd5e1'}; border:1px solid ${isSel ? '#fdb813' : 'rgba(255,255,255,0.14)'}; padding:5px 11px; border-radius:8px; font-size:11.5px; font-weight:800; cursor:pointer;">
+                    ${clean}
+                </button>
+            `;
+        }).join('');
+        const cleanBlitzExam = formatCleanTopicTitle(saState.blitzExam);
 
-        // 5. Build "Recommended Quick Practice & Library" Horizontal Shelf
+        // 5. QUICK ACCESS & DAILY PRACTICE SHELF
         const quickLinksList = (window.sidebarConfig && Array.isArray(window.sidebarConfig.quickLinks)) ? window.sidebarConfig.quickLinks : [];
         const essentialList = (window.sidebarConfig && Array.isArray(window.sidebarConfig.essentialPractice)) ? window.sidebarConfig.essentialPractice : [];
-        const combinedQuick = [
-            { title: 'Daily Quiz Challenge', path: 'Daily Quiz Challenge', icon: '📅', sub: 'Build Your Daily Streak' },
-            ...quickLinksList.map(q => ({ title: q.title || q.path.split(' > ').pop(), path: q.path, icon: q.icon || '📚', sub: 'Quick Resource Access' })),
-            ...essentialList.filter(e => e.path !== 'Daily Quiz Challenge').map(e => ({ title: e.title || e.path.split(' > ').pop(), path: e.path, icon: e.icon || '📝', sub: 'Essential Exam Practice' }))
+        const streakNum = document.getElementById('nav-streak-display')?.innerText || '0';
+
+        const quickShelfItems = [
+            { title: 'Daily Quiz Challenge', path: 'Daily Quiz Challenge', icon: '📅', badge: `🔥 ${streakNum}d Streak`, sub: 'Complete 1 quiz daily' },
+            ...quickLinksList.map(q => ({ title: q.title || q.path.split(' > ').pop(), path: q.path, icon: q.icon || '📚', badge: formatCleanTopicTitle(q.path.split(' > ')[0] || 'Resource'), sub: 'Direct Study Material' })),
+            ...essentialList.filter(e => e.path !== 'Daily Quiz Challenge').map(e => ({ title: e.title || e.path.split(' > ').pop(), path: e.path, icon: e.icon || '📝', badge: formatCleanTopicTitle(e.path.split(' > ')[0] || 'Practice'), sub: 'High-Yield Practice' }))
         ];
 
-        const horizCardsHtml = combinedQuick.map((item, idx) => {
+        const quickCardsHtml = quickShelfItems.map((item, idx) => {
             const cleanT = formatCleanTopicTitle(item.title);
             const th = getAutoTopicTheme(cleanT, item.icon, idx, null, '📘', null, item.path);
             const encodedPath = encodeURIComponent(item.path);
             return `
-                <div class="ps-feature-media-card" onclick="openSidebarItem('${encodedPath}')">
-                    <div style="height:88px; border-radius:12px; background:linear-gradient(135deg, ${th.bg}, #0b0f19); border:1px solid ${th.border}; padding:12px; display:flex; align-items:flex-end; justify-content:space-between; position:relative; overflow:hidden;">
-                        <span style="font-size:38px; filter:drop-shadow(0 4px 10px rgba(0,0,0,0.5));">${th.i}</span>
-                        <span style="background:rgba(0,0,0,0.55); color:${th.c}; border:1px solid ${th.border}; padding:3px 9px; border-radius:999px; font-size:10px; font-weight:800;">OPEN NOW</span>
+                <div class="sa-quick-card" style="border-left:4px solid ${th.c};" onclick="openSidebarItem('${encodedPath}')">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <span style="width:38px; height:38px; border-radius:10px; background:${th.bg}; border:1px solid ${th.border}; display:flex; align-items:center; justify-content:center; font-size:19px;">${th.i}</span>
+                        <span style="background:${th.bg}; color:${th.c}; border:1px solid ${th.border}; padding:3px 8px; border-radius:999px; font-size:10px; font-weight:800;">${item.badge}</span>
                     </div>
-                    <div style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
-                        <div style="min-width:0;">
-                            <div style="font-size:14px; font-weight:800; color:#fff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${cleanT}</div>
-                            <div style="font-size:11.5px; color:#94a3b8; margin-top:2px;">${item.sub}</div>
-                        </div>
-                        <span style="color:${th.c}; font-weight:900; font-size:16px;">&rarr;</span>
+                    <div>
+                        <div style="font-size:14px; font-weight:800; color:#fff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${cleanT}</div>
+                        <div style="font-size:11px; color:#94a3b8; margin-top:2px;">${item.sub}</div>
                     </div>
                 </div>
             `;
         }).join('');
 
-        const activeCatLabel = activeCat === 'ALL' ? 'Suggested for You' : `${formatCleanTopicTitle(activeCat)} • Modules & Subjects`;
-
         mc.innerHTML = `
             <div class="page-transition">
-                <!-- 1. PLAY STORE TOP FILTER CHIPS -->
-                <div class="ps-top-chips-bar">${filterChipsHtml}</div>
-
-                <!-- 2. PLAY STORE CONTINUOUS AUTO-SLIDING HERO SPOTLIGHT CAROUSEL -->
-                <div class="ps-hero-carousel-wrap">
-                    <div class="ps-hero-carousel-track" id="psHeroCarouselTrack">
+                <!-- 1. CONTINUOUS SLIDING EXAM SUITE CAROUSEL (100% Admin-Uploaded Modules Inside) -->
+                <div class="sa-carousel-section">
+                    <div class="sa-carousel-track" id="saHeroCarouselTrack">
                         ${heroSlidesHtml}
                     </div>
-                    <div class="ps-carousel-dots">${dotsHtml}</div>
+                    <div class="sa-carousel-dots">${dotsHtml}</div>
                 </div>
 
-                <!-- 3. PLAY STORE 3-ROW STACKED HORIZONTAL SWIPEABLE SHELF ("Suggested for You") -->
-                <div class="ps-shelf-section">
-                    <div class="ps-shelf-header">
-                        <div>
-                            <div style="font-size:11px; color:#94a3b8; font-weight:700;">Featured • Swipe Left/Right</div>
-                            <h3 class="ps-shelf-title">${activeCatLabel}</h3>
-                        </div>
-                        <button type="button" class="ps-shelf-arrow-btn" onclick="document.getElementById('psTripleShelfTrack')?.scrollBy({left: 280, behavior: 'smooth'})">&rarr;</button>
+                <!-- 2. ORGANISED CATEGORY-WISE STUDY MODULES (Replaces "Suggested for You" — Zero Fake Ratings!) -->
+                <div class="sa-section-block">
+                    <div class="sa-section-header">
+                        <h3 class="sa-section-title">
+                            <span style="color:#fdb813;">▎</span> Explore Study Modules
+                        </h3>
+                        <button type="button" onclick="document.getElementById('saModulesSwipeTrack')?.scrollBy({left: 280, behavior: 'smooth'})" style="background:#151c2c; color:#fdb813; border:1px solid rgba(253,184,19,0.35); border-radius:999px; padding:4px 11px; font-size:11px; font-weight:800;">Swipe &rarr;</button>
                     </div>
-                    <div class="ps-triple-stack-track" id="psTripleShelfTrack">
-                        ${tripleColumns.join('')}
-                    </div>
-                </div>
-
-                <!-- 4. INSTALLED APP EXCLUSIVE SUPERPOWERS (Offline Vault, 60s Blitz, Daily Target Ring) -->
-                <div class="ps-shelf-section">
-                    <div class="ps-shelf-header">
-                        <div>
-                            <div style="font-size:11px; color:#a8c7fa; font-weight:800; text-transform:uppercase;">📱 App-Only Exclusive Tools</div>
-                            <h3 class="ps-shelf-title">Installed App Superpowers</h3>
-                        </div>
-                    </div>
-
-                    <div class="ps-exclusive-strip">
-                        <!-- App Exclusive 1: Offline Question Pack Vault -->
-                        <div class="ps-exclusive-card" style="--exc-border:rgba(16,185,129,0.45);">
-                            <div>
-                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-                                    <span style="background:rgba(16,185,129,0.18); color:#10b981; border:1px solid rgba(16,185,129,0.45); padding:3px 9px; border-radius:999px; font-size:10px; font-weight:900;">📴 OFFLINE APP VAULT</span>
-                                    <span style="font-size:11px; color:#cbd5e1; font-weight:800;">📦 ${offlineCached.length} MCQs Cached</span>
-                                </div>
-                                <div style="font-size:16px; font-weight:900; color:#fff;">Practice Without Internet</div>
-                                <div style="font-size:12px; color:#94a3b8; margin-top:3px; line-height:1.4;">Save 60 high-yield MCQs (${cachedExamName}) directly to your phone for Airplane-Mode practice.</div>
-                            </div>
-                            <div style="display:flex; gap:8px;">
-                                <button type="button" id="btnDownloadOfflinePack" onclick="downloadAppOfflineQuestionPack()" style="flex:1; background:#1e293b; color:#e2e8f0; border:1px solid rgba(255,255,255,0.15); padding:9px; border-radius:999px; font-size:12px; font-weight:800;">⬇️ Sync Pack</button>
-                                <button type="button" onclick="launchAppOfflineVaultQuiz()" style="flex:1.2; background:#10b981; color:#000; border:none; padding:9px; border-radius:999px; font-size:12px; font-weight:900;">▶️ Play Offline</button>
-                            </div>
-                        </div>
-
-                        <!-- App Exclusive 2: 60-Second Rapid Blitz Mode -->
-                        <div class="ps-exclusive-card" style="--exc-border:rgba(253,184,19,0.45);">
-                            <div>
-                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-                                    <span style="background:rgba(253,184,19,0.18); color:#fdb813; border:1px solid rgba(253,184,19,0.45); padding:3px 9px; border-radius:999px; font-size:10px; font-weight:900;">⚡ 60-SEC REFLEX GAME</span>
-                                    <span style="font-size:11px; color:#fdb813; font-weight:800;">🏆 Best: ${psAppState.blitzBestScore} pts</span>
-                                </div>
-                                <div style="font-size:16px; font-weight:900; color:#fff;">60-Second Rapid Blitz</div>
-                                <div style="font-size:12px; color:#94a3b8; margin-top:3px; line-height:1.4;">Beat the 60-second clock with 2x Combo streaks to boost your exam speed &amp; accuracy.</div>
-                            </div>
-                            <button type="button" onclick="openAppRapidBlitzModal()" style="width:100%; background:linear-gradient(135deg, #fdb813, #f59e0b); color:#000; border:none; padding:10px; border-radius:999px; font-size:12.5px; font-weight:900;">⚡ Start 60s Blitz Now</button>
-                        </div>
-
-                        <!-- App Exclusive 3: Daily Target Ring & Custom Mock -->
-                        <div class="ps-exclusive-card" style="--exc-border:rgba(168,199,250,0.45);">
-                            <div style="display:flex; align-items:center; gap:14px;">
-                                <div onclick="cycleAppDailyGoalTarget()" style="position:relative; width:56px; height:56px; flex-shrink:0; cursor:pointer;" title="Tap to change daily goal">
-                                    <svg viewBox="0 0 52 52" style="width:56px; height:56px; transform:rotate(-90deg);">
-                                        <circle cx="26" cy="26" r="22" fill="none" stroke="#1e293b" stroke-width="5"/>
-                                        <circle cx="26" cy="26" r="22" fill="none" stroke="#a8c7fa" stroke-width="5" stroke-dasharray="${ringDash} 140" stroke-linecap="round"/>
-                                    </svg>
-                                    <div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:900; color:#fff;">${ringPct}%</div>
-                                </div>
-                                <div>
-                                    <span style="font-size:10px; font-weight:800; color:#a8c7fa; text-transform:uppercase;">🎯 Daily Goal Ring (Tap to Edit)</span>
-                                    <div style="font-size:15px; font-weight:900; color:#fff; margin-top:2px;">${todaySolved} / ${psAppState.dailyGoalTarget} MCQs Solved</div>
-                                    <div style="font-size:11.5px; color:#94a3b8; margin-top:2px;">Build a custom 20–250 MCQ test</div>
-                                </div>
-                            </div>
-                            <div style="display:flex; gap:8px;">
-                                <button type="button" onclick="forceCwStep1(event)" style="flex:1; background:#a8c7fa; color:#062e6f; border:none; padding:9px; border-radius:999px; font-size:12px; font-weight:900;">🎯 Custom Mock</button>
-                                <button type="button" onclick="launchSmartMistakeClinicSession()" style="flex:1; background:#1e293b; color:#fff; border:1px solid rgba(255,255,255,0.15); padding:9px; border-radius:999px; font-size:12px; font-weight:800;">🧬 Fix Mistakes</button>
-                            </div>
-                        </div>
+                    <div class="sa-cat-tabs-row">${catTabsHtml}</div>
+                    <div class="sa-modules-Redesign-track" id="saModulesSwipeTrack">
+                        ${moduleColumns.join('')}
                     </div>
                 </div>
 
-                <!-- 5. PLAY STORE HORIZONTAL RECOMMENDED CARDS SHELF -->
-                <div class="ps-shelf-section">
-                    <div class="ps-shelf-header">
-                        <h3 class="ps-shelf-title">Recommended for You</h3>
-                        <button type="button" class="ps-shelf-arrow-btn" onclick="document.getElementById('psHorizQuickTrack')?.scrollBy({left: 260, behavior: 'smooth'})">&rarr;</button>
+                <!-- 3. SMART REVISION & WEAK-SPOT DOCTOR (Replaces Offline Practice Vault — Detailed & Beneficial!) -->
+                <div class="sa-section-block">
+                    <div class="sa-feature-full-card" style="border-color:rgba(56,189,248,0.42);">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                            <span style="background:rgba(56,189,248,0.16); color:#38bdf8; border:1px solid rgba(56,189,248,0.45); padding:3px 9px; border-radius:999px; font-size:10px; font-weight:900;">🩺 PERSONAL WEAK-SPOT DOCTOR</span>
+                            <span style="font-size:11px; font-weight:800; color:#10b981;">✔ ${globalProg.solved} Total Solved (${globalProg.acc}%)</span>
+                        </div>
+
+                        <h3 style="margin:0 0 4px 0; font-size:16.5px; font-weight:900; color:#ffffff;">Smart Mistake Recovery &amp; Revision Hub</h3>
+                        <p style="margin:0 0 12px 0; font-size:12px; color:#94a3b8; line-height:1.4;">Automatically isolates your wrong, skipped, and bookmarked questions so you never repeat the same mistake in the real exam.</p>
+
+                        ${lastPathClean ? `
+                            <div onclick="saJumpToPathEncoded('${lastPathEncoded}', event)" style="background:rgba(16,185,129,0.12); border:1px solid rgba(16,185,129,0.4); border-radius:11px; padding:9px 12px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center; gap:8px; cursor:pointer;">
+                                <div style="min-width:0;">
+                                    <div style="font-size:10px; font-weight:900; color:#10b981; text-transform:uppercase;">▶️ Continue Last Active Chapter</div>
+                                    <div style="font-size:13px; font-weight:800; color:#fff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${lastPathClean}</div>
+                                </div>
+                                <span style="background:#10b981; color:#000; padding:5px 10px; border-radius:8px; font-size:11px; font-weight:900; flex-shrink:0;">Resume &rarr;</span>
+                            </div>
+                        ` : ''}
+
+                        <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:8px; margin-bottom:12px;">
+                            <div onclick="if(typeof setSmartClinicMode==='function'){setSmartClinicMode('WRONG'); launchSmartMistakeClinicSession();}" style="background:#0b0f19; border:1px solid rgba(239,68,68,0.4); border-radius:11px; padding:9px 6px; text-align:center; cursor:pointer;">
+                                <div style="font-size:16px; font-weight:900; color:#ef4444;">✖ ${globalProg.wrong}</div>
+                                <div style="font-size:10.5px; font-weight:800; color:#e2e8f0; margin-top:2px;">Wrong MCQs</div>
+                                <div style="font-size:9.5px; color:#ef4444; margin-top:2px;">Tap to Fix &rarr;</div>
+                            </div>
+                            <div onclick="if(typeof setSmartClinicMode==='function'){setSmartClinicMode('SKIPPED'); launchSmartMistakeClinicSession();}" style="background:#0b0f19; border:1px solid rgba(234,179,8,0.4); border-radius:11px; padding:9px 6px; text-align:center; cursor:pointer;">
+                                <div style="font-size:16px; font-weight:900; color:#eab308;">⏭️ ${globalProg.skipped}</div>
+                                <div style="font-size:10.5px; font-weight:800; color:#e2e8f0; margin-top:2px;">Skipped</div>
+                                <div style="font-size:9.5px; color:#eab308; margin-top:2px;">Retry &rarr;</div>
+                            </div>
+                            <div onclick="window.location.hash='#/bookmarks'" style="background:#0b0f19; border:1px solid rgba(168,85,247,0.4); border-radius:11px; padding:9px 6px; text-align:center; cursor:pointer;">
+                                <div style="font-size:16px; font-weight:900; color:#c084fc;">🔖 ${bmCount}</div>
+                                <div style="font-size:10.5px; font-weight:800; color:#e2e8f0; margin-top:2px;">Bookmarks</div>
+                                <div style="font-size:9.5px; color:#c084fc; margin-top:2px;">Revise &rarr;</div>
+                            </div>
+                        </div>
+
+                        <div style="display:flex; gap:8px;">
+                            <button type="button" onclick="forceCwStep1(event)" style="flex:1.2; background:linear-gradient(135deg, #fdb813, #f59e0b); color:#000; border:none; padding:10px 12px; border-radius:11px; font-size:12px; font-weight:900; cursor:pointer;">🎯 Custom Mock (20–250 Q)</button>
+                            <button type="button" onclick="window.location.hash='#/progress'" style="flex:1; background:rgba(56,189,248,0.15); color:#38bdf8; border:1px solid rgba(56,189,248,0.4); padding:10px 12px; border-radius:11px; font-size:12px; font-weight:800; cursor:pointer;">📊 Full Analytics</button>
+                        </div>
                     </div>
-                    <div class="ps-horiz-cards-track" id="psHorizQuickTrack">
-                        ${horizCardsHtml}
+
+                    <!-- 4. PROPERLY ORGANIZED FULL-WIDTH 60-SECOND SPEED BLITZ CARD (Fixes Point 7 & Image 3) -->
+                    <div class="sa-feature-full-card" style="border-color:rgba(253,184,19,0.42); margin-bottom:4px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                            <span style="background:rgba(253,184,19,0.18); color:#fdb813; border:1px solid rgba(253,184,19,0.45); padding:3px 9px; border-radius:999px; font-size:10px; font-weight:900;">⚡ 60-SECOND SPEED CHALLENGE</span>
+                            <span style="font-size:11px; font-weight:900; color:#fdb813;">🏆 Best: ${saState.blitzBestScore} pts (${saState.blitzBestAcc}% Acc)</span>
+                        </div>
+
+                        <h3 style="margin:0 0 4px 0; font-size:16.5px; font-weight:900; color:#ffffff;">60-Second Rapid Reflex Blitz</h3>
+                        <p style="margin:0 0 10px 0; font-size:12px; color:#94a3b8; line-height:1.4;">Select your target exam below and solve as many MCQs as you can in 60 seconds. 3 correct answers in a row unlocks 🔥 2x Combo Points!</p>
+
+                        <div style="margin-bottom:12px;">
+                            <div style="font-size:10px; font-weight:800; color:#94a3b8; text-transform:uppercase; margin-bottom:6px;">Select Exam for 60s Blitz:</div>
+                            <div style="display:flex; gap:6px; flex-wrap:wrap;">${blitzExamPillsHtml}</div>
+                        </div>
+
+                        <button type="button" id="btnStartOrganizedBlitz" onclick="launchOrganized60sBlitz()" style="width:100%; background:linear-gradient(135deg, #fdb813, #f59e0b); color:#000; border:none; padding:11px 16px; border-radius:12px; font-size:13px; font-weight:900; cursor:pointer; box-shadow:0 6px 18px rgba(253,184,19,0.3);">
+                            ⚡ Start 60s ${cleanBlitzExam} Blitz Now &rarr;
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 5. QUICK LINKS & DAILY CHALLENGE SHELF -->
+                <div class="sa-section-block">
+                    <div class="sa-section-header">
+                        <h3 class="sa-section-title">
+                            <span style="color:#a855f7;">▎</span> Quick Access &amp; Daily Practice
+                        </h3>
+                    </div>
+                    <div class="sa-quick-horiz-track">
+                        ${quickCardsHtml}
                     </div>
                 </div>
             </div>
         `;
 
         // Attach touch/scroll listeners to Hero Carousel so finger swipes sync dots and pause auto-scroll
-        const track = document.getElementById('psHeroCarouselTrack');
+        const track = document.getElementById('saHeroCarouselTrack');
         if (track) {
-            track.addEventListener('touchstart', () => { psAppState.isTouchingCarousel = true; }, { passive: true });
+            track.addEventListener('touchstart', () => { saState.isTouchingCarousel = true; }, { passive: true });
             track.addEventListener('touchend', () => {
-                setTimeout(() => { psAppState.isTouchingCarousel = false; }, 1200);
+                setTimeout(() => { saState.isTouchingCarousel = false; }, 1400);
             }, { passive: true });
             track.addEventListener('scroll', () => {
-                const slideW = track.querySelector('.ps-hero-slide')?.offsetWidth || 280;
-                const idx = Math.round(track.scrollLeft / (slideW + 14));
-                psAppState.activeSlideIdx = idx;
-                updateCarouselDotsUI(idx);
+                const slideW = track.querySelector('.sa-exam-slide')?.offsetWidth || 290;
+                const idx = Math.round(track.scrollLeft / (slideW + 12));
+                saState.activeSlideIdx = idx;
+                updateSaCarouselDots(idx);
             }, { passive: true });
         }
 
-        startContinuousHeroCarousel();
+        startStudyHeroCarousel();
         return true;
     }
 
     // Hook _renderView non-destructively: ONLY intercept Root Home when inside the Installed Mobile App!
-    const _origRenderViewBeforePlayStore = _renderView;
+    const _origRenderViewBeforeStudyApp = _renderView;
     _renderView = function() {
-        injectPlayStoreMobileAppStyles();
+        injectStudyMobileAppStyles();
+        upgradeNavbarSearchButtonLogo();
+        repairAndEnhanceMobileAppDock();
 
         const rawHash = decodeURIComponent(window.location.hash.replace(/^#\/?/, '')).trim();
         const isRootHome = (!rawHash || rawHash === 'home') && (!Array.isArray(currentPath) || currentPath.length === 0);
 
         if (isInstalledMobileAppMode() && isRootHome) {
-            renderPlayStoreMobileAppHome();
+            renderStudyMobileAppHome();
             window.scrollTo({ top: 0, behavior: 'smooth' });
             return;
         }
 
-        document.body.classList.remove('mcqs-playstore-app-active');
-        if (psAppState.carouselTimer) clearInterval(psAppState.carouselTimer);
-        _origRenderViewBeforePlayStore();
-        enhanceMobileAppBottomDock();
+        document.body.classList.remove('mcqs-study-app-active');
+        if (saState.carouselTimer) clearInterval(saState.carouselTimer);
+        _origRenderViewBeforeStudyApp();
+        repairAndEnhanceMobileAppDock();
     };
 
     if (document.readyState === 'complete' || document.readyState === 'interactive') {
         setTimeout(() => {
-            injectPlayStoreMobileAppStyles();
+            injectStudyMobileAppStyles();
+            upgradeNavbarSearchButtonLogo();
+            repairAndEnhanceMobileAppDock();
             if (isInstalledMobileAppMode()) {
-                enhanceMobileAppBottomDock();
                 const rawHash = decodeURIComponent(window.location.hash.replace(/^#\/?/, '')).trim();
                 if ((!rawHash || rawHash === 'home') && (!Array.isArray(currentPath) || currentPath.length === 0)) {
                     _renderView();
