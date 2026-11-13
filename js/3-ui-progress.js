@@ -5937,14 +5937,17 @@ async function handleLiveSearch() {
 })();
 
 // ==========================================
-// 8. INSTALLED MOBILE APP EXCLUSIVE: STUDY-OPTIMIZED CONTINUOUS EXAM CAROUSEL,
-//    ADMIN-UPLOADED MODULE EXPLORER, SMART WEAK-SPOT DOCTOR, ORGANIZED 60s BLITZ,
-//    FLOATING ICON DOCK & ZERO-BLEED MODERN SEARCH
-// (Strictly Scoped to Installed Mobile PWA • Zero Impact on PC or Mobile Website)
+// 8. INSTALLED MOBILE APP & COMPACT ANALYTICS SUITE:
+//    CONTINUOUS EXAM CAROUSEL, SEPARATED QUICK LINKS & ESSENTIAL PRACTICE,
+//    COMPACT LIVE-SIMULATION ANALYTICS DASHBOARD & FLOATING ICON DOCK
 // ==========================================
-(function initStudyInstalledMobileAppV2() {
-    if (window._mcqsStudyMobileAppLoadedV2) return;
-    window._mcqsStudyMobileAppLoadedV2 = true;
+(function initStudyInstalledMobileAppV3() {
+    if (window._mcqsStudyMobileAppLoadedV3) return;
+    window._mcqsStudyMobileAppLoadedV3 = true;
+
+    // Crisp inline SVG badges so Android/iOS never renders dull grey unicode checkmarks
+    const SVG_CHECK_GREEN = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px; flex-shrink:0;"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
+    const SVG_CROSS_RED = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px; flex-shrink:0;"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`;
 
     function isInstalledMobileAppMode() {
         const isStandalone = document.documentElement.classList.contains('is-standalone-pwa') ||
@@ -5957,12 +5960,12 @@ async function handleLiveSearch() {
     }
 
     function injectStudyMobileAppStyles() {
-        if (document.getElementById('mcqs-study-mobile-app-styles-v2')) return;
+        if (document.getElementById('mcqs-study-mobile-app-styles-v3')) return;
         const st = document.createElement('style');
-        st.id = 'mcqs-study-mobile-app-styles-v2';
+        st.id = 'mcqs-study-mobile-app-styles-v3';
         st.textContent = `
             /* ==========================================
-               1. MODERNIZED SEARCH BUTTON & ZERO-BLEED MOBILE SEARCH BAR (FIXES IMAGE 4)
+               1. MODERNIZED SEARCH BUTTON & ZERO-BLEED MOBILE SEARCH BAR
                ========================================== */
             .navbar .search-icon-btn {
                 background: rgba(255, 255, 255, 0.06) !important;
@@ -5983,7 +5986,6 @@ async function handleLiveSearch() {
                 background: rgba(253, 184, 19, 0.12) !important;
             }
 
-            /* On Mobile: Completely hide Logo, Rating, Streak & Profile behind Search when open! */
             @media (max-width: 860px) {
                 body.mcqs-search-open .navbar .nav-left,
                 body.mcqs-search-open .navbar .nav-right {
@@ -6032,7 +6034,7 @@ async function handleLiveSearch() {
             }
 
             /* ==========================================
-               2. FLOATING BOTTOM NAVIGATION DOCK WITH GUARANTEED VISIBLE SVG LOGOS (FIXES POINT 3)
+               2. FLOATING BOTTOM NAVIGATION DOCK WITH GUARANTEED VISIBLE SVG LOGOS
                ========================================== */
             @media (max-width: 860px) {
                 #mobileAppDock {
@@ -6068,7 +6070,6 @@ async function handleLiveSearch() {
                     color: #94a3b8 !important;
                     min-width: 0 !important;
                 }
-                /* Explicit dimensions & zero padding so SVG icons NEVER collapse! */
                 #mobileAppDock .app-tab:not(.ai-tab-inner) .app-tab-icon {
                     width: 44px !important;
                     height: 26px !important;
@@ -6109,7 +6110,6 @@ async function handleLiveSearch() {
                     color: #fdb813 !important;
                     font-weight: 900 !important;
                 }
-                /* Center Ask AI Pill inside Floating Dock */
                 #mobileAppDock .app-tab.ai-tab-inner {
                     background: linear-gradient(135deg, #fdb813, #f59e0b) !important;
                     color: #000000 !important;
@@ -6154,7 +6154,6 @@ async function handleLiveSearch() {
                 display: none !important;
             }
 
-            /* Continuous Auto-Sliding Exam Suite Carousel (Top of Screen) */
             .sa-carousel-section {
                 padding: 12px 0 6px 0;
             }
@@ -6177,7 +6176,7 @@ async function handleLiveSearch() {
             }
             .sa-exam-banner-card {
                 position: relative;
-                min-height: 215px;
+                min-height: 210px;
                 border-radius: 20px;
                 overflow: hidden;
                 padding: 16px;
@@ -6251,7 +6250,6 @@ async function handleLiveSearch() {
                 background: #fdb813;
             }
 
-            /* Section Headers & Category Filter Pills */
             .sa-section-block {
                 margin-top: 16px;
                 padding: 0 14px;
@@ -6264,7 +6262,7 @@ async function handleLiveSearch() {
                 margin-bottom: 10px;
             }
             .sa-section-title {
-                font-size: 16.5px;
+                font-size: 16px;
                 font-weight: 900;
                 color: #ffffff;
                 margin: 0;
@@ -6300,7 +6298,6 @@ async function handleLiveSearch() {
                 color: #fdb813;
             }
 
-            /* Organised Swipeable Study Module Columns (3-Row Cards with Full Borders) */
             .sa-modules-Redesign-track {
                 display: flex;
                 gap: 12px;
@@ -6319,7 +6316,7 @@ async function handleLiveSearch() {
                 flex-direction: column;
                 gap: 10px;
             }
-            .sa-module- column-single {
+            .sa-module-column-single {
                 flex: 0 0 100%;
                 max-width: 100%;
             }
@@ -6350,7 +6347,6 @@ async function handleLiveSearch() {
                 flex-shrink: 0;
             }
 
-            /* Full-Width Detailed Student Feature Cards (Smart Weak-Spot Doctor & Organized 60s Blitz) */
             .sa-feature-full-card {
                 background: linear-gradient(155deg, #131a2c 0%, #0b0f1a 100%);
                 border: 1.5px solid rgba(255, 255, 255, 0.11);
@@ -6360,7 +6356,7 @@ async function handleLiveSearch() {
                 box-shadow: 0 12px 30px rgba(0, 0, 0, 0.55);
             }
 
-            /* Horizontal Essential & Quick Links Shelf */
+            /* Separated Quick Links & Essential Practice Horizontal Tracks */
             .sa-quick-horiz-track {
                 display: flex;
                 gap: 10px;
@@ -6372,24 +6368,105 @@ async function handleLiveSearch() {
             }
             .sa-quick-horiz-track::-webkit-scrollbar { display: none; }
             .sa-quick-card {
-                flex: 0 0 68%;
-                max-width: 68%;
+                flex: 0 0 72%;
+                max-width: 72%;
                 scroll-snap-align: start;
                 background: linear-gradient(145deg, #13192a, #0b0f19);
                 border: 1px solid rgba(255, 255, 255, 0.1);
-                border-radius: 15px;
-                padding: 13px;
+                border-radius: 14px;
+                padding: 12px 13px;
                 display: flex;
-                flex-direction: column;
+                align-items: center;
                 justify-content: space-between;
                 gap: 10px;
                 cursor: pointer;
+                box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4);
+            }
+            .sa-quick-card-single {
+                flex: 0 0 100%;
+                max-width: 100%;
+            }
+
+            /* ==========================================
+               4. COMPACT LIVE-SIMULATION ANALYTICS DASHBOARD STYLES (FIXES IMAGES 1 & 2)
+               ========================================== */
+            .ad-compact-shell {
+                display: flex;
+                flex-direction: column;
+                gap: 12px;
+                max-width: 1100px;
+                margin: 0 auto;
+            }
+            .ad-top-bar {
+                background: linear-gradient(145deg, #111728, #090d16);
+                border: 1px solid rgba(253, 184, 19, 0.32);
+                border-radius: 16px;
+                padding: 13px 15px;
+                box-shadow: 0 10px 26px rgba(0, 0, 0, 0.5);
+            }
+            .ad-telemetry-hero {
+                display: grid;
+                grid-template-columns: auto 1fr;
+                gap: 14px;
+                align-items: center;
+                background: linear-gradient(155deg, #131a2e 0%, #0a0e18 100%);
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                border-radius: 16px;
+                padding: 14px;
+                box-shadow: 0 10px 28px rgba(0, 0, 0, 0.55);
+            }
+            .ad-ring-box {
+                position: relative;
+                width: 96px;
+                height: 96px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                flex-shrink: 0;
+            }
+            .ad-kpi-quad-grid {
+                display: grid;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 8px;
+                width: 100%;
+            }
+            .ad-kpi-mini-pill {
+                background: #0b0f1a;
+                border: 1px solid rgba(255, 255, 255, 0.08);
+                border-radius: 11px;
+                padding: 8px 10px;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                min-width: 0;
+            }
+            .ad-sim-card {
+                background: linear-gradient(150deg, rgba(253, 184, 19, 0.08) 0%, #0d1220 55%);
+                border: 1.5px solid rgba(253, 184, 19, 0.38);
+                border-radius: 16px;
+                padding: 14px;
+                box-shadow: 0 10px 28px rgba(0, 0, 0, 0.5);
+            }
+            .ad-split-row {
+                display: grid;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 12px;
+            }
+            @media (max-width: 680px) {
+                .ad-split-row {
+                    grid-template-columns: 1fr;
+                }
+            }
+            @media (max-width: 380px) {
+                .ad-telemetry-hero {
+                    grid-template-columns: 1fr;
+                    justify-items: center;
+                }
             }
         `;
         document.head.appendChild(st);
     }
 
-    // Modernize the top navbar Search button icon into a crisp SVG magnifying glass
     function upgradeNavbarSearchButtonLogo() {
         const searchBtn = document.querySelector('.navbar .search-icon-btn');
         if (!searchBtn || searchBtn.dataset.modernSvgApplied) return;
@@ -6403,17 +6480,16 @@ async function handleLiveSearch() {
         `;
     }
 
-    // Guarantee SVG icons inside #mobileAppDock are always present and visible
     function repairAndEnhanceMobileAppDock() {
         const dock = document.getElementById('mobileAppDock');
         if (!dock) return;
         const tabs = dock.querySelectorAll('.app-tab');
         const svgPaths = [
-            'M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z', // Home
-            'M19 5h-2V3H7v2H5c-1.1 0-2 .9-2 2v1c0 2.55 1.92 4.63 4.39 4.94A5.01 5.01 0 0011 15.9V19H7v2h10v-2h-4v-3.1a5.01 5.01 0 003.61-2.96C19.08 12.63 21 10.55 21 8V7c0-1.1-.9-2-2-2zM7 10.82C5.84 10.4 5 9.3 5 8V7h2v3.82zM19 8c0 1.3-.84 2.4-2 2.82V7h2v1z', // Rank
-            'M19 9l1.25-2.75L23 5l-2.75-1.25L19 1l-1.25 2.75L15 5l2.75 1.25L19 9zm-7.5.5L9 4 6.5 9.5 1 12l5.5 2.5L9 20l2.5-5.5L17 12l-5.5-2.5zM19 15l-1.25 2.75L15 19l2.75 1.25L19 23l1.25-2.75L23 19l-2.75-1.25L19 15z', // Ask AI
-            'M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z', // Stats
-            'M17 3H7c-1.1 0-1.99.9-1.99 2L5 21l7-3 7 3V5c0-1.1-.9-2-2-2z' // Saved
+            'M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z',
+            'M19 5h-2V3H7v2H5c-1.1 0-2 .9-2 2v1c0 2.55 1.92 4.63 4.39 4.94A5.01 5.01 0 0011 15.9V19H7v2h10v-2h-4v-3.1a5.01 5.01 0 003.61-2.96C19.08 12.63 21 10.55 21 8V7c0-1.1-.9-2-2-2zM7 10.82C5.84 10.4 5 9.3 5 8V7h2v3.82zM19 8c0 1.3-.84 2.4-2 2.82V7h2v1z',
+            'M19 9l1.25-2.75L23 5l-2.75-1.25L19 1l-1.25 2.75L15 5l2.75 1.25L19 9zm-7.5.5L9 4 6.5 9.5 1 12l5.5 2.5L9 20l2.5-5.5L17 12l-5.5-2.5zM19 15l-1.25 2.75L15 19l2.75 1.25L19 23l1.25-2.75L23 19l-2.75-1.25L19 15z',
+            'M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z',
+            'M17 3H7c-1.1 0-1.99.9-1.99 2L5 21l7-3 7 3V5c0-1.1-.9-2-2-2z'
         ];
         const tabLabels = ['Home', 'Ranks', 'Ask AI', 'Stats', 'Saved'];
 
@@ -6439,7 +6515,7 @@ async function handleLiveSearch() {
     }
 
     // ==========================================
-    // STATE & ADMIN-PANEL DATA READERS FOR INSTALLED MOBILE APP
+    // STATE & ADMIN-PANEL DATA READERS
     // ==========================================
     var saState = {
         selectedCategory: 'ALL',
@@ -6448,7 +6524,12 @@ async function handleLiveSearch() {
         isTouchingCarousel: false,
         blitzExam: '',
         blitzBestScore: Number(localStorage.getItem('mcqs_app_blitz_best_v1') || 0),
-        blitzBestAcc: Number(localStorage.getItem('mcqs_app_blitz_best_acc_v1') || 0)
+        blitzBestAcc: Number(localStorage.getItem('mcqs_app_blitz_best_acc_v1') || 0),
+        // Live Analytics Simulator State
+        analyticsSimMode: 'SHIELD', // 'CURRENT' | 'SHIELD' | 'SPEED'
+        analyticsSimQuestions: 180,
+        lastAnalyticsData: null,
+        lastAnalyticsCategory: ''
     };
 
     function getActiveExamCategoriesFromAdmin() {
@@ -6500,7 +6581,6 @@ async function handleLiveSearch() {
         return Array.from(childSet);
     }
 
-    // Reads real student progress for any exam or folder from localStorage
     function getStudentProgressSummaryForApp(examPrefix = '') {
         try {
             const uid = (typeof currentUser !== 'undefined' && currentUser && currentUser.uid) ? currentUser.uid : 'guest';
@@ -6538,7 +6618,434 @@ async function handleLiveSearch() {
         }
     }
 
-    // Builds 100% Admin-Panel-driven metadata for each Exam Category slide
+    // ==========================================
+    // COMPACT, MODERNIZED ANALYTICS COMMAND CENTER WITH LIVE SIMULATOR (FIXES IMAGES 1 & 2)
+    // ==========================================
+    function buildPrecisionSvgTrajectoryHtml(trendArr) {
+        const pts = (Array.isArray(trendArr) && trendArr.length > 0) ? trendArr.slice(-10) : [100];
+        const displayPts = pts.length === 1 ? [pts[0], pts[0]] : pts;
+
+        const svgW = 330;
+        const svgH = 118;
+        const padLeft = 36; // Dedicated left gutter so 100%, 75%, 50% NEVER touch the green dots!
+        const padRight = 16;
+        const padTop = 14;
+        const padBottom = 22;
+        const plotW = svgW - padLeft - padRight;
+        const plotH = svgH - padTop - padBottom;
+
+        const coords = displayPts.map((val, idx) => {
+            const clamped = Math.min(100, Math.max(0, Number(val) || 0));
+            const x = padLeft + (idx / Math.max(1, displayPts.length - 1)) * plotW;
+            const y = padTop + (1 - clamped / 100) * plotH;
+            return { x: Number(x.toFixed(1)), y: Number(y.toFixed(1)), val: Math.round(clamped), idx };
+        });
+
+        // Smooth SVG cubic bezier path
+        let pathD = `M ${coords[0].x} ${coords[0].y}`;
+        for (let i = 0; i < coords.length - 1; i++) {
+            const p0 = coords[i];
+            const p1 = coords[i + 1];
+            const midX = ((p0.x + p1.x) / 2).toFixed(1);
+            pathD += ` C ${midX} ${p0.y}, ${midX} ${p1.y}, ${p1.x} ${p1.y}`;
+        }
+        const areaD = `${pathD} L ${coords[coords.length - 1].x} ${padTop + plotH} L ${coords[0].x} ${padTop + plotH} Z`;
+
+        const gridLinesHtml = [100, 75, 50, 25, 0].map(gVal => {
+            const gy = (padTop + (1 - gVal / 100) * plotH).toFixed(1);
+            return `
+                <line x1="${padLeft}" y1="${gy}" x2="${svgW - padRight}" y2="${gy}" stroke="rgba(255,255,255,0.07)" stroke-dasharray="3 3" stroke-width="1"/>
+                <text x="${padLeft - 7}" y="${Number(gy) + 3.5}" text-anchor="end" fill="#64748b" font-size="9.5" font-weight="700">${gVal}%</text>
+            `;
+        }).join('');
+
+        const dotsHtml = coords.map((c, i) => {
+            const isFirst = i === 0;
+            const isLast = i === coords.length - 1;
+            const showLabel = isFirst || isLast || i === Math.floor(coords.length / 2);
+            return `
+                <circle cx="${c.x}" cy="${c.y}" r="${isLast ? 4.5 : 3.5}" fill="${isLast ? '#10b981' : '#fdb813'}" stroke="#080b12" stroke-width="1.8"/>
+                ${showLabel ? `<text x="${c.x}" y="${svgH - 4}" text-anchor="${isFirst ? 'start' : (isLast ? 'end' : 'middle')}" fill="${isLast ? '#10b981' : '#94a3b8'}" font-size="9" font-weight="800">T${i + 1} (${c.val}%)</text>` : ''}
+            `;
+        }).join('');
+
+        return `
+            <svg viewBox="0 0 ${svgW} ${svgH}" style="width:100%; height:118px; display:block; overflow:visible;">
+                <defs>
+                    <linearGradient id="adTrajAreaGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stop-color="#10b981" stop-opacity="0.32"/>
+                        <stop offset="100%" stop-color="#10b981" stop-opacity="0.0"/>
+                    </linearGradient>
+                </defs>
+                ${gridLinesHtml}
+                <path d="${areaD}" fill="url(#adTrajAreaGrad)"/>
+                <path d="${pathD}" fill="none" stroke="#fdb813" stroke-width="2.6" stroke-linecap="round"/>
+                ${dotsHtml}
+            </svg>
+        `;
+    }
+
+    window.setAnalyticsLiveSimOption = function(mode, qCount) {
+        if (mode) saState.analyticsSimMode = mode;
+        if (qCount) saState.analyticsSimQuestions = Number(qCount);
+        renderAnalyticsLiveSimulatorBox();
+    };
+
+    function renderAnalyticsLiveSimulatorBox() {
+        const mount = document.getElementById('adLiveSimulatorMount');
+        if (!mount || !saState.lastAnalyticsData) return;
+
+        const st = saState.lastAnalyticsData;
+        const catClean = formatCleanTopicTitle(saState.lastAnalyticsCategory || 'Exam');
+        const qTotal = saState.analyticsSimQuestions || 180;
+        const maxMarks = qTotal * 4;
+
+        const baseAcc = st.overallAccuracy || 0;
+        const baseTime = st.avgTimeCorrect || 25;
+
+        let simAcc = baseAcc;
+        let simTimePerQ = baseTime;
+        let simNote = `At your current ${baseAcc}% accuracy across a ${qTotal}-question ${catClean} paper.`;
+
+        if (saState.analyticsSimMode === 'SHIELD') {
+            // Simulates eliminating 50% of wrong answers via Negative-Mark Shield
+            const wrongRatio = (100 - baseAcc) / 2;
+            simAcc = Math.min(100, Math.round(baseAcc + wrongRatio));
+            simNote = `Simulates fixing 50% of your wrong answers (raising accuracy from ${baseAcc}% → ${simAcc}%).`;
+        } else if (saState.analyticsSimMode === 'SPEED') {
+            simAcc = Math.min(100, baseAcc + 4);
+            simTimePerQ = Math.max(5, baseTime - 3);
+            const minsSaved = Math.max(1, Math.round((qTotal * 3) / 60));
+            simNote = `Simulates shaving 3s per MCQ (${baseTime}s → ${simTimePerQ}s), saving ~${minsSaved} mins for revision!`;
+        }
+
+        const projCorrect = Math.round((simAcc / 100) * qTotal);
+        const projWrong = qTotal - projCorrect;
+        const projScore = (projCorrect * 4) - projWrong;
+        const baseProjCorrect = Math.round((baseAcc / 100) * qTotal);
+        const baseProjScore = (baseProjCorrect * 4) - (qTotal - baseProjCorrect);
+        const scoreGain = Math.max(0, projScore - baseProjScore);
+        const estMinutes = Math.max(1, Math.round((qTotal * simTimePerQ) / 60));
+        const barPct = Math.min(100, Math.max(5, Math.round((Math.max(0, projScore) / maxMarks) * 100)));
+
+        mount.innerHTML = `
+            <div class="ad-sim-card">
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px; margin-bottom:8px;">
+                    <span style="background:rgba(253,184,19,0.2); color:#fdb813; border:1px solid rgba(253,184,19,0.45); padding:2px 9px; border-radius:999px; font-size:10px; font-weight:900;">🎛️ LIVE SCORE &amp; PACE SIMULATOR</span>
+                    <div style="display:flex; gap:4px;">
+                        ${[50, 100, 180].map(qNum => `
+                            <button type="button" onclick="setAnalyticsLiveSimOption(null, ${qNum})" style="background:${qTotal === qNum ? '#fdb813' : '#090d16'}; color:${qTotal === qNum ? '#000' : '#94a3b8'}; border:1px solid ${qTotal === qNum ? '#fdb813' : 'rgba(255,255,255,0.12)'}; border-radius:6px; padding:2px 7px; font-size:10px; font-weight:800; cursor:pointer;">${qNum} Q</button>
+                        `).join('')}
+                    </div>
+                </div>
+
+                <!-- 3 Interactive Simulation Mode Pills -->
+                <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:6px; margin-bottom:10px;">
+                    <button type="button" onclick="setAnalyticsLiveSimOption('CURRENT', null)" style="background:${saState.analyticsSimMode === 'CURRENT' ? 'rgba(56,189,248,0.2)' : '#090d16'}; color:${saState.analyticsSimMode === 'CURRENT' ? '#38bdf8' : '#94a3b8'}; border:1px solid ${saState.analyticsSimMode === 'CURRENT' ? '#38bdf8' : 'rgba(255,255,255,0.1)'}; border-radius:8px; padding:6px 4px; font-size:10.5px; font-weight:800; cursor:pointer;">📊 Current Pace</button>
+                    <button type="button" onclick="setAnalyticsLiveSimOption('SHIELD', null)" style="background:${saState.analyticsSimMode === 'SHIELD' ? 'rgba(16,185,129,0.2)' : '#090d16'}; color:${saState.analyticsSimMode === 'SHIELD' ? '#10b981' : '#94a3b8'}; border:1px solid ${saState.analyticsSimMode === 'SHIELD' ? '#10b981' : 'rgba(255,255,255,0.1)'}; border-radius:8px; padding:6px 4px; font-size:10.5px; font-weight:800; cursor:pointer;">🛡️ Mistake Shield</button>
+                    <button type="button" onclick="setAnalyticsLiveSimOption('SPEED', null)" style="background:${saState.analyticsSimMode === 'SPEED' ? 'rgba(253,184,19,0.2)' : '#090d16'}; color:${saState.analyticsSimMode === 'SPEED' ? '#fdb813' : '#94a3b8'}; border:1px solid ${saState.analyticsSimMode === 'SPEED' ? '#fdb813' : 'rgba(255,255,255,0.1)'}; border-radius:8px; padding:6px 4px; font-size:10.5px; font-weight:800; cursor:pointer;">⚡ Speed Boost</button>
+                </div>
+
+                <div style="background:#080b12; border:1px solid rgba(255,255,255,0.08); border-radius:11px; padding:10px 12px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:6px;">
+                        <div>
+                            <div style="font-size:9.5px; color:#94a3b8; font-weight:800; text-transform:uppercase;">PROJECTED ${qTotal}-Q SCORE</div>
+                            <div style="display:flex; align-items:baseline; gap:6px;">
+                                <span style="font-size:24px; font-weight:900; color:#fdb813;">${projScore}</span>
+                                <span style="font-size:11px; color:#64748b; font-weight:700;">/ ${maxMarks} pts</span>
+                                ${scoreGain > 0 ? `<span style="background:rgba(16,185,129,0.18); color:#10b981; padding:1px 6px; border-radius:5px; font-size:10px; font-weight:900;">↑ +${scoreGain} Lift</span>` : ''}
+                            </div>
+                        </div>
+                        <div style="text-align:right; font-size:10.5px;">
+                            <div style="color:#10b981; font-weight:800;">${SVG_CHECK_GREEN} ${projCorrect} Right • <span style="color:#ef4444;">${SVG_CROSS_RED} ${projWrong} Wrong</span></div>
+                            <div style="color:#38bdf8; font-weight:700; margin-top:2px;">⏱️ Est. Completion: ${estMinutes} mins (${simTimePerQ}s/Q)</div>
+                        </div>
+                    </div>
+
+                    <div style="width:100%; height:6px; background:#141b2d; border-radius:3px; overflow:hidden; margin-bottom:6px;">
+                        <div style="width:${barPct}%; height:100%; background:linear-gradient(90deg, #fdb813, #10b981); border-radius:3px; transition:width 0.35s ease;"></div>
+                    </div>
+                    <div style="font-size:10.5px; color:#cbd5e1; line-height:1.35;">💡 ${simNote}</div>
+                </div>
+            </div>
+        `;
+    }
+
+    // Override _renderProgressDashboard globally so Analytics is ultra-compact, modern & has live simulation!
+    _renderProgressDashboard = async function(category) {
+        if (!currentUser) { _renderProgressSelection(); return; }
+        const displayCategory = formatCleanTopicTitle(category);
+        const safeCatJs = category.replace(/'/g, "\\'");
+        const bc = document.getElementById('breadcrumb-text');
+        if (bc) bc.innerText = `Home / Profile / Progress / ${displayCategory}`;
+
+        const mc = document.getElementById('dynamic-content');
+        if (!mc) return;
+        mc.innerHTML = `<div class="mcqs-arch-surface page-transition" style="text-align:center; padding:32px;"><h3>📊 Loading ${displayCategory} Diagnostics...</h3></div>`;
+
+        try {
+            const snap = await db.collection('leaderboards').where('userId', '==', currentUser.uid).get();
+            const tempDocs = [];
+            snap.forEach(doc => tempDocs.push(doc.data()));
+            tempDocs.sort((a, b) => (a.timestamp?.toMillis() || 0) - (b.timestamp?.toMillis() || 0));
+
+            // Compute stats for this category
+            let totalScore = 0, totalAttempted = 0, correctCount = 0, wrongCount = 0, quizzesPlayed = 0;
+            let accuracyTrend = [], totalAvgTimeC = 0, countC = 0, totalAvgTimeW = 0, countW = 0;
+            const subjectMap = {};
+
+            tempDocs.forEach(d => {
+                const matches = (d.examCategory === category) ||
+                    (d.quizPath && (d.quizPath.startsWith(category) || d.quizPath.startsWith('Daily Quiz Challenge > ' + category)));
+                if (!matches) return;
+                quizzesPlayed++;
+                totalScore += Number(d.score) || 0;
+                const qAtt = d.attemptedQuestions !== undefined ? Number(d.attemptedQuestions) : ((Number(d.correctCount) || 0) + (Number(d.wrongCount) || 0));
+                totalAttempted += qAtt;
+                const c = d.correctCount !== undefined ? Number(d.correctCount) : Math.round(((Number(d.accuracy) || 0) / 100) * qAtt);
+                const w = d.wrongCount !== undefined ? Number(d.wrongCount) : Math.max(0, qAtt - c);
+                correctCount += c;
+                wrongCount += w;
+                accuracyTrend.push(Number(d.accuracy) || 0);
+                if (d.avgTimeCorrect) { totalAvgTimeC += Number(d.avgTimeCorrect); countC++; }
+                if (d.avgTimeWrong) { totalAvgTimeW += Number(d.avgTimeWrong); countW++; }
+                if (d.subjectBreakdown && typeof d.subjectBreakdown === 'object') {
+                    Object.keys(d.subjectBreakdown).forEach(sKey => {
+                        const cleanS = formatCleanTopicTitle(sKey);
+                        if (!subjectMap[cleanS]) subjectMap[cleanS] = { attempts: 0, correct: 0 };
+                        subjectMap[cleanS].attempts += Number(d.subjectBreakdown[sKey].attempts) || 0;
+                        subjectMap[cleanS].correct += Number(d.subjectBreakdown[sKey].correct) || 0;
+                    });
+                }
+            });
+
+            const exams = getActiveExamCategoriesFromAdmin();
+            const examTabsHtml = exams.map(ex => {
+                const cleanEx = formatCleanTopicTitle(ex);
+                const isAct = ex === category;
+                return `
+                    <button type="button" class="sa-cat-tab-btn ${isAct ? 'active' : ''}" onclick="window.location.hash='#/progress/${encodeURIComponent(ex)}'">
+                        ${cleanEx}
+                    </button>
+                `;
+            }).join('');
+
+            if (quizzesPlayed === 0 && totalAttempted === 0) {
+                mc.innerHTML = `
+                    <div class="ad-compact-shell page-transition">
+                        <div class="ad-top-bar">
+                            <div class="sa-cat-tabs-row" style="padding-bottom:6px;">${examTabsHtml}</div>
+                            <h2 style="margin:4px 0 0 0; font-size:18px; font-weight:900; color:#fff;">📊 ${displayCategory} Diagnostics</h2>
+                        </div>
+                        <div class="ad-top-bar" style="text-align:center; padding:32px 18px;">
+                            <div style="font-size:40px; margin-bottom:8px;">📈</div>
+                            <h3 style="margin:0 0 6px 0; color:#fff; font-size:18px;">No ${displayCategory} Quizzes Completed Yet</h3>
+                            <p style="color:#94a3b8; font-size:12.5px; margin:0 0 18px 0;">Complete 1 quiz in ${displayCategory} to activate your live telemetry ring, speed radar, and score simulator.</p>
+                            <button class="mcqs-btn-gold" onclick="jumpToSection(['${safeCatJs}'])">🚀 Start First ${displayCategory} Quiz</button>
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+
+            const overallAccuracy = (correctCount + wrongCount) > 0 ? Math.round((correctCount / (correctCount + wrongCount)) * 100) : 0;
+            const avgTimeCorrect = countC > 0 ? Math.round(totalAvgTimeC / countC) : 0;
+            const avgTimeWrong = countW > 0 ? Math.round(totalAvgTimeW / countW) : 0;
+            const recentTrend = accuracyTrend.slice(-10);
+
+            const subjectList = Object.keys(subjectMap)
+                .filter(k => subjectMap[k].attempts > 0)
+                .map(k => {
+                    const s = subjectMap[k];
+                    const pct = Math.round((s.correct / s.attempts) * 100);
+                    return { name: k, attempts: s.attempts, correct: s.correct, pct, isWeak: pct < 50 };
+                })
+                .sort((a, b) => b.pct - a.pct);
+
+            saState.lastAnalyticsData = {
+                quizzesPlayed, totalScore, totalAttempted, correctCount, wrongCount,
+                overallAccuracy, avgTimeCorrect, avgTimeWrong, recentTrend, subjectList
+            };
+            saState.lastAnalyticsCategory = category;
+            saState.analyticsSimQuestions = displayCategory.toLowerCase().includes('neet') ? 180 : (displayCategory.toLowerCase().includes('jee') ? 75 : 100);
+            if (wrongCount === 0 && saState.analyticsSimMode === 'SHIELD') {
+                saState.analyticsSimMode = 'SPEED';
+            }
+
+            // Circular SVG Accuracy Ring math
+            const ringCircum = 238;
+            const ringOffset = Math.round(ringCircum - (overallAccuracy / 100) * ringCircum);
+            const ringColor = overallAccuracy >= 75 ? '#10b981' : (overallAccuracy >= 50 ? '#fdb813' : '#ef4444');
+
+            // Weak-Spot / Mastery Banner (Ultra-compact 1-line bar)
+            const weakSubjs = subjectList.filter(s => s.isWeak);
+            const statusBannerHtml = weakSubjs.length > 0
+                ? `<div style="background:rgba(239,68,68,0.12); border:1px solid rgba(239,68,68,0.4); border-left:4px solid #ef4444; border-radius:12px; padding:9px 12px; font-size:12px; color:#fecaca; display:flex; justify-content:space-between; align-items:center; gap:8px;">
+                        <span>🚨 <b>Weak Spot (&lt;50%):</b> ${weakSubjs.map(w => `${w.name} (${w.pct}%)`).join(', ')}</span>
+                        <button type="button" onclick="launchCustomStudioWithPreselection('${safeCatJs}')" style="background:#ef4444; color:#fff; border:none; padding:4px 10px; border-radius:6px; font-size:11px; font-weight:800; cursor:pointer; flex-shrink:0;">Fix Now</button>
+                   </div>`
+                : `<div style="background:rgba(16,185,129,0.12); border:1px solid rgba(16,185,129,0.38); border-left:4px solid #10b981; border-radius:12px; padding:9px 12px; font-size:12px; color:#d1fae5; font-weight:700; display:flex; align-items:center; gap:7px;">
+                        ${SVG_CHECK_GREEN} <span><b>Strong Mastery!</b> All practiced subjects in ${displayCategory} are ≥ 50% accuracy.</span>
+                   </div>`;
+
+            // Compact Subject Mastery Rows
+            const subjectRowsHtml = subjectList.length > 0
+                ? subjectList.map(s => {
+                    const col = s.pct >= 70 ? '#10b981' : (s.pct >= 50 ? '#fdb813' : '#ef4444');
+                    const sIcon = getAutomaticIconForName(s.name, null, `${category} > ${s.name}`);
+                    return `
+                        <div style="background:#080b12; border:1px solid rgba(255,255,255,0.07); border-radius:10px; padding:8px 11px; margin-bottom:7px;">
+                            <div style="display:flex; justify-content:space-between; align-items:center; font-size:12px; font-weight:800; margin-bottom:4px;">
+                                <span style="color:#f8fafc;">${sIcon} ${s.name}</span>
+                                <span style="display:inline-flex; align-items:center; gap:6px;">
+                                    <span style="color:${col}; font-weight:900;">${s.pct}%</span>
+                                    <span style="background:rgba(16,185,129,0.14); color:#cbd5e1; border:1px solid rgba(16,185,129,0.35); padding:1px 6px; border-radius:6px; font-size:10px;">
+                                        ${SVG_CHECK_GREEN} ${s.correct}/${s.attempts}
+                                    </span>
+                                </span>
+                            </div>
+                            <div style="width:100%; height:5px; background:#141c2e; border-radius:3px; overflow:hidden;">
+                                <div style="width:${s.pct}%; height:100%; background:${col}; border-radius:3px;"></div>
+                            </div>
+                        </div>
+                    `;
+                }).join('')
+                : `<div style="font-size:12px; color:#94a3b8;">Practice chapter quizzes to populate subject mastery bars.</div>`;
+
+            // Speed Autopsy diagnosis line
+            let speedDiagText = '⚡ Optimal Pacing: Zero time wasted on wrong options.';
+            if (avgTimeWrong > 0) {
+                speedDiagText = avgTimeWrong < avgTimeCorrect
+                    ? `⚠️ Impulse Alert: You spent ${avgTimeWrong}s on Wrong vs ${avgTimeCorrect}s on Correct. Pause +5s before locking!`
+                    : `🧠 Time Sink: You spent ${avgTimeWrong}s on Wrong answers. Skip tough MCQs on 1st pass!`;
+            }
+
+            mc.innerHTML = `
+                <div class="ad-compact-shell page-transition">
+                    <!-- 1. COMPACT COMMAND HEADER WITH 1-TAP EXAM TABS -->
+                    <div class="ad-top-bar">
+                        <div class="mcqs-crumb-bar" style="margin-bottom:8px;">
+                            <span class="mcqs-crumb-pill" onclick="goHome()">🏠 Home</span>
+                            <span style="color:#475569;">›</span>
+                            <span class="mcqs-crumb-pill" onclick="window.location.hash='#/progress'">📊 Analytics</span>
+                            <span style="color:#475569;">›</span>
+                            <span class="mcqs-crumb-pill active">${displayCategory}</span>
+                        </div>
+
+                        <div class="sa-cat-tabs-row" style="padding-bottom:8px; margin-bottom:8px; border-bottom:1px solid rgba(255,255,255,0.07);">
+                            ${examTabsHtml}
+                        </div>
+
+                        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+                            <div>
+                                <h1 style="margin:0; font-size:18px; font-weight:900; color:#ffffff;">📊 ${displayCategory} Diagnostic Center</h1>
+                                <div style="font-size:11.5px; color:#94a3b8; margin-top:2px;">
+                                    Compiled from <b style="color:#fdb813;">${quizzesPlayed} Quiz${quizzesPlayed === 1 ? '' : 'zes'}</b> • <b style="color:#38bdf8;">${totalAttempted} MCQs</b>
+                                </div>
+                            </div>
+                            <div style="display:flex; gap:6px;">
+                                <button type="button" onclick="launchCustomStudioWithPreselection('${safeCatJs}')" style="background:#fdb813; color:#000; border:none; padding:7px 12px; border-radius:9px; font-size:11.5px; font-weight:900; cursor:pointer;">🎯 Custom Mock</button>
+                                <button type="button" onclick="window.location.hash='#/board/${encodeURIComponent(category)}'" style="background:rgba(255,255,255,0.06); color:#fff; border:1px solid rgba(255,255,255,0.15); padding:7px 11px; border-radius:9px; font-size:11.5px; font-weight:800; cursor:pointer;">🏆 Rank</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 2. COMPACT TELEMETRY HERO (ANIMATED RING + 2x2 KPI GRID IN ONE CARD!) -->
+                    <div class="ad-telemetry-hero">
+                        <div class="ad-ring-box">
+                            <svg width="96" height="96" viewBox="0 0 96 96" style="transform:rotate(-90deg);">
+                                <circle cx="48" cy="48" r="38" fill="none" stroke="#161f33" stroke-width="8"/>
+                                <circle cx="48" cy="48" r="38" fill="none" stroke="${ringColor}" stroke-width="8" stroke-dasharray="${ringCircum}" stroke-dashoffset="${ringOffset}" stroke-linecap="round" style="transition:stroke-dashoffset 0.8s ease;"/>
+                            </svg>
+                            <div style="position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;">
+                                <span style="font-size:20px; font-weight:900; color:#ffffff; line-height:1;">${overallAccuracy}%</span>
+                                <span style="font-size:9px; font-weight:800; color:${ringColor}; text-transform:uppercase; margin-top:2px;">Accuracy</span>
+                            </div>
+                        </div>
+
+                        <div class="ad-kpi-quad-grid">
+                            <div class="ad-kpi-mini-pill" style="border-color:rgba(253,184,19,0.35);">
+                                <span style="font-size:9.5px; font-weight:800; color:#94a3b8; text-transform:uppercase;">⭐ Net Score</span>
+                                <span style="font-size:20px; font-weight:900; color:#fdb813; margin-top:1px;">${totalScore} <small style="font-size:10px; color:#94a3b8;">pts</small></span>
+                            </div>
+                            <div class="ad-kpi-mini-pill" style="border-color:rgba(56,189,248,0.35);">
+                                <span style="font-size:9.5px; font-weight:800; color:#94a3b8; text-transform:uppercase;">📝 Attempted</span>
+                                <span style="font-size:20px; font-weight:900; color:#38bdf8; margin-top:1px;">${totalAttempted} <small style="font-size:10px; color:#94a3b8;">MCQs</small></span>
+                            </div>
+                            <div class="ad-kpi-mini-pill" style="border-color:rgba(16,185,129,0.4);">
+                                <span style="font-size:9.5px; font-weight:800; color:#94a3b8; text-transform:uppercase;">Correct (+4)</span>
+                                <span style="font-size:18px; font-weight:900; color:#10b981; margin-top:1px; display:inline-flex; align-items:center; gap:4px;">${SVG_CHECK_GREEN} ${correctCount}</span>
+                            </div>
+                            <div class="ad-kpi-mini-pill" style="border-color:rgba(239,68,68,0.4);">
+                                <span style="font-size:9.5px; font-weight:800; color:#94a3b8; text-transform:uppercase;">Wrong (−1)</span>
+                                <span style="font-size:18px; font-weight:900; color:#ef4444; margin-top:1px; display:inline-flex; align-items:center; gap:4px;">${SVG_CROSS_RED} ${wrongCount}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    ${statusBannerHtml}
+
+                    <!-- 3. INTERACTIVE LIVE SCORE & PACE SIMULATOR -->
+                    <div id="adLiveSimulatorMount"></div>
+
+                    <!-- 4. SIDE-BY-SIDE SPEED AUTOPSY + SUBJECT MASTERY & SVG TRAJECTORY -->
+                    <div class="ad-split-row">
+                        <!-- Left Card: Compact Side-by-Side Speed Autopsy + Subject Mastery -->
+                        <div class="ad-top-bar" style="display:flex; flex-direction:column; justify-content:space-between; gap:12px;">
+                            <div>
+                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                                    <span style="font-size:12.5px; font-weight:900; color:#ffffff;">⏱️ Speed-vs-Accuracy Radar</span>
+                                    <span style="font-size:10px; color:#fdb813; font-weight:800;">Live Pacing</span>
+                                </div>
+                                <!-- Always Side-by-Side 2 Columns even on Mobile! -->
+                                <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:7px;">
+                                    <div style="background:rgba(16,185,129,0.1); border:1px solid rgba(16,185,129,0.4); border-radius:10px; padding:8px; text-align:center;">
+                                        <div style="font-size:18px; font-weight:900; color:#10b981; display:inline-flex; align-items:center; gap:4px;">${SVG_CHECK_GREEN} ${avgTimeCorrect}s</div>
+                                        <div style="font-size:10px; color:#cbd5e1; font-weight:700; margin-top:2px;">Avg on Correct</div>
+                                    </div>
+                                    <div style="background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.4); border-radius:10px; padding:8px; text-align:center;">
+                                        <div style="font-size:18px; font-weight:900; color:#ef4444; display:inline-flex; align-items:center; gap:4px;">${SVG_CROSS_RED} ${avgTimeWrong}s</div>
+                                        <div style="font-size:10px; color:#cbd5e1; font-weight:700; margin-top:2px;">Avg on Wrong</div>
+                                    </div>
+                                </div>
+                                <div style="font-size:10.5px; color:#94a3b8; line-height:1.35;">${speedDiagText}</div>
+                            </div>
+
+                            <div style="border-top:1px solid rgba(255,255,255,0.07); padding-top:10px;">
+                                <div style="font-size:12.5px; font-weight:900; color:#ffffff; margin-bottom:8px;">📚 Subject-Wise Mastery</div>
+                                ${subjectRowsHtml}
+                            </div>
+                        </div>
+
+                        <!-- Right Card: Precision Non-Overlapping SVG Accuracy Trajectory -->
+                        <div class="ad-top-bar" style="display:flex; flex-direction:column; justify-content:space-between;">
+                            <div>
+                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                                    <span style="font-size:12.5px; font-weight:900; color:#ffffff;">📈 Accuracy Trajectory (Last ${recentTrend.length} Tests)</span>
+                                    <span style="background:rgba(16,185,129,0.16); color:#10b981; padding:2px 8px; border-radius:999px; font-size:10px; font-weight:900;">Now: ${overallAccuracy}%</span>
+                                </div>
+                                <div style="background:#080b12; border:1px solid rgba(255,255,255,0.07); border-radius:12px; padding:10px 8px 6px 6px;">
+                                    ${buildPrecisionSvgTrajectoryHtml(recentTrend)}
+                                </div>
+                            </div>
+                            <div style="font-size:10.5px; color:#94a3b8; margin-top:8px; display:flex; justify-content:space-between;">
+                                <span>● First Recorded: <b style="color:#fdb813;">${recentTrend[0] || overallAccuracy}%</b></span>
+                                <span>● Peak Accuracy: <b style="color:#10b981;">${Math.max(...recentTrend, overallAccuracy)}%</b></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            renderAnalyticsLiveSimulatorBox();
+        } catch (e) {
+            mc.innerHTML = `<div class="card"><p style="color:#ef4444;">Error loading analytics: ${e.message}</p></div>`;
+        }
+    };
+
+    // ==========================================
+    // ADMIN-DRIVEN SLIDES & MODULES FOR INSTALLED MOBILE APP
+    // ==========================================
     function getAdminDrivenExamSlideData(examKey, idx) {
         const clean = formatCleanTopicTitle(examKey);
         const tMeta = (typeof customTopicTypes !== 'undefined' && customTopicTypes[examKey]) || null;
@@ -6581,7 +7088,6 @@ async function handleLiveSearch() {
         };
     }
 
-    // Collects real uploaded modules & nested subjects for the Category-Wise Study Modules shelf
     function collectUploadedStudyModules(selectedCat) {
         const exams = getActiveExamCategoriesFromAdmin();
         const targetExams = (selectedCat && selectedCat !== 'ALL') ? [selectedCat] : exams;
@@ -6606,8 +7112,8 @@ async function handleLiveSearch() {
                         ? grandChildren.slice(0, 4).map(g => formatCleanTopicTitle(g)).join(' • ')
                         : `${cleanEx} Uploaded Module`,
                     statusBadge: modProg.solved > 0
-                        ? `✔ ${modProg.solved} Solved (${modProg.acc}%)`
-                        : (grandChildren.length > 0 ? `${grandChildren.length} Sections` : 'Open Module'),
+                        ? `${SVG_CHECK_GREEN} ${modProg.solved} Solved (${modProg.acc}%)`
+                        : (grandChildren.length > 0 ? `● ${grandChildren.length} Sections` : '● Open Module'),
                     statusColor: modProg.solved > 0 ? '#10b981' : th.c,
                     icon: th.i === 'NONE' ? '📘' : th.i,
                     color: th.c,
@@ -6630,8 +7136,8 @@ async function handleLiveSearch() {
                         title: cleanG,
                         subtitle: `${cleanEx} › ${cleanChild}${leafChildren.length > 0 ? ` • ${leafChildren.slice(0, 2).map(l => formatCleanTopicTitle(l)).join(', ')}` : ''}`,
                         statusBadge: gProg.solved > 0
-                            ? `✔ ${gProg.solved} Solved (${gProg.acc}%)`
-                            : (leafChildren.length > 0 ? `${leafChildren.length} Chapters` : 'Practice MCQs'),
+                            ? `${SVG_CHECK_GREEN} ${gProg.solved} Solved (${gProg.acc}%)`
+                            : (leafChildren.length > 0 ? `● ${leafChildren.length} Chapters` : '● Practice MCQs'),
                         statusColor: gProg.solved > 0 ? '#10b981' : gTh.c,
                         icon: gTh.i === 'NONE' ? '📘' : gTh.i,
                         color: gTh.c,
@@ -6646,9 +7152,6 @@ async function handleLiveSearch() {
         return items;
     }
 
-    // ==========================================
-    // CONTINUOUS HERO CAROUSEL CONTROLLER
-    // ==========================================
     function startStudyHeroCarousel() {
         if (saState.carouselTimer) clearInterval(saState.carouselTimer);
         saState.carouselTimer = setInterval(() => {
@@ -6693,7 +7196,7 @@ async function handleLiveSearch() {
     };
 
     // ==========================================
-    // ORGANIZED 60-SECOND SPEED BLITZ ENGINE (FIXES POINT 7 & IMAGE 3)
+    // ORGANIZED 60-SECOND SPEED BLITZ ENGINE
     // ==========================================
     var saBlitzGame = {
         questions: [],
@@ -6798,7 +7301,7 @@ async function handleLiveSearch() {
                 <div style="font-size:36px; font-weight:900; color:#fdb813; margin:10px 0;">${saBlitzGame.score} pts</div>
 
                 <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:8px; background:#090d16; border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:10px; margin-bottom:18px;">
-                    <div><div style="font-size:15px; font-weight:900; color:#10b981;">✔ ${saBlitzGame.correct}</div><div style="font-size:10px; color:#94a3b8;">Correct</div></div>
+                    <div><div style="font-size:15px; font-weight:900; color:#10b981;">${SVG_CHECK_GREEN} ${saBlitzGame.correct}</div><div style="font-size:10px; color:#94a3b8;">Correct</div></div>
                     <div><div style="font-size:15px; font-weight:900; color:#38bdf8;">${acc}%</div><div style="font-size:10px; color:#94a3b8;">Accuracy</div></div>
                     <div><div style="font-size:15px; font-weight:900; color:#fdb813;">${saState.blitzBestScore}</div><div style="font-size:10px; color:#94a3b8;">Best Score</div></div>
                 </div>
@@ -6834,7 +7337,7 @@ async function handleLiveSearch() {
         const q = saBlitzGame.questions[saBlitzGame.idx % saBlitzGame.questions.length];
         const multBadge = saBlitzGame.streak >= 3
             ? `<span style="background:#f59e0b; color:#000; padding:3px 9px; border-radius:999px; font-size:11px; font-weight:900;">🔥 2x COMBO</span>`
-            : `<span style="background:rgba(56,189,248,0.15); color:#38bdf8; padding:3px 9px; border-radius:999px; font-size:11px; font-weight:800;">✔ ${saBlitzGame.correct}/${saBlitzGame.attempted}</span>`;
+            : `<span style="background:rgba(56,189,248,0.15); color:#38bdf8; padding:3px 9px; border-radius:999px; font-size:11px; font-weight:800;">${SVG_CHECK_GREEN} ${saBlitzGame.correct}/${saBlitzGame.attempted}</span>`;
 
         modal.innerHTML = `
             <div style="display:flex; justify-content:space-between; align-items:center; padding-bottom:10px; border-bottom:1px solid rgba(255,255,255,0.1);">
@@ -6893,12 +7396,11 @@ async function handleLiveSearch() {
             saState.blitzExam = exams[0] || 'NEET';
         }
 
-        // 1. CONTINUOUS SLIDING EXAM CATEGORY BANNERS (100% Driven by Admin Panel Uploads — No Play Store Open/Ratings/180Q!)
+        // 1. CONTINUOUS SLIDING EXAM CATEGORY BANNERS (100% Driven by Admin Panel Uploads)
         const heroSlidesHtml = exams.map((exKey, idx) => {
             const slide = getAdminDrivenExamSlideData(exKey, idx);
             const encodedExArr = encodeURIComponent(JSON.stringify([exKey]));
 
-            // Real uploaded folders inside this exam category from Admin Panel
             const uploadedChipsHtml = slide.directModules.slice(0, 6).map(mKey => {
                 const cleanM = formatCleanTopicTitle(mKey);
                 const mIcon = getAutomaticIconForName(cleanM, null, `${exKey} > ${mKey}`);
@@ -6916,7 +7418,7 @@ async function handleLiveSearch() {
                 : (slide.directModules.map(m => formatCleanTopicTitle(m)).join(' • ') || 'Complete Study & Practice Suite');
 
             const progressPill = slide.prog.solved > 0
-                ? `<span style="background:rgba(16,185,129,0.22); color:#10b981; border:1px solid rgba(16,185,129,0.5); padding:4px 10px; border-radius:999px; font-size:10.5px; font-weight:900;">✔ ${slide.prog.solved} Solved • ${slide.prog.acc}%</span>`
+                ? `<span style="background:rgba(16,185,129,0.22); color:#10b981; border:1px solid rgba(16,185,129,0.5); padding:4px 10px; border-radius:999px; font-size:10.5px; font-weight:900; display:inline-flex; align-items:center; gap:4px;">${SVG_CHECK_GREEN} ${slide.prog.solved} Solved • ${slide.prog.acc}%</span>`
                 : `<span style="background:rgba(255,255,255,0.1); color:#f8fafc; border:1px solid rgba(255,255,255,0.2); padding:4px 10px; border-radius:999px; font-size:10.5px; font-weight:800;">📂 ${slide.directModules.length} Uploaded Sections</span>`;
 
             return `
@@ -6924,7 +7426,6 @@ async function handleLiveSearch() {
                     <div class="sa-exam-banner-card" style="--sa-grad:${slide.grad}; --sa-border:${slide.border}; --sa-orb:${slide.bg};">
                         <div class="sa-banner-orb"></div>
 
-                        <!-- Live Animated SVG Study Trajectory Wave -->
                         <svg class="sa-banner-wave" viewBox="0 0 320 80" preserveAspectRatio="none">
                             <defs>
                                 <linearGradient id="saWave_${idx}" x1="0" y1="0" x2="0" y2="1">
@@ -6936,7 +7437,6 @@ async function handleLiveSearch() {
                             <path d="M 0 62 Q 80 24, 160 46 T 320 14" fill="none" stroke="${slide.color}" stroke-width="2.5" stroke-linecap="round"/>
                         </svg>
 
-                        <!-- Top Header of Exam Slide -->
                         <div style="position:relative; z-index:2; display:flex; justify-content:space-between; align-items:flex-start; gap:8px;">
                             <div style="display:flex; align-items:center; gap:10px; min-width:0;">
                                 <div style="width:44px; height:44px; border-radius:13px; background:rgba(9,13,22,0.75); border:1.5px solid ${slide.border}; color:${slide.color}; display:flex; align-items:center; justify-content:center; font-size:23px; flex-shrink:0; box-shadow:0 6px 16px rgba(0,0,0,0.5);">
@@ -6950,12 +7450,10 @@ async function handleLiveSearch() {
                             ${progressPill}
                         </div>
 
-                        <!-- Middle: Real Admin-Uploaded Folders (Tap any chip to open directly!) -->
                         <div class="sa-uploaded-chips-wrap">
                             ${uploadedChipsHtml}
                         </div>
 
-                        <!-- Bottom Footer Bar -->
                         <div style="position:relative; z-index:2; display:flex; justify-content:space-between; align-items:center; border-top:1px solid rgba(255,255,255,0.12); padding-top:8px; font-size:12px; font-weight:800; color:${slide.color};">
                             <span>Tap any module above or open ${slide.cleanName}</span>
                             <span>Explore &rarr;</span>
@@ -6967,7 +7465,7 @@ async function handleLiveSearch() {
 
         const dotsHtml = exams.map((_, i) => `<span class="sa-carousel-dot ${i === 0 ? 'active' : ''}"></span>`).join('');
 
-        // 2. ORGANISED CATEGORY-WISE STUDY MODULES SHELF (Replaces "Suggested for You" — Zero Fake Star Ratings!)
+        // 2. ORGANISED CATEGORY-WISE STUDY MODULES SHELF
         const catTabsHtml = [
             `<button type="button" class="sa-cat-tab-btn ${activeCat === 'ALL' ? 'active' : ''}" onclick="saSelectModuleCategory('ALL')">All Categories</button>`,
             ...exams.map(exKey => {
@@ -6991,7 +7489,7 @@ async function handleLiveSearch() {
                             <div style="min-width:0; flex:1;">
                                 <div style="font-size:14.5px; font-weight:800; color:#ffffff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${item.title}</div>
                                 <div style="font-size:11.5px; color:#94a3b8; margin-top:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${item.subtitle}</div>
-                                <div style="font-size:10.5px; font-weight:800; color:${item.statusColor}; margin-top:3px;">● ${item.statusBadge}</div>
+                                <div style="font-size:10.5px; font-weight:800; color:${item.statusColor}; margin-top:3px; display:inline-flex; align-items:center; gap:4px;">${item.statusBadge}</div>
                             </div>
                         </div>
                         <span style="color:${item.color}; font-size:18px; font-weight:900; flex-shrink:0;">&rsaquo;</span>
@@ -7001,7 +7499,7 @@ async function handleLiveSearch() {
             moduleColumns.push(`<div class="${colClass}">${rowsHtml}</div>`);
         }
 
-        // 3. BENEFICIAL STUDENT FEATURE #1: SMART REVISION & WEAK-SPOT DOCTOR (Replaces Offline Practice — Point 6)
+        // 3. SMART REVISION & WEAK-SPOT DOCTOR + 60s SPEED BLITZ
         const globalProg = getStudentProgressSummaryForApp('');
         const bmCount = Array.isArray(userBookmarks) ? userBookmarks.length : 0;
         const lastPathClean = globalProg.lastActivePath
@@ -7011,7 +7509,6 @@ async function handleLiveSearch() {
             ? encodeURIComponent(JSON.stringify(globalProg.lastActivePath.split(' > ').filter(Boolean)))
             : '';
 
-        // 4. BENEFICIAL STUDENT FEATURE #2: PROPERLY ORGANIZED 60-SECOND SPEED BLITZ CARD (Fixes Point 7 & Image 3)
         const blitzExamPillsHtml = exams.map(exKey => {
             const clean = formatCleanTopicTitle(exKey);
             const isSel = saState.blitzExam === exKey;
@@ -7024,38 +7521,73 @@ async function handleLiveSearch() {
         }).join('');
         const cleanBlitzExam = formatCleanTopicTitle(saState.blitzExam);
 
-        // 5. QUICK ACCESS & DAILY PRACTICE SHELF
+        // 4. SEPARATED QUICK LINKS & ESSENTIAL PRACTICE SECTIONS (Fixes Point 2 & Image 3!)
         const quickLinksList = (window.sidebarConfig && Array.isArray(window.sidebarConfig.quickLinks)) ? window.sidebarConfig.quickLinks : [];
         const essentialList = (window.sidebarConfig && Array.isArray(window.sidebarConfig.essentialPractice)) ? window.sidebarConfig.essentialPractice : [];
         const streakNum = document.getElementById('nav-streak-display')?.innerText || '0';
 
-        const quickShelfItems = [
-            { title: 'Daily Quiz Challenge', path: 'Daily Quiz Challenge', icon: '📅', badge: `🔥 ${streakNum}d Streak`, sub: 'Complete 1 quiz daily' },
-            ...quickLinksList.map(q => ({ title: q.title || q.path.split(' > ').pop(), path: q.path, icon: q.icon || '📚', badge: formatCleanTopicTitle(q.path.split(' > ')[0] || 'Resource'), sub: 'Direct Study Material' })),
-            ...essentialList.filter(e => e.path !== 'Daily Quiz Challenge').map(e => ({ title: e.title || e.path.split(' > ').pop(), path: e.path, icon: e.icon || '📝', badge: formatCleanTopicTitle(e.path.split(' > ')[0] || 'Practice'), sub: 'High-Yield Practice' }))
-        ];
-
-        const quickCardsHtml = quickShelfItems.map((item, idx) => {
-            const cleanT = formatCleanTopicTitle(item.title);
-            const th = getAutoTopicTheme(cleanT, item.icon, idx, null, '📘', null, item.path);
+        // Build Part A: Quick Links (Strictly from Admin Panel Quick Links)
+        let usedColorsQ = new Set();
+        const qCardCls = quickLinksList.length <= 1 ? 'sa-quick-card sa-quick-card-single' : 'sa-quick-card';
+        const quickLinksCardsHtml = quickLinksList.map((item, idx) => {
+            const displayTitle = formatCleanTopicTitle(item.title || item.path.split(' > ').pop() || '');
+            const parentExam = formatCleanTopicTitle(item.path.split(' > ')[0] || 'Resource');
             const encodedPath = encodeURIComponent(item.path);
+            const th = getAutoTopicTheme(displayTitle, item.icon || null, idx, usedColorsQ, '📚', null, item.path);
             return `
-                <div class="sa-quick-card" style="border-left:4px solid ${th.c};" onclick="openSidebarItem('${encodedPath}')">
-                    <div style="display:flex; justify-content:space-between; align-items:center;">
-                        <span style="width:38px; height:38px; border-radius:10px; background:${th.bg}; border:1px solid ${th.border}; display:flex; align-items:center; justify-content:center; font-size:19px;">${th.i}</span>
-                        <span style="background:${th.bg}; color:${th.c}; border:1px solid ${th.border}; padding:3px 8px; border-radius:999px; font-size:10px; font-weight:800;">${item.badge}</span>
+                <div class="${qCardCls}" style="border-left:4px solid ${th.c};" onclick="openSidebarItem('${encodedPath}')">
+                    <div style="display:flex; align-items:center; gap:11px; min-width:0; flex:1;">
+                        <span style="width:42px; height:42px; border-radius:11px; background:${th.bg}; border:1px solid ${th.border}; color:${th.c}; display:flex; align-items:center; justify-content:center; font-size:20px; flex-shrink:0;">${th.i}</span>
+                        <div style="min-width:0; flex:1;">
+                            <div style="font-size:14px; font-weight:800; color:#ffffff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${displayTitle}</div>
+                            <div style="font-size:11px; color:#94a3b8; margin-top:2px;">${parentExam} • Quick Link</div>
+                        </div>
                     </div>
-                    <div>
-                        <div style="font-size:14px; font-weight:800; color:#fff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${cleanT}</div>
-                        <div style="font-size:11px; color:#94a3b8; margin-top:2px;">${item.sub}</div>
-                    </div>
+                    <span style="color:${th.c}; font-weight:900; font-size:18px; flex-shrink:0;">&rsaquo;</span>
                 </div>
             `;
         }).join('');
 
+        // Build Part B: Essential Practice (Daily Quiz Challenge + Strictly Admin Panel Essential Practice)
+        let usedColorsE = new Set(['#fdb813']);
+        const essentialItemsFiltered = essentialList.filter(e => e.path !== 'Daily Quiz Challenge');
+        const eCardCls = essentialItemsFiltered.length === 0 ? 'sa-quick-card sa-quick-card-single' : 'sa-quick-card';
+
+        let essentialCardsHtml = `
+            <div class="${eCardCls}" style="border-left:4px solid #fdb813;" onclick="jumpToSection(['Daily Quiz Challenge'])">
+                <div style="display:flex; align-items:center; gap:11px; min-width:0; flex:1;">
+                    <span style="width:42px; height:42px; border-radius:11px; background:rgba(253,184,19,0.18); border:1px solid rgba(253,184,19,0.5); color:#fdb813; display:flex; align-items:center; justify-content:center; font-size:20px; flex-shrink:0;">📅</span>
+                    <div style="min-width:0; flex:1;">
+                        <div style="font-size:14px; font-weight:900; color:#fdb813; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">Daily Quiz Challenge</div>
+                        <div style="font-size:11px; color:#cbd5e1; margin-top:2px;">🔥 ${streakNum} Day Streak • Play Daily</div>
+                    </div>
+                </div>
+                <span style="color:#fdb813; font-weight:900; font-size:18px; flex-shrink:0;">&rsaquo;</span>
+            </div>
+        `;
+
+        essentialItemsFiltered.forEach((item, idx) => {
+            const displayTitle = formatCleanTopicTitle(item.title || item.path.split(' > ').pop() || '');
+            const parentExam = formatCleanTopicTitle(item.path.split(' > ')[0] || 'Practice');
+            const encodedPath = encodeURIComponent(item.path);
+            const th = getAutoTopicTheme(displayTitle, item.icon || null, idx + 4, usedColorsE, '📝', null, item.path);
+            essentialCardsHtml += `
+                <div class="sa-quick-card" style="border-left:4px solid ${th.c};" onclick="openSidebarItem('${encodedPath}')">
+                    <div style="display:flex; align-items:center; gap:11px; min-width:0; flex:1;">
+                        <span style="width:42px; height:42px; border-radius:11px; background:${th.bg}; border:1px solid ${th.border}; color:${th.c}; display:flex; align-items:center; justify-content:center; font-size:20px; flex-shrink:0;">${th.i}</span>
+                        <div style="min-width:0; flex:1;">
+                            <div style="font-size:14px; font-weight:800; color:#ffffff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${displayTitle}</div>
+                            <div style="font-size:11px; color:#94a3b8; margin-top:2px;">${parentExam} • Essential Practice</div>
+                        </div>
+                    </div>
+                    <span style="color:${th.c}; font-weight:900; font-size:18px; flex-shrink:0;">&rsaquo;</span>
+                </div>
+            `;
+        });
+
         mc.innerHTML = `
             <div class="page-transition">
-                <!-- 1. CONTINUOUS SLIDING EXAM SUITE CAROUSEL (100% Admin-Uploaded Modules Inside) -->
+                <!-- 1. CONTINUOUS SLIDING EXAM SUITE CAROUSEL -->
                 <div class="sa-carousel-section">
                     <div class="sa-carousel-track" id="saHeroCarouselTrack">
                         ${heroSlidesHtml}
@@ -7063,7 +7595,7 @@ async function handleLiveSearch() {
                     <div class="sa-carousel-dots">${dotsHtml}</div>
                 </div>
 
-                <!-- 2. ORGANISED CATEGORY-WISE STUDY MODULES (Replaces "Suggested for You" — Zero Fake Ratings!) -->
+                <!-- 2. ORGANISED CATEGORY-WISE STUDY MODULES -->
                 <div class="sa-section-block">
                     <div class="sa-section-header">
                         <h3 class="sa-section-title">
@@ -7077,12 +7609,12 @@ async function handleLiveSearch() {
                     </div>
                 </div>
 
-                <!-- 3. SMART REVISION & WEAK-SPOT DOCTOR (Replaces Offline Practice Vault — Detailed & Beneficial!) -->
+                <!-- 3. SMART REVISION & WEAK-SPOT DOCTOR + 60-SECOND SPEED BLITZ -->
                 <div class="sa-section-block">
                     <div class="sa-feature-full-card" style="border-color:rgba(56,189,248,0.42);">
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
                             <span style="background:rgba(56,189,248,0.16); color:#38bdf8; border:1px solid rgba(56,189,248,0.45); padding:3px 9px; border-radius:999px; font-size:10px; font-weight:900;">🩺 PERSONAL WEAK-SPOT DOCTOR</span>
-                            <span style="font-size:11px; font-weight:800; color:#10b981;">✔ ${globalProg.solved} Total Solved (${globalProg.acc}%)</span>
+                            <span style="font-size:11px; font-weight:800; color:#10b981; display:inline-flex; align-items:center; gap:4px;">${SVG_CHECK_GREEN} ${globalProg.solved} Solved (${globalProg.acc}%)</span>
                         </div>
 
                         <h3 style="margin:0 0 4px 0; font-size:16.5px; font-weight:900; color:#ffffff;">Smart Mistake Recovery &amp; Revision Hub</h3>
@@ -7100,7 +7632,7 @@ async function handleLiveSearch() {
 
                         <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:8px; margin-bottom:12px;">
                             <div onclick="if(typeof setSmartClinicMode==='function'){setSmartClinicMode('WRONG'); launchSmartMistakeClinicSession();}" style="background:#0b0f19; border:1px solid rgba(239,68,68,0.4); border-radius:11px; padding:9px 6px; text-align:center; cursor:pointer;">
-                                <div style="font-size:16px; font-weight:900; color:#ef4444;">✖ ${globalProg.wrong}</div>
+                                <div style="font-size:16px; font-weight:900; color:#ef4444; display:inline-flex; align-items:center; gap:4px;">${SVG_CROSS_RED} ${globalProg.wrong}</div>
                                 <div style="font-size:10.5px; font-weight:800; color:#e2e8f0; margin-top:2px;">Wrong MCQs</div>
                                 <div style="font-size:9.5px; color:#ef4444; margin-top:2px;">Tap to Fix &rarr;</div>
                             </div>
@@ -7122,7 +7654,7 @@ async function handleLiveSearch() {
                         </div>
                     </div>
 
-                    <!-- 4. PROPERLY ORGANIZED FULL-WIDTH 60-SECOND SPEED BLITZ CARD (Fixes Point 7 & Image 3) -->
+                    <!-- ORGANIZED FULL-WIDTH 60-SECOND SPEED BLITZ CARD -->
                     <div class="sa-feature-full-card" style="border-color:rgba(253,184,19,0.42); margin-bottom:4px;">
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
                             <span style="background:rgba(253,184,19,0.18); color:#fdb813; border:1px solid rgba(253,184,19,0.45); padding:3px 9px; border-radius:999px; font-size:10px; font-weight:900;">⚡ 60-SECOND SPEED CHALLENGE</span>
@@ -7143,21 +7675,34 @@ async function handleLiveSearch() {
                     </div>
                 </div>
 
-                <!-- 5. QUICK LINKS & DAILY CHALLENGE SHELF -->
+                <!-- 4. PART A: QUICK LINKS (Strictly Separated as per Admin Panel!) -->
                 <div class="sa-section-block">
                     <div class="sa-section-header">
                         <h3 class="sa-section-title">
-                            <span style="color:#a855f7;">▎</span> Quick Access &amp; Daily Practice
+                            <span style="color:#a855f7;">▎</span> 📚 Quick Links
                         </h3>
+                        <span style="font-size:10.5px; color:#c084fc; font-weight:800;">Direct Study Material</span>
                     </div>
                     <div class="sa-quick-horiz-track">
-                        ${quickCardsHtml}
+                        ${quickLinksCardsHtml || '<div style="color:#64748b; font-size:12px; padding:6px;">No quick links configured in Admin Panel.</div>'}
+                    </div>
+                </div>
+
+                <!-- 5. PART B: ESSENTIAL PRACTICE (Strictly Separated as per Admin Panel!) -->
+                <div class="sa-section-block">
+                    <div class="sa-section-header">
+                        <h3 class="sa-section-title">
+                            <span style="color:#fdb813;">▎</span> ⚡ Essential Practice
+                        </h3>
+                        <span style="font-size:10.5px; color:#fdb813; font-weight:800;">Daily Quiz &amp; PYQs</span>
+                    </div>
+                    <div class="sa-quick-horiz-track">
+                        ${essentialCardsHtml}
                     </div>
                 </div>
             </div>
         `;
 
-        // Attach touch/scroll listeners to Hero Carousel so finger swipes sync dots and pause auto-scroll
         const track = document.getElementById('saHeroCarouselTrack');
         if (track) {
             track.addEventListener('touchstart', () => { saState.isTouchingCarousel = true; }, { passive: true });
@@ -7176,8 +7721,7 @@ async function handleLiveSearch() {
         return true;
     }
 
-    // Hook _renderView non-destructively: ONLY intercept Root Home when inside the Installed Mobile App!
-    const _origRenderViewBeforeStudyApp = _renderView;
+    const _origRenderViewBeforeStudyAppV3 = _renderView;
     _renderView = function() {
         injectStudyMobileAppStyles();
         upgradeNavbarSearchButtonLogo();
@@ -7194,7 +7738,7 @@ async function handleLiveSearch() {
 
         document.body.classList.remove('mcqs-study-app-active');
         if (saState.carouselTimer) clearInterval(saState.carouselTimer);
-        _origRenderViewBeforeStudyApp();
+        _origRenderViewBeforeStudyAppV3();
         repairAndEnhanceMobileAppDock();
     };
 
