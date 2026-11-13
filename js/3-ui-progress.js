@@ -5935,3 +5935,1180 @@ async function handleLiveSearch() {
         }, 120);
     }
 })();
+
+// ==========================================
+// 8. INSTALLED MOBILE APP EXCLUSIVE: GOOGLE PLAY STORE UI, CONTINUOUS EXAM CAROUSEL,
+//    3-ROW SWIPEABLE SHELVES, OFFLINE MCQ VAULT, 60s BLITZ & DAILY GOAL RING
+// (Strictly Scoped to Installed Mobile PWA • Zero Impact on PC or Mobile Website)
+// ==========================================
+(function initPlayStoreInstalledMobileAppV1() {
+    if (window._mcqsPlayStoreMobileAppLoadedV1) return;
+    window._mcqsPlayStoreMobileAppLoadedV1 = true;
+
+    // Strictly detects Installed Mobile PWA (Standalone/Fullscreen on mobile viewport)
+    function isInstalledMobileAppMode() {
+        const isStandalone = document.documentElement.classList.contains('is-standalone-pwa') ||
+                             window.matchMedia('(display-mode: standalone)').matches ||
+                             window.matchMedia('(display-mode: fullscreen)').matches ||
+                             window.navigator.standalone === true ||
+                             document.referrer.indexOf('android-app://') !== -1 ||
+                             localStorage.getItem('mcqs_preview_mobile_app_ui') === 'true';
+        return isStandalone && window.innerWidth <= 860;
+    }
+
+    function injectPlayStoreMobileAppStyles() {
+        if (document.getElementById('mcqs-playstore-mobile-app-styles')) return;
+        const st = document.createElement('style');
+        st.id = 'mcqs-playstore-mobile-app-styles';
+        st.textContent = `
+            /* ==========================================
+               PLAY STORE INSTALLED MOBILE APP THEME
+               ========================================== */
+            body.mcqs-playstore-app-active {
+                background-color: #0b0e14 !important;
+            }
+            body.mcqs-playstore-app-active .container {
+                padding: 0 0 105px 0 !important;
+                max-width: 100vw !important;
+            }
+            body.mcqs-playstore-app-active #breadcrumb-text {
+                display: none !important;
+            }
+
+            /* 1. Play Store Top Horizontal Filter Chips */
+            .ps-top-chips-bar {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                overflow-x: auto;
+                padding: 10px 16px 12px 16px;
+                background: #0b0e14;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+                scrollbar-width: none;
+                -webkit-overflow-scrolling: touch;
+            }
+            .ps-top-chips-bar::-webkit-scrollbar { display: none; }
+            .ps-filter-chip {
+                background: #1b202c;
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                color: #e2e8f0;
+                padding: 8px 15px;
+                border-radius: 999px;
+                font-size: 13px;
+                font-weight: 700;
+                white-space: nowrap;
+                display: inline-flex;
+                align-items: center;
+                gap: 7px;
+                cursor: pointer;
+                flex-shrink: 0;
+                transition: all 0.2s ease;
+            }
+            .ps-filter-chip.active {
+                background: #a8c7fa;
+                color: #062e6f;
+                border-color: #a8c7fa;
+                font-weight: 800;
+                box-shadow: 0 4px 14px rgba(168, 199, 250, 0.28);
+            }
+
+            /* 2. Play Store Continuous Hero Spotlight Carousel (88% Peeking Cards) */
+            .ps-hero-carousel-wrap {
+                position: relative;
+                padding: 14px 0 8px 0;
+            }
+            .ps-hero-carousel-track {
+                display: flex;
+                gap: 14px;
+                overflow-x: auto;
+                scroll-snap-type: x mandatory;
+                scroll-behavior: smooth;
+                padding: 0 16px 10px 16px;
+                scrollbar-width: none;
+                -webkit-overflow-scrolling: touch;
+            }
+            .ps-hero-carousel-track::-webkit-scrollbar { display: none; }
+            .ps-hero-slide {
+                flex: 0 0 88%;
+                max-width: 88%;
+                scroll-snap-align: center;
+                display: flex;
+                flex-direction: column;
+                gap: 12px;
+                cursor: pointer;
+                user-select: none;
+            }
+            .ps-hero-artwork-card {
+                position: relative;
+                height: 205px;
+                border-radius: 18px;
+                overflow: hidden;
+                padding: 18px;
+                display: flex;
+                flex-direction: column;
+                justify-content: space-between;
+                border: 1px solid var(--ps-accent-border, rgba(255, 255, 255, 0.16));
+                background: var(--ps-hero-bg, linear-gradient(135deg, #1e1b4b, #0f172a));
+                box-shadow: 0 14px 32px rgba(0, 0, 0, 0.65);
+            }
+            .ps-hero-sim-wave {
+                position: absolute;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                height: 95px;
+                pointer-events: none;
+                opacity: 0.85;
+            }
+            .ps-hero-orb {
+                position: absolute;
+                top: -25px;
+                right: -25px;
+                width: 140px;
+                height: 140px;
+                border-radius: 50%;
+                background: var(--ps-orb-color, rgba(253, 184, 19, 0.28));
+                filter: blur(22px);
+                pointer-events: none;
+                animation: psOrbFloat 3.6s ease-in-out infinite alternate;
+            }
+            .ps-hero-bottom-meta {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 12px;
+                padding: 2px 4px;
+            }
+            .ps-hero-app-icon {
+                width: 52px;
+                height: 52px;
+                border-radius: 14px;
+                background: var(--ps-icon-bg, #1e293b);
+                border: 1.5px solid var(--ps-accent-border, rgba(255,255,255,0.2));
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 26px;
+                flex-shrink: 0;
+                box-shadow: 0 6px 16px rgba(0, 0, 0, 0.5);
+            }
+            .ps-try-btn {
+                background: #a8c7fa;
+                color: #062e6f;
+                border: none;
+                padding: 9px 22px;
+                border-radius: 999px;
+                font-size: 13.5px;
+                font-weight: 800;
+                cursor: pointer;
+                flex-shrink: 0;
+                box-shadow: 0 4px 12px rgba(168, 199, 250, 0.25);
+            }
+            .ps-carousel-dots {
+                display: flex;
+                justify-content: center;
+                gap: 6px;
+                margin-top: 2px;
+            }
+            .ps-carousel-dot {
+                width: 6px;
+                height: 6px;
+                border-radius: 999px;
+                background: rgba(255, 255, 255, 0.22);
+                transition: all 0.25s ease;
+            }
+            .ps-carousel-dot.active {
+                width: 18px;
+                background: #a8c7fa;
+            }
+
+            /* 3. Play Store Section Headers */
+            .ps-shelf-section {
+                margin-top: 18px;
+            }
+            .ps-shelf-header {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                padding: 0 16px;
+                margin-bottom: 12px;
+            }
+            .ps-shelf-title {
+                font-size: 17.5px;
+                font-weight: 800;
+                color: #f1f5f9;
+                margin: 0;
+                letter-spacing: -0.2px;
+            }
+            .ps-shelf-arrow-btn {
+                width: 32px;
+                height: 32px;
+                border-radius: 50%;
+                background: #1b202c;
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                color: #e2e8f0;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 15px;
+                cursor: pointer;
+            }
+
+            /* 4. Play Store "Suggested for You" 3-Row Stacked Horizontal Shelf */
+            .ps-triple-stack-track {
+                display: flex;
+                gap: 14px;
+                overflow-x: auto;
+                scroll-snap-type: x mandatory;
+                padding: 0 16px 8px 16px;
+                scrollbar-width: none;
+                -webkit-overflow-scrolling: touch;
+            }
+            .ps-triple-stack-track::-webkit-scrollbar { display: none; }
+            .ps-triple-column {
+                flex: 0 0 86%;
+                max-width: 86%;
+                scroll-snap-align: start;
+                display: flex;
+                flex-direction: column;
+                gap: 14px;
+            }
+            .ps-app-list-row {
+                display: flex;
+                align-items: center;
+                gap: 14px;
+                cursor: pointer;
+                padding: 4px 2px;
+                border-radius: 12px;
+                transition: background 0.15s ease;
+            }
+            .ps-app-list-row:active {
+                background: rgba(255, 255, 255, 0.06);
+            }
+            .ps-row-squircle {
+                width: 58px;
+                height: 58px;
+                border-radius: 15px;
+                background: var(--row-bg, #1e293b);
+                border: 1.5px solid var(--row-border, rgba(255, 255, 255, 0.18));
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 26px;
+                flex-shrink: 0;
+                box-shadow: 0 6px 16px rgba(0, 0, 0, 0.45);
+            }
+            .ps-row-info {
+                flex: 1;
+                min-width: 0;
+            }
+            .ps-row-title {
+                font-size: 15px;
+                font-weight: 700;
+                color: #f8fafc;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+                margin-bottom: 3px;
+            }
+            .ps-row-sub {
+                font-size: 12px;
+                color: #94a3b8;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+                margin-bottom: 4px;
+            }
+            .ps-row-meta {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                font-size: 11.5px;
+                color: #cbd5e1;
+                font-weight: 600;
+            }
+
+            /* 5. Play Store Horizontal Feature Cards Shelf ("Recommended for you") */
+            .ps-horiz-cards-track {
+                display: flex;
+                gap: 12px;
+                overflow-x: auto;
+                scroll-snap-type: x mandatory;
+                padding: 0 16px 10px 16px;
+                scrollbar-width: none;
+                -webkit-overflow-scrolling: touch;
+            }
+            .ps-horiz-cards-track::-webkit-scrollbar { display: none; }
+            .ps-feature-media-card {
+                flex: 0 0 74%;
+                max-width: 74%;
+                scroll-snap-align: start;
+                background: #141824;
+                border: 1px solid rgba(255, 255, 255, 0.09);
+                border-radius: 16px;
+                padding: 14px;
+                display: flex;
+                flex-direction: column;
+                justify-content: space-between;
+                gap: 12px;
+                cursor: pointer;
+                box-shadow: 0 10px 24px rgba(0, 0, 0, 0.5);
+            }
+
+            /* 6. App-Exclusive Power Hub Cards (Offline Vault, 60s Blitz, Daily Ring) */
+            .ps-exclusive-strip {
+                display: flex;
+                gap: 12px;
+                overflow-x: auto;
+                scroll-snap-type: x mandatory;
+                padding: 0 16px 10px 16px;
+                scrollbar-width: none;
+                -webkit-overflow-scrolling: touch;
+            }
+            .ps-exclusive-strip::-webkit-scrollbar { display: none; }
+            .ps-exclusive-card {
+                flex: 0 0 85%;
+                max-width: 85%;
+                scroll-snap-align: start;
+                background: linear-gradient(150deg, #161c2e 0%, #0e1320 100%);
+                border: 1.5px solid var(--exc-border, rgba(168, 199, 250, 0.35));
+                border-radius: 18px;
+                padding: 16px;
+                box-shadow: 0 12px 28px rgba(0, 0, 0, 0.6);
+                display: flex;
+                flex-direction: column;
+                justify-content: space-between;
+                gap: 12px;
+            }
+
+            /* 7. Play Store Styled Bottom Navigation Bar (#mobileAppDock) */
+            body.mcqs-playstore-app-active #mobileAppDock {
+                background: #13161f !important;
+                border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
+                height: 66px !important;
+                padding: 6px 8px max(6px, env(safe-area-inset-bottom)) 8px !important;
+                border-radius: 0 !important;
+                bottom: 0 !important;
+                left: 0 !important;
+                right: 0 !important;
+                width: 100vw !important;
+                max-width: 100vw !important;
+                box-shadow: 0 -8px 25px rgba(0, 0, 0, 0.7) !important;
+            }
+            body.mcqs-playstore-app-active #mobileAppDock .app-tab {
+                position: relative;
+                display: flex !important;
+                flex-direction: column !important;
+                align-items: center !important;
+                justify-content: center !important;
+                gap: 3px !important;
+            }
+            body.mcqs-playstore-app-active #mobileAppDock .app-tab:not(.ai-tab-inner) .app-tab-icon {
+                padding: 3px 18px !important;
+                border-radius: 999px !important;
+                transition: background 0.2s ease !important;
+            }
+            body.mcqs-playstore-app-active #mobileAppDock .app-tab.active:not(.ai-tab-inner) .app-tab-icon {
+                background: rgba(168, 199, 250, 0.22) !important;
+            }
+            body.mcqs-playstore-app-active #mobileAppDock .app-tab.active:not(.ai-tab-inner) .app-tab-icon svg {
+                fill: #a8c7fa !important;
+            }
+            body.mcqs-playstore-app-active #mobileAppDock .app-tab.active:not(.ai-tab-inner) .app-tab-label {
+                color: #a8c7fa !important;
+                font-weight: 800 !important;
+            }
+
+            @keyframes psOrbFloat {
+                0% { transform: translate(0, 0) scale(0.95); }
+                100% { transform: translate(-14px, 12px) scale(1.1); }
+            }
+        `;
+        document.head.appendChild(st);
+    }
+
+    // ==========================================
+    // STATE FOR PLAY STORE MOBILE APP
+    // ==========================================
+    var psAppState = {
+        selectedCategory: 'ALL',
+        activeSlideIdx: 0,
+        carouselTimer: null,
+        isTouchingCarousel: false,
+        dailyGoalTarget: Number(localStorage.getItem('mcqs_app_daily_goal_v1') || 30),
+        offlinePackCount: 0,
+        blitzBestScore: Number(localStorage.getItem('mcqs_app_blitz_best_v1') || 0)
+    };
+
+    function getOfflineVaultQuestions() {
+        try {
+            const raw = localStorage.getItem('mcqs_offline_vault_mcqs_v1');
+            return raw ? JSON.parse(raw) : [];
+        } catch (e) {
+            return [];
+        }
+    }
+
+    function getActiveExamCategoriesForApp() {
+        const deletedSet = new Set((typeof topicOverrides !== 'undefined' && topicOverrides && topicOverrides.deletedPaths) || []);
+        const keys = new Set(Object.keys(typeof appData !== 'undefined' ? appData : {}));
+        if (typeof customTopicTypes !== 'undefined') {
+            Object.keys(customTopicTypes).forEach(dbKey => {
+                if (deletedSet.has(dbKey)) return;
+                const root = dbKey.split(' > ')[0];
+                if (root && !deletedSet.has(root)) keys.add(root);
+            });
+        }
+        return Array.from(keys).filter(k => k && k !== 'Daily Quiz Challenge' && !deletedSet.has(k));
+    }
+
+    function getDirectChildFolders(pathArr) {
+        const deletedSet = new Set((typeof topicOverrides !== 'undefined' && topicOverrides && topicOverrides.deletedPaths) || []);
+        const fullPrefix = pathArr.join(' > ');
+        let currNode = typeof appData !== 'undefined' ? appData : {};
+        for (let seg of pathArr) {
+            if (currNode && typeof currNode === 'object' && currNode[seg] !== undefined) {
+                currNode = currNode[seg];
+            } else {
+                currNode = null;
+                break;
+            }
+        }
+        const childSet = new Set();
+        if (currNode && typeof currNode === 'object' && !Array.isArray(currNode)) {
+            Object.keys(currNode).forEach(k => {
+                const candidateFull = fullPrefix ? `${fullPrefix} > ${k}` : k;
+                if (!deletedSet.has(candidateFull)) childSet.add(k);
+            });
+        }
+        if (typeof customTopicTypes !== 'undefined') {
+            const prefixWithArrow = fullPrefix ? (fullPrefix + ' > ') : '';
+            Object.keys(customTopicTypes).forEach(dbKey => {
+                if (deletedSet.has(dbKey)) return;
+                if (!fullPrefix) {
+                    const rootSeg = dbKey.split(' > ')[0];
+                    if (rootSeg && !deletedSet.has(rootSeg)) childSet.add(rootSeg);
+                } else if (dbKey.startsWith(prefixWithArrow)) {
+                    const nextSeg = dbKey.slice(prefixWithArrow.length).split(' > ')[0];
+                    const nextFull = `${fullPrefix} > ${nextSeg}`;
+                    if (nextSeg && !deletedSet.has(nextFull)) childSet.add(nextSeg);
+                }
+            });
+        }
+        return Array.from(childSet);
+    }
+
+    // Generates rich Play Store banner copy & artwork theme for ANY current or future Exam Category
+    function getPlayStoreBannerMetaForExam(examKey, idx) {
+        const clean = formatCleanTopicTitle(examKey);
+        const lower = clean.toLowerCase();
+        const tMeta = (typeof customTopicTypes !== 'undefined' && customTopicTypes[examKey]) || null;
+        const cIcon = tMeta ? tMeta.icon : null;
+        const th = getAutoTopicTheme(clean, cIcon, idx, null, '📘', null, examKey);
+
+        const bannerGradients = [
+            'linear-gradient(135deg, #2e1065 0%, #0f172a 55%, #064e3b 100%)',
+            'linear-gradient(135deg, #0c4a6e 0%, #0f172a 55%, #3b0764 100%)',
+            'linear-gradient(135deg, #4c0519 0%, #111827 55%, #1e3a8a 100%)',
+            'linear-gradient(135deg, #14532d 0%, #0f172a 55%, #7c2d12 100%)',
+            'linear-gradient(135deg, #312e81 0%, #090d16 55%, #701a75 100%)'
+        ];
+
+        let headline = `Master ${clean} Line-by-Line MCQs & Mock Series`;
+        let tagLine = 'NCERT • PYQs • 4-Tier Difficulty';
+        if (lower.includes('neet')) {
+            headline = 'Crack NEET-UG with NCERT Line-by-Line & Diagram MCQs';
+            tagLine = 'Biology • Chemistry • Physics • 180-Q Mock';
+        } else if (lower.includes('jee')) {
+            headline = 'Master JEE Main Physics, Chemistry & Calculus Problems';
+            tagLine = 'PYQ Archives • Formula Sheets • Speed Tests';
+        } else if (lower.includes('board')) {
+            headline = 'Score 95%+ in Class 9–12 State & Central Board Exams';
+            tagLine = 'CBSE • AHSEC • SEBA • Chapter-Wise Banks';
+        } else if (lower.includes('general') || lower.includes('gk')) {
+            headline = 'Conquer Competitive GK, Indian Polity, History & Science';
+            tagLine = 'Current Affairs • Static GK • Exam PYQs';
+        }
+
+        return {
+            cleanName: clean,
+            icon: th.i === 'NONE' ? '📘' : th.i,
+            color: th.c,
+            bg: th.bg,
+            border: th.border,
+            heroGrad: bannerGradients[idx % bannerGradients.length],
+            headline,
+            tagLine
+        };
+    }
+
+    // Collects all swipeable modules & subtopics for the selected category (or all categories)
+    function collectPlayStoreModulesForCategory(selectedCat) {
+        const exams = getActiveExamCategoriesForApp();
+        const targetExams = (selectedCat && selectedCat !== 'ALL') ? [selectedCat] : exams;
+        const items = [];
+        let colorCounter = 0;
+
+        targetExams.forEach(exKey => {
+            const cleanEx = formatCleanTopicTitle(exKey);
+            const directChildren = getDirectChildFolders([exKey]);
+
+            directChildren.forEach(childKey => {
+                const fullPath = `${exKey} > ${childKey}`;
+                const cleanChild = formatCleanTopicTitle(childKey);
+                const tMeta = (typeof customTopicTypes !== 'undefined' && customTopicTypes[fullPath]) || null;
+                const cIcon = tMeta ? tMeta.icon : null;
+                const th = getAutoTopicTheme(cleanChild, cIcon, colorCounter++, null, '📘', null, fullPath);
+                const grandChildren = getDirectChildFolders([exKey, childKey]);
+
+                items.push({
+                    title: `${cleanChild} (${cleanEx})`,
+                    shortTitle: cleanChild,
+                    examName: cleanEx,
+                    subtitle: grandChildren.length > 0
+                        ? `${cleanEx} • ${grandChildren.slice(0, 3).map(g => formatCleanTopicTitle(g)).join(' • ')}`
+                        : `${cleanEx} • Full Practice Suite`,
+                    badge: grandChildren.length > 0 ? `${grandChildren.length} Modules` : 'Instant Launch',
+                    icon: th.i === 'NONE' ? '📘' : th.i,
+                    color: th.c,
+                    bg: th.bg,
+                    border: th.border,
+                    pathArr: [exKey, childKey]
+                });
+
+                // Also add 2nd-level subjects (e.g., Botany, Zoology, Physics, Class 11, Class 12) so the shelf is rich!
+                grandChildren.slice(0, 6).forEach(gKey => {
+                    const gFull = `${fullPath} > ${gKey}`;
+                    const cleanG = formatCleanTopicTitle(gKey);
+                    const gMeta = (typeof customTopicTypes !== 'undefined' && customTopicTypes[gFull]) || null;
+                    const gTh = getAutoTopicTheme(cleanG, gMeta?.icon || null, colorCounter++, null, '📘', null, gFull);
+                    const leafChildren = getDirectChildFolders([exKey, childKey, gKey]);
+
+                    items.push({
+                        title: `${cleanG} — ${cleanEx}`,
+                        shortTitle: cleanG,
+                        examName: cleanEx,
+                        subtitle: `${cleanEx} › ${cleanChild} • ${leafChildren.length > 0 ? `${leafChildren.length} Chapters` : 'MCQs & PDFs'}`,
+                        badge: leafChildren.length > 0 ? `${leafChildren.length} Topics` : '4.9 ★',
+                        icon: gTh.i === 'NONE' ? '📘' : gTh.i,
+                        color: gTh.c,
+                        bg: gTh.bg,
+                        border: gTh.border,
+                        pathArr: [exKey, childKey, gKey]
+                    });
+                });
+            });
+        });
+
+        return items;
+    }
+
+    // ==========================================
+    // CONTINUOUS HERO CAROUSEL CONTROLLER (AUTO-SLIDES LEFT TO RIGHT + PAUSES ON TOUCH)
+    // ==========================================
+    function startContinuousHeroCarousel() {
+        if (psAppState.carouselTimer) clearInterval(psAppState.carouselTimer);
+        psAppState.carouselTimer = setInterval(() => {
+            if (psAppState.isTouchingCarousel) return;
+            const track = document.getElementById('psHeroCarouselTrack');
+            if (!track) return;
+            const slides = track.querySelectorAll('.ps-hero-slide');
+            if (slides.length <= 1) return;
+
+            psAppState.activeSlideIdx = (psAppState.activeSlideIdx + 1) % slides.length;
+            const targetSlide = slides[psAppState.activeSlideIdx];
+            if (targetSlide) {
+                const scrollTarget = targetSlide.offsetLeft - 16;
+                track.scrollTo({ left: scrollTarget, behavior: 'smooth' });
+            }
+            updateCarouselDotsUI(psAppState.activeSlideIdx);
+        }, 3400);
+    }
+
+    function updateCarouselDotsUI(activeIdx) {
+        const dots = document.querySelectorAll('.ps-carousel-dot');
+        dots.forEach((d, i) => d.classList.toggle('active', i === activeIdx));
+    }
+
+    window.psSelectFilterCategory = function(catKey) {
+        psAppState.selectedCategory = catKey;
+        renderPlayStoreMobileAppHome();
+    };
+
+    window.psJumpToPathEncoded = function(encodedJsonArr) {
+        try {
+            const arr = JSON.parse(decodeURIComponent(encodedJsonArr));
+            if (Array.isArray(arr) && arr.length > 0) {
+                jumpToSection(arr);
+            }
+        } catch (e) {}
+    };
+
+    // ==========================================
+    // APP-EXCLUSIVE SUPERPOWER 1: OFFLINE QUESTION PACK VAULT (PRACTICE WITHOUT INTERNET!)
+    // ==========================================
+    window.downloadAppOfflineQuestionPack = async function() {
+        const exams = getActiveExamCategoriesForApp();
+        const targetExam = (psAppState.selectedCategory && psAppState.selectedCategory !== 'ALL')
+            ? psAppState.selectedCategory
+            : (exams[0] || 'NEET');
+        const cleanEx = formatCleanTopicTitle(targetExam);
+
+        const btn = document.getElementById('btnDownloadOfflinePack');
+        if (btn) { btn.disabled = true; btn.innerText = '⏳ Caching Pack...'; }
+
+        try {
+            if (typeof db === 'undefined') throw new Error('Database not connected');
+            const snap = await db.collection('content')
+                .where('path', '>=', targetExam)
+                .where('path', '<=', targetExam + '\uf8ff')
+                .limit(65)
+                .get();
+
+            const pack = [];
+            snap.forEach(doc => {
+                const d = doc.data();
+                if ((!d.type || d.type === 'mcq') && d.question && d.options && d.options.A) {
+                    pack.push({ id: doc.id, ...d });
+                }
+            });
+
+            if (pack.length === 0) {
+                showNotification(`⚠️ No MCQs found in ${cleanEx} to cache yet.`);
+            } else {
+                localStorage.setItem('mcqs_offline_vault_mcqs_v1', JSON.stringify(pack.slice(0, 60)));
+                localStorage.setItem('mcqs_offline_vault_exam_v1', cleanEx);
+                showNotification(`📴 Cached ${Math.min(60, pack.length)} ${cleanEx} MCQs for Offline Practice!`);
+                renderPlayStoreMobileAppHome();
+            }
+        } catch (e) {
+            showNotification('⚠️ Connect to internet once to download Offline Pack.');
+        } finally {
+            if (btn) { btn.disabled = false; btn.innerText = '⬇️ Sync Offline Pack'; }
+        }
+    };
+
+    window.launchAppOfflineVaultQuiz = function() {
+        const pack = getOfflineVaultQuestions();
+        const savedExam = localStorage.getItem('mcqs_offline_vault_exam_v1') || 'Offline Vault';
+        if (!pack.length) {
+            window.downloadAppOfflineQuestionPack();
+            return;
+        }
+        const shuffled = [...pack].sort(() => Math.random() - 0.5).slice(0, 25);
+        document.body.classList.add('hide-ai-btn');
+        document.body.classList.add('mcqs-quiz-screen-active');
+        document.body.classList.add('hide-bottom-bar');
+
+        currentQuestions = shuffled;
+        currentQuizPath = `${savedExam} > 📴 Offline App Vault`;
+        currentIndex = 0;
+        userAnswers = {};
+        timeSpent = {};
+        window.location.hash = '#/quiz';
+        setTimeout(() => {
+            if (typeof renderQuizInterface === 'function') renderQuizInterface();
+            if (typeof startQuestionTimer === 'function') startQuestionTimer();
+        }, 60);
+    };
+
+    // ==========================================
+    // APP-EXCLUSIVE SUPERPOWER 2: 60-SECOND RAPID BLITZ MINI-GAME MODAL
+    // ==========================================
+    var blitzState = {
+        questions: [],
+        idx: 0,
+        score: 0,
+        streak: 0,
+        timeLeft: 60,
+        timer: null
+    };
+
+    window.openAppRapidBlitzModal = async function() {
+        let pool = getOfflineVaultQuestions();
+        const exams = getActiveExamCategoriesForApp();
+        const targetExam = (psAppState.selectedCategory && psAppState.selectedCategory !== 'ALL')
+            ? psAppState.selectedCategory
+            : (exams[0] || 'NEET');
+
+        if (pool.length < 10 && typeof db !== 'undefined') {
+            try {
+                const snap = await db.collection('content')
+                    .where('path', '>=', targetExam)
+                    .where('path', '<=', targetExam + '\uf8ff')
+                    .limit(35)
+                    .get();
+                snap.forEach(doc => {
+                    const d = doc.data();
+                    if ((!d.type || d.type === 'mcq') && d.question && d.options && d.options.A) {
+                        pool.push({ id: doc.id, ...d });
+                    }
+                });
+            } catch (e) {}
+        }
+
+        if (pool.length === 0) {
+            showNotification('⚠️ Open an exam category first to load questions!');
+            return;
+        }
+
+        blitzState.questions = [...pool].sort(() => Math.random() - 0.5);
+        blitzState.idx = 0;
+        blitzState.score = 0;
+        blitzState.streak = 0;
+        blitzState.timeLeft = 60;
+
+        let modal = document.getElementById('psRapidBlitzModal');
+        if (!modal) {
+            modal = document.createElement('div');
+            modal.id = 'psRapidBlitzModal';
+            modal.style.cssText = 'position:fixed; inset:0; background:rgba(6,9,17,0.97); z-index:99999; display:flex; flex-direction:column; justify-content:space-between; padding:18px; box-sizing:border-box;';
+            document.body.appendChild(modal);
+        }
+        modal.style.display = 'flex';
+        renderBlitzQuestionFrame();
+
+        if (blitzState.timer) clearInterval(blitzState.timer);
+        blitzState.timer = setInterval(() => {
+            blitzState.timeLeft--;
+            const tEl = document.getElementById('psBlitzTimerBadge');
+            if (tEl) tEl.innerText = `⏱️ ${blitzState.timeLeft}s`;
+            if (blitzState.timeLeft <= 0) {
+                finishAppRapidBlitz();
+            }
+        }, 1000);
+    };
+
+    window.closeAppRapidBlitzModal = function() {
+        if (blitzState.timer) clearInterval(blitzState.timer);
+        const modal = document.getElementById('psRapidBlitzModal');
+        if (modal) modal.style.display = 'none';
+        renderPlayStoreMobileAppHome();
+    };
+
+    function finishAppRapidBlitz() {
+        if (blitzState.timer) clearInterval(blitzState.timer);
+        if (blitzState.score > psAppState.blitzBestScore) {
+            psAppState.blitzBestScore = blitzState.score;
+            localStorage.setItem('mcqs_app_blitz_best_v1', String(blitzState.score));
+        }
+        const modal = document.getElementById('psRapidBlitzModal');
+        if (!modal) return;
+        modal.innerHTML = `
+            <div style="margin:auto; text-align:center; max-width:340px; background:#141a29; border:1.5px solid #fdb813; border-radius:20px; padding:28px 20px;">
+                <div style="font-size:48px; margin-bottom:8px;">⚡</div>
+                <h2 style="margin:0 0 6px 0; color:#fff; font-size:22px; font-weight:900;">60s Blitz Complete!</h2>
+                <div style="font-size:36px; font-weight:900; color:#fdb813; margin:10px 0;">${blitzState.score} pts</div>
+                <div style="font-size:13px; color:#94a3b8; margin-bottom:20px;">Personal Best in App: <b style="color:#10b981;">${psAppState.blitzBestScore} pts</b></div>
+                <div style="display:flex; gap:10px;">
+                    <button type="button" onclick="openAppRapidBlitzModal()" style="flex:1; background:#fdb813; color:#000; border:none; padding:11px; border-radius:999px; font-weight:900; font-size:13px;">🔄 Play Again</button>
+                    <button type="button" onclick="closeAppRapidBlitzModal()" style="flex:1; background:#1e293b; color:#fff; border:none; padding:11px; border-radius:999px; font-weight:800; font-size:13px;">✕ Done</button>
+                </div>
+            </div>
+        `;
+    }
+
+    window.answerBlitzOption = function(letter) {
+        const q = blitzState.questions[blitzState.idx % blitzState.questions.length];
+        const corr = Array.isArray(q.correctAnswers) ? q.correctAnswers : ['A'];
+        if (corr.includes(letter)) {
+            blitzState.streak++;
+            const mult = blitzState.streak >= 3 ? 2 : 1;
+            blitzState.score += (10 * mult);
+        } else {
+            blitzState.streak = 0;
+            blitzState.score = Math.max(0, blitzState.score - 2);
+        }
+        blitzState.idx++;
+        renderBlitzQuestionFrame();
+    };
+
+    function renderBlitzQuestionFrame() {
+        const modal = document.getElementById('psRapidBlitzModal');
+        if (!modal) return;
+        const q = blitzState.questions[blitzState.idx % blitzState.questions.length];
+        const multBadge = blitzState.streak >= 3 ? `<span style="background:#f59e0b; color:#000; padding:3px 9px; border-radius:999px; font-size:11px; font-weight:900;">🔥 2x COMBO</span>` : '';
+
+        modal.innerHTML = `
+            <div style="display:flex; justify-content:space-between; align-items:center; padding-bottom:12px; border-bottom:1px solid rgba(255,255,255,0.1);">
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <span id="psBlitzTimerBadge" style="background:#ef4444; color:#fff; padding:5px 12px; border-radius:999px; font-size:13px; font-weight:900;">⏱️ ${blitzState.timeLeft}s</span>
+                    <span style="color:#fdb813; font-size:15px; font-weight:900;">⚡ ${blitzState.score} pts</span>
+                    ${multBadge}
+                </div>
+                <button type="button" onclick="closeAppRapidBlitzModal()" style="background:rgba(255,255,255,0.1); color:#fff; border:none; width:34px; height:34px; border-radius:50%; font-size:16px; font-weight:800;">✕</button>
+            </div>
+
+            <div style="my:auto; overflow-y:auto; padding:14px 0;">
+                <div style="font-size:11px; color:#a8c7fa; font-weight:800; text-transform:uppercase; margin-bottom:6px;">App-Exclusive 60s Reflex Sprint • Q#${blitzState.idx + 1}</div>
+                <div style="font-size:15.5px; color:#fff; font-weight:700; line-height:1.5; margin-bottom:16px;">${q.question}</div>
+                <div style="display:flex; flex-direction:column; gap:10px;">
+                    ${['A', 'B', 'C', 'D'].map(letKey => q.options?.[letKey] ? `
+                        <button type="button" onclick="answerBlitzOption('${letKey}')" style="background:#161c2c; border:1.5px solid rgba(168,199,250,0.3); color:#f8fafc; padding:13px 15px; border-radius:14px; text-align:left; font-size:14px; font-weight:600; display:flex; align-items:center; gap:10px;">
+                            <span style="width:26px; height:26px; border-radius:8px; background:rgba(168,199,250,0.18); color:#a8c7fa; display:inline-flex; align-items:center; justify-content:center; font-weight:900; font-size:12px; flex-shrink:0;">${letKey}</span>
+                            <span>${q.options[letKey]}</span>
+                        </button>
+                    ` : '').join('')}
+                </div>
+            </div>
+
+            <div style="text-align:center; font-size:11.5px; color:#64748b;">Tap the fastest correct option • 3 in a row activates 2x Combo!</div>
+        `;
+    }
+
+    // ==========================================
+    // APP-EXCLUSIVE SUPERPOWER 3: DAILY GOAL RING CYCLER
+    // ==========================================
+    window.cycleAppDailyGoalTarget = function() {
+        const targets = [20, 40, 60, 100];
+        const nextIdx = (targets.indexOf(psAppState.dailyGoalTarget) + 1) % targets.length;
+        psAppState.dailyGoalTarget = targets[nextIdx];
+        localStorage.setItem('mcqs_app_daily_goal_v1', String(psAppState.dailyGoalTarget));
+        renderPlayStoreMobileAppHome();
+    };
+
+    // Polish #mobileAppDock labels & saved badge for Installed Mobile App
+    function enhanceMobileAppBottomDock() {
+        if (!isInstalledMobileAppMode()) return;
+        const dock = document.getElementById('mobileAppDock');
+        if (!dock) return;
+        const tabs = dock.querySelectorAll('.app-tab');
+        if (tabs[0]) {
+            const lbl = tabs[0].querySelector('.app-tab-label');
+            if (lbl) lbl.innerText = 'For You';
+        }
+        if (tabs[1]) {
+            const lbl = tabs[1].querySelector('.app-tab-label');
+            if (lbl) lbl.innerText = 'Ranks';
+        }
+        if (tabs[4]) {
+            const lbl = tabs[4].querySelector('.app-tab-label');
+            const bmCnt = Array.isArray(userBookmarks) ? userBookmarks.length : 0;
+            if (lbl) lbl.innerText = bmCnt > 0 ? `Saved (${bmCnt})` : 'Saved';
+        }
+    }
+
+    // ==========================================
+    // MAIN PLAY STORE INSTALLED MOBILE APP RENDERER
+    // ==========================================
+    function renderPlayStoreMobileAppHome() {
+        if (!isInstalledMobileAppMode()) return false;
+        const mc = document.getElementById('dynamic-content');
+        if (!mc) return false;
+
+        document.body.classList.add('mcqs-playstore-app-active');
+        enhanceMobileAppBottomDock();
+
+        const exams = getActiveExamCategoriesForApp();
+        const activeCat = psAppState.selectedCategory || 'ALL';
+
+        // 1. Build Top Play Store Filter Chips (All Exams + Dynamic Exam Categories + Offline Vault + 60s Blitz)
+        const filterChipsHtml = [
+            `<button type="button" class="ps-filter-chip ${activeCat === 'ALL' ? 'active' : ''}" onclick="psSelectFilterCategory('ALL')">🔥 For You (All)</button>`,
+            ...exams.map((exKey, i) => {
+                const meta = getPlayStoreBannerMetaForExam(exKey, i);
+                const safeEx = exKey.replace(/'/g, "\\'");
+                return `<button type="button" class="ps-filter-chip ${activeCat === exKey ? 'active' : ''}" onclick="psSelectFilterCategory('${safeEx}')">${meta.icon} ${meta.cleanName}</button>`;
+            }),
+            `<button type="button" class="ps-filter-chip" onclick="launchAppOfflineVaultQuiz()">📴 Offline Vault</button>`,
+            `<button type="button" class="ps-filter-chip" onclick="openAppRapidBlitzModal()">⚡ 60s Blitz</button>`
+        ].join('');
+
+        // 2. Build Continuous Auto-Sliding Play Store Hero Spotlight Cards (One for every Exam Category + Custom Mock)
+        const heroExamsList = (activeCat !== 'ALL' && exams.includes(activeCat))
+            ? [activeCat, ...exams.filter(e => e !== activeCat)]
+            : exams;
+
+        const heroSlidesHtml = heroExamsList.map((exKey, idx) => {
+            const meta = getPlayStoreBannerMetaForExam(exKey, idx);
+            const encodedExArr = encodeURIComponent(JSON.stringify([exKey]));
+            const directCount = getDirectChildFolders([exKey]).length;
+
+            return `
+                <div class="ps-hero-slide" onclick="psJumpToPathEncoded('${encodedExArr}')">
+                    <div class="ps-hero-artwork-card" style="--ps-hero-bg:${meta.heroGrad}; --ps-accent-border:${meta.border}; --ps-orb-color:${meta.bg};">
+                        <div class="ps-hero-orb"></div>
+
+                        <!-- Animated SVG Simulation Wave Inside Banner -->
+                        <svg class="ps-hero-sim-wave" viewBox="0 0 320 90" preserveAspectRatio="none">
+                            <defs>
+                                <linearGradient id="psWaveGrad_${idx}" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="0%" stop-color="${meta.color}" stop-opacity="0.36"/>
+                                    <stop offset="100%" stop-color="${meta.color}" stop-opacity="0.0"/>
+                                </linearGradient>
+                            </defs>
+                            <path d="M 0 68 Q 75 30, 155 52 T 320 18 L 320 90 L 0 90 Z" fill="url(#psWaveGrad_${idx})"/>
+                            <path d="M 0 68 Q 75 30, 155 52 T 320 18" fill="none" stroke="${meta.color}" stroke-width="2.5" stroke-linecap="round"/>
+                        </svg>
+
+                        <div style="position:relative; z-index:2; display:flex; justify-content:space-between; align-items:center;">
+                            <span style="background:rgba(0,0,0,0.45); backdrop-filter:blur(8px); color:#fff; border:1px solid ${meta.border}; padding:4px 10px; border-radius:999px; font-size:10.5px; font-weight:800; letter-spacing:0.4px;">
+                                ● LIVE EXAM SUITE • ${directCount || 'ALL'} MODULES
+                            </span>
+                            <span style="background:rgba(16,185,129,0.2); color:#10b981; border:1px solid rgba(16,185,129,0.45); padding:3px 9px; border-radius:999px; font-size:10.5px; font-weight:900;">
+                                ✔ +4 / −1 Sim
+                            </span>
+                        </div>
+
+                        <div style="position:relative; z-index:2; margin-top:auto;">
+                            <div style="font-size:11px; color:#cbd5e1; font-weight:700; margin-bottom:4px;">${meta.tagLine}</div>
+                            <h2 style="margin:0; font-size:19px; font-weight:900; color:#ffffff; line-height:1.22; text-shadow:0 4px 14px rgba(0,0,0,0.7);">
+                                ${meta.headline}
+                            </h2>
+                        </div>
+                    </div>
+
+                    <!-- Play Store App Row Underneath Banner -->
+                    <div class="ps-hero-bottom-meta">
+                        <div style="display:flex; align-items:center; gap:12px; min-width:0;">
+                            <div class="ps-hero-app-icon" style="--ps-icon-bg:${meta.bg}; --ps-accent-border:${meta.border}; color:${meta.color};">
+                                ${meta.icon}
+                            </div>
+                            <div style="min-width:0;">
+                                <div style="font-size:15.5px; font-weight:800; color:#f8fafc; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${meta.cleanName} Complete Suite</div>
+                                <div style="font-size:12px; color:#94a3b8; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">MCQs • NCERT PDFs • PYQs • Custom Mock</div>
+                                <div style="font-size:11px; color:#cbd5e1; margin-top:2px; display:flex; align-items:center; gap:6px;">
+                                    <span style="background:#e2e8f0; color:#0f172a; font-weight:900; font-size:9.5px; padding:1px 4px; border-radius:3px;">4 TIERS</span>
+                                    <span>Easy • Medium • Hard • Mixed</span>
+                                </div>
+                            </div>
+                        </div>
+                        <button type="button" class="ps-try-btn">Open</button>
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        const dotsHtml = heroExamsList.map((_, i) => `<span class="ps-carousel-dot ${i === 0 ? 'active' : ''}"></span>`).join('');
+
+        // 3. Build Play Store "Suggested for You" 3-Row Stacked Horizontal Shelf (Grouped in columns of 3)
+        const allModules = collectPlayStoreModulesForCategory(activeCat);
+        const tripleColumns = [];
+        for (let i = 0; i < allModules.length; i += 3) {
+            const slice = allModules.slice(i, i + 3);
+            const rowsHtml = slice.map(item => {
+                const encodedArr = encodeURIComponent(JSON.stringify(item.pathArr));
+                return `
+                    <div class="ps-app-list-row" onclick="psJumpToPathEncoded('${encodedArr}')">
+                        <div class="ps-row-squircle" style="--row-bg:${item.bg}; --row-border:${item.border}; color:${item.color};">
+                            ${item.icon}
+                        </div>
+                        <div class="ps-row-info">
+                            <div class="ps-row-title">${item.title}</div>
+                            <div class="ps-row-sub">${item.subtitle}</div>
+                            <div class="ps-row-meta">
+                                <span>5.0 ★</span>
+                                <span style="color:${item.color}; font-weight:800;">● ${item.badge}</span>
+                            </div>
+                        </div>
+                        <span style="color:#94a3b8; font-size:18px; font-weight:700; padding-left:4px;">›</span>
+                    </div>
+                `;
+            }).join('');
+            tripleColumns.push(`<div class="ps-triple-column">${rowsHtml}</div>`);
+        }
+
+        // 4. Build App-Exclusive Superpowers Strip (Only in Installed Mobile App!)
+        const offlineCached = getOfflineVaultQuestions();
+        const cachedExamName = localStorage.getItem('mcqs_offline_vault_exam_v1') || formatCleanTopicTitle(exams[0] || 'NEET');
+
+        // Calculate today's solved MCQs for the Daily Goal Ring
+        let todaySolved = 0;
+        try {
+            const uid = (typeof currentUser !== 'undefined' && currentUser && currentUser.uid) ? currentUser.uid : 'guest';
+            const localMap = JSON.parse(localStorage.getItem(`mcqsprep_topic_progress_v2_${uid}`) || '{}');
+            Object.values(localMap).forEach(rec => {
+                if (rec && Array.isArray(rec.correctIds)) todaySolved += rec.correctIds.length;
+                if (rec && Array.isArray(rec.wrongIds)) todaySolved += rec.wrongIds.length;
+            });
+        } catch (e) {}
+        const ringPct = Math.min(100, Math.round((todaySolved / Math.max(1, psAppState.dailyGoalTarget)) * 100));
+        const ringDash = Math.round((ringPct / 100) * 138);
+
+        // 5. Build "Recommended Quick Practice & Library" Horizontal Shelf
+        const quickLinksList = (window.sidebarConfig && Array.isArray(window.sidebarConfig.quickLinks)) ? window.sidebarConfig.quickLinks : [];
+        const essentialList = (window.sidebarConfig && Array.isArray(window.sidebarConfig.essentialPractice)) ? window.sidebarConfig.essentialPractice : [];
+        const combinedQuick = [
+            { title: 'Daily Quiz Challenge', path: 'Daily Quiz Challenge', icon: '📅', sub: 'Build Your Daily Streak' },
+            ...quickLinksList.map(q => ({ title: q.title || q.path.split(' > ').pop(), path: q.path, icon: q.icon || '📚', sub: 'Quick Resource Access' })),
+            ...essentialList.filter(e => e.path !== 'Daily Quiz Challenge').map(e => ({ title: e.title || e.path.split(' > ').pop(), path: e.path, icon: e.icon || '📝', sub: 'Essential Exam Practice' }))
+        ];
+
+        const horizCardsHtml = combinedQuick.map((item, idx) => {
+            const cleanT = formatCleanTopicTitle(item.title);
+            const th = getAutoTopicTheme(cleanT, item.icon, idx, null, '📘', null, item.path);
+            const encodedPath = encodeURIComponent(item.path);
+            return `
+                <div class="ps-feature-media-card" onclick="openSidebarItem('${encodedPath}')">
+                    <div style="height:88px; border-radius:12px; background:linear-gradient(135deg, ${th.bg}, #0b0f19); border:1px solid ${th.border}; padding:12px; display:flex; align-items:flex-end; justify-content:space-between; position:relative; overflow:hidden;">
+                        <span style="font-size:38px; filter:drop-shadow(0 4px 10px rgba(0,0,0,0.5));">${th.i}</span>
+                        <span style="background:rgba(0,0,0,0.55); color:${th.c}; border:1px solid ${th.border}; padding:3px 9px; border-radius:999px; font-size:10px; font-weight:800;">OPEN NOW</span>
+                    </div>
+                    <div style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
+                        <div style="min-width:0;">
+                            <div style="font-size:14px; font-weight:800; color:#fff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${cleanT}</div>
+                            <div style="font-size:11.5px; color:#94a3b8; margin-top:2px;">${item.sub}</div>
+                        </div>
+                        <span style="color:${th.c}; font-weight:900; font-size:16px;">&rarr;</span>
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        const activeCatLabel = activeCat === 'ALL' ? 'Suggested for You' : `${formatCleanTopicTitle(activeCat)} • Modules & Subjects`;
+
+        mc.innerHTML = `
+            <div class="page-transition">
+                <!-- 1. PLAY STORE TOP FILTER CHIPS -->
+                <div class="ps-top-chips-bar">${filterChipsHtml}</div>
+
+                <!-- 2. PLAY STORE CONTINUOUS AUTO-SLIDING HERO SPOTLIGHT CAROUSEL -->
+                <div class="ps-hero-carousel-wrap">
+                    <div class="ps-hero-carousel-track" id="psHeroCarouselTrack">
+                        ${heroSlidesHtml}
+                    </div>
+                    <div class="ps-carousel-dots">${dotsHtml}</div>
+                </div>
+
+                <!-- 3. PLAY STORE 3-ROW STACKED HORIZONTAL SWIPEABLE SHELF ("Suggested for You") -->
+                <div class="ps-shelf-section">
+                    <div class="ps-shelf-header">
+                        <div>
+                            <div style="font-size:11px; color:#94a3b8; font-weight:700;">Featured • Swipe Left/Right</div>
+                            <h3 class="ps-shelf-title">${activeCatLabel}</h3>
+                        </div>
+                        <button type="button" class="ps-shelf-arrow-btn" onclick="document.getElementById('psTripleShelfTrack')?.scrollBy({left: 280, behavior: 'smooth'})">&rarr;</button>
+                    </div>
+                    <div class="ps-triple-stack-track" id="psTripleShelfTrack">
+                        ${tripleColumns.join('')}
+                    </div>
+                </div>
+
+                <!-- 4. INSTALLED APP EXCLUSIVE SUPERPOWERS (Offline Vault, 60s Blitz, Daily Target Ring) -->
+                <div class="ps-shelf-section">
+                    <div class="ps-shelf-header">
+                        <div>
+                            <div style="font-size:11px; color:#a8c7fa; font-weight:800; text-transform:uppercase;">📱 App-Only Exclusive Tools</div>
+                            <h3 class="ps-shelf-title">Installed App Superpowers</h3>
+                        </div>
+                    </div>
+
+                    <div class="ps-exclusive-strip">
+                        <!-- App Exclusive 1: Offline Question Pack Vault -->
+                        <div class="ps-exclusive-card" style="--exc-border:rgba(16,185,129,0.45);">
+                            <div>
+                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                                    <span style="background:rgba(16,185,129,0.18); color:#10b981; border:1px solid rgba(16,185,129,0.45); padding:3px 9px; border-radius:999px; font-size:10px; font-weight:900;">📴 OFFLINE APP VAULT</span>
+                                    <span style="font-size:11px; color:#cbd5e1; font-weight:800;">📦 ${offlineCached.length} MCQs Cached</span>
+                                </div>
+                                <div style="font-size:16px; font-weight:900; color:#fff;">Practice Without Internet</div>
+                                <div style="font-size:12px; color:#94a3b8; margin-top:3px; line-height:1.4;">Save 60 high-yield MCQs (${cachedExamName}) directly to your phone for Airplane-Mode practice.</div>
+                            </div>
+                            <div style="display:flex; gap:8px;">
+                                <button type="button" id="btnDownloadOfflinePack" onclick="downloadAppOfflineQuestionPack()" style="flex:1; background:#1e293b; color:#e2e8f0; border:1px solid rgba(255,255,255,0.15); padding:9px; border-radius:999px; font-size:12px; font-weight:800;">⬇️ Sync Pack</button>
+                                <button type="button" onclick="launchAppOfflineVaultQuiz()" style="flex:1.2; background:#10b981; color:#000; border:none; padding:9px; border-radius:999px; font-size:12px; font-weight:900;">▶️ Play Offline</button>
+                            </div>
+                        </div>
+
+                        <!-- App Exclusive 2: 60-Second Rapid Blitz Mode -->
+                        <div class="ps-exclusive-card" style="--exc-border:rgba(253,184,19,0.45);">
+                            <div>
+                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                                    <span style="background:rgba(253,184,19,0.18); color:#fdb813; border:1px solid rgba(253,184,19,0.45); padding:3px 9px; border-radius:999px; font-size:10px; font-weight:900;">⚡ 60-SEC REFLEX GAME</span>
+                                    <span style="font-size:11px; color:#fdb813; font-weight:800;">🏆 Best: ${psAppState.blitzBestScore} pts</span>
+                                </div>
+                                <div style="font-size:16px; font-weight:900; color:#fff;">60-Second Rapid Blitz</div>
+                                <div style="font-size:12px; color:#94a3b8; margin-top:3px; line-height:1.4;">Beat the 60-second clock with 2x Combo streaks to boost your exam speed &amp; accuracy.</div>
+                            </div>
+                            <button type="button" onclick="openAppRapidBlitzModal()" style="width:100%; background:linear-gradient(135deg, #fdb813, #f59e0b); color:#000; border:none; padding:10px; border-radius:999px; font-size:12.5px; font-weight:900;">⚡ Start 60s Blitz Now</button>
+                        </div>
+
+                        <!-- App Exclusive 3: Daily Target Ring & Custom Mock -->
+                        <div class="ps-exclusive-card" style="--exc-border:rgba(168,199,250,0.45);">
+                            <div style="display:flex; align-items:center; gap:14px;">
+                                <div onclick="cycleAppDailyGoalTarget()" style="position:relative; width:56px; height:56px; flex-shrink:0; cursor:pointer;" title="Tap to change daily goal">
+                                    <svg viewBox="0 0 52 52" style="width:56px; height:56px; transform:rotate(-90deg);">
+                                        <circle cx="26" cy="26" r="22" fill="none" stroke="#1e293b" stroke-width="5"/>
+                                        <circle cx="26" cy="26" r="22" fill="none" stroke="#a8c7fa" stroke-width="5" stroke-dasharray="${ringDash} 140" stroke-linecap="round"/>
+                                    </svg>
+                                    <div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:900; color:#fff;">${ringPct}%</div>
+                                </div>
+                                <div>
+                                    <span style="font-size:10px; font-weight:800; color:#a8c7fa; text-transform:uppercase;">🎯 Daily Goal Ring (Tap to Edit)</span>
+                                    <div style="font-size:15px; font-weight:900; color:#fff; margin-top:2px;">${todaySolved} / ${psAppState.dailyGoalTarget} MCQs Solved</div>
+                                    <div style="font-size:11.5px; color:#94a3b8; margin-top:2px;">Build a custom 20–250 MCQ test</div>
+                                </div>
+                            </div>
+                            <div style="display:flex; gap:8px;">
+                                <button type="button" onclick="forceCwStep1(event)" style="flex:1; background:#a8c7fa; color:#062e6f; border:none; padding:9px; border-radius:999px; font-size:12px; font-weight:900;">🎯 Custom Mock</button>
+                                <button type="button" onclick="launchSmartMistakeClinicSession()" style="flex:1; background:#1e293b; color:#fff; border:1px solid rgba(255,255,255,0.15); padding:9px; border-radius:999px; font-size:12px; font-weight:800;">🧬 Fix Mistakes</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 5. PLAY STORE HORIZONTAL RECOMMENDED CARDS SHELF -->
+                <div class="ps-shelf-section">
+                    <div class="ps-shelf-header">
+                        <h3 class="ps-shelf-title">Recommended for You</h3>
+                        <button type="button" class="ps-shelf-arrow-btn" onclick="document.getElementById('psHorizQuickTrack')?.scrollBy({left: 260, behavior: 'smooth'})">&rarr;</button>
+                    </div>
+                    <div class="ps-horiz-cards-track" id="psHorizQuickTrack">
+                        ${horizCardsHtml}
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // Attach touch/scroll listeners to Hero Carousel so finger swipes sync dots and pause auto-scroll
+        const track = document.getElementById('psHeroCarouselTrack');
+        if (track) {
+            track.addEventListener('touchstart', () => { psAppState.isTouchingCarousel = true; }, { passive: true });
+            track.addEventListener('touchend', () => {
+                setTimeout(() => { psAppState.isTouchingCarousel = false; }, 1200);
+            }, { passive: true });
+            track.addEventListener('scroll', () => {
+                const slideW = track.querySelector('.ps-hero-slide')?.offsetWidth || 280;
+                const idx = Math.round(track.scrollLeft / (slideW + 14));
+                psAppState.activeSlideIdx = idx;
+                updateCarouselDotsUI(idx);
+            }, { passive: true });
+        }
+
+        startContinuousHeroCarousel();
+        return true;
+    }
+
+    // Hook _renderView non-destructively: ONLY intercept Root Home when inside the Installed Mobile App!
+    const _origRenderViewBeforePlayStore = _renderView;
+    _renderView = function() {
+        injectPlayStoreMobileAppStyles();
+
+        const rawHash = decodeURIComponent(window.location.hash.replace(/^#\/?/, '')).trim();
+        const isRootHome = (!rawHash || rawHash === 'home') && (!Array.isArray(currentPath) || currentPath.length === 0);
+
+        if (isInstalledMobileAppMode() && isRootHome) {
+            renderPlayStoreMobileAppHome();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            return;
+        }
+
+        document.body.classList.remove('mcqs-playstore-app-active');
+        if (psAppState.carouselTimer) clearInterval(psAppState.carouselTimer);
+        _origRenderViewBeforePlayStore();
+        enhanceMobileAppBottomDock();
+    };
+
+    if (document.readyState === 'complete' || document.readyState === 'interactive') {
+        setTimeout(() => {
+            injectPlayStoreMobileAppStyles();
+            if (isInstalledMobileAppMode()) {
+                enhanceMobileAppBottomDock();
+                const rawHash = decodeURIComponent(window.location.hash.replace(/^#\/?/, '')).trim();
+                if ((!rawHash || rawHash === 'home') && (!Array.isArray(currentPath) || currentPath.length === 0)) {
+                    _renderView();
+                }
+            }
+        }, 140);
+    }
+})();
