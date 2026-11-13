@@ -3661,12 +3661,29 @@ async function handleLiveSearch() {
     // ==========================================
     // COLLISION-PROOF FLOATING CENTER PILL BAR ALIGNMENT
     // ==========================================
+    function isStrictHomepageView() {
+        const rawHash = decodeURIComponent(window.location.hash.replace(/^#\/?/, '')).trim();
+        const isRootRoute = (!rawHash || rawHash === 'home');
+        const isRootPath = (!Array.isArray(currentPath) || currentPath.length === 0);
+        return isRootRoute && isRootPath;
+    }
+
     function alignFloatingCenterPillBar() {
         const pillBar = document.getElementById('mcqsWebCenterNavPills');
-        if (!pillBar || window.innerWidth <= 860) return;
-        if (document.body.classList.contains('mcqs-quiz-screen-active') || document.body.classList.contains('admin-mode')) {
+        if (!pillBar) return;
+
+        // Strictly hide the floating center pill bar on ALL inner topics, buttons, quizzes, analytics, and leaderboards!
+        const showOnHomeOnly = isStrictHomepageView() &&
+            window.innerWidth > 860 &&
+            !document.body.classList.contains('mcqs-quiz-screen-active') &&
+            !document.body.classList.contains('admin-mode');
+
+        if (!showOnHomeOnly) {
+            pillBar.style.setProperty('display', 'none', 'important');
             return;
         }
+
+        pillBar.style.setProperty('display', 'inline-flex', 'important');
 
         const navbar = document.querySelector('.navbar');
         const navLeft = document.querySelector('.nav-left');
@@ -3676,14 +3693,14 @@ async function handleLiveSearch() {
         if (!navbar || !navLeft || !navRight) return;
 
         const navRect = navbar.getBoundingClientRect();
-        // When user scrolls down past .navbar, center the floating pill bar at 50% of the screen
+        // When user scrolls down past .navbar on the Homepage, center the floating pill bar at 50% of the screen
         if (navRect.bottom <= 14) {
             pillBar.style.left = '50%';
             pillBar.style.transform = 'translateX(-50%) scale(1)';
             return;
         }
 
-        // When at the top of the page, measure the exact empty space between .nav-left (including < back button and 🔥 streak) and Search/.nav-right
+        // When at the top of the Homepage, center the pill bar in the exact gap between .nav-left and Search/.nav-right
         const leftEdge = navLeft.getBoundingClientRect().right + 14;
         const rightAnchor = (searchWrap && searchWrap.offsetWidth > 0) ? searchWrap : navRight;
         const rightEdge = rightAnchor.getBoundingClientRect().left - 14;
@@ -3709,7 +3726,7 @@ async function handleLiveSearch() {
     window.addEventListener('resize', alignFloatingCenterPillBar, { passive: true });
 
     // ==========================================
-    // SMART QUIZ EXIT FUNCTION & GUARANTEED QUIZ TOP BACK-BAR INJECTOR (FIXES IMAGE 1)
+    // SMART QUIZ EXIT FUNCTION & GUARANTEED QUIZ TOP BACK-BAR INJECTOR
     // ==========================================
     window.exitActiveQuizPractice = function() {
         if (typeof currentTimer !== 'undefined' && currentTimer) clearInterval(currentTimer);
@@ -3722,8 +3739,6 @@ async function handleLiveSearch() {
         document.body.classList.remove('hide-bottom-bar');
 
         if (Array.isArray(currentPath) && currentPath.length > 0) {
-            const lastSeg = formatCleanTopicTitle(currentPath[currentPath.length - 1]).toLowerCase();
-            // If currentPath ends with a leaf difficulty or quiz folder (like Easy, Medium, Hard, Mixed), step up to the parent chapter folder so it doesn't auto-relaunch the quiz!
             if (currentPath.length > 1) {
                 const parentTrail = currentPath.slice(0, -1);
                 jumpToSection(parentTrail);
@@ -3748,7 +3763,6 @@ async function handleLiveSearch() {
             return false;
         }
 
-        // If the Welcome/Resume card is showing, inject a Back button inside it if missing
         if (hasWelcomeResumeCard && !dyn.querySelector('#mcqsWelcomeBackExitBtn')) {
             const resumeCard = dyn.querySelector('#btnResumeTopicPractice')?.closest('.admin-panel-card');
             if (resumeCard) {
@@ -3762,7 +3776,6 @@ async function handleLiveSearch() {
             }
         }
 
-        // If an active MCQ question is on screen, guarantee the Top Back Bar is mounted right at the top!
         if (hasActiveQuizOptions && !document.getElementById('mcqsGuaranteedQuizBackBar')) {
             const rawQuizTitle = (typeof currentQuizPath !== 'undefined' && currentQuizPath)
                 ? currentQuizPath
@@ -3804,6 +3817,9 @@ async function handleLiveSearch() {
             document.body.classList.remove('mcqs-quiz-screen-active');
         }
 
+        const onRootHome = isStrictHomepageView() && !isQuizRoute;
+        document.body.classList.toggle('mcqs-on-root-home', onRootHome);
+
         const pathStr = (Array.isArray(currentPath) ? currentPath.join(' > ') : '').toLowerCase();
         const combined = `${rawHash} ${pathStr}`;
         const shouldHideAi = isQuizRoute ||
@@ -3823,6 +3839,7 @@ async function handleLiveSearch() {
             if (aiBtn) aiBtn.style.removeProperty('display');
         }
 
+        alignFloatingCenterPillBar();
         setTimeout(alignFloatingCenterPillBar, 25);
     }
 
