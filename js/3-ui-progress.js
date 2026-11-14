@@ -5937,13 +5937,12 @@ async function handleLiveSearch() {
 })();
 
 // ==========================================
-// 8. INSTALLED MOBILE APP & EXAM-ACCURATE ANALYTICS SUITE:
-//    TRUE CATEGORY MARKING (+1/0 FOR GK & BOARD, +4/-1 FOR NEET & JEE),
-//    ZERO FAKE DATA SIMULATOR, LOWER/NARROWER FLOATING DOCK & SEPARATED SHELVES
+// 8. INSTALLED MOBILE APP, EXAM-ACCURATE ANALYTICS SUITE,
+//    STRICT HOME-ONLY FLOATING NAV LOCK & QUESTION-ONLY AI TUTOR LIVE SUGGESTIONS
 // ==========================================
-(function initStudyInstalledMobileAppV4() {
-    if (window._mcqsStudyMobileAppLoadedV4) return;
-    window._mcqsStudyMobileAppLoadedV4 = true;
+(function initStudyInstalledMobileAppV5() {
+    if (window._mcqsStudyMobileAppLoadedV5) return;
+    window._mcqsStudyMobileAppLoadedV5 = true;
 
     const SVG_CHECK_GREEN = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px; flex-shrink:0;"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
     const SVG_CROSS_RED = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px; flex-shrink:0;"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`;
@@ -5959,13 +5958,268 @@ async function handleLiveSearch() {
     }
 
     // ==========================================
-    // EXAM-ACCURATE MARKING SCHEME DETECTOR (+1/0 for GK & Board, +4/-1 for NEET & JEE)
+    // 1. STRICT MODAL & NON-HOME DETECTOR FOR FLOATING CENTER NAV BAR (FIXES ISSUE 1)
+    // ==========================================
+    function isAnyOverlayModalOpen() {
+        const modalIds = [
+            'aiModal', 'authModal', 'streakModal', 'userReportsModal',
+            'reportModal', 'feedbackModal', 'editTopicModal', 'editModal',
+            'inAppPdfViewerModal', 'studentDiagramZoomModal', 'saRapidBlitzModal'
+        ];
+        for (const id of modalIds) {
+            const el = document.getElementById(id);
+            if (el) {
+                const disp = window.getComputedStyle(el).display;
+                if (disp && disp !== 'none') return true;
+            }
+        }
+        return false;
+    }
+
+    function enforceCenterPillBarHomeOnlyVisibility() {
+        const rawHash = decodeURIComponent(window.location.hash.replace(/^#\/?/, '')).trim();
+        const isRootHome = (!rawHash || rawHash === 'home') && (!Array.isArray(currentPath) || currentPath.length === 0);
+        const modalOpen = isAnyOverlayModalOpen();
+        const quizActive = document.body.classList.contains('mcqs-quiz-screen-active');
+        const adminActive = document.body.classList.contains('admin-mode');
+
+        document.body.classList.toggle('mcqs-any-modal-open', modalOpen);
+
+        const pillBar = document.getElementById('mcqsWebCenterNavPills');
+        if (!pillBar) return;
+
+        if (!isRootHome || modalOpen || quizActive || adminActive || window.innerWidth <= 860) {
+            pillBar.style.setProperty('display', 'none', 'important');
+            pillBar.style.setProperty('visibility', 'hidden', 'important');
+            pillBar.style.setProperty('opacity', '0', 'important');
+            pillBar.style.setProperty('pointer-events', 'none', 'important');
+        } else {
+            pillBar.style.setProperty('display', 'inline-flex', 'important');
+            pillBar.style.setProperty('visibility', 'visible', 'important');
+            pillBar.style.setProperty('opacity', '1', 'important');
+            pillBar.style.setProperty('pointer-events', 'auto', 'important');
+        }
+    }
+
+    function attachModalVisibilityObservers() {
+        if (window._mcqsModalVisibilityObserverAttached) return;
+        window._mcqsModalVisibilityObserverAttached = true;
+
+        const obs = new MutationObserver(() => {
+            enforceCenterPillBarHomeOnlyVisibility();
+        });
+
+        ['aiModal', 'authModal', 'streakModal', 'userReportsModal', 'reportModal', 'feedbackModal'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) obs.observe(el, { attributes: true, attributeFilter: ['style', 'class'] });
+        });
+
+        obs.observe(document.body, { childList: true, attributes: true, attributeFilter: ['class'] });
+        window.addEventListener('hashchange', enforceCenterPillBarHomeOnlyVisibility);
+        window.addEventListener('scroll', enforceCenterPillBarHomeOnlyVisibility, { passive: true, capture: true });
+    }
+
+    // ==========================================
+    // 2. ASK AI TUTOR: 100% QUESTION-ONLY LIVE SUGGESTIONS (ZERO TOPIC NAMES — FIXES ISSUE 2)
+    // ==========================================
+    var aiUploadedQuestionsCache = {
+        loaded: false,
+        loading: false,
+        lastFetchTime: 0,
+        items: []
+    };
+
+    function stripHtmlToCleanQuestionText(rawHtml) {
+        if (!rawHtml) return '';
+        let s = String(rawHtml);
+        // Remove diagram zoom labels & captions
+        s = s.replace(/<div[^>]*class="[^"]*mcq-diagram-caption[^"]*"[^>]*>[\s\S]*?<\/div>/gi, ' ');
+        // Convert table cells into clean spaced text
+        s = s.replace(/<\/?(?:tr|th|td|table|thead|tbody)[^>]*>/gi, ' ');
+        s = s.replace(/<br\s*\/?>/gi, ' ');
+        s = s.replace(/<[^>]+>/g, ' ');
+        s = s.replace(/&nbsp;/gi, ' ').replace(/&amp;/gi, '&').replace(/&lt;/gi, '<').replace(/&gt;/gi, '>').replace(/&quot;/gi, '"');
+        return s.replace(/\s+/g, ' ').trim();
+    }
+
+    async function ensureAIQuestionsCacheLoaded() {
+        if (typeof db === 'undefined') return aiUploadedQuestionsCache.items;
+        const now = Date.now();
+        if (aiUploadedQuestionsCache.loaded && (now - aiUploadedQuestionsCache.lastFetchTime) < 180000 && aiUploadedQuestionsCache.items.length > 0) {
+            return aiUploadedQuestionsCache.items;
+        }
+        if (aiUploadedQuestionsCache.loading) return aiUploadedQuestionsCache.items;
+        aiUploadedQuestionsCache.loading = true;
+
+        try {
+            const snap = await db.collection('content').limit(1500).get();
+            const list = [];
+            snap.forEach(doc => {
+                const d = doc.data();
+                if (d.type && d.type !== 'mcq') return;
+                const cleanQ = stripHtmlToCleanQuestionText(d.rawQuestionText || d.question || '');
+                if (!cleanQ || cleanQ.length < 4) return;
+
+                const opts = d.options || {};
+                const cleanA = stripHtmlToCleanQuestionText(opts.A || '');
+                const cleanB = stripHtmlToCleanQuestionText(opts.B || '');
+                const cleanC = stripHtmlToCleanQuestionText(opts.C || '');
+                const cleanD = stripHtmlToCleanQuestionText(opts.D || '');
+
+                const fullPrompt = cleanA
+                    ? `${cleanQ}\nA) ${cleanA}\nB) ${cleanB}\nC) ${cleanC}\nD) ${cleanD}`
+                    : cleanQ;
+
+                list.push({
+                    id: doc.id,
+                    cleanQuestion: cleanQ,
+                    searchBlob: `${cleanQ} ${cleanA} ${cleanB} ${cleanC} ${cleanD}`.toLowerCase(),
+                    fullPromptForAI: fullPrompt.trim()
+                });
+            });
+
+            aiUploadedQuestionsCache.items = list;
+            aiUploadedQuestionsCache.loaded = true;
+            aiUploadedQuestionsCache.lastFetchTime = Date.now();
+        } catch (e) {}
+
+        aiUploadedQuestionsCache.loading = false;
+        return aiUploadedQuestionsCache.items;
+    }
+
+    var _currentAIFuzzyMatchedPrompts = [];
+
+    window.selectAIUploadedQuestionSuggestion = function(idx) {
+        const promptText = _currentAIFuzzyMatchedPrompts[idx];
+        const inputEl = document.getElementById('aiTextInput');
+        const box = document.getElementById('ai-fuzzy-box');
+        if (box) {
+            box.innerHTML = '';
+            box.style.display = 'none';
+        }
+        if (inputEl && promptText) {
+            inputEl.value = promptText;
+            if (typeof autoExpandTextarea === 'function') autoExpandTextarea(inputEl);
+            inputEl.focus();
+        }
+    };
+
+    async function renderQuestionOnlyAIFuzzySuggestions() {
+        const inputEl = document.getElementById('aiTextInput');
+        const box = document.getElementById('ai-fuzzy-box');
+        if (!inputEl || !box) return;
+
+        const rawQuery = inputEl.value.trim();
+        // If user already selected a multi-line question or typed < 2 chars, hide suggestions
+        if (rawQuery.length < 2 || rawQuery.includes('\nA) ')) {
+            box.innerHTML = '';
+            box.style.display = 'none';
+            return;
+        }
+
+        let pool = aiUploadedQuestionsCache.items;
+        if (!aiUploadedQuestionsCache.loaded || pool.length === 0) {
+            pool = await ensureAIQuestionsCacheLoaded();
+        }
+
+        const qLower = rawQuery.toLowerCase();
+        const tokens = qLower.split(/\s+/).filter(Boolean);
+        if (tokens.length === 0) {
+            box.innerHTML = '';
+            box.style.display = 'none';
+            return;
+        }
+
+        const scoredMatches = [];
+        for (let i = 0; i < pool.length; i++) {
+            const item = pool[i];
+            if (!tokens.every(t => item.searchBlob.includes(t))) continue;
+
+            const qTextLower = item.cleanQuestion.toLowerCase();
+            let score = 0;
+            if (qTextLower.startsWith(qLower)) score += 100;
+            else if (qTextLower.includes(' ' + qLower)) score += 60;
+            else if (qTextLower.includes(qLower)) score += 35;
+            else score += 10;
+
+            scoredMatches.push({ item, score });
+        }
+
+        scoredMatches.sort((a, b) => b.score - a.score);
+        const topMatches = scoredMatches.slice(0, 6).map(m => m.item);
+
+        if (topMatches.length === 0) {
+            box.innerHTML = '';
+            box.style.display = 'none';
+            return;
+        }
+
+        _currentAIFuzzyMatchedPrompts = topMatches.map(m => m.fullPromptForAI);
+
+        const escHtml = (str) => String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        const escapedQueryRe = new RegExp(`(${rawQuery.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'ig');
+
+        box.innerHTML = topMatches.map((m, idx) => {
+            const snippet = m.cleanQuestion.length > 115
+                ? m.cleanQuestion.slice(0, 115) + '...'
+                : m.cleanQuestion;
+            const highlighted = escHtml(snippet).replace(escapedQueryRe, '<b style="color:#fdb813;">$1</b>');
+
+            return `
+                <div onmousedown="selectAIUploadedQuestionSuggestion(${idx})" onclick="selectAIUploadedQuestionSuggestion(${idx})" style="padding:11px 15px; border-bottom:1px solid rgba(255,255,255,0.07); cursor:pointer; display:flex; align-items:center; justify-content:space-between; gap:12px; background:#0d1527; transition:background 0.15s ease;" onmouseover="this.style.background='rgba(253,184,19,0.1)'" onmouseout="this.style.background='#0d1527'">
+                    <div style="display:flex; align-items:flex-start; gap:10px; min-width:0; flex:1;">
+                        <span style="color:#fdb813; font-size:15px; flex-shrink:0; margin-top:1px;">📝</span>
+                        <div style="font-size:13px; color:#f1f5f9; line-height:1.45; overflow:hidden; text-overflow:ellipsis;">${highlighted}</div>
+                    </div>
+                    <span style="color:#fdb813; font-size:11.5px; font-weight:800; white-space:nowrap; flex-shrink:0;">Ask AI &rarr;</span>
+                </div>
+            `;
+        }).join('');
+        box.style.display = 'block';
+    }
+
+    function bindQuestionOnlyAISuggestions() {
+        // Override the global function so oninput="handleAIFuzzySuggestions()" always uses our question-only engine
+        window.handleAIFuzzySuggestions = renderQuestionOnlyAIFuzzySuggestions;
+
+        const aiInput = document.getElementById('aiTextInput');
+        if (aiInput && !aiInput.dataset.questionOnlyBoundV5) {
+            aiInput.dataset.questionOnlyBoundV5 = 'true';
+            aiInput.addEventListener('focus', () => {
+                window.handleAIFuzzySuggestions = renderQuestionOnlyAIFuzzySuggestions;
+                ensureAIQuestionsCacheLoaded();
+            }, true);
+            aiInput.addEventListener('input', () => {
+                window.handleAIFuzzySuggestions = renderQuestionOnlyAIFuzzySuggestions;
+            }, true);
+        }
+
+        if (typeof window.openAIModal === 'function' && !window._origOpenAIModalWrappedV5) {
+            window._origOpenAIModalWrappedV5 = window.openAIModal;
+            window.openAIModal = function() {
+                window.handleAIFuzzySuggestions = renderQuestionOnlyAIFuzzySuggestions;
+                window._origOpenAIModalWrappedV5();
+                enforceCenterPillBarHomeOnlyVisibility();
+                ensureAIQuestionsCacheLoaded();
+            };
+        }
+
+        if (typeof window.closeAIModal === 'function' && !window._origCloseAIModalWrappedV5) {
+            window._origCloseAIModalWrappedV5 = window.closeAIModal;
+            window.closeAIModal = function() {
+                window._origCloseAIModalWrappedV5();
+                enforceCenterPillBarHomeOnlyVisibility();
+            };
+        }
+    }
+
+    // ==========================================
+    // 3. EXAM-ACCURATE MARKING SCHEME DETECTOR (+1/0 for GK & Board, +4/-1 for NEET & JEE)
     // ==========================================
     function getExamMarkingScheme(categoryOrPath, statsObj = null) {
         const raw = String(categoryOrPath || '').split(' > ')[0].trim();
         const lower = formatCleanTopicTitle(raw).toLowerCase();
 
-        // 1. If real quiz stats exist with attempted questions, verify if score matches +1/0 or +4/-1
         if (statsObj && statsObj.correctCount > 0 && statsObj.totalScore !== undefined) {
             const expected1_0 = statsObj.correctCount * 1;
             const expected4_1 = (statsObj.correctCount * 4) - (statsObj.wrongCount || 0);
@@ -6009,7 +6263,6 @@ async function handleLiveSearch() {
             }
         }
 
-        // 2. Category-based rules
         if (lower.includes('neet')) {
             return {
                 pos: 4,
@@ -6035,7 +6288,6 @@ async function handleLiveSearch() {
             };
         }
 
-        // Default for General Knowledge, Board, and other categories: +1 Mark per question, 0 Negative
         return {
             pos: 1,
             neg: 0,
@@ -6049,13 +6301,27 @@ async function handleLiveSearch() {
     }
 
     function injectStudyMobileAppStyles() {
-        if (document.getElementById('mcqs-study-mobile-app-styles-v4')) return;
+        if (document.getElementById('mcqs-study-mobile-app-styles-v5')) return;
         const st = document.createElement('style');
-        st.id = 'mcqs-study-mobile-app-styles-v4';
+        st.id = 'mcqs-study-mobile-app-styles-v5';
         st.textContent = `
-            /* ==========================================
-               1. MODERNIZED SEARCH BUTTON & ZERO-BLEED MOBILE SEARCH BAR
-               ========================================== */
+            /* Strictly hide floating center pill bar whenever ANY modal is open or when not on Root Home! */
+            body.mcqs-any-modal-open #mcqsWebCenterNavPills,
+            body:not(.mcqs-on-root-home) #mcqsWebCenterNavPills,
+            body.mcqs-quiz-screen-active #mcqsWebCenterNavPills,
+            body.admin-mode #mcqsWebCenterNavPills {
+                display: none !important;
+                visibility: hidden !important;
+                opacity: 0 !important;
+                pointer-events: none !important;
+            }
+            @media (min-width: 861px) {
+                #mcqsWebCenterNavPills {
+                    z-index: 3500 !important; /* Below .modal-overlay (z-index: 4000) so modals always cover it */
+                }
+            }
+
+            /* 1. MODERNIZED SEARCH BUTTON & ZERO-BLEED MOBILE SEARCH BAR */
             .navbar .search-icon-btn {
                 background: rgba(255, 255, 255, 0.06) !important;
                 border: 1.5px solid rgba(253, 184, 19, 0.38) !important;
@@ -6122,9 +6388,7 @@ async function handleLiveSearch() {
                 }
             }
 
-            /* ==========================================
-               2. LOWER & NARROWER FLOATING BOTTOM NAVIGATION DOCK (FIXES IMAGE 2)
-               ========================================== */
+            /* 2. LOWER & NARROWER FLOATING BOTTOM NAVIGATION DOCK */
             @media (max-width: 860px) {
                 #mobileAppDock {
                     position: fixed !important;
@@ -6230,9 +6494,7 @@ async function handleLiveSearch() {
                 }
             }
 
-            /* ==========================================
-               3. INSTALLED MOBILE APP STUDY WORKSPACE
-               ========================================== */
+            /* 3. INSTALLED MOBILE APP STUDY WORKSPACE */
             body.mcqs-study-app-active {
                 background-color: #080b12 !important;
             }
@@ -6476,9 +6738,7 @@ async function handleLiveSearch() {
                 max-width: 100%;
             }
 
-            /* ==========================================
-               4. COMPACT LIVE-SIMULATION ANALYTICS DASHBOARD STYLES
-               ========================================== */
+            /* 4. COMPACT LIVE-SIMULATION ANALYTICS DASHBOARD STYLES */
             .ad-compact-shell {
                 display: flex;
                 flex-direction: column;
@@ -6614,7 +6874,7 @@ async function handleLiveSearch() {
         blitzExam: '',
         blitzBestScore: Number(localStorage.getItem('mcqs_app_blitz_best_v1') || 0),
         blitzBestAcc: Number(localStorage.getItem('mcqs_app_blitz_best_acc_v1') || 0),
-        analyticsSimMode: 'CURRENT', // 'CURRENT' | 'FIX_WRONG' | 'FULL_TARGET'
+        analyticsSimMode: 'CURRENT',
         analyticsSimQuestions: 50,
         lastAnalyticsData: null,
         lastAnalyticsCategory: '',
@@ -6708,7 +6968,7 @@ async function handleLiveSearch() {
     }
 
     // ==========================================
-    // COMPACT, 100% TRUE-DATA ANALYTICS COMMAND CENTER WITH EXAM-SPECIFIC MARKING (FIXES IMAGE 1)
+    // COMPACT, 100% TRUE-DATA ANALYTICS COMMAND CENTER
     // ==========================================
     function buildPrecisionSvgTrajectoryHtml(trendArr) {
         const pts = (Array.isArray(trendArr) && trendArr.length > 0) ? trendArr.slice(-10) : [100];
@@ -6787,9 +7047,8 @@ async function handleLiveSearch() {
         const scheme = saState.lastAnalyticsScheme;
         const catClean = formatCleanTopicTitle(saState.lastAnalyticsCategory || 'Exam');
         const qTotal = saState.analyticsSimQuestions || scheme.defaultPaper;
-        const maxMarks = qTotal * scheme.pos; // 50 Q in GK = 50 * 1 = 50 pts! 180 Q in NEET = 180 * 4 = 720 pts!
+        const maxMarks = qTotal * scheme.pos;
 
-        // Exact accuracy ratio from student's real attempted questions
         const exactRatio = st.totalAttempted > 0 ? (st.correctCount / st.totalAttempted) : (st.overallAccuracy / 100);
         const baseRight = Math.round(exactRatio * qTotal);
         const baseWrong = qTotal - baseRight;
@@ -6803,7 +7062,6 @@ async function handleLiveSearch() {
         if (saState.analyticsSimMode === 'CURRENT') {
             simNote = `Based on your real ${st.correctCount}/${st.totalAttempted} (${st.overallAccuracy}%) accuracy across a ${qTotal}-question ${catClean} paper (${scheme.posLabel} Correct, ${scheme.negLabel} Wrong).`;
         } else if (saState.analyticsSimMode === 'FIX_WRONG') {
-            // Simulates converting half of wrong ratio (or fixing wrong answers)
             const improvedWrong = Math.floor(baseWrong / 2);
             projCorrect = qTotal - improvedWrong;
             projWrong = improvedWrong;
@@ -6819,7 +7077,6 @@ async function handleLiveSearch() {
         const scoreGain = Math.max(0, projScore - baseScore);
         const barPct = Math.min(100, Math.max(4, Math.round((Math.max(0, projScore) / Math.max(1, maxMarks)) * 100)));
 
-        // 100% True Time Display — Never invent 25s/Q if recorded time is 0s!
         let timeLineHtml = '';
         if (st.avgTimeCorrect > 0) {
             const estMins = Math.max(1, Math.round((qTotal * st.avgTimeCorrect) / 60));
@@ -6839,7 +7096,6 @@ async function handleLiveSearch() {
                     </div>
                 </div>
 
-                <!-- 3 Interactive Simulation Mode Pills -->
                 <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:6px; margin-bottom:10px;">
                     <button type="button" onclick="setAnalyticsLiveSimOption('CURRENT', null)" style="background:${saState.analyticsSimMode === 'CURRENT' ? 'rgba(56,189,248,0.2)' : '#090d16'}; color:${saState.analyticsSimMode === 'CURRENT' ? '#38bdf8' : '#94a3b8'}; border:1px solid ${saState.analyticsSimMode === 'CURRENT' ? '#38bdf8' : 'rgba(255,255,255,0.1)'}; border-radius:8px; padding:6px 4px; font-size:10.5px; font-weight:800; cursor:pointer;">📊 Current (${st.overallAccuracy}%)</button>
                     <button type="button" onclick="setAnalyticsLiveSimOption('FIX_WRONG', null)" style="background:${saState.analyticsSimMode === 'FIX_WRONG' ? 'rgba(16,185,129,0.2)' : '#090d16'}; color:${saState.analyticsSimMode === 'FIX_WRONG' ? '#10b981' : '#94a3b8'}; border:1px solid ${saState.analyticsSimMode === 'FIX_WRONG' ? '#10b981' : 'rgba(255,255,255,0.1)'}; border-radius:8px; padding:6px 4px; font-size:10.5px; font-weight:800; cursor:pointer;">🛡️ Mistake Shield</button>
@@ -6871,7 +7127,6 @@ async function handleLiveSearch() {
         `;
     }
 
-    // Override _renderProgressDashboard globally with 100% True Marking & Compact Layout
     _renderProgressDashboard = async function(category) {
         if (!currentUser) { _renderProgressSelection(); return; }
         const displayCategory = formatCleanTopicTitle(category);
@@ -7050,7 +7305,7 @@ async function handleLiveSearch() {
                         </div>
                     </div>
 
-                    <!-- 2. COMPACT TELEMETRY HERO (ANIMATED RING + EXAM-ACCURATE 2x2 KPI GRID) -->
+                    <!-- 2. COMPACT TELEMETRY HERO -->
                     <div class="ad-telemetry-hero">
                         <div class="ad-ring-box">
                             <svg width="96" height="96" viewBox="0 0 96 96" style="transform:rotate(-90deg);">
@@ -7085,7 +7340,7 @@ async function handleLiveSearch() {
 
                     ${statusBannerHtml}
 
-                    <!-- 3. INTERACTIVE LIVE SCORE SIMULATOR (50 Q in GK = 50 pts!) -->
+                    <!-- 3. INTERACTIVE LIVE SCORE SIMULATOR -->
                     <div id="adLiveSimulatorMount"></div>
 
                     <!-- 4. SIDE-BY-SIDE SPEED AUTOPSY + SUBJECT MASTERY & SVG TRAJECTORY -->
@@ -7357,6 +7612,7 @@ async function handleLiveSearch() {
             document.body.appendChild(modal);
         }
         modal.style.display = 'flex';
+        enforceCenterPillBarHomeOnlyVisibility();
         renderSaBlitzFrame();
 
         if (saBlitzGame.timer) clearInterval(saBlitzGame.timer);
@@ -7374,6 +7630,7 @@ async function handleLiveSearch() {
         if (saBlitzGame.timer) clearInterval(saBlitzGame.timer);
         const modal = document.getElementById('saRapidBlitzModal');
         if (modal) modal.style.display = 'none';
+        enforceCenterPillBarHomeOnlyVisibility();
         renderStudyMobileAppHome();
     };
 
@@ -7816,32 +8073,52 @@ async function handleLiveSearch() {
         return true;
     }
 
-    const _origRenderViewBeforeStudyAppV4 = _renderView;
+    const _origRenderViewBeforeStudyAppV5 = _renderView;
     _renderView = function() {
         injectStudyMobileAppStyles();
         upgradeNavbarSearchButtonLogo();
         repairAndEnhanceMobileAppDock();
+        attachModalVisibilityObservers();
+        bindQuestionOnlyAISuggestions();
 
         const rawHash = decodeURIComponent(window.location.hash.replace(/^#\/?/, '')).trim();
         const isRootHome = (!rawHash || rawHash === 'home') && (!Array.isArray(currentPath) || currentPath.length === 0);
 
         if (isInstalledMobileAppMode() && isRootHome) {
             renderStudyMobileAppHome();
+            enforceCenterPillBarHomeOnlyVisibility();
             window.scrollTo({ top: 0, behavior: 'smooth' });
             return;
         }
 
         document.body.classList.remove('mcqs-study-app-active');
         if (saState.carouselTimer) clearInterval(saState.carouselTimer);
-        _origRenderViewBeforeStudyAppV4();
+        _origRenderViewBeforeStudyAppV5();
         repairAndEnhanceMobileAppDock();
+        enforceCenterPillBarHomeOnlyVisibility();
     };
+
+    window.addEventListener('DOMContentLoaded', () => {
+        injectStudyMobileAppStyles();
+        attachModalVisibilityObservers();
+        bindQuestionOnlyAISuggestions();
+        enforceCenterPillBarHomeOnlyVisibility();
+    });
+
+    window.addEventListener('load', () => {
+        attachModalVisibilityObservers();
+        bindQuestionOnlyAISuggestions();
+        enforceCenterPillBarHomeOnlyVisibility();
+    });
 
     if (document.readyState === 'complete' || document.readyState === 'interactive') {
         setTimeout(() => {
             injectStudyMobileAppStyles();
             upgradeNavbarSearchButtonLogo();
             repairAndEnhanceMobileAppDock();
+            attachModalVisibilityObservers();
+            bindQuestionOnlyAISuggestions();
+            enforceCenterPillBarHomeOnlyVisibility();
             if (isInstalledMobileAppMode()) {
                 const rawHash = decodeURIComponent(window.location.hash.replace(/^#\/?/, '')).trim();
                 if ((!rawHash || rawHash === 'home') && (!Array.isArray(currentPath) || currentPath.length === 0)) {
