@@ -5937,15 +5937,14 @@ async function handleLiveSearch() {
 })();
 
 // ==========================================
-// 8. INSTALLED MOBILE APP & COMPACT ANALYTICS SUITE:
-//    CONTINUOUS EXAM CAROUSEL, SEPARATED QUICK LINKS & ESSENTIAL PRACTICE,
-//    COMPACT LIVE-SIMULATION ANALYTICS DASHBOARD & FLOATING ICON DOCK
+// 8. INSTALLED MOBILE APP & EXAM-ACCURATE ANALYTICS SUITE:
+//    TRUE CATEGORY MARKING (+1/0 FOR GK & BOARD, +4/-1 FOR NEET & JEE),
+//    ZERO FAKE DATA SIMULATOR, LOWER/NARROWER FLOATING DOCK & SEPARATED SHELVES
 // ==========================================
-(function initStudyInstalledMobileAppV3() {
-    if (window._mcqsStudyMobileAppLoadedV3) return;
-    window._mcqsStudyMobileAppLoadedV3 = true;
+(function initStudyInstalledMobileAppV4() {
+    if (window._mcqsStudyMobileAppLoadedV4) return;
+    window._mcqsStudyMobileAppLoadedV4 = true;
 
-    // Crisp inline SVG badges so Android/iOS never renders dull grey unicode checkmarks
     const SVG_CHECK_GREEN = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px; flex-shrink:0;"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
     const SVG_CROSS_RED = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px; flex-shrink:0;"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`;
 
@@ -5959,10 +5958,100 @@ async function handleLiveSearch() {
         return isStandalone && window.innerWidth <= 860;
     }
 
+    // ==========================================
+    // EXAM-ACCURATE MARKING SCHEME DETECTOR (+1/0 for GK & Board, +4/-1 for NEET & JEE)
+    // ==========================================
+    function getExamMarkingScheme(categoryOrPath, statsObj = null) {
+        const raw = String(categoryOrPath || '').split(' > ')[0].trim();
+        const lower = formatCleanTopicTitle(raw).toLowerCase();
+
+        // 1. If real quiz stats exist with attempted questions, verify if score matches +1/0 or +4/-1
+        if (statsObj && statsObj.correctCount > 0 && statsObj.totalScore !== undefined) {
+            const expected1_0 = statsObj.correctCount * 1;
+            const expected4_1 = (statsObj.correctCount * 4) - (statsObj.wrongCount || 0);
+            if (statsObj.wrongCount > 0) {
+                if (statsObj.totalScore === expected1_0 && statsObj.totalScore !== expected4_1) {
+                    return {
+                        pos: 1,
+                        neg: 0,
+                        hasNeg: false,
+                        posLabel: '+1',
+                        negLabel: '0',
+                        schemeBadge: '✔ +1 Mark • No Neg',
+                        paperSizes: [25, 50, 100],
+                        defaultPaper: 50
+                    };
+                }
+                if (statsObj.totalScore === expected4_1) {
+                    const isNeet = lower.includes('neet');
+                    return {
+                        pos: 4,
+                        neg: 1,
+                        hasNeg: true,
+                        posLabel: '+4',
+                        negLabel: '−1',
+                        schemeBadge: '✔ +4 Marks • ✖ −1 Neg',
+                        paperSizes: isNeet ? [45, 90, 180] : [25, 50, 75],
+                        defaultPaper: isNeet ? 180 : 75
+                    };
+                }
+            } else if (statsObj.totalScore === statsObj.correctCount) {
+                return {
+                    pos: 1,
+                    neg: 0,
+                    hasNeg: false,
+                    posLabel: '+1',
+                    negLabel: '0',
+                    schemeBadge: '✔ +1 Mark • No Neg',
+                    paperSizes: [25, 50, 100],
+                    defaultPaper: 50
+                };
+            }
+        }
+
+        // 2. Category-based rules
+        if (lower.includes('neet')) {
+            return {
+                pos: 4,
+                neg: 1,
+                hasNeg: true,
+                posLabel: '+4',
+                negLabel: '−1',
+                schemeBadge: '✔ +4 Marks • ✖ −1 Neg',
+                paperSizes: [45, 90, 180],
+                defaultPaper: 180
+            };
+        }
+        if (lower.includes('jee')) {
+            return {
+                pos: 4,
+                neg: 1,
+                hasNeg: true,
+                posLabel: '+4',
+                negLabel: '−1',
+                schemeBadge: '✔ +4 Marks • ✖ −1 Neg',
+                paperSizes: [25, 50, 75],
+                defaultPaper: 75
+            };
+        }
+
+        // Default for General Knowledge, Board, and other categories: +1 Mark per question, 0 Negative
+        return {
+            pos: 1,
+            neg: 0,
+            hasNeg: false,
+            posLabel: '+1',
+            negLabel: '0',
+            schemeBadge: '✔ +1 Mark • No Neg',
+            paperSizes: [25, 50, 100],
+            defaultPaper: 50
+        };
+    }
+
     function injectStudyMobileAppStyles() {
-        if (document.getElementById('mcqs-study-mobile-app-styles-v3')) return;
+        if (document.getElementById('mcqs-study-mobile-app-styles-v4')) return;
         const st = document.createElement('style');
-        st.id = 'mcqs-study-mobile-app-styles-v3';
+        st.id = 'mcqs-study-mobile-app-styles-v4';
         st.textContent = `
             /* ==========================================
                1. MODERNIZED SEARCH BUTTON & ZERO-BLEED MOBILE SEARCH BAR
@@ -6034,28 +6123,29 @@ async function handleLiveSearch() {
             }
 
             /* ==========================================
-               2. FLOATING BOTTOM NAVIGATION DOCK WITH GUARANTEED VISIBLE SVG LOGOS
+               2. LOWER & NARROWER FLOATING BOTTOM NAVIGATION DOCK (FIXES IMAGE 2)
                ========================================== */
             @media (max-width: 860px) {
                 #mobileAppDock {
                     position: fixed !important;
-                    bottom: max(12px, env(safe-area-inset-bottom)) !important;
-                    left: 12px !important;
-                    right: 12px !important;
-                    width: calc(100vw - 24px) !important;
-                    max-width: 460px !important;
-                    margin: 0 auto !important;
-                    height: 64px !important;
+                    bottom: max(4px, env(safe-area-inset-bottom)) !important;
+                    left: 50% !important;
+                    right: auto !important;
+                    transform: translateX(-50%) !important;
+                    width: calc(100vw - 52px) !important;
+                    max-width: 336px !important;
+                    margin: 0 !important;
+                    height: 54px !important;
                     background: rgba(14, 19, 32, 0.96) !important;
                     backdrop-filter: blur(20px) !important;
                     -webkit-backdrop-filter: blur(20px) !important;
                     border: 1.5px solid rgba(253, 184, 19, 0.42) !important;
-                    border-radius: 22px !important;
-                    padding: 6px 8px !important;
+                    border-radius: 18px !important;
+                    padding: 4px 6px !important;
                     display: flex !important;
                     align-items: center !important;
                     justify-content: space-around !important;
-                    box-shadow: 0 14px 36px rgba(0, 0, 0, 0.9), 0 0 22px rgba(253, 184, 19, 0.16) !important;
+                    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.9), 0 0 18px rgba(253, 184, 19, 0.14) !important;
                     z-index: 9400 !important;
                 }
                 #mobileAppDock .app-tab {
@@ -6064,15 +6154,15 @@ async function handleLiveSearch() {
                     flex-direction: column !important;
                     align-items: center !important;
                     justify-content: center !important;
-                    gap: 3px !important;
+                    gap: 2px !important;
                     cursor: pointer !important;
-                    padding: 2px 0 !important;
+                    padding: 1px 0 !important;
                     color: #94a3b8 !important;
                     min-width: 0 !important;
                 }
                 #mobileAppDock .app-tab:not(.ai-tab-inner) .app-tab-icon {
-                    width: 44px !important;
-                    height: 26px !important;
+                    width: 36px !important;
+                    height: 22px !important;
                     padding: 0 !important;
                     margin: 0 !important;
                     border-radius: 999px !important;
@@ -6083,10 +6173,10 @@ async function handleLiveSearch() {
                     transition: all 0.2s ease !important;
                 }
                 #mobileAppDock .app-tab:not(.ai-tab-inner) .app-tab-icon svg {
-                    width: 21px !important;
-                    height: 21px !important;
-                    min-width: 21px !important;
-                    min-height: 21px !important;
+                    width: 18px !important;
+                    height: 18px !important;
+                    min-width: 18px !important;
+                    min-height: 18px !important;
                     display: block !important;
                     fill: #94a3b8 !important;
                     transition: fill 0.2s ease, transform 0.2s ease !important;
@@ -6097,10 +6187,10 @@ async function handleLiveSearch() {
                 }
                 #mobileAppDock .app-tab.active:not(.ai-tab-inner) .app-tab-icon svg {
                     fill: #fdb813 !important;
-                    transform: scale(1.06) !important;
+                    transform: scale(1.05) !important;
                 }
                 #mobileAppDock .app-tab .app-tab-label {
-                    font-size: 10.5px !important;
+                    font-size: 9.5px !important;
                     font-weight: 700 !important;
                     color: #94a3b8 !important;
                     line-height: 1 !important;
@@ -6113,30 +6203,30 @@ async function handleLiveSearch() {
                 #mobileAppDock .app-tab.ai-tab-inner {
                     background: linear-gradient(135deg, #fdb813, #f59e0b) !important;
                     color: #000000 !important;
-                    border-radius: 16px !important;
-                    padding: 6px 12px !important;
-                    margin: 0 4px !important;
+                    border-radius: 13px !important;
+                    padding: 4px 10px !important;
+                    margin: 0 3px !important;
                     flex: 0 0 auto !important;
-                    box-shadow: 0 6px 18px rgba(253, 184, 19, 0.4) !important;
+                    box-shadow: 0 4px 14px rgba(253, 184, 19, 0.38) !important;
                 }
                 #mobileAppDock .app-tab.ai-tab-inner .app-tab-icon {
-                    width: 22px !important;
-                    height: 22px !important;
+                    width: 19px !important;
+                    height: 19px !important;
                     padding: 0 !important;
                     display: flex !important;
                     align-items: center !important;
                     justify-content: center !important;
                 }
                 #mobileAppDock .app-tab.ai-tab-inner .app-tab-icon svg {
-                    width: 20px !important;
-                    height: 20px !important;
+                    width: 17px !important;
+                    height: 17px !important;
                     fill: #000000 !important;
                     display: block !important;
                 }
                 #mobileAppDock .app-tab.ai-tab-inner .app-tab-label {
                     color: #000000 !important;
                     font-weight: 900 !important;
-                    font-size: 10.5px !important;
+                    font-size: 9.5px !important;
                 }
             }
 
@@ -6147,7 +6237,7 @@ async function handleLiveSearch() {
                 background-color: #080b12 !important;
             }
             body.mcqs-study-app-active .container {
-                padding: 0 0 110px 0 !important;
+                padding: 0 0 90px 0 !important;
                 max-width: 100vw !important;
             }
             body.mcqs-study-app-active #breadcrumb-text {
@@ -6356,7 +6446,6 @@ async function handleLiveSearch() {
                 box-shadow: 0 12px 30px rgba(0, 0, 0, 0.55);
             }
 
-            /* Separated Quick Links & Essential Practice Horizontal Tracks */
             .sa-quick-horiz-track {
                 display: flex;
                 gap: 10px;
@@ -6388,7 +6477,7 @@ async function handleLiveSearch() {
             }
 
             /* ==========================================
-               4. COMPACT LIVE-SIMULATION ANALYTICS DASHBOARD STYLES (FIXES IMAGES 1 & 2)
+               4. COMPACT LIVE-SIMULATION ANALYTICS DASHBOARD STYLES
                ========================================== */
             .ad-compact-shell {
                 display: flex;
@@ -6525,11 +6614,11 @@ async function handleLiveSearch() {
         blitzExam: '',
         blitzBestScore: Number(localStorage.getItem('mcqs_app_blitz_best_v1') || 0),
         blitzBestAcc: Number(localStorage.getItem('mcqs_app_blitz_best_acc_v1') || 0),
-        // Live Analytics Simulator State
-        analyticsSimMode: 'SHIELD', // 'CURRENT' | 'SHIELD' | 'SPEED'
-        analyticsSimQuestions: 180,
+        analyticsSimMode: 'CURRENT', // 'CURRENT' | 'FIX_WRONG' | 'FULL_TARGET'
+        analyticsSimQuestions: 50,
         lastAnalyticsData: null,
-        lastAnalyticsCategory: ''
+        lastAnalyticsCategory: '',
+        lastAnalyticsScheme: null
     };
 
     function getActiveExamCategoriesFromAdmin() {
@@ -6619,7 +6708,7 @@ async function handleLiveSearch() {
     }
 
     // ==========================================
-    // COMPACT, MODERNIZED ANALYTICS COMMAND CENTER WITH LIVE SIMULATOR (FIXES IMAGES 1 & 2)
+    // COMPACT, 100% TRUE-DATA ANALYTICS COMMAND CENTER WITH EXAM-SPECIFIC MARKING (FIXES IMAGE 1)
     // ==========================================
     function buildPrecisionSvgTrajectoryHtml(trendArr) {
         const pts = (Array.isArray(trendArr) && trendArr.length > 0) ? trendArr.slice(-10) : [100];
@@ -6627,7 +6716,7 @@ async function handleLiveSearch() {
 
         const svgW = 330;
         const svgH = 118;
-        const padLeft = 36; // Dedicated left gutter so 100%, 75%, 50% NEVER touch the green dots!
+        const padLeft = 36;
         const padRight = 16;
         const padTop = 14;
         const padBottom = 22;
@@ -6641,7 +6730,6 @@ async function handleLiveSearch() {
             return { x: Number(x.toFixed(1)), y: Number(y.toFixed(1)), val: Math.round(clamped), idx };
         });
 
-        // Smooth SVG cubic bezier path
         let pathD = `M ${coords[0].x} ${coords[0].y}`;
         for (let i = 0; i < coords.length - 1; i++) {
             const p0 = coords[i];
@@ -6662,10 +6750,10 @@ async function handleLiveSearch() {
         const dotsHtml = coords.map((c, i) => {
             const isFirst = i === 0;
             const isLast = i === coords.length - 1;
-            const showLabel = isFirst || isLast || i === Math.floor(coords.length / 2);
+            const showLabel = isFirst || isLast || (pts.length > 2 && i === Math.floor(coords.length / 2));
             return `
                 <circle cx="${c.x}" cy="${c.y}" r="${isLast ? 4.5 : 3.5}" fill="${isLast ? '#10b981' : '#fdb813'}" stroke="#080b12" stroke-width="1.8"/>
-                ${showLabel ? `<text x="${c.x}" y="${svgH - 4}" text-anchor="${isFirst ? 'start' : (isLast ? 'end' : 'middle')}" fill="${isLast ? '#10b981' : '#94a3b8'}" font-size="9" font-weight="800">T${i + 1} (${c.val}%)</text>` : ''}
+                ${showLabel ? `<text x="${c.x}" y="${svgH - 4}" text-anchor="${isFirst ? 'start' : (isLast ? 'end' : 'middle')}" fill="${isLast ? '#10b981' : '#94a3b8'}" font-size="9" font-weight="800">${pts.length === 1 ? (isLast ? `Quiz 1 (${c.val}%)` : '') : `T${i + 1} (${c.val}%)`}</text>` : ''}
             `;
         }).join('');
 
@@ -6693,72 +6781,84 @@ async function handleLiveSearch() {
 
     function renderAnalyticsLiveSimulatorBox() {
         const mount = document.getElementById('adLiveSimulatorMount');
-        if (!mount || !saState.lastAnalyticsData) return;
+        if (!mount || !saState.lastAnalyticsData || !saState.lastAnalyticsScheme) return;
 
         const st = saState.lastAnalyticsData;
+        const scheme = saState.lastAnalyticsScheme;
         const catClean = formatCleanTopicTitle(saState.lastAnalyticsCategory || 'Exam');
-        const qTotal = saState.analyticsSimQuestions || 180;
-        const maxMarks = qTotal * 4;
+        const qTotal = saState.analyticsSimQuestions || scheme.defaultPaper;
+        const maxMarks = qTotal * scheme.pos; // 50 Q in GK = 50 * 1 = 50 pts! 180 Q in NEET = 180 * 4 = 720 pts!
 
-        const baseAcc = st.overallAccuracy || 0;
-        const baseTime = st.avgTimeCorrect || 25;
+        // Exact accuracy ratio from student's real attempted questions
+        const exactRatio = st.totalAttempted > 0 ? (st.correctCount / st.totalAttempted) : (st.overallAccuracy / 100);
+        const baseRight = Math.round(exactRatio * qTotal);
+        const baseWrong = qTotal - baseRight;
+        const baseScore = (baseRight * scheme.pos) - (baseWrong * scheme.neg);
 
-        let simAcc = baseAcc;
-        let simTimePerQ = baseTime;
-        let simNote = `At your current ${baseAcc}% accuracy across a ${qTotal}-question ${catClean} paper.`;
+        let projCorrect = baseRight;
+        let projWrong = baseWrong;
+        let projScore = baseScore;
+        let simNote = '';
 
-        if (saState.analyticsSimMode === 'SHIELD') {
-            // Simulates eliminating 50% of wrong answers via Negative-Mark Shield
-            const wrongRatio = (100 - baseAcc) / 2;
-            simAcc = Math.min(100, Math.round(baseAcc + wrongRatio));
-            simNote = `Simulates fixing 50% of your wrong answers (raising accuracy from ${baseAcc}% → ${simAcc}%).`;
-        } else if (saState.analyticsSimMode === 'SPEED') {
-            simAcc = Math.min(100, baseAcc + 4);
-            simTimePerQ = Math.max(5, baseTime - 3);
-            const minsSaved = Math.max(1, Math.round((qTotal * 3) / 60));
-            simNote = `Simulates shaving 3s per MCQ (${baseTime}s → ${simTimePerQ}s), saving ~${minsSaved} mins for revision!`;
+        if (saState.analyticsSimMode === 'CURRENT') {
+            simNote = `Based on your real ${st.correctCount}/${st.totalAttempted} (${st.overallAccuracy}%) accuracy across a ${qTotal}-question ${catClean} paper (${scheme.posLabel} Correct, ${scheme.negLabel} Wrong).`;
+        } else if (saState.analyticsSimMode === 'FIX_WRONG') {
+            // Simulates converting half of wrong ratio (or fixing wrong answers)
+            const improvedWrong = Math.floor(baseWrong / 2);
+            projCorrect = qTotal - improvedWrong;
+            projWrong = improvedWrong;
+            projScore = (projCorrect * scheme.pos) - (projWrong * scheme.neg);
+            simNote = `Fixing 50% of your wrong answers on a ${qTotal}-question ${catClean} paper raises your score from ${baseScore} pts → ${projScore} pts!`;
+        } else if (saState.analyticsSimMode === 'FULL_TARGET') {
+            projCorrect = qTotal;
+            projWrong = 0;
+            projScore = maxMarks;
+            simNote = `100% Mastery Target: Answering all ${qTotal} questions correctly in ${catClean} yields the maximum ${maxMarks} / ${maxMarks} pts.`;
         }
 
-        const projCorrect = Math.round((simAcc / 100) * qTotal);
-        const projWrong = qTotal - projCorrect;
-        const projScore = (projCorrect * 4) - projWrong;
-        const baseProjCorrect = Math.round((baseAcc / 100) * qTotal);
-        const baseProjScore = (baseProjCorrect * 4) - (qTotal - baseProjCorrect);
-        const scoreGain = Math.max(0, projScore - baseProjScore);
-        const estMinutes = Math.max(1, Math.round((qTotal * simTimePerQ) / 60));
-        const barPct = Math.min(100, Math.max(5, Math.round((Math.max(0, projScore) / maxMarks) * 100)));
+        const scoreGain = Math.max(0, projScore - baseScore);
+        const barPct = Math.min(100, Math.max(4, Math.round((Math.max(0, projScore) / Math.max(1, maxMarks)) * 100)));
+
+        // 100% True Time Display — Never invent 25s/Q if recorded time is 0s!
+        let timeLineHtml = '';
+        if (st.avgTimeCorrect > 0) {
+            const estMins = Math.max(1, Math.round((qTotal * st.avgTimeCorrect) / 60));
+            timeLineHtml = `<div style="color:#38bdf8; font-weight:700; margin-top:2px;">⏱️ Real Pace (${st.avgTimeCorrect}s/Q): ~${estMins} mins for ${qTotal} Q</div>`;
+        } else {
+            timeLineHtml = `<div style="color:#94a3b8; font-weight:700; margin-top:2px;">⏱️ Recorded Avg Time: ${st.avgTimeCorrect}s/Q • Marking: ${scheme.posLabel} / ${scheme.negLabel}</div>`;
+        }
 
         mount.innerHTML = `
             <div class="ad-sim-card">
                 <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px; margin-bottom:8px;">
-                    <span style="background:rgba(253,184,19,0.2); color:#fdb813; border:1px solid rgba(253,184,19,0.45); padding:2px 9px; border-radius:999px; font-size:10px; font-weight:900;">🎛️ LIVE SCORE &amp; PACE SIMULATOR</span>
+                    <span style="background:rgba(253,184,19,0.2); color:#fdb813; border:1px solid rgba(253,184,19,0.45); padding:2px 9px; border-radius:999px; font-size:10px; font-weight:900;">🎛️ LIVE ${catClean.toUpperCase()} SCORE SIMULATOR (${scheme.posLabel}/${scheme.negLabel})</span>
                     <div style="display:flex; gap:4px;">
-                        ${[50, 100, 180].map(qNum => `
-                            <button type="button" onclick="setAnalyticsLiveSimOption(null, ${qNum})" style="background:${qTotal === qNum ? '#fdb813' : '#090d16'}; color:${qTotal === qNum ? '#000' : '#94a3b8'}; border:1px solid ${qTotal === qNum ? '#fdb813' : 'rgba(255,255,255,0.12)'}; border-radius:6px; padding:2px 7px; font-size:10px; font-weight:800; cursor:pointer;">${qNum} Q</button>
+                        ${scheme.paperSizes.map(qNum => `
+                            <button type="button" onclick="setAnalyticsLiveSimOption(null, ${qNum})" style="background:${qTotal === qNum ? '#fdb813' : '#090d16'}; color:${qTotal === qNum ? '#000' : '#94a3b8'}; border:1px solid ${qTotal === qNum ? '#fdb813' : 'rgba(255,255,255,0.12)'}; border-radius:6px; padding:2px 7px; font-size:10px; font-weight:800; cursor:pointer;">${qNum} Q (${qNum * scheme.pos} pts)</button>
                         `).join('')}
                     </div>
                 </div>
 
                 <!-- 3 Interactive Simulation Mode Pills -->
                 <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:6px; margin-bottom:10px;">
-                    <button type="button" onclick="setAnalyticsLiveSimOption('CURRENT', null)" style="background:${saState.analyticsSimMode === 'CURRENT' ? 'rgba(56,189,248,0.2)' : '#090d16'}; color:${saState.analyticsSimMode === 'CURRENT' ? '#38bdf8' : '#94a3b8'}; border:1px solid ${saState.analyticsSimMode === 'CURRENT' ? '#38bdf8' : 'rgba(255,255,255,0.1)'}; border-radius:8px; padding:6px 4px; font-size:10.5px; font-weight:800; cursor:pointer;">📊 Current Pace</button>
-                    <button type="button" onclick="setAnalyticsLiveSimOption('SHIELD', null)" style="background:${saState.analyticsSimMode === 'SHIELD' ? 'rgba(16,185,129,0.2)' : '#090d16'}; color:${saState.analyticsSimMode === 'SHIELD' ? '#10b981' : '#94a3b8'}; border:1px solid ${saState.analyticsSimMode === 'SHIELD' ? '#10b981' : 'rgba(255,255,255,0.1)'}; border-radius:8px; padding:6px 4px; font-size:10.5px; font-weight:800; cursor:pointer;">🛡️ Mistake Shield</button>
-                    <button type="button" onclick="setAnalyticsLiveSimOption('SPEED', null)" style="background:${saState.analyticsSimMode === 'SPEED' ? 'rgba(253,184,19,0.2)' : '#090d16'}; color:${saState.analyticsSimMode === 'SPEED' ? '#fdb813' : '#94a3b8'}; border:1px solid ${saState.analyticsSimMode === 'SPEED' ? '#fdb813' : 'rgba(255,255,255,0.1)'}; border-radius:8px; padding:6px 4px; font-size:10.5px; font-weight:800; cursor:pointer;">⚡ Speed Boost</button>
+                    <button type="button" onclick="setAnalyticsLiveSimOption('CURRENT', null)" style="background:${saState.analyticsSimMode === 'CURRENT' ? 'rgba(56,189,248,0.2)' : '#090d16'}; color:${saState.analyticsSimMode === 'CURRENT' ? '#38bdf8' : '#94a3b8'}; border:1px solid ${saState.analyticsSimMode === 'CURRENT' ? '#38bdf8' : 'rgba(255,255,255,0.1)'}; border-radius:8px; padding:6px 4px; font-size:10.5px; font-weight:800; cursor:pointer;">📊 Current (${st.overallAccuracy}%)</button>
+                    <button type="button" onclick="setAnalyticsLiveSimOption('FIX_WRONG', null)" style="background:${saState.analyticsSimMode === 'FIX_WRONG' ? 'rgba(16,185,129,0.2)' : '#090d16'}; color:${saState.analyticsSimMode === 'FIX_WRONG' ? '#10b981' : '#94a3b8'}; border:1px solid ${saState.analyticsSimMode === 'FIX_WRONG' ? '#10b981' : 'rgba(255,255,255,0.1)'}; border-radius:8px; padding:6px 4px; font-size:10.5px; font-weight:800; cursor:pointer;">🛡️ Mistake Shield</button>
+                    <button type="button" onclick="setAnalyticsLiveSimOption('FULL_TARGET', null)" style="background:${saState.analyticsSimMode === 'FULL_TARGET' ? 'rgba(253,184,19,0.2)' : '#090d16'}; color:${saState.analyticsSimMode === 'FULL_TARGET' ? '#fdb813' : '#94a3b8'}; border:1px solid ${saState.analyticsSimMode === 'FULL_TARGET' ? '#fdb813' : 'rgba(255,255,255,0.1)'}; border-radius:8px; padding:6px 4px; font-size:10.5px; font-weight:800; cursor:pointer;">🎯 100% Target</button>
                 </div>
 
                 <div style="background:#080b12; border:1px solid rgba(255,255,255,0.08); border-radius:11px; padding:10px 12px;">
                     <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:6px;">
                         <div>
-                            <div style="font-size:9.5px; color:#94a3b8; font-weight:800; text-transform:uppercase;">PROJECTED ${qTotal}-Q SCORE</div>
+                            <div style="font-size:9.5px; color:#94a3b8; font-weight:800; text-transform:uppercase;">PROJECTED ${qTotal}-Q SCORE (${maxMarks} MAX PTS)</div>
                             <div style="display:flex; align-items:baseline; gap:6px;">
                                 <span style="font-size:24px; font-weight:900; color:#fdb813;">${projScore}</span>
-                                <span style="font-size:11px; color:#64748b; font-weight:700;">/ ${maxMarks} pts</span>
-                                ${scoreGain > 0 ? `<span style="background:rgba(16,185,129,0.18); color:#10b981; padding:1px 6px; border-radius:5px; font-size:10px; font-weight:900;">↑ +${scoreGain} Lift</span>` : ''}
+                                <span style="font-size:11.5px; color:#94a3b8; font-weight:800;">/ ${maxMarks} pts</span>
+                                ${scoreGain > 0 ? `<span style="background:rgba(16,185,129,0.18); color:#10b981; padding:1px 6px; border-radius:5px; font-size:10px; font-weight:900;">↑ +${scoreGain} pts Lift</span>` : ''}
                             </div>
                         </div>
                         <div style="text-align:right; font-size:10.5px;">
-                            <div style="color:#10b981; font-weight:800;">${SVG_CHECK_GREEN} ${projCorrect} Right • <span style="color:#ef4444;">${SVG_CROSS_RED} ${projWrong} Wrong</span></div>
-                            <div style="color:#38bdf8; font-weight:700; margin-top:2px;">⏱️ Est. Completion: ${estMinutes} mins (${simTimePerQ}s/Q)</div>
+                            <div style="color:#10b981; font-weight:800;">${SVG_CHECK_GREEN} ${projCorrect} Right (+${projCorrect * scheme.pos}) • <span style="color:#ef4444;">${SVG_CROSS_RED} ${projWrong} Wrong (${scheme.hasNeg ? `−${projWrong * scheme.neg}` : '0'})</span></div>
+                            ${timeLineHtml}
                         </div>
                     </div>
 
@@ -6771,7 +6871,7 @@ async function handleLiveSearch() {
         `;
     }
 
-    // Override _renderProgressDashboard globally so Analytics is ultra-compact, modern & has live simulation!
+    // Override _renderProgressDashboard globally with 100% True Marking & Compact Layout
     _renderProgressDashboard = async function(category) {
         if (!currentUser) { _renderProgressSelection(); return; }
         const displayCategory = formatCleanTopicTitle(category);
@@ -6789,7 +6889,6 @@ async function handleLiveSearch() {
             snap.forEach(doc => tempDocs.push(doc.data()));
             tempDocs.sort((a, b) => (a.timestamp?.toMillis() || 0) - (b.timestamp?.toMillis() || 0));
 
-            // Compute stats for this category
             let totalScore = 0, totalAttempted = 0, correctCount = 0, wrongCount = 0, quizzesPlayed = 0;
             let accuracyTrend = [], totalAvgTimeC = 0, countC = 0, totalAvgTimeW = 0, countW = 0;
             const subjectMap = {};
@@ -6862,22 +6961,23 @@ async function handleLiveSearch() {
                 })
                 .sort((a, b) => b.pct - a.pct);
 
-            saState.lastAnalyticsData = {
+            const statsData = {
                 quizzesPlayed, totalScore, totalAttempted, correctCount, wrongCount,
                 overallAccuracy, avgTimeCorrect, avgTimeWrong, recentTrend, subjectList
             };
-            saState.lastAnalyticsCategory = category;
-            saState.analyticsSimQuestions = displayCategory.toLowerCase().includes('neet') ? 180 : (displayCategory.toLowerCase().includes('jee') ? 75 : 100);
-            if (wrongCount === 0 && saState.analyticsSimMode === 'SHIELD') {
-                saState.analyticsSimMode = 'SPEED';
-            }
+            const scheme = getExamMarkingScheme(category, statsData);
 
-            // Circular SVG Accuracy Ring math
+            saState.lastAnalyticsData = statsData;
+            saState.lastAnalyticsCategory = category;
+            saState.lastAnalyticsScheme = scheme;
+            saState.analyticsSimQuestions = scheme.defaultPaper;
+            saState.analyticsSimMode = 'CURRENT';
+
+            const maxAttemptedMarks = totalAttempted * scheme.pos;
             const ringCircum = 238;
             const ringOffset = Math.round(ringCircum - (overallAccuracy / 100) * ringCircum);
             const ringColor = overallAccuracy >= 75 ? '#10b981' : (overallAccuracy >= 50 ? '#fdb813' : '#ef4444');
 
-            // Weak-Spot / Mastery Banner (Ultra-compact 1-line bar)
             const weakSubjs = subjectList.filter(s => s.isWeak);
             const statusBannerHtml = weakSubjs.length > 0
                 ? `<div style="background:rgba(239,68,68,0.12); border:1px solid rgba(239,68,68,0.4); border-left:4px solid #ef4444; border-radius:12px; padding:9px 12px; font-size:12px; color:#fecaca; display:flex; justify-content:space-between; align-items:center; gap:8px;">
@@ -6888,7 +6988,6 @@ async function handleLiveSearch() {
                         ${SVG_CHECK_GREEN} <span><b>Strong Mastery!</b> All practiced subjects in ${displayCategory} are ≥ 50% accuracy.</span>
                    </div>`;
 
-            // Compact Subject Mastery Rows
             const subjectRowsHtml = subjectList.length > 0
                 ? subjectList.map(s => {
                     const col = s.pct >= 70 ? '#10b981' : (s.pct >= 50 ? '#fdb813' : '#ef4444');
@@ -6912,9 +7011,10 @@ async function handleLiveSearch() {
                 }).join('')
                 : `<div style="font-size:12px; color:#94a3b8;">Practice chapter quizzes to populate subject mastery bars.</div>`;
 
-            // Speed Autopsy diagnosis line
-            let speedDiagText = '⚡ Optimal Pacing: Zero time wasted on wrong options.';
-            if (avgTimeWrong > 0) {
+            let speedDiagText = avgTimeCorrect > 0
+                ? `⚡ Recorded Pace: ${avgTimeCorrect}s avg on Correct vs ${avgTimeWrong}s on Wrong.`
+                : `⏱️ Per-question timer data will update automatically on your next timed quiz.`;
+            if (avgTimeWrong > 0 && avgTimeCorrect > 0) {
                 speedDiagText = avgTimeWrong < avgTimeCorrect
                     ? `⚠️ Impulse Alert: You spent ${avgTimeWrong}s on Wrong vs ${avgTimeCorrect}s on Correct. Pause +5s before locking!`
                     : `🧠 Time Sink: You spent ${avgTimeWrong}s on Wrong answers. Skip tough MCQs on 1st pass!`;
@@ -6940,7 +7040,7 @@ async function handleLiveSearch() {
                             <div>
                                 <h1 style="margin:0; font-size:18px; font-weight:900; color:#ffffff;">📊 ${displayCategory} Diagnostic Center</h1>
                                 <div style="font-size:11.5px; color:#94a3b8; margin-top:2px;">
-                                    Compiled from <b style="color:#fdb813;">${quizzesPlayed} Quiz${quizzesPlayed === 1 ? '' : 'zes'}</b> • <b style="color:#38bdf8;">${totalAttempted} MCQs</b>
+                                    Compiled from <b style="color:#fdb813;">${quizzesPlayed} Quiz${quizzesPlayed === 1 ? '' : 'zes'}</b> • <b style="color:#38bdf8;">${totalAttempted} MCQs</b> (<span style="color:#10b981;">${scheme.schemeBadge}</span>)
                                 </div>
                             </div>
                             <div style="display:flex; gap:6px;">
@@ -6950,7 +7050,7 @@ async function handleLiveSearch() {
                         </div>
                     </div>
 
-                    <!-- 2. COMPACT TELEMETRY HERO (ANIMATED RING + 2x2 KPI GRID IN ONE CARD!) -->
+                    <!-- 2. COMPACT TELEMETRY HERO (ANIMATED RING + EXAM-ACCURATE 2x2 KPI GRID) -->
                     <div class="ad-telemetry-hero">
                         <div class="ad-ring-box">
                             <svg width="96" height="96" viewBox="0 0 96 96" style="transform:rotate(-90deg);">
@@ -6966,38 +7066,36 @@ async function handleLiveSearch() {
                         <div class="ad-kpi-quad-grid">
                             <div class="ad-kpi-mini-pill" style="border-color:rgba(253,184,19,0.35);">
                                 <span style="font-size:9.5px; font-weight:800; color:#94a3b8; text-transform:uppercase;">⭐ Net Score</span>
-                                <span style="font-size:20px; font-weight:900; color:#fdb813; margin-top:1px;">${totalScore} <small style="font-size:10px; color:#94a3b8;">pts</small></span>
+                                <span style="font-size:20px; font-weight:900; color:#fdb813; margin-top:1px;">${totalScore} <small style="font-size:10px; color:#94a3b8;">/ ${maxAttemptedMarks} pts</small></span>
                             </div>
                             <div class="ad-kpi-mini-pill" style="border-color:rgba(56,189,248,0.35);">
                                 <span style="font-size:9.5px; font-weight:800; color:#94a3b8; text-transform:uppercase;">📝 Attempted</span>
                                 <span style="font-size:20px; font-weight:900; color:#38bdf8; margin-top:1px;">${totalAttempted} <small style="font-size:10px; color:#94a3b8;">MCQs</small></span>
                             </div>
                             <div class="ad-kpi-mini-pill" style="border-color:rgba(16,185,129,0.4);">
-                                <span style="font-size:9.5px; font-weight:800; color:#94a3b8; text-transform:uppercase;">Correct (+4)</span>
-                                <span style="font-size:18px; font-weight:900; color:#10b981; margin-top:1px; display:inline-flex; align-items:center; gap:4px;">${SVG_CHECK_GREEN} ${correctCount}</span>
+                                <span style="font-size:9.5px; font-weight:800; color:#94a3b8; text-transform:uppercase;">Correct (${scheme.posLabel})</span>
+                                <span style="font-size:18px; font-weight:900; color:#10b981; margin-top:1px; display:inline-flex; align-items:center; gap:4px;">${SVG_CHECK_GREEN} ${correctCount} <small style="font-size:10px; color:#10b981;">(+${correctCount * scheme.pos})</small></span>
                             </div>
                             <div class="ad-kpi-mini-pill" style="border-color:rgba(239,68,68,0.4);">
-                                <span style="font-size:9.5px; font-weight:800; color:#94a3b8; text-transform:uppercase;">Wrong (−1)</span>
-                                <span style="font-size:18px; font-weight:900; color:#ef4444; margin-top:1px; display:inline-flex; align-items:center; gap:4px;">${SVG_CROSS_RED} ${wrongCount}</span>
+                                <span style="font-size:9.5px; font-weight:800; color:#94a3b8; text-transform:uppercase;">Wrong (${scheme.negLabel})</span>
+                                <span style="font-size:18px; font-weight:900; color:#ef4444; margin-top:1px; display:inline-flex; align-items:center; gap:4px;">${SVG_CROSS_RED} ${wrongCount} <small style="font-size:10px; color:#94a3b8;">(${scheme.hasNeg ? `−${wrongCount * scheme.neg}` : '0'})</small></span>
                             </div>
                         </div>
                     </div>
 
                     ${statusBannerHtml}
 
-                    <!-- 3. INTERACTIVE LIVE SCORE & PACE SIMULATOR -->
+                    <!-- 3. INTERACTIVE LIVE SCORE SIMULATOR (50 Q in GK = 50 pts!) -->
                     <div id="adLiveSimulatorMount"></div>
 
                     <!-- 4. SIDE-BY-SIDE SPEED AUTOPSY + SUBJECT MASTERY & SVG TRAJECTORY -->
                     <div class="ad-split-row">
-                        <!-- Left Card: Compact Side-by-Side Speed Autopsy + Subject Mastery -->
                         <div class="ad-top-bar" style="display:flex; flex-direction:column; justify-content:space-between; gap:12px;">
                             <div>
                                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
                                     <span style="font-size:12.5px; font-weight:900; color:#ffffff;">⏱️ Speed-vs-Accuracy Radar</span>
-                                    <span style="font-size:10px; color:#fdb813; font-weight:800;">Live Pacing</span>
+                                    <span style="font-size:10px; color:#fdb813; font-weight:800;">Recorded Pacing</span>
                                 </div>
-                                <!-- Always Side-by-Side 2 Columns even on Mobile! -->
                                 <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:7px;">
                                     <div style="background:rgba(16,185,129,0.1); border:1px solid rgba(16,185,129,0.4); border-radius:10px; padding:8px; text-align:center;">
                                         <div style="font-size:18px; font-weight:900; color:#10b981; display:inline-flex; align-items:center; gap:4px;">${SVG_CHECK_GREEN} ${avgTimeCorrect}s</div>
@@ -7017,11 +7115,10 @@ async function handleLiveSearch() {
                             </div>
                         </div>
 
-                        <!-- Right Card: Precision Non-Overlapping SVG Accuracy Trajectory -->
                         <div class="ad-top-bar" style="display:flex; flex-direction:column; justify-content:space-between;">
                             <div>
                                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-                                    <span style="font-size:12.5px; font-weight:900; color:#ffffff;">📈 Accuracy Trajectory (Last ${recentTrend.length} Tests)</span>
+                                    <span style="font-size:12.5px; font-weight:900; color:#ffffff;">📈 Accuracy Trajectory (${recentTrend.length} Quiz${recentTrend.length === 1 ? '' : 'zes'})</span>
                                     <span style="background:rgba(16,185,129,0.16); color:#10b981; padding:2px 8px; border-radius:999px; font-size:10px; font-weight:900;">Now: ${overallAccuracy}%</span>
                                 </div>
                                 <div style="background:#080b12; border:1px solid rgba(255,255,255,0.07); border-radius:12px; padding:10px 8px 6px 6px;">
@@ -7029,8 +7126,8 @@ async function handleLiveSearch() {
                                 </div>
                             </div>
                             <div style="font-size:10.5px; color:#94a3b8; margin-top:8px; display:flex; justify-content:space-between;">
-                                <span>● First Recorded: <b style="color:#fdb813;">${recentTrend[0] || overallAccuracy}%</b></span>
-                                <span>● Peak Accuracy: <b style="color:#10b981;">${Math.max(...recentTrend, overallAccuracy)}%</b></span>
+                                <span>● First Quiz: <b style="color:#fdb813;">${recentTrend[0] || overallAccuracy}%</b></span>
+                                <span>● Best Accuracy: <b style="color:#10b981;">${Math.max(...recentTrend, overallAccuracy)}%</b></span>
                             </div>
                         </div>
                     </div>
@@ -7396,7 +7493,7 @@ async function handleLiveSearch() {
             saState.blitzExam = exams[0] || 'NEET';
         }
 
-        // 1. CONTINUOUS SLIDING EXAM CATEGORY BANNERS (100% Driven by Admin Panel Uploads)
+        // 1. CONTINUOUS SLIDING EXAM CATEGORY BANNERS
         const heroSlidesHtml = exams.map((exKey, idx) => {
             const slide = getAdminDrivenExamSlideData(exKey, idx);
             const encodedExArr = encodeURIComponent(JSON.stringify([exKey]));
@@ -7521,12 +7618,11 @@ async function handleLiveSearch() {
         }).join('');
         const cleanBlitzExam = formatCleanTopicTitle(saState.blitzExam);
 
-        // 4. SEPARATED QUICK LINKS & ESSENTIAL PRACTICE SECTIONS (Fixes Point 2 & Image 3!)
+        // 4. SEPARATED QUICK LINKS & ESSENTIAL PRACTICE SECTIONS
         const quickLinksList = (window.sidebarConfig && Array.isArray(window.sidebarConfig.quickLinks)) ? window.sidebarConfig.quickLinks : [];
         const essentialList = (window.sidebarConfig && Array.isArray(window.sidebarConfig.essentialPractice)) ? window.sidebarConfig.essentialPractice : [];
         const streakNum = document.getElementById('nav-streak-display')?.innerText || '0';
 
-        // Build Part A: Quick Links (Strictly from Admin Panel Quick Links)
         let usedColorsQ = new Set();
         const qCardCls = quickLinksList.length <= 1 ? 'sa-quick-card sa-quick-card-single' : 'sa-quick-card';
         const quickLinksCardsHtml = quickLinksList.map((item, idx) => {
@@ -7548,7 +7644,6 @@ async function handleLiveSearch() {
             `;
         }).join('');
 
-        // Build Part B: Essential Practice (Daily Quiz Challenge + Strictly Admin Panel Essential Practice)
         let usedColorsE = new Set(['#fdb813']);
         const essentialItemsFiltered = essentialList.filter(e => e.path !== 'Daily Quiz Challenge');
         const eCardCls = essentialItemsFiltered.length === 0 ? 'sa-quick-card sa-quick-card-single' : 'sa-quick-card';
@@ -7721,7 +7816,7 @@ async function handleLiveSearch() {
         return true;
     }
 
-    const _origRenderViewBeforeStudyAppV3 = _renderView;
+    const _origRenderViewBeforeStudyAppV4 = _renderView;
     _renderView = function() {
         injectStudyMobileAppStyles();
         upgradeNavbarSearchButtonLogo();
@@ -7738,7 +7833,7 @@ async function handleLiveSearch() {
 
         document.body.classList.remove('mcqs-study-app-active');
         if (saState.carouselTimer) clearInterval(saState.carouselTimer);
-        _origRenderViewBeforeStudyAppV3();
+        _origRenderViewBeforeStudyAppV4();
         repairAndEnhanceMobileAppDock();
     };
 
