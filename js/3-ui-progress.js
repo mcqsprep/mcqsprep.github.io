@@ -7750,7 +7750,63 @@ async function handleLiveSearch() {
             saState.blitzExam = exams[0] || 'NEET';
         }
 
-        // 1. CONTINUOUS SLIDING EXAM CATEGORY BANNERS
+// 1. CONTINUOUS SLIDING EXAM CATEGORY BANNERS (100% Equal Height & Uniform 2x3 Chip Grid)
+        if (!document.getElementById('sa-equal-exam-box-lock')) {
+            const eqSt = document.createElement('style');
+            eqSt.id = 'sa-equal-exam-box-lock';
+            eqSt.textContent = `
+                .sa-carousel-track {
+                    align-items: stretch !important;
+                }
+                .sa-exam-slide {
+                    display: flex !important;
+                    flex-direction: column !important;
+                    height: 232px !important;
+                }
+                .sa-exam-banner-card {
+                    height: 232px !important;
+                    min-height: 232px !important;
+                    max-height: 232px !important;
+                    flex: 1 1 232px !important;
+                    padding: 14px 15px !important;
+                    box-sizing: border-box !important;
+                }
+                .sa-uploaded-chips-wrap {
+                    display: grid !important;
+                    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+                    grid-auto-rows: 28px !important;
+                    gap: 6px !important;
+                    height: 96px !important;
+                    min-height: 96px !important;
+                    max-height: 96px !important;
+                    margin: 8px 0 !important;
+                    align-content: start !important;
+                    overflow: hidden !important;
+                }
+                .sa-uploaded-chip {
+                    width: 100% !important;
+                    height: 28px !important;
+                    padding: 0 9px !important;
+                    border-radius: 8px !important;
+                    font-size: 11px !important;
+                    font-weight: 700 !important;
+                    display: inline-flex !important;
+                    align-items: center !important;
+                    gap: 5px !important;
+                    white-space: nowrap !important;
+                    overflow: hidden !important;
+                    text-overflow: ellipsis !important;
+                    box-sizing: border-box !important;
+                }
+                .sa-uploaded-chip span:last-child {
+                    overflow: hidden !important;
+                    text-overflow: ellipsis !important;
+                    white-space: nowrap !important;
+                }
+            `;
+            document.head.appendChild(eqSt);
+        }
+
         const heroSlidesHtml = exams.map((exKey, idx) => {
             const slide = getAdminDrivenExamSlideData(exKey, idx);
             const encodedExArr = encodeURIComponent(JSON.stringify([exKey]));
@@ -7761,7 +7817,7 @@ async function handleLiveSearch() {
                 const encodedModArr = encodeURIComponent(JSON.stringify([exKey, mKey]));
                 return `
                     <span class="sa-uploaded-chip" onclick="saJumpToPathEncoded('${encodedModArr}', event)">
-                        <span>${mIcon}</span>
+                        <span style="flex-shrink:0;">${mIcon}</span>
                         <span>${cleanM}</span>
                     </span>
                 `;
@@ -7772,8 +7828,8 @@ async function handleLiveSearch() {
                 : (slide.directModules.map(m => formatCleanTopicTitle(m)).join(' • ') || 'Complete Study & Practice Suite');
 
             const progressPill = slide.prog.solved > 0
-                ? `<span style="background:rgba(16,185,129,0.22); color:#10b981; border:1px solid rgba(16,185,129,0.5); padding:4px 10px; border-radius:999px; font-size:10.5px; font-weight:900; display:inline-flex; align-items:center; gap:4px;">${SVG_CHECK_GREEN} ${slide.prog.solved} Solved • ${slide.prog.acc}%</span>`
-                : `<span style="background:rgba(255,255,255,0.1); color:#f8fafc; border:1px solid rgba(255,255,255,0.2); padding:4px 10px; border-radius:999px; font-size:10.5px; font-weight:800;">📂 ${slide.directModules.length} Uploaded Sections</span>`;
+                ? `<span style="background:rgba(16,185,129,0.22); color:#10b981; border:1px solid rgba(16,185,129,0.5); padding:4px 9px; border-radius:999px; font-size:10px; font-weight:900; display:inline-flex; align-items:center; gap:4px; white-space:nowrap; flex-shrink:0;">${SVG_CHECK_GREEN} ${slide.prog.solved} Solved (${slide.prog.acc}%)</span>`
+                : `<span style="background:rgba(255,255,255,0.1); color:#f8fafc; border:1px solid rgba(255,255,255,0.2); padding:4px 9px; border-radius:999px; font-size:10px; font-weight:800; white-space:nowrap; flex-shrink:0;">📂 ${slide.directModules.length} Sections</span>`;
 
             return `
                 <div class="sa-exam-slide" onclick="saJumpToPathEncoded('${encodedExArr}', event)">
@@ -7791,13 +7847,13 @@ async function handleLiveSearch() {
                             <path d="M 0 62 Q 80 24, 160 46 T 320 14" fill="none" stroke="${slide.color}" stroke-width="2.5" stroke-linecap="round"/>
                         </svg>
 
-                        <div style="position:relative; z-index:2; display:flex; justify-content:space-between; align-items:flex-start; gap:8px;">
-                            <div style="display:flex; align-items:center; gap:10px; min-width:0;">
-                                <div style="width:44px; height:44px; border-radius:13px; background:rgba(9,13,22,0.75); border:1.5px solid ${slide.border}; color:${slide.color}; display:flex; align-items:center; justify-content:center; font-size:23px; flex-shrink:0; box-shadow:0 6px 16px rgba(0,0,0,0.5);">
+                        <div style="position:relative; z-index:2; display:flex; justify-content:space-between; align-items:center; gap:8px; height:44px;">
+                            <div style="display:flex; align-items:center; gap:10px; min-width:0; flex:1;">
+                                <div style="width:42px; height:42px; border-radius:12px; background:rgba(9,13,22,0.75); border:1.5px solid ${slide.border}; color:${slide.color}; display:flex; align-items:center; justify-content:center; font-size:21px; flex-shrink:0; box-shadow:0 6px 16px rgba(0,0,0,0.5);">
                                     ${slide.icon}
                                 </div>
-                                <div style="min-width:0;">
-                                    <h2 style="margin:0; font-size:19px; font-weight:900; color:#ffffff; line-height:1.15;">${slide.cleanName}</h2>
+                                <div style="min-width:0; flex:1;">
+                                    <h2 style="margin:0; font-size:17.5px; font-weight:900; color:#ffffff; line-height:1.15; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${slide.cleanName}</h2>
                                     <div style="font-size:11px; color:#cbd5e1; margin-top:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${subTopicsLine}</div>
                                 </div>
                             </div>
@@ -7808,9 +7864,9 @@ async function handleLiveSearch() {
                             ${uploadedChipsHtml}
                         </div>
 
-                        <div style="position:relative; z-index:2; display:flex; justify-content:space-between; align-items:center; border-top:1px solid rgba(255,255,255,0.12); padding-top:8px; font-size:12px; font-weight:800; color:${slide.color};">
-                            <span>Tap any module above or open ${slide.cleanName}</span>
-                            <span>Explore &rarr;</span>
+                        <div style="position:relative; z-index:2; display:flex; justify-content:space-between; align-items:center; gap:8px; border-top:1px solid rgba(255,255,255,0.12); padding-top:7px; font-size:11.5px; font-weight:800; color:${slide.color}; white-space:nowrap;">
+                            <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">Tap any module or open ${slide.cleanName}</span>
+                            <span style="flex-shrink:0;">Explore &rarr;</span>
                         </div>
                     </div>
                 </div>
