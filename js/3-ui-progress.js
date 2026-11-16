@@ -5937,28 +5937,28 @@ async function handleLiveSearch() {
 })();
 
 // ==========================================
-// 8. INSTALLED MOBILE APP, EXAM-ACCURATE ANALYTICS SUITE,
-//    STRICT HOME-ONLY FLOATING NAV LOCK & QUESTION-ONLY AI TUTOR LIVE SUGGESTIONS
+// 8. INSTALLED MOBILE APP, FIXED MOBILE TOP BAR, MODERNIZED QUIZ ACTION DECK,
+//    APP-ONLY BOTTOM DOCK LOCK, EXAM-ACCURATE ANALYTICS & AI QUESTION SUGGESTIONS
 // ==========================================
-(function initStudyInstalledMobileAppV5() {
-    if (window._mcqsStudyMobileAppLoadedV5) return;
-    window._mcqsStudyMobileAppLoadedV5 = true;
+(function initStudyInstalledMobileAppV6() {
+    if (window._mcqsStudyMobileAppLoadedV6) return;
+    window._mcqsStudyMobileAppLoadedV6 = true;
 
     const SVG_CHECK_GREEN = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px; flex-shrink:0;"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
     const SVG_CROSS_RED = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px; flex-shrink:0;"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`;
 
+    // Strictly detects Installed Standalone Mobile App (Never true on Mobile Website browser!)
     function isInstalledMobileAppMode() {
         const isStandalone = document.documentElement.classList.contains('is-standalone-pwa') ||
                              window.matchMedia('(display-mode: standalone)').matches ||
                              window.matchMedia('(display-mode: fullscreen)').matches ||
                              window.navigator.standalone === true ||
-                             document.referrer.indexOf('android-app://') !== -1 ||
-                             localStorage.getItem('mcqs_preview_mobile_app_ui') === 'true';
+                             document.referrer.indexOf('android-app://') !== -1;
         return isStandalone && window.innerWidth <= 860;
     }
 
     // ==========================================
-    // 1. STRICT MODAL & NON-HOME DETECTOR FOR FLOATING CENTER NAV BAR (FIXES ISSUE 1)
+    // 1. STRICT MODAL, TOP BAR & APP-ONLY BOTTOM DOCK VISIBILITY CONTROLLER
     // ==========================================
     function isAnyOverlayModalOpen() {
         const modalIds = [
@@ -5976,51 +5976,154 @@ async function handleLiveSearch() {
         return false;
     }
 
-    function enforceCenterPillBarHomeOnlyVisibility() {
+    function enforceNavigationBarsVisibility() {
         const rawHash = decodeURIComponent(window.location.hash.replace(/^#\/?/, '')).trim();
         const isRootHome = (!rawHash || rawHash === 'home') && (!Array.isArray(currentPath) || currentPath.length === 0);
         const modalOpen = isAnyOverlayModalOpen();
         const quizActive = document.body.classList.contains('mcqs-quiz-screen-active');
         const adminActive = document.body.classList.contains('admin-mode');
+        const isMobileInstalled = isInstalledMobileAppMode();
 
         document.body.classList.toggle('mcqs-any-modal-open', modalOpen);
+        document.body.classList.toggle('mcqs-is-installed-mobile-pwa', isMobileInstalled);
 
+        // 1. PC Floating Center Pill Bar: Only on Root Home on PC (>860px), hidden in all modals & inner pages
         const pillBar = document.getElementById('mcqsWebCenterNavPills');
-        if (!pillBar) return;
+        if (pillBar) {
+            if (!isRootHome || modalOpen || quizActive || adminActive || window.innerWidth <= 860) {
+                pillBar.style.setProperty('display', 'none', 'important');
+                pillBar.style.setProperty('visibility', 'hidden', 'important');
+                pillBar.style.setProperty('opacity', '0', 'important');
+                pillBar.style.setProperty('pointer-events', 'none', 'important');
+            } else {
+                pillBar.style.setProperty('display', 'inline-flex', 'important');
+                pillBar.style.setProperty('visibility', 'visible', 'important');
+                pillBar.style.setProperty('opacity', '1', 'important');
+                pillBar.style.setProperty('pointer-events', 'auto', 'important');
+            }
+        }
 
-        if (!isRootHome || modalOpen || quizActive || adminActive || window.innerWidth <= 860) {
-            pillBar.style.setProperty('display', 'none', 'important');
-            pillBar.style.setProperty('visibility', 'hidden', 'important');
-            pillBar.style.setProperty('opacity', '0', 'important');
-            pillBar.style.setProperty('pointer-events', 'none', 'important');
-        } else {
-            pillBar.style.setProperty('display', 'inline-flex', 'important');
-            pillBar.style.setProperty('visibility', 'visible', 'important');
-            pillBar.style.setProperty('opacity', '1', 'important');
-            pillBar.style.setProperty('pointer-events', 'auto', 'important');
+        // 2. Bottom App Dock (#mobileAppDock): ONLY visible in Installed Mobile App (NEVER on Mobile Website!)
+        const dock = document.getElementById('mobileAppDock');
+        if (dock) {
+            const hideDock = !isMobileInstalled || quizActive || modalOpen || adminActive || document.body.classList.contains('hide-bottom-bar');
+            if (hideDock) {
+                dock.style.setProperty('display', 'none', 'important');
+                dock.style.setProperty('visibility', 'hidden', 'important');
+                dock.style.setProperty('pointer-events', 'none', 'important');
+            } else {
+                dock.style.setProperty('display', 'flex', 'important');
+                dock.style.setProperty('visibility', 'visible', 'important');
+                dock.style.setProperty('pointer-events', 'auto', 'important');
+            }
         }
     }
 
-    function attachModalVisibilityObservers() {
-        if (window._mcqsModalVisibilityObserverAttached) return;
-        window._mcqsModalVisibilityObserverAttached = true;
+    // ==========================================
+    // 2. MODERNIZE QUIZ FOOTER ACTION BUTTONS (FIXES IMAGE 2: PREV BUTTON & UTILITY DECK)
+    // ==========================================
+    function modernizeQuizFooterCommandBar() {
+        const dyn = document.getElementById('dynamic-content');
+        if (!dyn) return;
 
-        const obs = new MutationObserver(() => {
-            enforceCenterPillBarHomeOnlyVisibility();
+        // Find the Prev, Next, and Submit buttons inside the active quiz card
+        const allBtns = Array.from(dyn.querySelectorAll('button'));
+        const prevBtn = allBtns.find(b => /prevQuestion/i.test(b.getAttribute('onclick') || '') || /←\s*PREV/i.test(b.innerText || ''));
+        const nextBtn = allBtns.find(b => /nextQuestion/i.test(b.getAttribute('onclick') || '') || /NEXT\s*→/i.test(b.innerText || ''));
+        const submitBtn = allBtns.find(b => /submitQuiz/i.test(b.getAttribute('onclick') || '') || /SUBMIT\s*\(/i.test(b.innerText || ''));
+
+        if (!prevBtn && !nextBtn && !submitBtn) return;
+
+        const saveBtn = allBtns.find(b => /bookmarkQuestion/i.test(b.getAttribute('onclick') || '') || /\bSAVE\b|\bSAVED\b/i.test(b.innerText || ''));
+        const doubtBtn = allBtns.find(b => /Doubt/i.test(b.getAttribute('onclick') || '') || /\bDOUBT\b/i.test(b.innerText || ''));
+        const reportBtn = allBtns.find(b => /openReportModal/i.test(b.getAttribute('onclick') || '') || /\bREPORT\b/i.test(b.innerText || ''));
+
+        // Locate the original footer wrapper holding prevBtn
+        const footerContainer = (prevBtn && prevBtn.parentElement) || (nextBtn && nextBtn.parentElement?.parentElement);
+        if (!footerContainer || footerContainer.dataset.mcqsDeckModernized === 'true') return;
+        footerContainer.dataset.mcqsDeckModernized = 'true';
+        footerContainer.className = 'mcqs-quiz-command-deck';
+        footerContainer.removeAttribute('style');
+
+        // Build Row 1: Utility Pill Row (Save, Doubt, Report)
+        const utilRow = document.createElement('div');
+        utilRow.className = 'mcqs-quiz-utility-row';
+
+        if (saveBtn) {
+            saveBtn.className = 'mcqs-quiz-util-btn util-save';
+            saveBtn.removeAttribute('style');
+            utilRow.appendChild(saveBtn);
+        }
+        if (doubtBtn) {
+            doubtBtn.className = 'mcqs-quiz-util-btn util-doubt';
+            doubtBtn.removeAttribute('style');
+            utilRow.appendChild(doubtBtn);
+        }
+        if (reportBtn) {
+            reportBtn.className = 'mcqs-quiz-util-btn util-report';
+            reportBtn.removeAttribute('style');
+            utilRow.appendChild(reportBtn);
+        }
+
+        // Build Row 2: Primary Navigation Row (← PREV, NEXT →, ✅ SUBMIT)
+        const navRow = document.createElement('div');
+        navRow.className = 'mcqs-quiz-primary-nav-row';
+
+        if (prevBtn) {
+            prevBtn.className = 'mcqs-quiz-nav-btn nav-prev';
+            prevBtn.removeAttribute('style');
+            navRow.appendChild(prevBtn);
+        }
+        if (nextBtn) {
+            nextBtn.className = 'mcqs-quiz-nav-btn nav-next';
+            nextBtn.removeAttribute('style');
+            navRow.appendChild(nextBtn);
+        }
+        if (submitBtn) {
+            submitBtn.className = 'mcqs-quiz-nav-btn nav-submit';
+            submitBtn.removeAttribute('style');
+            navRow.appendChild(submitBtn);
+        }
+
+        footerContainer.innerHTML = '';
+        if (utilRow.children.length > 0) footerContainer.appendChild(utilRow);
+        footerContainer.appendChild(navRow);
+    }
+
+    function attachGlobalObservers() {
+        if (window._mcqsV6ObserversAttached) return;
+        window._mcqsV6ObserversAttached = true;
+
+        const modalObs = new MutationObserver(() => {
+            enforceNavigationBarsVisibility();
         });
 
         ['aiModal', 'authModal', 'streakModal', 'userReportsModal', 'reportModal', 'feedbackModal'].forEach(id => {
             const el = document.getElementById(id);
-            if (el) obs.observe(el, { attributes: true, attributeFilter: ['style', 'class'] });
+            if (el) modalObs.observe(el, { attributes: true, attributeFilter: ['style', 'class'] });
         });
 
-        obs.observe(document.body, { childList: true, attributes: true, attributeFilter: ['class'] });
-        window.addEventListener('hashchange', enforceCenterPillBarHomeOnlyVisibility);
-        window.addEventListener('scroll', enforceCenterPillBarHomeOnlyVisibility, { passive: true, capture: true });
+        modalObs.observe(document.body, { childList: true, attributes: true, attributeFilter: ['class'] });
+
+        const dyn = document.getElementById('dynamic-content');
+        if (dyn) {
+            const dynObs = new MutationObserver(() => {
+                modernizeQuizFooterCommandBar();
+                enforceNavigationBarsVisibility();
+            });
+            dynObs.observe(dyn, { childList: true, subtree: true });
+        }
+
+        window.addEventListener('hashchange', () => {
+            enforceNavigationBarsVisibility();
+            setTimeout(modernizeQuizFooterCommandBar, 60);
+        });
+        window.addEventListener('resize', enforceNavigationBarsVisibility, { passive: true });
+        window.addEventListener('scroll', enforceNavigationBarsVisibility, { passive: true, capture: true });
     }
 
     // ==========================================
-    // 2. ASK AI TUTOR: 100% QUESTION-ONLY LIVE SUGGESTIONS (ZERO TOPIC NAMES — FIXES ISSUE 2)
+    // 3. ASK AI TUTOR: 100% QUESTION-ONLY LIVE SUGGESTIONS (ZERO TOPIC NAMES)
     // ==========================================
     var aiUploadedQuestionsCache = {
         loaded: false,
@@ -6032,9 +6135,7 @@ async function handleLiveSearch() {
     function stripHtmlToCleanQuestionText(rawHtml) {
         if (!rawHtml) return '';
         let s = String(rawHtml);
-        // Remove diagram zoom labels & captions
         s = s.replace(/<div[^>]*class="[^"]*mcq-diagram-caption[^"]*"[^>]*>[\s\S]*?<\/div>/gi, ' ');
-        // Convert table cells into clean spaced text
         s = s.replace(/<\/?(?:tr|th|td|table|thead|tbody)[^>]*>/gi, ' ');
         s = s.replace(/<br\s*\/?>/gi, ' ');
         s = s.replace(/<[^>]+>/g, ' ');
@@ -6110,7 +6211,6 @@ async function handleLiveSearch() {
         if (!inputEl || !box) return;
 
         const rawQuery = inputEl.value.trim();
-        // If user already selected a multi-line question or typed < 2 chars, hide suggestions
         if (rawQuery.length < 2 || rawQuery.includes('\nA) ')) {
             box.innerHTML = '';
             box.style.display = 'none';
@@ -6179,12 +6279,11 @@ async function handleLiveSearch() {
     }
 
     function bindQuestionOnlyAISuggestions() {
-        // Override the global function so oninput="handleAIFuzzySuggestions()" always uses our question-only engine
         window.handleAIFuzzySuggestions = renderQuestionOnlyAIFuzzySuggestions;
 
         const aiInput = document.getElementById('aiTextInput');
-        if (aiInput && !aiInput.dataset.questionOnlyBoundV5) {
-            aiInput.dataset.questionOnlyBoundV5 = 'true';
+        if (aiInput && !aiInput.dataset.questionOnlyBoundV6) {
+            aiInput.dataset.questionOnlyBoundV6 = 'true';
             aiInput.addEventListener('focus', () => {
                 window.handleAIFuzzySuggestions = renderQuestionOnlyAIFuzzySuggestions;
                 ensureAIQuestionsCacheLoaded();
@@ -6194,27 +6293,27 @@ async function handleLiveSearch() {
             }, true);
         }
 
-        if (typeof window.openAIModal === 'function' && !window._origOpenAIModalWrappedV5) {
-            window._origOpenAIModalWrappedV5 = window.openAIModal;
+        if (typeof window.openAIModal === 'function' && !window._origOpenAIModalWrappedV6) {
+            window._origOpenAIModalWrappedV6 = window.openAIModal;
             window.openAIModal = function() {
                 window.handleAIFuzzySuggestions = renderQuestionOnlyAIFuzzySuggestions;
-                window._origOpenAIModalWrappedV5();
-                enforceCenterPillBarHomeOnlyVisibility();
+                window._origOpenAIModalWrappedV6();
+                enforceNavigationBarsVisibility();
                 ensureAIQuestionsCacheLoaded();
             };
         }
 
-        if (typeof window.closeAIModal === 'function' && !window._origCloseAIModalWrappedV5) {
-            window._origCloseAIModalWrappedV5 = window.closeAIModal;
+        if (typeof window.closeAIModal === 'function' && !window._origCloseAIModalWrappedV6) {
+            window._origCloseAIModalWrappedV6 = window.closeAIModal;
             window.closeAIModal = function() {
-                window._origCloseAIModalWrappedV5();
-                enforceCenterPillBarHomeOnlyVisibility();
+                window._origCloseAIModalWrappedV6();
+                enforceNavigationBarsVisibility();
             };
         }
     }
 
     // ==========================================
-    // 3. EXAM-ACCURATE MARKING SCHEME DETECTOR (+1/0 for GK & Board, +4/-1 for NEET & JEE)
+    // 4. EXAM-ACCURATE MARKING SCHEME DETECTOR (+1/0 for GK & Board, +4/-1 for NEET & JEE)
     // ==========================================
     function getExamMarkingScheme(categoryOrPath, statsObj = null) {
         const raw = String(categoryOrPath || '').split(' > ')[0].trim();
@@ -6226,86 +6325,50 @@ async function handleLiveSearch() {
             if (statsObj.wrongCount > 0) {
                 if (statsObj.totalScore === expected1_0 && statsObj.totalScore !== expected4_1) {
                     return {
-                        pos: 1,
-                        neg: 0,
-                        hasNeg: false,
-                        posLabel: '+1',
-                        negLabel: '0',
-                        schemeBadge: '✔ +1 Mark • No Neg',
-                        paperSizes: [25, 50, 100],
-                        defaultPaper: 50
+                        pos: 1, neg: 0, hasNeg: false, posLabel: '+1', negLabel: '0',
+                        schemeBadge: '✔ +1 Mark • No Neg', paperSizes: [25, 50, 100], defaultPaper: 50
                     };
                 }
                 if (statsObj.totalScore === expected4_1) {
                     const isNeet = lower.includes('neet');
                     return {
-                        pos: 4,
-                        neg: 1,
-                        hasNeg: true,
-                        posLabel: '+4',
-                        negLabel: '−1',
-                        schemeBadge: '✔ +4 Marks • ✖ −1 Neg',
-                        paperSizes: isNeet ? [45, 90, 180] : [25, 50, 75],
-                        defaultPaper: isNeet ? 180 : 75
+                        pos: 4, neg: 1, hasNeg: true, posLabel: '+4', negLabel: '−1',
+                        schemeBadge: '✔ +4 Marks • ✖ −1 Neg', paperSizes: isNeet ? [45, 90, 180] : [25, 50, 75], defaultPaper: isNeet ? 180 : 75
                     };
                 }
             } else if (statsObj.totalScore === statsObj.correctCount) {
                 return {
-                    pos: 1,
-                    neg: 0,
-                    hasNeg: false,
-                    posLabel: '+1',
-                    negLabel: '0',
-                    schemeBadge: '✔ +1 Mark • No Neg',
-                    paperSizes: [25, 50, 100],
-                    defaultPaper: 50
+                    pos: 1, neg: 0, hasNeg: false, posLabel: '+1', negLabel: '0',
+                    schemeBadge: '✔ +1 Mark • No Neg', paperSizes: [25, 50, 100], defaultPaper: 50
                 };
             }
         }
 
         if (lower.includes('neet')) {
             return {
-                pos: 4,
-                neg: 1,
-                hasNeg: true,
-                posLabel: '+4',
-                negLabel: '−1',
-                schemeBadge: '✔ +4 Marks • ✖ −1 Neg',
-                paperSizes: [45, 90, 180],
-                defaultPaper: 180
+                pos: 4, neg: 1, hasNeg: true, posLabel: '+4', negLabel: '−1',
+                schemeBadge: '✔ +4 Marks • ✖ −1 Neg', paperSizes: [45, 90, 180], defaultPaper: 180
             };
         }
         if (lower.includes('jee')) {
             return {
-                pos: 4,
-                neg: 1,
-                hasNeg: true,
-                posLabel: '+4',
-                negLabel: '−1',
-                schemeBadge: '✔ +4 Marks • ✖ −1 Neg',
-                paperSizes: [25, 50, 75],
-                defaultPaper: 75
+                pos: 4, neg: 1, hasNeg: true, posLabel: '+4', negLabel: '−1',
+                schemeBadge: '✔ +4 Marks • ✖ −1 Neg', paperSizes: [25, 50, 75], defaultPaper: 75
             };
         }
 
         return {
-            pos: 1,
-            neg: 0,
-            hasNeg: false,
-            posLabel: '+1',
-            negLabel: '0',
-            schemeBadge: '✔ +1 Mark • No Neg',
-            paperSizes: [25, 50, 100],
-            defaultPaper: 50
+            pos: 1, neg: 0, hasNeg: false, posLabel: '+1', negLabel: '0',
+            schemeBadge: '✔ +1 Mark • No Neg', paperSizes: [25, 50, 100], defaultPaper: 50
         };
     }
 
     function injectStudyMobileAppStyles() {
-        if (document.getElementById('mcqs-study-mobile-app-styles-v5')) return;
+        if (document.getElementById('mcqs-study-mobile-app-styles-v6')) return;
         const st = document.createElement('style');
-        st.id = 'mcqs-study-mobile-app-styles-v5';
+        st.id = 'mcqs-study-mobile-app-styles-v6';
         st.textContent = `
-            /* Strictly hide floating center pill bar whenever ANY modal is open or when not on Root Home! */
+            /* Strictly hide PC floating center pill bar when any modal is open or when not on Root Home */
             body.mcqs-any-modal-open #mcqsWebCenterNavPills,
             body:not(.mcqs-on-root-home) #mcqsWebCenterNavPills,
             body.mcqs-quiz-screen-active #mcqsWebCenterNavPills,
@@ -6317,11 +6380,45 @@ async function handleLiveSearch() {
             }
             @media (min-width: 861px) {
                 #mcqsWebCenterNavPills {
-                    z-index: 3500 !important; /* Below .modal-overlay (z-index: 4000) so modals always cover it */
+                    z-index: 3500 !important;
                 }
             }
 
-            /* 1. MODERNIZED SEARCH BUTTON & ZERO-BLEED MOBILE SEARCH BAR */
+            /* ==========================================
+               1. MOBILE TOP BAR FIXED ON SCROLL (BOTH INSTALLED APP & MOBILE WEBSITE — FIXES IMAGE 1)
+               ========================================== */
+            @media (max-width: 860px) {
+                body:not(.mcqs-quiz-screen-active) {
+                    padding-top: 56px !important;
+                }
+                .navbar {
+                    position: fixed !important;
+                    top: 0 !important;
+                    left: 0 !important;
+                    right: 0 !important;
+                    width: 100vw !important;
+                    max-width: 100vw !important;
+                    height: 56px !important;
+                    padding: 0 12px !important;
+                    gap: 6px !important;
+                    z-index: 9500 !important;
+                    background: rgba(7, 10, 19, 0.96) !important;
+                    backdrop-filter: blur(18px) !important;
+                    -webkit-backdrop-filter: blur(18px) !important;
+                    border-bottom: 1px solid rgba(253, 184, 19, 0.24) !important;
+                    box-shadow: 0 6px 22px rgba(0, 0, 0, 0.75) !important;
+                }
+                /* Hide top bar automatically in Quiz Mode or Full-Screen Modals */
+                body.mcqs-quiz-screen-active .navbar,
+                body.mcqs-any-modal-open .navbar {
+                    display: none !important;
+                    visibility: hidden !important;
+                    opacity: 0 !important;
+                    pointer-events: none !important;
+                }
+            }
+
+            /* Modernized Search Button & Zero-Bleed Mobile Search Bar */
             .navbar .search-icon-btn {
                 background: rgba(255, 255, 255, 0.06) !important;
                 border: 1.5px solid rgba(253, 184, 19, 0.38) !important;
@@ -6388,9 +6485,147 @@ async function handleLiveSearch() {
                 }
             }
 
-            /* 2. LOWER & NARROWER FLOATING BOTTOM NAVIGATION DOCK */
+            /* ==========================================
+               2. MODERNIZED QUIZ FOOTER COMMAND DECK & VISIBLE PREV BUTTON (FIXES IMAGE 2)
+               ========================================== */
+            .mcqs-quiz-command-deck {
+                display: flex !important;
+                flex-direction: column !important;
+                gap: 10px !important;
+                margin-top: 18px !important;
+                padding-top: 14px !important;
+                border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
+                width: 100% !important;
+            }
+            .mcqs-quiz-utility-row {
+                display: grid !important;
+                grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+                gap: 8px !important;
+                width: 100% !important;
+            }
+            .mcqs-quiz-util-btn {
+                height: 36px !important;
+                border-radius: 10px !important;
+                font-size: 11.5px !important;
+                font-weight: 800 !important;
+                display: inline-flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+                gap: 5px !important;
+                cursor: pointer !important;
+                padding: 0 8px !important;
+                white-space: nowrap !important;
+                transition: all 0.16s ease !important;
+                font-family: inherit !important;
+            }
+            .mcqs-quiz-util-btn.util-save {
+                background: rgba(56, 189, 248, 0.12) !important;
+                border: 1px solid rgba(56, 189, 248, 0.4) !important;
+                color: #e0f2fe !important;
+            }
+            .mcqs-quiz-util-btn.util-doubt {
+                background: rgba(245, 158, 11, 0.12) !important;
+                border: 1px solid rgba(245, 158, 11, 0.42) !important;
+                color: #fef3c7 !important;
+            }
+            .mcqs-quiz-util-btn.util-report {
+                background: rgba(239, 68, 68, 0.12) !important;
+                border: 1px solid rgba(239, 68, 68, 0.4) !important;
+                color: #fee2e2 !important;
+            }
+            .mcqs-quiz-primary-nav-row {
+                display: grid !important;
+                grid-template-columns: 1fr 1.15fr 1.35fr !important;
+                gap: 9px !important;
+                width: 100% !important;
+                align-items: center !important;
+            }
+            .mcqs-quiz-nav-btn {
+                height: 44px !important;
+                min-height: 44px !important;
+                max-height: 44px !important;
+                border-radius: 12px !important;
+                font-size: 13px !important;
+                font-weight: 900 !important;
+                display: inline-flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+                gap: 6px !important;
+                cursor: pointer !important;
+                padding: 0 12px !important;
+                white-space: nowrap !important;
+                transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease !important;
+                font-family: inherit !important;
+                margin: 0 !important;
+            }
+            /* High-Visibility PREV Button (Never a tall dark invisible block!) */
+            .mcqs-quiz-nav-btn.nav-prev {
+                background: linear-gradient(145deg, #1e293b, #0f172a) !important;
+                border: 1.5px solid rgba(56, 189, 248, 0.55) !important;
+                color: #ffffff !important;
+                box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45) !important;
+            }
+            .mcqs-quiz-nav-btn.nav-prev:disabled {
+                background: #131c2e !important;
+                border: 1.5px solid rgba(148, 163, 184, 0.35) !important;
+                color: #94a3b8 !important;
+                opacity: 0.72 !important;
+                cursor: not-allowed !important;
+            }
+            .mcqs-quiz-nav-btn.nav-next {
+                background: linear-gradient(135deg, #fdb813 0%, #f59e0b 100%) !important;
+                border: none !important;
+                color: #000000 !important;
+                box-shadow: 0 6px 18px rgba(253, 184, 19, 0.32) !important;
+            }
+            .mcqs-quiz-nav-btn.nav-submit {
+                background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+                border: none !important;
+                color: #ffffff !important;
+                box-shadow: 0 6px 18px rgba(16, 185, 129, 0.32) !important;
+            }
+
+            @media (min-width: 769px) {
+                .mcqs-quiz-command-deck {
+                    flex-direction: row !important;
+                    justify-content: space-between !important;
+                    align-items: center !important;
+                }
+                .mcqs-quiz-utility-row {
+                    width: auto !important;
+                    display: flex !important;
+                    gap: 8px !important;
+                }
+                .mcqs-quiz-util-btn {
+                    padding: 0 14px !important;
+                    height: 40px !important;
+                }
+                .mcqs-quiz-primary-nav-row {
+                    width: auto !important;
+                    display: flex !important;
+                    gap: 10px !important;
+                }
+                .mcqs-quiz-nav-btn {
+                    padding: 0 18px !important;
+                    height: 42px !important;
+                    min-height: 42px !important;
+                    max-height: 42px !important;
+                }
+            }
+
+            /* ==========================================
+               3. APP-ONLY FLOATING BOTTOM DOCK (STRICTLY HIDDEN ON MOBILE WEBSITE — FIXES IMAGE 3)
+               ========================================== */
+            body:not(.mcqs-is-installed-mobile-pwa) #mobileAppDock,
+            html:not(.is-standalone-pwa) body:not(.mcqs-is-installed-mobile-pwa) #mobileAppDock {
+                display: none !important;
+                visibility: hidden !important;
+                opacity: 0 !important;
+                pointer-events: none !important;
+            }
+
             @media (max-width: 860px) {
-                #mobileAppDock {
+                body.mcqs-is-installed-mobile-pwa:not(.mcqs-quiz-screen-active):not(.hide-bottom-bar):not(.mcqs-any-modal-open) #mobileAppDock {
                     position: fixed !important;
                     bottom: max(4px, env(safe-area-inset-bottom)) !important;
                     left: 50% !important;
@@ -6494,7 +6729,9 @@ async function handleLiveSearch() {
                 }
             }
 
-            /* 3. INSTALLED MOBILE APP STUDY WORKSPACE */
+            /* ==========================================
+               4. INSTALLED MOBILE APP STUDY WORKSPACE (WITH EQUAL-HEIGHT EXAM CARDS)
+               ========================================== */
             body.mcqs-study-app-active {
                 background-color: #080b12 !important;
             }
@@ -6511,6 +6748,7 @@ async function handleLiveSearch() {
             }
             .sa-carousel-track {
                 display: flex;
+                align-items: stretch !important;
                 gap: 12px;
                 overflow-x: auto;
                 scroll-snap-type: x mandatory;
@@ -6525,19 +6763,26 @@ async function handleLiveSearch() {
                 max-width: 90%;
                 scroll-snap-align: center;
                 user-select: none;
+                display: flex !important;
+                flex-direction: column !important;
+                height: 232px !important;
             }
             .sa-exam-banner-card {
                 position: relative;
-                min-height: 210px;
+                height: 232px !important;
+                min-height: 232px !important;
+                max-height: 232px !important;
+                flex: 1 1 232px !important;
                 border-radius: 20px;
                 overflow: hidden;
-                padding: 16px;
+                padding: 14px 15px !important;
                 display: flex;
                 flex-direction: column;
                 justify-content: space-between;
                 border: 1.5px solid var(--sa-border, rgba(253, 184, 19, 0.4));
                 background: var(--sa-grad, linear-gradient(140deg, #1e1b4b, #090d16));
                 box-shadow: 0 14px 34px rgba(0, 0, 0, 0.7);
+                box-sizing: border-box !important;
             }
             .sa-banner-wave {
                 position: absolute;
@@ -6562,24 +6807,41 @@ async function handleLiveSearch() {
             .sa-uploaded-chips-wrap {
                 position: relative;
                 z-index: 2;
-                display: flex;
-                flex-wrap: wrap;
-                gap: 6px;
-                margin: 10px 0;
+                display: grid !important;
+                grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+                grid-auto-rows: 28px !important;
+                gap: 6px !important;
+                height: 96px !important;
+                min-height: 96px !important;
+                max-height: 96px !important;
+                margin: 8px 0 !important;
+                align-content: start !important;
+                overflow: hidden !important;
             }
             .sa-uploaded-chip {
                 background: rgba(9, 13, 22, 0.72);
                 backdrop-filter: blur(8px);
                 border: 1px solid rgba(255, 255, 255, 0.18);
                 color: #f8fafc;
-                padding: 5px 10px;
-                border-radius: 9px;
-                font-size: 11px;
-                font-weight: 700;
-                display: inline-flex;
-                align-items: center;
-                gap: 5px;
+                width: 100% !important;
+                height: 28px !important;
+                padding: 0 9px !important;
+                border-radius: 8px !important;
+                font-size: 11px !important;
+                font-weight: 700 !important;
+                display: inline-flex !important;
+                align-items: center !important;
+                gap: 5px !important;
+                white-space: nowrap !important;
+                overflow: hidden !important;
+                text-overflow: ellipsis !important;
                 cursor: pointer;
+                box-sizing: border-box !important;
+            }
+            .sa-uploaded-chip span:last-child {
+                overflow: hidden !important;
+                text-overflow: ellipsis !important;
+                white-space: nowrap !important;
             }
             .sa-uploaded-chip:active {
                 transform: scale(0.96);
@@ -6738,7 +7000,7 @@ async function handleLiveSearch() {
                 max-width: 100%;
             }
 
-            /* 4. COMPACT LIVE-SIMULATION ANALYTICS DASHBOARD STYLES */
+            /* 5. COMPACT LIVE-SIMULATION ANALYTICS DASHBOARD STYLES */
             .ad-compact-shell {
                 display: flex;
                 flex-direction: column;
@@ -7277,7 +7539,6 @@ async function handleLiveSearch() {
 
             mc.innerHTML = `
                 <div class="ad-compact-shell page-transition">
-                    <!-- 1. COMPACT COMMAND HEADER WITH 1-TAP EXAM TABS -->
                     <div class="ad-top-bar">
                         <div class="mcqs-crumb-bar" style="margin-bottom:8px;">
                             <span class="mcqs-crumb-pill" onclick="goHome()">🏠 Home</span>
@@ -7305,7 +7566,6 @@ async function handleLiveSearch() {
                         </div>
                     </div>
 
-                    <!-- 2. COMPACT TELEMETRY HERO -->
                     <div class="ad-telemetry-hero">
                         <div class="ad-ring-box">
                             <svg width="96" height="96" viewBox="0 0 96 96" style="transform:rotate(-90deg);">
@@ -7340,10 +7600,8 @@ async function handleLiveSearch() {
 
                     ${statusBannerHtml}
 
-                    <!-- 3. INTERACTIVE LIVE SCORE SIMULATOR -->
                     <div id="adLiveSimulatorMount"></div>
 
-                    <!-- 4. SIDE-BY-SIDE SPEED AUTOPSY + SUBJECT MASTERY & SVG TRAJECTORY -->
                     <div class="ad-split-row">
                         <div class="ad-top-bar" style="display:flex; flex-direction:column; justify-content:space-between; gap:12px;">
                             <div>
@@ -7612,7 +7870,7 @@ async function handleLiveSearch() {
             document.body.appendChild(modal);
         }
         modal.style.display = 'flex';
-        enforceCenterPillBarHomeOnlyVisibility();
+        enforceNavigationBarsVisibility();
         renderSaBlitzFrame();
 
         if (saBlitzGame.timer) clearInterval(saBlitzGame.timer);
@@ -7630,7 +7888,7 @@ async function handleLiveSearch() {
         if (saBlitzGame.timer) clearInterval(saBlitzGame.timer);
         const modal = document.getElementById('saRapidBlitzModal');
         if (modal) modal.style.display = 'none';
-        enforceCenterPillBarHomeOnlyVisibility();
+        enforceNavigationBarsVisibility();
         renderStudyMobileAppHome();
     };
 
@@ -7743,6 +8001,7 @@ async function handleLiveSearch() {
         document.body.classList.add('mcqs-study-app-active');
         upgradeNavbarSearchButtonLogo();
         repairAndEnhanceMobileAppDock();
+        enforceNavigationBarsVisibility();
 
         const exams = getActiveExamCategoriesFromAdmin();
         const activeCat = saState.selectedCategory || 'ALL';
@@ -7750,63 +8009,7 @@ async function handleLiveSearch() {
             saState.blitzExam = exams[0] || 'NEET';
         }
 
-// 1. CONTINUOUS SLIDING EXAM CATEGORY BANNERS (100% Equal Height & Uniform 2x3 Chip Grid)
-        if (!document.getElementById('sa-equal-exam-box-lock')) {
-            const eqSt = document.createElement('style');
-            eqSt.id = 'sa-equal-exam-box-lock';
-            eqSt.textContent = `
-                .sa-carousel-track {
-                    align-items: stretch !important;
-                }
-                .sa-exam-slide {
-                    display: flex !important;
-                    flex-direction: column !important;
-                    height: 232px !important;
-                }
-                .sa-exam-banner-card {
-                    height: 232px !important;
-                    min-height: 232px !important;
-                    max-height: 232px !important;
-                    flex: 1 1 232px !important;
-                    padding: 14px 15px !important;
-                    box-sizing: border-box !important;
-                }
-                .sa-uploaded-chips-wrap {
-                    display: grid !important;
-                    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-                    grid-auto-rows: 28px !important;
-                    gap: 6px !important;
-                    height: 96px !important;
-                    min-height: 96px !important;
-                    max-height: 96px !important;
-                    margin: 8px 0 !important;
-                    align-content: start !important;
-                    overflow: hidden !important;
-                }
-                .sa-uploaded-chip {
-                    width: 100% !important;
-                    height: 28px !important;
-                    padding: 0 9px !important;
-                    border-radius: 8px !important;
-                    font-size: 11px !important;
-                    font-weight: 700 !important;
-                    display: inline-flex !important;
-                    align-items: center !important;
-                    gap: 5px !important;
-                    white-space: nowrap !important;
-                    overflow: hidden !important;
-                    text-overflow: ellipsis !important;
-                    box-sizing: border-box !important;
-                }
-                .sa-uploaded-chip span:last-child {
-                    overflow: hidden !important;
-                    text-overflow: ellipsis !important;
-                    white-space: nowrap !important;
-                }
-            `;
-            document.head.appendChild(eqSt);
-        }
-
+        // 1. CONTINUOUS SLIDING EXAM CATEGORY BANNERS (100% Equal Height 232px & Uniform 2x3 Chip Grid)
         const heroSlidesHtml = exams.map((exKey, idx) => {
             const slide = getAdminDrivenExamSlideData(exKey, idx);
             const encodedExArr = encodeURIComponent(JSON.stringify([exKey]));
@@ -8129,12 +8332,12 @@ async function handleLiveSearch() {
         return true;
     }
 
-    const _origRenderViewBeforeStudyAppV5 = _renderView;
+    const _origRenderViewBeforeStudyAppV6 = _renderView;
     _renderView = function() {
         injectStudyMobileAppStyles();
         upgradeNavbarSearchButtonLogo();
         repairAndEnhanceMobileAppDock();
-        attachModalVisibilityObservers();
+        attachGlobalObservers();
         bindQuestionOnlyAISuggestions();
 
         const rawHash = decodeURIComponent(window.location.hash.replace(/^#\/?/, '')).trim();
@@ -8142,29 +8345,32 @@ async function handleLiveSearch() {
 
         if (isInstalledMobileAppMode() && isRootHome) {
             renderStudyMobileAppHome();
-            enforceCenterPillBarHomeOnlyVisibility();
+            enforceNavigationBarsVisibility();
             window.scrollTo({ top: 0, behavior: 'smooth' });
             return;
         }
 
         document.body.classList.remove('mcqs-study-app-active');
         if (saState.carouselTimer) clearInterval(saState.carouselTimer);
-        _origRenderViewBeforeStudyAppV5();
+        _origRenderViewBeforeStudyAppV6();
         repairAndEnhanceMobileAppDock();
-        enforceCenterPillBarHomeOnlyVisibility();
+        enforceNavigationBarsVisibility();
+        setTimeout(modernizeQuizFooterCommandBar, 60);
     };
 
     window.addEventListener('DOMContentLoaded', () => {
         injectStudyMobileAppStyles();
-        attachModalVisibilityObservers();
+        attachGlobalObservers();
         bindQuestionOnlyAISuggestions();
-        enforceCenterPillBarHomeOnlyVisibility();
+        enforceNavigationBarsVisibility();
+        modernizeQuizFooterCommandBar();
     });
 
     window.addEventListener('load', () => {
-        attachModalVisibilityObservers();
+        attachGlobalObservers();
         bindQuestionOnlyAISuggestions();
-        enforceCenterPillBarHomeOnlyVisibility();
+        enforceNavigationBarsVisibility();
+        modernizeQuizFooterCommandBar();
     });
 
     if (document.readyState === 'complete' || document.readyState === 'interactive') {
@@ -8172,9 +8378,10 @@ async function handleLiveSearch() {
             injectStudyMobileAppStyles();
             upgradeNavbarSearchButtonLogo();
             repairAndEnhanceMobileAppDock();
-            attachModalVisibilityObservers();
+            attachGlobalObservers();
             bindQuestionOnlyAISuggestions();
-            enforceCenterPillBarHomeOnlyVisibility();
+            enforceNavigationBarsVisibility();
+            modernizeQuizFooterCommandBar();
             if (isInstalledMobileAppMode()) {
                 const rawHash = decodeURIComponent(window.location.hash.replace(/^#\/?/, '')).trim();
                 if ((!rawHash || rawHash === 'home') && (!Array.isArray(currentPath) || currentPath.length === 0)) {
