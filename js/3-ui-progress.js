@@ -2845,22 +2845,50 @@ async function handleLiveSearch() {
                 }
             }
 
-            /* Mobile Navbar Safety */
+            /* Mobile Navbar Safety (Permanently Fixed on Scroll, Zero Top Gap) */
             @media (max-width: 860px) {
-                body {
+                html, body {
+                    overflow-x: hidden !important;
+                    overflow-x: clip !important;
+                    max-width: 100vw !important;
+                }
+                html body:not(.mcqs-quiz-screen-active),
+                html.is-standalone-pwa body:not(.mcqs-quiz-screen-active) {
+                    padding-top: 56px !important;
+                }
+                html body.mcqs-quiz-screen-active,
+                html.is-standalone-pwa body.mcqs-quiz-screen-active {
                     padding-top: 0 !important;
                 }
-                .navbar {
-                    position: sticky !important;
+                html body .navbar,
+                html.is-standalone-pwa body .navbar {
+                    position: fixed !important;
                     top: 0 !important;
-                    z-index: 4000 !important;
-                    width: 100% !important;
+                    left: 0 !important;
+                    right: 0 !important;
+                    margin: 0 !important;
+                    transform: none !important;
+                    z-index: 9900 !important;
+                    width: 100vw !important;
                     max-width: 100vw !important;
                     height: 56px !important;
                     padding: 0 12px !important;
                     gap: 6px !important;
-                    background: rgba(6, 9, 17, 0.95) !important;
-                    backdrop-filter: blur(14px) !important;
+                    background: rgba(7, 10, 19, 0.96) !important;
+                    backdrop-filter: blur(18px) !important;
+                    -webkit-backdrop-filter: blur(18px) !important;
+                    border-bottom: 1px solid rgba(253, 184, 19, 0.24) !important;
+                    box-shadow: 0 6px 22px rgba(0, 0, 0, 0.75) !important;
+                    box-sizing: border-box !important;
+                }
+                html body.mcqs-quiz-screen-active .navbar,
+                html body.mcqs-any-modal-open .navbar,
+                html.is-standalone-pwa body.mcqs-quiz-screen-active .navbar,
+                html.is-standalone-pwa body.mcqs-any-modal-open .navbar {
+                    display: none !important;
+                    visibility: hidden !important;
+                    opacity: 0 !important;
+                    pointer-events: none !important;
                 }
                 .nav-left {
                     min-width: 0 !important;
@@ -3672,10 +3700,10 @@ async function handleLiveSearch() {
         const pillBar = document.getElementById('mcqsWebCenterNavPills');
         if (!pillBar) return;
 
-        // Strictly hide the floating center pill bar on ALL inner topics, buttons, quizzes, analytics, and leaderboards!
         const showOnHomeOnly = isStrictHomepageView() &&
             window.innerWidth > 860 &&
             !document.body.classList.contains('mcqs-quiz-screen-active') &&
+            !document.body.classList.contains('mcqs-any-modal-open') &&
             !document.body.classList.contains('admin-mode');
 
         if (!showOnHomeOnly) {
@@ -3693,25 +3721,36 @@ async function handleLiveSearch() {
         if (!navbar || !navLeft || !navRight) return;
 
         const navRect = navbar.getBoundingClientRect();
-        // When user scrolls down past .navbar on the Homepage, center the floating pill bar at 50% of the screen
+        // When user scrolls down past .navbar on the Homepage, center pill bar cleanly at 50%
         if (navRect.bottom <= 14) {
+            pillBar.style.opacity = '1';
+            pillBar.style.pointerEvents = 'auto';
             pillBar.style.left = '50%';
             pillBar.style.transform = 'translateX(-50%) scale(1)';
             return;
         }
 
-        // When at the top of the Homepage, center the pill bar in the exact gap between .nav-left and Search/.nav-right
+        // At top of Homepage, center pill bar strictly between .nav-left (streak badge) and Search/.nav-right
         const leftEdge = navLeft.getBoundingClientRect().right + 14;
         const rightAnchor = (searchWrap && searchWrap.offsetWidth > 0) ? searchWrap : navRight;
         const rightEdge = rightAnchor.getBoundingClientRect().left - 14;
         const availableGap = rightEdge - leftEdge;
         const naturalWidth = pillBar.offsetWidth || 500;
 
+        if (availableGap < 250 && document.body.classList.contains('mcqs-search-open')) {
+            pillBar.style.opacity = '0';
+            pillBar.style.pointerEvents = 'none';
+            return;
+        }
+
+        pillBar.style.opacity = '1';
+        pillBar.style.pointerEvents = 'auto';
+
         if (availableGap > 200) {
             const midpointPx = Math.round((leftEdge + rightEdge) / 2);
             pillBar.style.left = midpointPx + 'px';
             if (naturalWidth > availableGap) {
-                const scaleFactor = Math.max(0.78, (availableGap - 8) / naturalWidth);
+                const scaleFactor = Math.max(0.76, (availableGap - 10) / naturalWidth);
                 pillBar.style.transform = `translateX(-50%) scale(${scaleFactor.toFixed(3)})`;
             } else {
                 pillBar.style.transform = 'translateX(-50%) scale(1)';
@@ -3722,11 +3761,19 @@ async function handleLiveSearch() {
         }
     }
 
-    window.addEventListener('scroll', alignFloatingCenterPillBar, { passive: true, capture: true });
-    window.addEventListener('resize', alignFloatingCenterPillBar, { passive: true });
+    let _pillAlignRaf = null;
+    function schedulePillBarAlign() {
+        if (_pillAlignRaf) return;
+        _pillAlignRaf = requestAnimationFrame(() => {
+            _pillAlignRaf = null;
+            alignFloatingCenterPillBar();
+        });
+    }
+    window.addEventListener('scroll', schedulePillBarAlign, { passive: true, capture: true });
+    window.addEventListener('resize', schedulePillBarAlign, { passive: true });
 
     // ==========================================
-    // SMART QUIZ EXIT FUNCTION & GUARANTEED QUIZ TOP BACK-BAR INJECTOR
+    // SMART QUIZ EXIT & NON-LOOPING QUIZ BACK-BAR INJECTOR
     // ==========================================
     window.exitActiveQuizPractice = function() {
         if (typeof currentTimer !== 'undefined' && currentTimer) clearInterval(currentTimer);
@@ -3811,11 +3858,7 @@ async function handleLiveSearch() {
         const isQuizDomMounted = ensureQuizTopBackBarInjected();
         const isQuizRoute = (rawHash === 'quiz') || isQuizDomMounted;
 
-        if (isQuizRoute) {
-            document.body.classList.add('mcqs-quiz-screen-active');
-        } else {
-            document.body.classList.remove('mcqs-quiz-screen-active');
-        }
+        document.body.classList.toggle('mcqs-quiz-screen-active', isQuizRoute);
 
         const onRootHome = isStrictHomepageView() && !isQuizRoute;
         document.body.classList.toggle('mcqs-on-root-home', onRootHome);
@@ -3839,20 +3882,17 @@ async function handleLiveSearch() {
             if (aiBtn) aiBtn.style.removeProperty('display');
         }
 
-        alignFloatingCenterPillBar();
-        setTimeout(alignFloatingCenterPillBar, 25);
+        schedulePillBarAlign();
     }
 
-    // Observe #dynamic-content so whenever js/4-quiz-engine.js or js/6-admin.js renders a question, the Back Bar mounts immediately!
-    function attachDynamicContentObserver() {
-        const dyn = document.getElementById('dynamic-content');
-        if (!dyn || window._mcqsDynObserverAttachedV10) return;
-        window._mcqsDynObserverAttachedV10 = true;
+    // Expose safely for Section 8's non-looping renderQuizInterface hook (NO MutationObserver!)
+    window.__mcqsSyncQuizAndAntiCheatState = syncQuizScreenAndAntiCheatState;
 
-        const obs = new MutationObserver(() => {
-            syncQuizScreenAndAntiCheatState();
-        });
-        obs.observe(dyn, { childList: true });
+    function attachDynamicContentObserver() {
+        // MutationObserver permanently removed to prevent STATUS_STACK_OVERFLOW.
+        if (typeof window.__mcqsInstallSafeQuizHooks === 'function') {
+            window.__mcqsInstallSafeQuizHooks();
+        }
     }
 
     // Search bar open/close hooks
@@ -6020,32 +6060,31 @@ async function handleLiveSearch() {
     }
 
     // ==========================================
-    // 2. MODERNIZE QUIZ FOOTER ACTION BUTTONS (FIXES IMAGE 2: PREV BUTTON & UTILITY DECK)
+    // 2. MODERNIZE QUIZ FOOTER ACTION BUTTONS & SAFE NON-LOOPING HOOKS (ZERO MUTATIONOBSERVERS)
     // ==========================================
     function modernizeQuizFooterCommandBar() {
         const dyn = document.getElementById('dynamic-content');
         if (!dyn) return;
 
-        // Find the Prev, Next, and Submit buttons inside the active quiz card
         const allBtns = Array.from(dyn.querySelectorAll('button'));
         const prevBtn = allBtns.find(b => /prevQuestion/i.test(b.getAttribute('onclick') || '') || /←\s*PREV/i.test(b.innerText || ''));
         const nextBtn = allBtns.find(b => /nextQuestion/i.test(b.getAttribute('onclick') || '') || /NEXT\s*→/i.test(b.innerText || ''));
-        const submitBtn = allBtns.find(b => /submitQuiz/i.test(b.getAttribute('onclick') || '') || /SUBMIT\s*\(/i.test(b.innerText || ''));
+        const submitBtn = allBtns.find(b => /submitQuiz/i.test(b.getAttribute('onclick') || '') || /SUBMIT/i.test(b.innerText || ''));
 
         if (!prevBtn && !nextBtn && !submitBtn) return;
 
         const saveBtn = allBtns.find(b => /bookmarkQuestion/i.test(b.getAttribute('onclick') || '') || /\bSAVE\b|\bSAVED\b/i.test(b.innerText || ''));
-        const doubtBtn = allBtns.find(b => /Doubt/i.test(b.getAttribute('onclick') || '') || /\bDOUBT\b/i.test(b.innerText || ''));
+        const doubtBtn = allBtns.find(b => /flagQuestionDoubt|Doubt/i.test(b.getAttribute('onclick') || '') || /\bDOUBT\b/i.test(b.innerText || ''));
         const reportBtn = allBtns.find(b => /openReportModal/i.test(b.getAttribute('onclick') || '') || /\bREPORT\b/i.test(b.innerText || ''));
 
-        // Locate the original footer wrapper holding prevBtn
         const footerContainer = (prevBtn && prevBtn.parentElement) || (nextBtn && nextBtn.parentElement?.parentElement);
-        if (!footerContainer || footerContainer.dataset.mcqsDeckModernized === 'true') return;
+        if (!footerContainer || footerContainer === dyn || footerContainer.classList.contains('card')) return;
+        if (footerContainer.dataset.mcqsDeckModernized === 'true') return;
+
         footerContainer.dataset.mcqsDeckModernized = 'true';
         footerContainer.className = 'mcqs-quiz-command-deck';
         footerContainer.removeAttribute('style');
 
-        // Build Row 1: Utility Pill Row (Save, Doubt, Report)
         const utilRow = document.createElement('div');
         utilRow.className = 'mcqs-quiz-utility-row';
 
@@ -6065,7 +6104,6 @@ async function handleLiveSearch() {
             utilRow.appendChild(reportBtn);
         }
 
-        // Build Row 2: Primary Navigation Row (← PREV, NEXT →, ✅ SUBMIT)
         const navRow = document.createElement('div');
         navRow.className = 'mcqs-quiz-primary-nav-row';
 
@@ -6090,36 +6128,115 @@ async function handleLiveSearch() {
         footerContainer.appendChild(navRow);
     }
 
-    function attachGlobalObservers() {
-        if (window._mcqsV6ObserversAttached) return;
-        window._mcqsV6ObserversAttached = true;
-
-        const modalObs = new MutationObserver(() => {
+    function runPostQuizRenderEnhancements() {
+        try {
+            if (typeof window.__mcqsSyncQuizAndAntiCheatState === 'function') {
+                window.__mcqsSyncQuizAndAntiCheatState();
+            }
+            modernizeQuizFooterCommandBar();
             enforceNavigationBarsVisibility();
-        });
+        } catch (err) {
+            console.error('Post-quiz UI enhancement error:', err);
+        }
+    }
 
-        ['aiModal', 'authModal', 'streakModal', 'userReportsModal', 'reportModal', 'feedbackModal'].forEach(id => {
-            const el = document.getElementById(id);
-            if (el) modalObs.observe(el, { attributes: true, attributeFilter: ['style', 'class'] });
-        });
-
-        modalObs.observe(document.body, { childList: true, attributes: true, attributeFilter: ['class'] });
-
-        const dyn = document.getElementById('dynamic-content');
-        if (dyn) {
-            const dynObs = new MutationObserver(() => {
-                modernizeQuizFooterCommandBar();
-                enforceNavigationBarsVisibility();
-            });
-            dynObs.observe(dyn, { childList: true, subtree: true });
+    function installSafeQuizAndModalHooks() {
+        // 1. Safe non-looping hook on renderQuizInterface (uses setTimeout 0 after DOM settles)
+        if (typeof window.renderQuizInterface === 'function' && !window.renderQuizInterface.__mcqsSafeHooked) {
+            const origRenderQuiz = window.renderQuizInterface;
+            const wrappedRenderQuiz = function(...args) {
+                const result = origRenderQuiz.apply(this, args);
+                setTimeout(runPostQuizRenderEnhancements, 0);
+                return result;
+            };
+            wrappedRenderQuiz.__mcqsSafeHooked = true;
+            window.renderQuizInterface = wrappedRenderQuiz;
         }
 
-        window.addEventListener('hashchange', () => {
-            enforceNavigationBarsVisibility();
-            setTimeout(modernizeQuizFooterCommandBar, 60);
+        // 2. Safe hook on _initiateQuizEngine (covers loading / resume screens rendered before first question)
+        if (typeof window._initiateQuizEngine === 'function' && !window._initiateQuizEngine.__mcqsSafeHooked) {
+            const origInitQuiz = window._initiateQuizEngine;
+            const wrappedInitQuiz = function(...args) {
+                const res = origInitQuiz.apply(this, args);
+                if (res && typeof res.then === 'function') {
+                    res.then(() => setTimeout(runPostQuizRenderEnhancements, 0), () => setTimeout(runPostQuizRenderEnhancements, 0));
+                } else {
+                    setTimeout(runPostQuizRenderEnhancements, 0);
+                }
+                return res;
+            };
+            wrappedInitQuiz.__mcqsSafeHooked = true;
+            window._initiateQuizEngine = wrappedInitQuiz;
+        }
+
+        // 3. Safe hooks for quiz results & review transitions
+        ['_renderQuizResults', '_renderQuizReview'].forEach(fnName => {
+            if (typeof window[fnName] === 'function' && !window[fnName].__mcqsSafeHooked) {
+                const origFn = window[fnName];
+                const wrappedFn = function(...args) {
+                    const res = origFn.apply(this, args);
+                    setTimeout(runPostQuizRenderEnhancements, 0);
+                    return res;
+                };
+                wrappedFn.__mcqsSafeHooked = true;
+                window[fnName] = wrappedFn;
+            }
         });
-        window.addEventListener('resize', enforceNavigationBarsVisibility, { passive: true });
-        window.addEventListener('scroll', enforceNavigationBarsVisibility, { passive: true, capture: true });
+
+        // 4. Safe hooks for modal open/close functions (replaces body/modal MutationObserver)
+        [
+            'showAuthModal', 'skipSignIn',
+            'openStreakModal', 'closeStreakModal',
+            'openFeedbackModal', 'closeFeedbackModal',
+            'openReportModal', 'closeReportModal',
+            'openUserReportsModal', 'closeUserReportsModal',
+            'closeEditTopicModal', 'closeEditModal',
+            'openInAppMaterialViewer', 'closeInAppMaterialViewer'
+        ].forEach(fnName => {
+            if (typeof window[fnName] === 'function' && !window[fnName].__mcqsSafeHooked) {
+                const origFn = window[fnName];
+                const wrappedFn = function(...args) {
+                    const res = origFn.apply(this, args);
+                    setTimeout(enforceNavigationBarsVisibility, 0);
+                    return res;
+                };
+                wrappedFn.__mcqsSafeHooked = true;
+                window[fnName] = wrappedFn;
+            }
+        });
+    }
+
+    window.__mcqsInstallSafeQuizHooks = installSafeQuizAndModalHooks;
+
+    function attachGlobalObservers() {
+        // Always check idempotently in case 4-quiz-engine.js or 6-admin.js loaded/wrapped after us
+        installSafeQuizAndModalHooks();
+
+        if (window._mcqsV6ListenersAttached) return;
+        window._mcqsV6ListenersAttached = true;
+
+        let _visRaf = null;
+        const scheduleVisibilitySync = () => {
+            if (_visRaf) return;
+            _visRaf = requestAnimationFrame(() => {
+                _visRaf = null;
+                enforceNavigationBarsVisibility();
+            });
+        };
+
+        window.addEventListener('hashchange', () => {
+            installSafeQuizAndModalHooks();
+            setTimeout(runPostQuizRenderEnhancements, 0);
+        });
+        window.addEventListener('resize', scheduleVisibilitySync, { passive: true });
+        window.addEventListener('scroll', scheduleVisibilitySync, { passive: true, capture: true });
+
+        // Lightweight click sync for any modal close buttons/overlays without using MutationObserver
+        document.addEventListener('click', (e) => {
+            if (e.target && (e.target.closest('.modal-overlay') || e.target.closest('.close-modal'))) {
+                setTimeout(enforceNavigationBarsVisibility, 0);
+            }
+        }, true);
     }
 
     // ==========================================
@@ -6385,32 +6502,42 @@ async function handleLiveSearch() {
             }
 
             /* ==========================================
-               1. MOBILE TOP BAR FIXED ON SCROLL (BOTH INSTALLED APP & MOBILE WEBSITE — FIXES IMAGE 1)
+               1. MOBILE TOP BAR FIXED ON SCROLL (HIGH SPECIFICITY — ZERO TOP GAP)
                ========================================== */
             @media (max-width: 860px) {
-                body:not(.mcqs-quiz-screen-active) {
+                html body:not(.mcqs-quiz-screen-active),
+                html.is-standalone-pwa body:not(.mcqs-quiz-screen-active) {
                     padding-top: 56px !important;
                 }
-                .navbar {
+                html body.mcqs-quiz-screen-active,
+                html.is-standalone-pwa body.mcqs-quiz-screen-active {
+                    padding-top: 0 !important;
+                }
+                html body .navbar,
+                html.is-standalone-pwa body .navbar {
                     position: fixed !important;
                     top: 0 !important;
                     left: 0 !important;
                     right: 0 !important;
+                    margin: 0 !important;
+                    transform: none !important;
                     width: 100vw !important;
                     max-width: 100vw !important;
                     height: 56px !important;
                     padding: 0 12px !important;
                     gap: 6px !important;
-                    z-index: 9500 !important;
+                    z-index: 9900 !important;
                     background: rgba(7, 10, 19, 0.96) !important;
                     backdrop-filter: blur(18px) !important;
                     -webkit-backdrop-filter: blur(18px) !important;
                     border-bottom: 1px solid rgba(253, 184, 19, 0.24) !important;
                     box-shadow: 0 6px 22px rgba(0, 0, 0, 0.75) !important;
+                    box-sizing: border-box !important;
                 }
-                /* Hide top bar automatically in Quiz Mode or Full-Screen Modals */
-                body.mcqs-quiz-screen-active .navbar,
-                body.mcqs-any-modal-open .navbar {
+                html body.mcqs-quiz-screen-active .navbar,
+                html body.mcqs-any-modal-open .navbar,
+                html.is-standalone-pwa body.mcqs-quiz-screen-active .navbar,
+                html.is-standalone-pwa body.mcqs-any-modal-open .navbar {
                     display: none !important;
                     visibility: hidden !important;
                     opacity: 0 !important;
@@ -6486,7 +6613,7 @@ async function handleLiveSearch() {
             }
 
             /* ==========================================
-               2. MODERNIZED QUIZ FOOTER COMMAND DECK & VISIBLE PREV BUTTON (FIXES IMAGE 2)
+               2. MODERNIZED QUIZ FOOTER COMMAND DECK & VISIBLE PREV BUTTON
                ========================================== */
             .mcqs-quiz-command-deck {
                 display: flex !important;
@@ -6534,13 +6661,13 @@ async function handleLiveSearch() {
                 color: #fee2e2 !important;
             }
             .mcqs-quiz-primary-nav-row {
-                display: grid !important;
-                grid-template-columns: 1fr 1.15fr 1.35fr !important;
+                display: flex !important;
                 gap: 9px !important;
                 width: 100% !important;
                 align-items: center !important;
             }
             .mcqs-quiz-nav-btn {
+                flex: 1 1 0 !important;
                 height: 44px !important;
                 min-height: 44px !important;
                 max-height: 44px !important;
@@ -6558,7 +6685,6 @@ async function handleLiveSearch() {
                 font-family: inherit !important;
                 margin: 0 !important;
             }
-            /* High-Visibility PREV Button (Never a tall dark invisible block!) */
             .mcqs-quiz-nav-btn.nav-prev {
                 background: linear-gradient(145deg, #1e293b, #0f172a) !important;
                 border: 1.5px solid rgba(56, 189, 248, 0.55) !important;
