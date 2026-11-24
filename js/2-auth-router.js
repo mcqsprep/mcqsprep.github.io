@@ -576,7 +576,10 @@ function updateSidebarLinks() {
 
 function handleRouting() {
     try {
-        if (!dataLoaded) return; 
+        if (!dataLoaded) return;
+        if (typeof window.__mcqsInterceptQuizExit === 'function' && window.__mcqsInterceptQuizExit()) {
+            return;
+        }
         let rawHash = window.location.hash.replace(/^#\/?/, ''); 
         let hash = decodeURIComponent(rawHash);
         
