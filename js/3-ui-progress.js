@@ -3614,13 +3614,53 @@ async function handleLiveSearch() {
                 font-size: 14.5px !important;
                 line-height: 1.55 !important;
                 color: #e2e8f0 !important;
-                transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease !important;
+                transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease !important;
                 box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3) !important;
             }
-            .option-btn:hover:not(:disabled), .quiz-option:hover:not(:disabled) {
-                transform: translateX(4px) !important;
-                border-color: rgba(253, 184, 19, 0.65) !important;
-                box-shadow: 0 6px 20px rgba(253, 184, 19, 0.15) !important;
+            @media (hover: hover) {
+                .option-btn:hover:not(:disabled):not(.selected), .quiz-option:hover:not(:disabled):not(.selected) {
+                    transform: translateX(4px) !important;
+                    border-color: rgba(253, 184, 19, 0.55) !important;
+                    box-shadow: 0 6px 20px rgba(253, 184, 19, 0.14) !important;
+                }
+            }
+            .option-btn.selected, .quiz-option.selected {
+                background: linear-gradient(145deg, rgba(253, 184, 19, 0.24), rgba(245, 158, 11, 0.11)) !important;
+                border: 2px solid #fdb813 !important;
+                color: #ffffff !important;
+                font-weight: 700 !important;
+                box-shadow: 0 0 0 1px rgba(253, 184, 19, 0.38), 0 8px 24px rgba(253, 184, 19, 0.24) !important;
+            }
+            .option-btn.selected > span:first-child, .quiz-option.selected > span:first-child {
+                background: #fdb813 !important;
+                color: #000000 !important;
+                font-weight: 900 !important;
+                box-shadow: 0 0 10px rgba(253, 184, 19, 0.55) !important;
+            }
+            .option-btn.selected::after, .quiz-option.selected::after {
+                content: '✓';
+                margin-left: 10px;
+                width: 24px;
+                height: 24px;
+                border-radius: 50%;
+                background: #fdb813;
+                color: #000000;
+                font-size: 13px;
+                font-weight: 900;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                flex-shrink: 0;
+            }
+            .option-btn.correct, .quiz-option.correct {
+                background: linear-gradient(145deg, rgba(16, 185, 129, 0.24), rgba(16, 185, 129, 0.1)) !important;
+                border: 2px solid #10b981 !important;
+                color: #ffffff !important;
+            }
+            .option-btn.wrong, .quiz-option.wrong {
+                background: linear-gradient(145deg, rgba(239, 68, 68, 0.24), rgba(239, 68, 68, 0.1)) !important;
+                border: 2px solid #ef4444 !important;
+                color: #ffffff !important;
             }
             .quiz-explanation {
                 background: linear-gradient(155deg, rgba(16, 185, 129, 0.08), rgba(11, 15, 26, 0.98)) !important;
@@ -7898,7 +7938,7 @@ async function handleLiveSearch() {
         return Array.from(childSet);
     }
 
-    function getStudentProgressSummaryForApp(examPrefix = '') {
+function getStudentProgressSummaryForApp(examPrefix = '') {
         try {
             const uid = (typeof currentUser !== 'undefined' && currentUser && currentUser.uid) ? currentUser.uid : 'guest';
             const localMap = JSON.parse(localStorage.getItem(`mcqsprep_topic_progress_v2_${uid}`) || '{}');
@@ -7907,12 +7947,24 @@ async function handleLiveSearch() {
             const skipSet = new Set();
             let lastActivePath = '';
             let lastActiveTime = 0;
+            let lastActiveAnswered = 0;
 
             Object.keys(localMap).forEach(pathKey => {
                 const rec = localMap[pathKey] || {};
-                if (rec.inProgress && rec.inProgress.updatedAt && rec.inProgress.updatedAt > lastActiveTime) {
-                    lastActiveTime = rec.inProgress.updatedAt;
-                    lastActivePath = pathKey;
+                const isResumableTopic = pathKey &&
+                    !pathKey.includes('Custom Practice') &&
+                    !pathKey.includes('Mistake Clinic') &&
+                    !pathKey.includes('Skipped Recovery') &&
+                    !pathKey.includes('Rapid Sprint') &&
+                    pathKey !== 'Daily Quiz Challenge';
+
+                if (isResumableTopic && rec.inProgress && rec.inProgress.userAnswers) {
+                    const ansCount = Object.keys(rec.inProgress.userAnswers).length;
+                    if (ansCount > 0 && (rec.inProgress.updatedAt || 0) > lastActiveTime) {
+                        lastActiveTime = rec.inProgress.updatedAt || 0;
+                        lastActivePath = pathKey;
+                        lastActiveAnswered = ansCount;
+                    }
                 }
                 if (examPrefix && !pathKey.startsWith(examPrefix)) return;
                 (rec.correctIds || []).forEach(id => corrSet.add(id));
@@ -7927,13 +7979,186 @@ async function handleLiveSearch() {
                 correct: corrSet.size,
                 wrong: wrongSet.size,
                 skipped: skipSet.size,
+                wrongIds: Array.from(wrongSet),
+                skippedIds: Array.from(skipSet),
                 acc,
-                lastActivePath
+                lastActivePath,
+                lastActiveAnswered
             };
         } catch (e) {
-            return { solved: 0, correct: 0, wrong: 0, skipped: 0, acc: 0, lastActivePath: '' };
+            return { solved: 0, correct: 0, wrong: 0, skipped: 0, wrongIds: [], skippedIds: [], acc: 0, lastActivePath: '', lastActiveAnswered: 0 };
         }
     }
+
+    // Installed Mobile App: 1-Tap Resume Last Unfinished Chapter
+    window.saResumeLastActiveChapter = function(encodedJsonArr) {
+        try {
+            const arr = JSON.parse(decodeURIComponent(encodedJsonArr));
+            if (!Array.isArray(arr) || arr.length === 0) return;
+            currentPath = arr;
+            document.body.classList.add('hide-ai-btn');
+            document.body.classList.add('hide-bottom-bar');
+            window.location.hash = '#/quiz';
+        } catch (e) {}
+    };
+
+    // Installed Mobile App: Interactive Custom Mock Builder (Updates in-place without resetting carousel)
+    window.saSetAppMockOption = function(field, val) {
+        if (field === 'exam') saState.mockExam = val;
+        else if (field === 'diff') saState.mockDiff = val;
+        else if (field === 'limit') saState.mockLimit = Number(val) || 45;
+        renderSaAppCustomMockCard();
+    };
+
+    window.saLaunchAppCustomMock = function() {
+        const exams = getActiveExamCategoriesFromAdmin();
+        const excludedSet = new Set((window.customPracticeConfig && Array.isArray(window.customPracticeConfig.excludedExams)) ? window.customPracticeConfig.excludedExams : []);
+        const validExams = exams.filter(k => !excludedSet.has(k));
+        const chosenExam = saState.mockExam || validExams[0] || exams[0] || '';
+        if (!chosenExam) {
+            forceCwStep1();
+            return;
+        }
+        cwPath = chosenExam;
+        cwDiff = saState.mockDiff || 'Mixed';
+        cwLimit = Number(saState.mockLimit) || 45;
+        cwSelectedSubjects = [];
+        cwSelectedChapters = [];
+        document.body.classList.add('hide-ai-btn');
+        document.body.classList.add('hide-bottom-bar');
+        window.location.hash = '#/custom-setup';
+        setTimeout(() => {
+            if (typeof cwStep2 === 'function') {
+                cwStep2();
+                const diffEl = document.getElementById('cwDiffSelect');
+                if (diffEl) diffEl.value = cwDiff;
+                const numEl = document.getElementById('cwNum');
+                if (numEl) numEl.value = String(cwLimit);
+                if (typeof cwValidateLimit === 'function') cwValidateLimit();
+            }
+        }, 60);
+    };
+
+    function renderSaAppCustomMockCard() {
+        const mount = document.getElementById('saAppCustomMockMount');
+        if (!mount) return;
+
+        const allExams = getActiveExamCategoriesFromAdmin();
+        const excludedSet = new Set((window.customPracticeConfig && Array.isArray(window.customPracticeConfig.excludedExams)) ? window.customPracticeConfig.excludedExams : []);
+        const validExams = allExams.filter(k => !excludedSet.has(k));
+        const examList = validExams.length ? validExams : allExams;
+
+        if (!saState.mockExam || !examList.includes(saState.mockExam)) {
+            saState.mockExam = examList[0] || 'NEET';
+        }
+        if (!saState.mockDiff) saState.mockDiff = 'Mixed';
+        if (!saState.mockLimit) saState.mockLimit = 45;
+
+        const examPills = examList.map(ex => {
+            const clean = formatCleanTopicTitle(ex);
+            const active = saState.mockExam === ex;
+            const safe = ex.replace(/'/g, "\\'");
+            return `<button type="button" onclick="saSetAppMockOption('exam', '${safe}')" style="background:${active ? '#fdb813' : '#0b0f19'}; color:${active ? '#000' : '#cbd5e1'}; border:1px solid ${active ? '#fdb813' : 'rgba(255,255,255,0.14)'}; padding:5px 11px; border-radius:8px; font-size:11.5px; font-weight:800; cursor:pointer;">${clean}</button>`;
+        }).join('');
+
+        const diffPills = [
+            { id: 'Mixed', lbl: '⚡ Mixed' },
+            { id: 'Easy', lbl: '🟢 Easy' },
+            { id: 'Medium', lbl: '🟡 Med' },
+            { id: 'Hard', lbl: '🔴 Hard' }
+        ].map(d => {
+            const active = saState.mockDiff === d.id;
+            return `<button type="button" onclick="saSetAppMockOption('diff', '${d.id}')" style="flex:1; background:${active ? 'rgba(56,189,248,0.2)' : '#0b0f19'}; color:${active ? '#38bdf8' : '#cbd5e1'}; border:1px solid ${active ? '#38bdf8' : 'rgba(255,255,255,0.12)'}; padding:6px 4px; border-radius:8px; font-size:11px; font-weight:800; cursor:pointer; white-space:nowrap;">${d.lbl}</button>`;
+        }).join('');
+
+        const countPills = [25, 45, 90, 180, 250].map(n => {
+            const active = Number(saState.mockLimit) === n;
+            return `<button type="button" onclick="saSetAppMockOption('limit', ${n})" style="flex:1; background:${active ? '#fdb813' : '#0b0f19'}; color:${active ? '#000' : '#cbd5e1'}; border:1px solid ${active ? '#fdb813' : 'rgba(255,255,255,0.12)'}; padding:6px 4px; border-radius:8px; font-size:11.5px; font-weight:900; cursor:pointer;">${n}</button>`;
+        }).join('');
+
+        mount.innerHTML = `
+            <div class="sa-feature-full-card" style="border-color:rgba(253,184,19,0.42);">
+                <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:8px;">
+                    <span style="background:rgba(253,184,19,0.18); color:#fdb813; border:1px solid rgba(253,184,19,0.45); padding:3px 9px; border-radius:999px; font-size:10px; font-weight:900;">🎯 CUSTOM MOCK BUILDER</span>
+                    <span style="font-size:10.5px; font-weight:800; color:#94a3b8;">20–250 MCQs</span>
+                </div>
+
+                <h3 style="margin:0 0 4px 0; font-size:16.5px; font-weight:900; color:#ffffff;">Build Your Own Mock Test</h3>
+                <p style="margin:0 0 11px 0; font-size:12px; color:#94a3b8; line-height:1.4;">Mix multiple subjects &amp; chapters with your chosen exam, difficulty, and question count.</p>
+
+                <div style="display:flex; flex-direction:column; gap:9px; margin-bottom:13px;">
+                    <div>
+                        <div style="font-size:10px; font-weight:800; color:#94a3b8; text-transform:uppercase; margin-bottom:5px;">1. Target Exam</div>
+                        <div style="display:flex; gap:6px; flex-wrap:wrap;">${examPills}</div>
+                    </div>
+                    <div>
+                        <div style="font-size:10px; font-weight:800; color:#94a3b8; text-transform:uppercase; margin-bottom:5px;">2. Difficulty</div>
+                        <div style="display:flex; gap:6px;">${diffPills}</div>
+                    </div>
+                    <div>
+                        <div style="font-size:10px; font-weight:800; color:#94a3b8; text-transform:uppercase; margin-bottom:5px;">3. Number of Questions</div>
+                        <div style="display:flex; gap:6px;">${countPills}</div>
+                    </div>
+                </div>
+
+                <button type="button" onclick="saLaunchAppCustomMock()" style="width:100%; background:linear-gradient(135deg, #fdb813, #f59e0b); color:#000; border:none; padding:11px 14px; border-radius:12px; font-size:13px; font-weight:900; cursor:pointer; box-shadow:0 6px 18px rgba(253,184,19,0.28);">
+                    Select Chapters &amp; Launch (${saState.mockLimit} MCQs) &rarr;
+                </button>
+            </div>
+        `;
+    }
+
+    // Installed Mobile App: Strict Mistake & Skipped Recovery Launcher (No silent unrelated sprint, zero #/quiz race)
+    window.saLaunchMobileClinicMode = async function(mode) {
+        const prog = getStudentProgressSummaryForApp('');
+        const targetIds = mode === 'WRONG' ? prog.wrongIds : prog.skippedIds;
+
+        if (!targetIds || targetIds.length === 0) {
+            if (mode === 'WRONG') {
+                showNotification('✅ 0 pending Wrong MCQs! Submit any quiz to track mistakes here.');
+            } else {
+                showNotification('✅ 0 Skipped MCQs waiting right now!');
+            }
+            return;
+        }
+
+        if (typeof db === 'undefined') return;
+        showNotification(`⏳ Loading ${Math.min(30, targetIds.length)} ${mode === 'WRONG' ? 'Wrong' : 'Skipped'} MCQs...`);
+
+        try {
+            const sliceIds = targetIds.slice(0, 30);
+            const questionsToLaunch = [];
+            for (let i = 0; i < sliceIds.length; i += 10) {
+                const chunk = sliceIds.slice(i, i + 10);
+                const snap = await db.collection('content').where(firebase.firestore.FieldPath.documentId(), 'in', chunk).get();
+                snap.forEach(doc => {
+                    const d = doc.data();
+                    if (!d.type || d.type === 'mcq') questionsToLaunch.push({ id: doc.id, ...d });
+                });
+            }
+
+            if (questionsToLaunch.length === 0) {
+                showNotification('⚠️ Those saved questions are no longer in the question bank.');
+                return;
+            }
+
+            currentQuestions = questionsToLaunch;
+            currentQuizPath = mode === 'WRONG' ? 'Mistake Clinic > Wrong MCQs' : 'Mistake Clinic > Skipped Recovery';
+            currentIndex = 0;
+            userAnswers = {};
+            timeSpent = {};
+
+            document.body.classList.add('hide-ai-btn');
+            document.body.classList.add('hide-bottom-bar');
+            document.body.classList.add('mcqs-quiz-screen-active');
+            document.body.classList.remove('mcqs-study-app-active');
+
+            if (typeof renderQuizInterface === 'function') renderQuizInterface();
+            if (typeof startQuestionTimer === 'function') startQuestionTimer();
+        } catch (err) {
+            showNotification('❌ Could not load clinic questions: ' + err.message);
+        }
+    };
 
     // ==========================================
     // COMPACT, 100% TRUE-DATA ANALYTICS COMMAND CENTER
@@ -8926,52 +9151,52 @@ async function handleLiveSearch() {
                     </div>
                 </div>
 
-                <!-- 3. SMART REVISION & WEAK-SPOT DOCTOR + 60-SECOND SPEED BLITZ -->
+                <!-- 3. ORGANISED STUDY TOOLS (CONTINUE BANNER + CUSTOM MOCK BUILDER + MISTAKE CLINIC + 60s BLITZ) -->
                 <div class="sa-section-block">
+                    ${lastPathClean ? `
+                        <div onclick="saResumeLastActiveChapter('${lastPathEncoded}')" style="background:linear-gradient(145deg, rgba(16,185,129,0.16), #0d1524); border:1.5px solid rgba(16,185,129,0.45); border-radius:16px; padding:12px 14px; margin-bottom:14px; display:flex; justify-content:space-between; align-items:center; gap:10px; cursor:pointer; box-shadow:0 8px 22px rgba(0,0,0,0.45);">
+                            <div style="min-width:0; flex:1;">
+                                <div style="font-size:10px; font-weight:900; color:#10b981; text-transform:uppercase; letter-spacing:0.4px;">▶️ Continue Where You Left Off</div>
+                                <div style="font-size:13.5px; font-weight:800; color:#ffffff; margin-top:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${lastPathClean}</div>
+                                <div style="font-size:11px; color:#94a3b8; margin-top:1px;">${globalProg.lastActiveAnswered} question${globalProg.lastActiveAnswered === 1 ? '' : 's'} saved in session</div>
+                            </div>
+                            <span style="background:#10b981; color:#000000; padding:7px 13px; border-radius:10px; font-size:11.5px; font-weight:900; flex-shrink:0;">Resume &rarr;</span>
+                        </div>
+                    ` : ''}
+
+                    <!-- CARD A: DEDICATED CUSTOM MOCK BUILDER -->
+                    <div id="saAppCustomMockMount"></div>
+
+                    <!-- CARD B: DEDICATED MISTAKE & REVISION CLINIC (ONLY REVISION TOOLS) -->
                     <div class="sa-feature-full-card" style="border-color:rgba(56,189,248,0.42);">
-                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-                            <span style="background:rgba(56,189,248,0.16); color:#38bdf8; border:1px solid rgba(56,189,248,0.45); padding:3px 9px; border-radius:999px; font-size:10px; font-weight:900;">🩺 PERSONAL WEAK-SPOT DOCTOR</span>
-                            <span style="font-size:11px; font-weight:800; color:#10b981; display:inline-flex; align-items:center; gap:4px;">${SVG_CHECK_GREEN} ${globalProg.solved} Solved (${globalProg.acc}%)</span>
+                        <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:8px;">
+                            <span style="background:rgba(56,189,248,0.16); color:#38bdf8; border:1px solid rgba(56,189,248,0.45); padding:3px 9px; border-radius:999px; font-size:10px; font-weight:900;">🩺 MISTAKE &amp; REVISION CLINIC</span>
+                            <span style="font-size:11px; font-weight:800; color:#10b981; display:inline-flex; align-items:center; gap:4px;">${SVG_CHECK_GREEN} ${globalProg.solved} Tracked (${globalProg.acc}%)</span>
                         </div>
 
-                        <h3 style="margin:0 0 4px 0; font-size:16.5px; font-weight:900; color:#ffffff;">Smart Mistake Recovery &amp; Revision Hub</h3>
-                        <p style="margin:0 0 12px 0; font-size:12px; color:#94a3b8; line-height:1.4;">Automatically isolates your wrong, skipped, and bookmarked questions so you never repeat the same mistake in the real exam.</p>
+                        <h3 style="margin:0 0 4px 0; font-size:16.5px; font-weight:900; color:#ffffff;">Fix Weak Spots &amp; Revise</h3>
+                        <p style="margin:0 0 12px 0; font-size:12px; color:#94a3b8; line-height:1.4;">Re-attempt questions you got wrong or skipped in submitted quizzes, or review your personal Doubt Diary.</p>
 
-                        ${lastPathClean ? `
-                            <div onclick="saJumpToPathEncoded('${lastPathEncoded}', event)" style="background:rgba(16,185,129,0.12); border:1px solid rgba(16,185,129,0.4); border-radius:11px; padding:9px 12px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center; gap:8px; cursor:pointer;">
-                                <div style="min-width:0;">
-                                    <div style="font-size:10px; font-weight:900; color:#10b981; text-transform:uppercase;">▶️ Continue Last Active Chapter</div>
-                                    <div style="font-size:13px; font-weight:800; color:#fff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${lastPathClean}</div>
-                                </div>
-                                <span style="background:#10b981; color:#000; padding:5px 10px; border-radius:8px; font-size:11px; font-weight:900; flex-shrink:0;">Resume &rarr;</span>
-                            </div>
-                        ` : ''}
-
-                        <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:8px; margin-bottom:12px;">
-                            <div onclick="if(typeof setSmartClinicMode==='function'){setSmartClinicMode('WRONG'); launchSmartMistakeClinicSession();}" style="background:#0b0f19; border:1px solid rgba(239,68,68,0.4); border-radius:11px; padding:9px 6px; text-align:center; cursor:pointer;">
+                        <div style="display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:8px;">
+                            <div onclick="saLaunchMobileClinicMode('WRONG')" style="background:#0b0f19; border:1px solid rgba(239,68,68,0.42); border-radius:12px; padding:10px 6px; text-align:center; cursor:pointer;">
                                 <div style="font-size:16px; font-weight:900; color:#ef4444; display:inline-flex; align-items:center; gap:4px;">${SVG_CROSS_RED} ${globalProg.wrong}</div>
-                                <div style="font-size:10.5px; font-weight:800; color:#e2e8f0; margin-top:2px;">Wrong MCQs</div>
-                                <div style="font-size:9.5px; color:#ef4444; margin-top:2px;">Tap to Fix &rarr;</div>
+                                <div style="font-size:10.5px; font-weight:800; color:#e2e8f0; margin-top:3px;">Wrong MCQs</div>
+                                <div style="font-size:9.5px; color:#ef4444; margin-top:2px; font-weight:700;">${globalProg.wrong > 0 ? 'Fix Now →' : 'All Clear'}</div>
                             </div>
-                            <div onclick="if(typeof setSmartClinicMode==='function'){setSmartClinicMode('SKIPPED'); launchSmartMistakeClinicSession();}" style="background:#0b0f19; border:1px solid rgba(234,179,8,0.4); border-radius:11px; padding:9px 6px; text-align:center; cursor:pointer;">
+                            <div onclick="saLaunchMobileClinicMode('SKIPPED')" style="background:#0b0f19; border:1px solid rgba(234,179,8,0.42); border-radius:12px; padding:10px 6px; text-align:center; cursor:pointer;">
                                 <div style="font-size:16px; font-weight:900; color:#eab308;">⏭️ ${globalProg.skipped}</div>
-                                <div style="font-size:10.5px; font-weight:800; color:#e2e8f0; margin-top:2px;">Skipped</div>
-                                <div style="font-size:9.5px; color:#eab308; margin-top:2px;">Retry &rarr;</div>
+                                <div style="font-size:10.5px; font-weight:800; color:#e2e8f0; margin-top:3px;">Skipped</div>
+                                <div style="font-size:9.5px; color:#eab308; margin-top:2px; font-weight:700;">${globalProg.skipped > 0 ? 'Retry →' : 'None Left'}</div>
                             </div>
-                            <div onclick="window.location.hash='#/bookmarks'" style="background:#0b0f19; border:1px solid rgba(168,85,247,0.4); border-radius:11px; padding:9px 6px; text-align:center; cursor:pointer;">
-                                <div style="font-size:16px; font-weight:900; color:#c084fc;">🔖 ${bmCount}</div>
-                                <div style="font-size:10.5px; font-weight:800; color:#e2e8f0; margin-top:2px;">Bookmarks</div>
-                                <div style="font-size:9.5px; color:#c084fc; margin-top:2px;">Revise &rarr;</div>
+                            <div onclick="window.location.hash='#/diary'" style="background:#0b0f19; border:1px solid rgba(56,189,248,0.42); border-radius:12px; padding:10px 6px; text-align:center; cursor:pointer;">
+                                <div style="font-size:16px; font-weight:900; color:#38bdf8;">📔</div>
+                                <div style="font-size:10.5px; font-weight:800; color:#e2e8f0; margin-top:3px;">Doubt Diary</div>
+                                <div style="font-size:9.5px; color:#38bdf8; margin-top:2px; font-weight:700;">Open Notes &rarr;</div>
                             </div>
-                        </div>
-
-                        <div style="display:flex; gap:8px;">
-                            <button type="button" onclick="forceCwStep1(event)" style="flex:1.2; background:linear-gradient(135deg, #fdb813, #f59e0b); color:#000; border:none; padding:10px 12px; border-radius:11px; font-size:12px; font-weight:900; cursor:pointer;">🎯 Custom Mock (20–250 Q)</button>
-                            <button type="button" onclick="window.location.hash='#/progress'" style="flex:1; background:rgba(56,189,248,0.15); color:#38bdf8; border:1px solid rgba(56,189,248,0.4); padding:10px 12px; border-radius:11px; font-size:12px; font-weight:800; cursor:pointer;">📊 Full Analytics</button>
                         </div>
                     </div>
 
-                    <!-- ORGANIZED FULL-WIDTH 60-SECOND SPEED BLITZ CARD -->
+                    <!-- CARD C: 60-SECOND SPEED BLITZ -->
                     <div class="sa-feature-full-card" style="border-color:rgba(253,184,19,0.42); margin-bottom:4px;">
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
                             <span style="background:rgba(253,184,19,0.18); color:#fdb813; border:1px solid rgba(253,184,19,0.45); padding:3px 9px; border-radius:999px; font-size:10px; font-weight:900;">⚡ 60-SECOND SPEED CHALLENGE</span>
@@ -9026,13 +9251,18 @@ async function handleLiveSearch() {
             track.addEventListener('touchend', () => {
                 setTimeout(() => { saState.isTouchingCarousel = false; }, 1400);
             }, { passive: true });
-            track.addEventListener('scroll', () => {
+           track.addEventListener('scroll', () => {
                 const slideW = track.querySelector('.sa-exam-slide')?.offsetWidth || 290;
                 const idx = Math.round(track.scrollLeft / (slideW + 12));
                 saState.activeSlideIdx = idx;
                 updateSaCarouselDots(idx);
             }, { passive: true });
         }
+
+        renderSaAppCustomMockCard();
+        startStudyHeroCarousel();
+        return true;
+    }
 
         startStudyHeroCarousel();
         return true;
