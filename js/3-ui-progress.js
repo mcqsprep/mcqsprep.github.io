@@ -3773,81 +3773,179 @@ async function handleLiveSearch() {
     window.addEventListener('resize', schedulePillBarAlign, { passive: true });
 
     // ==========================================
-    // SMART QUIZ EXIT & NON-LOOPING QUIZ BACK-BAR INJECTOR
+    // ACTIVE QUIZ GUARD, PC-ONLY BACK BUTTON & EXIT CONFIRMATION POPUP
     // ==========================================
-    window.exitActiveQuizPractice = function() {
+    window.__mcqsQuizGuardArmed = false;
+    window.__mcqsAllowQuizExit = false;
+    window.__mcqsQuizActiveHash = '#/quiz';
+
+    window.isQuizPracticeActive = function() {
+        const dyn = document.getElementById('dynamic-content');
+        if (!dyn) return false;
+        return Boolean(
+            dyn.querySelector('.quiz-option') ||
+            dyn.querySelector('.option-btn') ||
+            dyn.querySelector('.question-palette')
+        );
+    };
+
+    function armQuizExitBackGuard() {
+        if (!window.isQuizPracticeActive()) return;
+        window.__mcqsAllowQuizExit = false;
+        if (!window.__mcqsQuizGuardArmed) {
+            window.__mcqsQuizGuardArmed = true;
+            window.__mcqsQuizActiveHash = window.location.hash || '#/quiz';
+            try {
+                history.pushState({ mcqsQuizGuard: true }, '', window.__mcqsQuizActiveHash);
+            } catch (e) {}
+        }
+    }
+
+    function disarmQuizExitBackGuard() {
+        window.__mcqsQuizGuardArmed = false;
+        const modal = document.getElementById('mcqsExitQuizConfirmModal');
+        if (modal) modal.style.display = 'none';
+    }
+
+    window.closeQuizExitConfirmModal = function() {
+        const modal = document.getElementById('mcqsExitQuizConfirmModal');
+        if (modal) modal.style.display = 'none';
+    };
+
+    window.openQuizExitConfirmModal = function() {
+        let modal = document.getElementById('mcqsExitQuizConfirmModal');
+        if (!modal) {
+            modal = document.createElement('div');
+            modal.id = 'mcqsExitQuizConfirmModal';
+            modal.className = 'mcqs-exit-confirm-overlay';
+            modal.innerHTML = `
+                <div class="mcqs-exit-confirm-card" onclick="event.stopPropagation()">
+                    <div class="mcqs-exit-confirm-icon">⚠️</div>
+                    <h3 class="mcqs-exit-confirm-title">Exit Practice Session?</h3>
+                    <p class="mcqs-exit-confirm-desc">Are you sure you want to exit this practice session? Any unsubmitted answers in this active test will be lost.</p>
+                    <div class="mcqs-exit-confirm-actions">
+                        <button type="button" class="mcqs-exit-btn-cancel" onclick="closeQuizExitConfirmModal()">Stay in Practice</button>
+                        <button type="button" class="mcqs-exit-btn-confirm" onclick="confirmExitActiveQuizPractice()">Yes, Exit</button>
+                    </div>
+                </div>
+            `;
+            modal.addEventListener('click', window.closeQuizExitConfirmModal);
+            document.body.appendChild(modal);
+        }
+        modal.style.display = 'flex';
+    };
+
+    window.requestExitActiveQuiz = function() {
+        if (window.isQuizPracticeActive()) {
+            window.openQuizExitConfirmModal();
+        } else {
+            window.confirmExitActiveQuizPractice();
+        }
+    };
+
+    window.confirmExitActiveQuizPractice = function() {
+        window.__mcqsAllowQuizExit = true;
+        disarmQuizExitBackGuard();
+
         if (typeof currentTimer !== 'undefined' && currentTimer) clearInterval(currentTimer);
         if (typeof window.saveLiveQuizSessionProgress === 'function') {
             try { window.saveLiveQuizSessionProgress(); } catch (e) {}
         }
+
         document.body.classList.remove('mcqs-quiz-screen-active');
         document.body.classList.remove('mcqs-anti-cheat-active');
         document.body.classList.remove('hide-ai-btn');
         document.body.classList.remove('hide-bottom-bar');
 
-        if (Array.isArray(currentPath) && currentPath.length > 0) {
+        const dyn = document.getElementById('dynamic-content');
+        if (dyn) dyn.innerHTML = '';
+
+        const isCustomSession = (typeof currentQuizPath === 'string' && currentQuizPath.includes('Custom Practice'));
+        if (!isCustomSession && Array.isArray(currentPath) && currentPath.length > 0) {
             if (currentPath.length > 1) {
-                const parentTrail = currentPath.slice(0, -1);
-                jumpToSection(parentTrail);
-                return;
+                jumpToSection(currentPath.slice(0, -1));
+            } else {
+                jumpToSection(currentPath);
             }
+        } else {
+            goHome();
         }
-        goHome();
+
+        setTimeout(() => {
+            window.__mcqsAllowQuizExit = false;
+            syncQuizScreenAndAntiCheatState();
+            if (typeof window.__mcqsEnforceNavBars === 'function') window.__mcqsEnforceNavBars();
+        }, 120);
     };
+
+    window.exitActiveQuizPractice = window.requestExitActiveQuiz;
+
+    // Intercept Mobile & PC Hardware/Browser Back Button via popstate + hashchange belt-and-suspenders
+    window.__mcqsInterceptQuizExit = function() {
+        if (!window.isQuizPracticeActive() || window.__mcqsAllowQuizExit) return false;
+        const activeHash = window.__mcqsQuizActiveHash || '#/quiz';
+        if (window.location.hash !== activeHash) {
+            try {
+                history.pushState({ mcqsQuizGuard: true }, '', activeHash);
+            } catch (e) {}
+            window.openQuizExitConfirmModal();
+            return true;
+        }
+        return false;
+    };
+
+    if (!window._mcqsQuizPopstateGuardBound) {
+        window._mcqsQuizPopstateGuardBound = true;
+        window.addEventListener('popstate', function() {
+            if (window.isQuizPracticeActive() && !window.__mcqsAllowQuizExit) {
+                const activeHash = window.__mcqsQuizActiveHash || '#/quiz';
+                try {
+                    history.pushState({ mcqsQuizGuard: true }, '', activeHash);
+                } catch (e) {}
+                window.openQuizExitConfirmModal();
+            }
+        });
+    }
 
     function ensureQuizTopBackBarInjected() {
         const dyn = document.getElementById('dynamic-content');
         if (!dyn) return false;
 
-        const hasActiveQuizOptions = Boolean(
-            dyn.querySelector('.option-btn') ||
-            dyn.querySelector('.quiz-option') ||
-            dyn.querySelector('.quiz-header')
-        );
+        // Remove legacy yellow-marked top bar if present
+        const legacyBar = document.getElementById('mcqsGuaranteedQuizBackBar');
+        if (legacyBar) legacyBar.remove();
+
+        const hasActiveQuizOptions = window.isQuizPracticeActive();
         const hasWelcomeResumeCard = Boolean(dyn.querySelector('#btnResumeTopicPractice'));
 
         if (!hasActiveQuizOptions && !hasWelcomeResumeCard) {
+            disarmQuizExitBackGuard();
             return false;
         }
 
-        if (hasWelcomeResumeCard && !dyn.querySelector('#mcqsWelcomeBackExitBtn')) {
-            const resumeCard = dyn.querySelector('#btnResumeTopicPractice')?.closest('.admin-panel-card');
-            if (resumeCard) {
-                resumeCard.insertAdjacentHTML('afterbegin', `
-                    <div style="margin-bottom:14px;">
-                        <button type="button" id="mcqsWelcomeBackExitBtn" class="mcqs-quiz-exit-btn" onclick="exitActiveQuizPractice()">
-                            ❮ Back to Chapter
+        if (hasActiveQuizOptions) {
+            armQuizExitBackGuard();
+            // PC-ONLY standalone Back button (strictly hidden on mobile via CSS)
+            if (!document.getElementById('mcqsPcQuizBackWrap')) {
+                dyn.insertAdjacentHTML('afterbegin', `
+                    <div id="mcqsPcQuizBackWrap" class="mcqs-pc-only-quiz-back-wrap">
+                        <button type="button" class="mcqs-pc-only-quiz-back-btn" onclick="requestExitActiveQuiz()" title="Exit Practice">
+                            <span>❮</span> <span>Back</span>
                         </button>
                     </div>
                 `);
             }
-        }
-
-        if (hasActiveQuizOptions && !document.getElementById('mcqsGuaranteedQuizBackBar')) {
-            const rawQuizTitle = (typeof currentQuizPath !== 'undefined' && currentQuizPath)
-                ? currentQuizPath
-                : (Array.isArray(currentPath) && currentPath.length ? currentPath.join(' > ') : 'Practice Session');
-            const cleanTrail = rawQuizTitle.split(' > ').map(s => formatCleanTopicTitle(s)).join(' › ');
-
-            const backBarHtml = `
-                <div id="mcqsGuaranteedQuizBackBar" class="mcqs-quiz-top-backbar">
-                    <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap; min-width:0;">
-                        <button type="button" class="mcqs-quiz-exit-btn" onclick="exitActiveQuizPractice()" title="Save &amp; Exit to Chapter">
-                            ❮ Back to Chapter
+        } else if (hasWelcomeResumeCard && !dyn.querySelector('#mcqsWelcomeBackExitBtn')) {
+            const resumeCard = dyn.querySelector('#btnResumeTopicPractice')?.closest('.admin-panel-card');
+            if (resumeCard) {
+                resumeCard.insertAdjacentHTML('afterbegin', `
+                    <div class="mcqs-pc-only-quiz-back-wrap" style="margin-bottom:14px;">
+                        <button type="button" id="mcqsWelcomeBackExitBtn" class="mcqs-pc-only-quiz-back-btn" onclick="confirmExitActiveQuizPractice()">
+                            <span>❮</span> <span>Back</span>
                         </button>
-                        <div style="min-width:0;">
-                            <div style="font-size:10px; font-weight:800; color:#94a3b8; text-transform:uppercase; letter-spacing:0.5px;">Active Practice Session</div>
-                            <div style="font-size:13px; font-weight:800; color:#f8fafc; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:55vw;">${cleanTrail}</div>
-                        </div>
                     </div>
-                    <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
-                        <span style="background:rgba(16,185,129,0.14); color:#10b981; border:1px solid rgba(16,185,129,0.38); padding:4px 9px; border-radius:999px; font-size:11px; font-weight:800;">✔ +4 Correct</span>
-                        <span style="background:rgba(239,68,68,0.14); color:#ef4444; border:1px solid rgba(239,68,68,0.38); padding:4px 9px; border-radius:999px; font-size:11px; font-weight:800;">✖ −1 Negative</span>
-                        <span style="background:rgba(255,255,255,0.05); color:#94a3b8; border:1px solid rgba(255,255,255,0.12); padding:4px 9px; border-radius:999px; font-size:11px; font-weight:700;">🔒 Anti-Cheat</span>
-                    </div>
-                </div>
-            `;
-            dyn.insertAdjacentHTML('afterbegin', backBarHtml);
+                `);
+            }
         }
 
         return true;
@@ -3856,40 +3954,41 @@ async function handleLiveSearch() {
     function syncQuizScreenAndAntiCheatState() {
         const rawHash = decodeURIComponent(window.location.hash.replace(/^#\/?/, '')).toLowerCase();
         const isQuizDomMounted = ensureQuizTopBackBarInjected();
-        const isQuizRoute = (rawHash === 'quiz') || isQuizDomMounted;
+        const dyn = document.getElementById('dynamic-content');
+        const isReviewOrResult = Boolean(
+            dyn && (dyn.querySelector('.review-tabs') || dyn.innerHTML.includes('Quiz Completed!'))
+        );
+        const isQuizRoute = isQuizDomMounted || (rawHash === 'quiz' && !isReviewOrResult);
 
         document.body.classList.toggle('mcqs-quiz-screen-active', isQuizRoute);
 
         const onRootHome = isStrictHomepageView() && !isQuizRoute;
         document.body.classList.toggle('mcqs-on-root-home', onRootHome);
 
-        const pathStr = (Array.isArray(currentPath) ? currentPath.join(' > ') : '').toLowerCase();
-        const combined = `${rawHash} ${pathStr}`;
-        const shouldHideAi = isQuizRoute ||
-            rawHash === 'custom-setup' ||
-            rawHash === 'admin' ||
-            rawHash === 'admin-panel' ||
-            /mcq|practice paper|mock test|test series|sample paper|model paper|daily quiz|custom practice/.test(combined);
+        // STRICT FIX FOR IMAGE 3: Only activate anti-cheat / hide Ask AI inside an ACTIVE quiz or setup/admin.
+        // Never leave mcqs-anti-cheat-active stuck on chapter folders like "MCQs Practice > Botany"!
+        const isRestrictedRoute = rawHash === 'custom-setup' || rawHash === 'admin' || rawHash === 'admin-panel';
+        const shouldHideAi = isQuizRoute || isRestrictedRoute;
 
         const aiBtn = document.getElementById('ai-floating-btn');
         if (shouldHideAi) {
-            document.body.classList.add('mcqs-anti-cheat-active');
+            document.body.classList.toggle('mcqs-anti-cheat-active', isQuizRoute);
             document.body.classList.add('hide-ai-btn');
+            document.body.classList.add('hide-bottom-bar');
             if (aiBtn) aiBtn.style.setProperty('display', 'none', 'important');
         } else {
             document.body.classList.remove('mcqs-anti-cheat-active');
             document.body.classList.remove('hide-ai-btn');
+            document.body.classList.remove('hide-bottom-bar');
             if (aiBtn) aiBtn.style.removeProperty('display');
         }
 
         schedulePillBarAlign();
     }
 
-    // Expose safely for Section 8's non-looping renderQuizInterface hook (NO MutationObserver!)
     window.__mcqsSyncQuizAndAntiCheatState = syncQuizScreenAndAntiCheatState;
 
     function attachDynamicContentObserver() {
-        // MutationObserver permanently removed to prevent STATUS_STACK_OVERFLOW.
         if (typeof window.__mcqsInstallSafeQuizHooks === 'function') {
             window.__mcqsInstallSafeQuizHooks();
         }
@@ -6027,7 +6126,6 @@ async function handleLiveSearch() {
         document.body.classList.toggle('mcqs-any-modal-open', modalOpen);
         document.body.classList.toggle('mcqs-is-installed-mobile-pwa', isMobileInstalled);
 
-        // 1. PC Floating Center Pill Bar: Only on Root Home on PC (>860px), hidden in all modals & inner pages
         const pillBar = document.getElementById('mcqsWebCenterNavPills');
         if (pillBar) {
             if (!isRootHome || modalOpen || quizActive || adminActive || window.innerWidth <= 860) {
@@ -6043,24 +6141,207 @@ async function handleLiveSearch() {
             }
         }
 
-        // 2. Bottom App Dock (#mobileAppDock): ONLY visible in Installed Mobile App (NEVER on Mobile Website!)
+        // Bottom App Dock: Strictly for Installed Mobile PWA, always restored at full opacity/color outside quiz
         const dock = document.getElementById('mobileAppDock');
         if (dock) {
             const hideDock = !isMobileInstalled || quizActive || modalOpen || adminActive || document.body.classList.contains('hide-bottom-bar');
             if (hideDock) {
                 dock.style.setProperty('display', 'none', 'important');
                 dock.style.setProperty('visibility', 'hidden', 'important');
+                dock.style.setProperty('opacity', '0', 'important');
                 dock.style.setProperty('pointer-events', 'none', 'important');
             } else {
                 dock.style.setProperty('display', 'flex', 'important');
                 dock.style.setProperty('visibility', 'visible', 'important');
+                dock.style.setProperty('opacity', '1', 'important');
+                dock.style.setProperty('transform', 'translateX(-50%)', 'important');
                 dock.style.setProperty('pointer-events', 'auto', 'important');
+
+                const aiTab = dock.querySelector('.ai-tab-inner');
+                if (aiTab) {
+                    aiTab.style.setProperty('opacity', '1', 'important');
+                    aiTab.style.setProperty('pointer-events', 'auto', 'important');
+                }
             }
         }
     }
 
+    window.__mcqsEnforceNavBars = enforceNavigationBarsVisibility;
+
     // ==========================================
-    // 2. MODERNIZE QUIZ FOOTER ACTION BUTTONS & SAFE NON-LOOPING HOOKS (ZERO MUTATIONOBSERVERS)
+    // 2A. 1-LINE AUTO-SLIDING QUESTION PALETTE + PC SLIDE BAR + EXPAND/HIDE TOGGLE
+    // ==========================================
+    window.__mcqsQuizPaletteExpanded = false;
+    window.__mcqsLastPaletteScrollLeft = 0;
+    window.__mcqsLastPaletteQuizKey = '';
+
+    window.toggleQuizPaletteExpand = function() {
+        window.__mcqsQuizPaletteExpanded = !window.__mcqsQuizPaletteExpanded;
+        const shell = document.getElementById('mcqsPaletteShell');
+        const btn = document.getElementById('mcqsPaletteToggleBtn');
+        const track = shell ? shell.querySelector('.question-palette') : null;
+        const sliderWrap = document.getElementById('mcqsPalettePcSliderWrap');
+
+        if (!shell || !track) return;
+        shell.classList.toggle('is-expanded', window.__mcqsQuizPaletteExpanded);
+
+        if (btn) {
+            btn.innerHTML = window.__mcqsQuizPaletteExpanded
+                ? '<span>⊟</span> <span>1-Line View</span>'
+                : '<span>⊞</span> <span>Expand All</span>';
+        }
+
+        if (window.__mcqsQuizPaletteExpanded) {
+            if (sliderWrap) sliderWrap.style.display = 'none';
+        } else {
+            syncPaletteSliderAndCenterActive(track, false);
+        }
+    };
+
+    function syncPaletteSliderAndCenterActive(track, animateFromPrevious = true) {
+        if (!track || window.__mcqsQuizPaletteExpanded) return;
+
+        const sliderWrap = document.getElementById('mcqsPalettePcSliderWrap');
+        const slider = document.getElementById('mcqsPalettePcSlider');
+        const btns = track.querySelectorAll('button');
+        const activeIdx = (typeof currentIndex === 'number' && currentIndex >= 0 && currentIndex < btns.length) ? currentIndex : 0;
+        const activeBtn = btns[activeIdx];
+
+        const maxScroll = Math.max(0, track.scrollWidth - track.clientWidth);
+
+        if (sliderWrap && slider) {
+            if (maxScroll > 4 && window.innerWidth > 860) {
+                sliderWrap.style.display = 'flex';
+                slider.min = '0';
+                slider.max = String(maxScroll);
+            } else {
+                sliderWrap.style.display = 'none';
+            }
+        }
+
+        if (activeBtn && maxScroll > 0) {
+            const targetLeft = Math.min(
+                maxScroll,
+                Math.max(0, activeBtn.offsetLeft - (track.clientWidth / 2) + (activeBtn.offsetWidth / 2))
+            );
+
+            if (animateFromPrevious) {
+                const startLeft = Math.min(maxScroll, Math.max(0, window.__mcqsLastPaletteScrollLeft || 0));
+                track.style.scrollBehavior = 'auto';
+                track.scrollLeft = startLeft;
+                requestAnimationFrame(() => {
+                    track.style.scrollBehavior = 'smooth';
+                    track.scrollLeft = targetLeft;
+                    window.__mcqsLastPaletteScrollLeft = targetLeft;
+                    if (slider) slider.value = String(Math.round(targetLeft));
+                });
+            } else {
+                track.style.scrollBehavior = 'smooth';
+                track.scrollLeft = targetLeft;
+                window.__mcqsLastPaletteScrollLeft = targetLeft;
+                if (slider) slider.value = String(Math.round(targetLeft));
+            }
+        } else if (slider) {
+            slider.value = '0';
+        }
+    }
+
+    function modernizeQuizQuestionPalette() {
+        const dyn = document.getElementById('dynamic-content');
+        if (!dyn) return;
+        const track = dyn.querySelector('.question-palette');
+        if (!track || track.dataset.mcqsPaletteEnhanced === 'true') return;
+        track.dataset.mcqsPaletteEnhanced = 'true';
+
+        // Reset expand/scroll state when a brand-new quiz starts
+        const quizKey = `${typeof currentQuizPath === 'string' ? currentQuizPath : ''}__${Array.isArray(currentQuestions) ? currentQuestions.length : 0}`;
+        if (window.__mcqsLastPaletteQuizKey !== quizKey) {
+            window.__mcqsLastPaletteQuizKey = quizKey;
+            window.__mcqsQuizPaletteExpanded = false;
+            window.__mcqsLastPaletteScrollLeft = 0;
+        }
+
+        const totalCount = Array.isArray(currentQuestions) ? currentQuestions.length : track.querySelectorAll('button').length;
+        const answeredCount = (typeof userAnswers === 'object' && userAnswers) ? Object.keys(userAnswers).length : 0;
+
+        const shell = document.createElement('div');
+        shell.id = 'mcqsPaletteShell';
+        shell.className = 'mcqs-palette-shell' + (window.__mcqsQuizPaletteExpanded ? ' is-expanded' : '');
+
+        const header = document.createElement('div');
+        header.className = 'mcqs-palette-header';
+        header.innerHTML = `
+            <div class="mcqs-palette-meta">
+                <span class="mcqs-palette-label">Questions</span>
+                <span class="mcqs-palette-pill">${answeredCount} / ${totalCount} Answered</span>
+            </div>
+            <button type="button" id="mcqsPaletteToggleBtn" class="mcqs-palette-toggle-btn" onclick="toggleQuizPaletteExpand()">
+                ${window.__mcqsQuizPaletteExpanded ? '<span>⊟</span> <span>1-Line View</span>' : '<span>⊞</span> <span>Expand All</span>'}
+            </button>
+        `;
+
+        const sliderWrap = document.createElement('div');
+        sliderWrap.id = 'mcqsPalettePcSliderWrap';
+        sliderWrap.className = 'mcqs-palette-pc-slider-wrap';
+        sliderWrap.style.display = 'none';
+        sliderWrap.innerHTML = `
+            <button type="button" class="mcqs-slider-step-btn" id="mcqsSliderStepLeft" title="Slide Left">❮</button>
+            <input type="range" id="mcqsPalettePcSlider" class="mcqs-palette-pc-slider" min="0" max="100" value="0" aria-label="Slide through question numbers">
+            <button type="button" class="mcqs-slider-step-btn" id="mcqsSliderStepRight" title="Slide Right">❯</button>
+        `;
+
+        track.parentNode.insertBefore(shell, track);
+        shell.appendChild(header);
+        shell.appendChild(track);
+        shell.appendChild(sliderWrap);
+
+        // Bind PC slide bar + scroll sync + PC wheel horizontal slide
+        const slider = sliderWrap.querySelector('#mcqsPalettePcSlider');
+        const stepLeft = sliderWrap.querySelector('#mcqsSliderStepLeft');
+        const stepRight = sliderWrap.querySelector('#mcqsSliderStepRight');
+
+        if (slider) {
+            slider.addEventListener('input', () => {
+                const v = Number(slider.value) || 0;
+                track.style.scrollBehavior = 'auto';
+                track.scrollLeft = v;
+                window.__mcqsLastPaletteScrollLeft = v;
+            });
+        }
+        if (stepLeft) {
+            stepLeft.addEventListener('click', () => {
+                track.style.scrollBehavior = 'smooth';
+                track.scrollBy({ left: -240, behavior: 'smooth' });
+            });
+        }
+        if (stepRight) {
+            stepRight.addEventListener('click', () => {
+                track.style.scrollBehavior = 'smooth';
+                track.scrollBy({ left: 240, behavior: 'smooth' });
+            });
+        }
+
+        track.addEventListener('scroll', () => {
+            if (window.__mcqsQuizPaletteExpanded) return;
+            window.__mcqsLastPaletteScrollLeft = track.scrollLeft;
+            if (slider) slider.value = String(Math.round(track.scrollLeft));
+        }, { passive: true });
+
+        track.addEventListener('wheel', (e) => {
+            if (window.__mcqsQuizPaletteExpanded || window.innerWidth <= 860) return;
+            if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+                e.preventDefault();
+                track.style.scrollBehavior = 'auto';
+                track.scrollLeft += e.deltaY;
+            }
+        }, { passive: false });
+
+        // Auto-slide to active question number cleanly
+        requestAnimationFrame(() => syncPaletteSliderAndCenterActive(track, true));
+    }
+
+    // ==========================================
+    // 2B. MODERNIZE QUIZ FOOTER ACTION BUTTONS
     // ==========================================
     function modernizeQuizFooterCommandBar() {
         const dyn = document.getElementById('dynamic-content');
@@ -6133,13 +6414,13 @@ async function handleLiveSearch() {
             if (typeof window.__mcqsSyncQuizAndAntiCheatState === 'function') {
                 window.__mcqsSyncQuizAndAntiCheatState();
             }
+            modernizeQuizQuestionPalette();
             modernizeQuizFooterCommandBar();
             enforceNavigationBarsVisibility();
         } catch (err) {
             console.error('Post-quiz UI enhancement error:', err);
         }
     }
-
     function installSafeQuizAndModalHooks() {
         // 1. Safe non-looping hook on renderQuizInterface (uses setTimeout 0 after DOM settles)
         if (typeof window.renderQuizInterface === 'function' && !window.renderQuizInterface.__mcqsSafeHooked) {
@@ -7199,6 +7480,305 @@ async function handleLiveSearch() {
                     grid-template-columns: 1fr;
                     justify-items: center;
                 }
+            }
+
+            /* ==========================================
+               6. PC-ONLY QUIZ BACK BUTTON & EXIT CONFIRMATION POPUP
+               ========================================== */
+            .mcqs-pc-only-quiz-back-wrap {
+                display: flex;
+                align-items: center;
+                margin-bottom: 12px;
+            }
+            .mcqs-pc-only-quiz-back-btn {
+                background: linear-gradient(145deg, #131b2e, #0b101d);
+                color: #fdb813;
+                border: 1.5px solid rgba(253, 184, 19, 0.5);
+                padding: 8px 16px;
+                border-radius: 999px;
+                font-size: 13px;
+                font-weight: 800;
+                cursor: pointer;
+                display: inline-flex;
+                align-items: center;
+                gap: 7px;
+                box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
+                transition: all 0.18s ease;
+                font-family: inherit;
+            }
+            .mcqs-pc-only-quiz-back-btn:hover {
+                background: #fdb813;
+                color: #000000;
+                transform: translateX(-2px);
+            }
+            @media (max-width: 860px) {
+                .mcqs-pc-only-quiz-back-wrap {
+                    display: none !important;
+                }
+            }
+
+            .mcqs-exit-confirm-overlay {
+                position: fixed;
+                inset: 0;
+                background: rgba(4, 7, 15, 0.84);
+                backdrop-filter: blur(10px);
+                -webkit-backdrop-filter: blur(10px);
+                z-index: 999999;
+                display: none;
+                align-items: center;
+                justify-content: center;
+                padding: 18px;
+            }
+            .mcqs-exit-confirm-card {
+                width: 100%;
+                max-width: 380px;
+                background: linear-gradient(155deg, #121a2d 0%, #090d18 100%);
+                border: 1.5px solid rgba(253, 184, 19, 0.45);
+                border-radius: 18px;
+                padding: 24px 20px;
+                text-align: center;
+                box-shadow: 0 22px 55px rgba(0, 0, 0, 0.88);
+            }
+            .mcqs-exit-confirm-icon {
+                font-size: 36px;
+                margin-bottom: 8px;
+            }
+            .mcqs-exit-confirm-title {
+                margin: 0 0 8px 0;
+                font-size: 19px;
+                font-weight: 900;
+                color: #ffffff;
+            }
+            .mcqs-exit-confirm-desc {
+                margin: 0 0 20px 0;
+                font-size: 13px;
+                color: #94a3b8;
+                line-height: 1.55;
+            }
+            .mcqs-exit-confirm-actions {
+                display: flex;
+                gap: 10px;
+            }
+            .mcqs-exit-btn-cancel {
+                flex: 1;
+                padding: 11px 14px;
+                border-radius: 11px;
+                border: 1px solid rgba(255, 255, 255, 0.16);
+                background: rgba(255, 255, 255, 0.06);
+                color: #f8fafc;
+                font-size: 13px;
+                font-weight: 800;
+                cursor: pointer;
+                font-family: inherit;
+            }
+            .mcqs-exit-btn-confirm {
+                flex: 1;
+                padding: 11px 14px;
+                border-radius: 11px;
+                border: none;
+                background: linear-gradient(135deg, #ef4444, #dc2626);
+                color: #ffffff;
+                font-size: 13px;
+                font-weight: 900;
+                cursor: pointer;
+                box-shadow: 0 6px 18px rgba(239, 68, 68, 0.35);
+                font-family: inherit;
+            }
+
+            /* ==========================================
+               7. 1-LINE SLIDING QUESTION PALETTE + PC SLIDE BAR + EXPAND/COLLAPSE
+               ========================================== */
+            .mcqs-palette-shell {
+                background: #080d17;
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                border-radius: 12px;
+                padding: 10px 12px;
+                margin-bottom: 16px;
+                box-sizing: border-box;
+                width: 100%;
+            }
+            .mcqs-palette-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                gap: 8px;
+                margin-bottom: 8px;
+            }
+            .mcqs-palette-meta {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                min-width: 0;
+            }
+            .mcqs-palette-label {
+                font-size: 11px;
+                font-weight: 800;
+                color: #94a3b8;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+            }
+            .mcqs-palette-pill {
+                font-size: 10.5px;
+                font-weight: 800;
+                color: #10b981;
+                background: rgba(16, 185, 129, 0.13);
+                border: 1px solid rgba(16, 185, 129, 0.35);
+                padding: 2px 8px;
+                border-radius: 999px;
+                white-space: nowrap;
+            }
+            .mcqs-palette-toggle-btn {
+                background: rgba(253, 184, 19, 0.14);
+                color: #fdb813;
+                border: 1px solid rgba(253, 184, 19, 0.42);
+                border-radius: 999px;
+                padding: 4px 11px;
+                font-size: 11px;
+                font-weight: 800;
+                cursor: pointer;
+                display: inline-flex;
+                align-items: center;
+                gap: 5px;
+                white-space: nowrap;
+                transition: all 0.16s ease;
+                font-family: inherit;
+            }
+            .mcqs-palette-toggle-btn:hover {
+                background: #fdb813;
+                color: #000000;
+            }
+
+            /* Default Collapsed State: Single-Line Horizontal Sliding Strip */
+            .mcqs-palette-shell:not(.is-expanded) .question-palette {
+                display: flex !important;
+                flex-wrap: nowrap !important;
+                align-items: center !important;
+                gap: 7px !important;
+                overflow-x: auto !important;
+                overflow-y: hidden !important;
+                background: transparent !important;
+                border: none !important;
+                padding: 2px 2px 4px 2px !important;
+                margin: 0 !important;
+                -webkit-overflow-scrolling: touch !important;
+                touch-action: pan-x !important;
+                scrollbar-width: none !important;
+            }
+            .mcqs-palette-shell:not(.is-expanded) .question-palette::-webkit-scrollbar {
+                display: none !important;
+            }
+            .mcqs-palette-shell .question-palette button {
+                flex: 0 0 34px !important;
+                width: 34px !important;
+                height: 34px !important;
+                min-width: 34px !important;
+                border-radius: 8px !important;
+                font-size: 12px !important;
+                font-weight: 800 !important;
+                display: inline-flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+                padding: 0 !important;
+                transition: transform 0.14s ease !important;
+            }
+
+            /* Expanded State: Multi-Row Grid (Scrollable if very large) */
+            .mcqs-palette-shell.is-expanded .question-palette {
+                display: flex !important;
+                flex-wrap: wrap !important;
+                gap: 7px !important;
+                max-height: 220px !important;
+                overflow-y: auto !important;
+                overflow-x: hidden !important;
+                background: transparent !important;
+                border: none !important;
+                padding: 4px 2px !important;
+                margin: 0 !important;
+            }
+
+            /* Dedicated PC Horizontal Slide Bar (Strictly Hidden on Mobile) */
+            .mcqs-palette-pc-slider-wrap {
+                display: none;
+                align-items: center;
+                gap: 8px;
+                margin-top: 8px;
+                padding-top: 7px;
+                border-top: 1px solid rgba(255, 255, 255, 0.07);
+            }
+            .mcqs-slider-step-btn {
+                width: 24px;
+                height: 24px;
+                border-radius: 6px;
+                background: rgba(255, 255, 255, 0.06);
+                border: 1px solid rgba(255, 255, 255, 0.14);
+                color: #cbd5e1;
+                font-size: 11px;
+                font-weight: 800;
+                cursor: pointer;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                flex-shrink: 0;
+            }
+            .mcqs-slider-step-btn:hover {
+                border-color: #fdb813;
+                color: #fdb813;
+            }
+            .mcqs-palette-pc-slider {
+                -webkit-appearance: none;
+                appearance: none;
+                flex: 1;
+                height: 6px;
+                background: #162038;
+                border-radius: 999px;
+                outline: none;
+                cursor: pointer;
+                margin: 0;
+                padding: 0;
+                border: none !important;
+            }
+            .mcqs-palette-pc-slider::-webkit-slider-thumb {
+                -webkit-appearance: none;
+                appearance: none;
+                width: 34px;
+                height: 12px;
+                border-radius: 999px;
+                background: linear-gradient(135deg, #fdb813, #f59e0b);
+                cursor: grab;
+                box-shadow: 0 0 10px rgba(253, 184, 19, 0.45);
+            }
+            .mcqs-palette-pc-slider::-moz-range-thumb {
+                width: 34px;
+                height: 12px;
+                border: none;
+                border-radius: 999px;
+                background: linear-gradient(135deg, #fdb813, #f59e0b);
+                cursor: grab;
+                box-shadow: 0 0 10px rgba(253, 184, 19, 0.45);
+            }
+            @media (max-width: 860px) {
+                .mcqs-palette-pc-slider-wrap {
+                    display: none !important;
+                }
+            }
+
+            /* ==========================================
+               8. LOCK BOTTOM DOCK & ASK AI TAB AT 100% BRIGHTNESS OUTSIDE ACTIVE QUIZ (FIXES IMAGE 3)
+               ========================================== */
+            body:not(.mcqs-quiz-screen-active) #mobileAppDock {
+                opacity: 1 !important;
+            }
+            body:not(.mcqs-quiz-screen-active) #mobileAppDock .app-tab.ai-tab-inner {
+                opacity: 1 !important;
+                pointer-events: auto !important;
+                filter: none !important;
+                background: linear-gradient(135deg, #fdb813, #f59e0b) !important;
+            }
+            body:not(.mcqs-quiz-screen-active) #mobileAppDock .app-tab.ai-tab-inner .app-tab-icon svg {
+                fill: #000000 !important;
+            }
+            body:not(.mcqs-quiz-screen-active) #mobileAppDock .app-tab.ai-tab-inner .app-tab-label {
+                color: #000000 !important;
             }
         `;
         document.head.appendChild(st);
