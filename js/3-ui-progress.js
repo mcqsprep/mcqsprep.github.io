@@ -9259,11 +9259,7 @@ function getStudentProgressSummaryForApp(examPrefix = '') {
             }, { passive: true });
         }
 
-        renderSaAppCustomMockCard();
-        startStudyHeroCarousel();
-        return true;
-    }
-
+renderSaAppCustomMockCard();
         startStudyHeroCarousel();
         return true;
     }
