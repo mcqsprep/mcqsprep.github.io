@@ -402,6 +402,9 @@ auth.onAuthStateChanged(async (user) => {
         
         checkUserNotifications();
         if (typeof loadUserBookmarks === 'function') await loadUserBookmarks();
+        if (typeof window.verifyAndSyncAccurateDailyStreak === 'function') {
+            window.verifyAndSyncAccurateDailyStreak();
+        }
     } else {
         if (badge) badge.style.display = 'none'; 
         if (loginNavBtn) loginNavBtn.style.display = 'flex'; 
@@ -410,11 +413,14 @@ auth.onAuthStateChanged(async (user) => {
         const streakEl = document.getElementById('nav-streak-display');
         if (streakEl) streakEl.innerText = "0";
         userBookmarks = [];
+        if (typeof window.verifyAndSyncAccurateDailyStreak === 'function') {
+            window.verifyAndSyncAccurateDailyStreak();
+        }
         if (window.location.hash !== '#/admin' && window.location.hash !== '#/admin-panel' && !sessionStorage.getItem('auth_skipped')) {
             const authModal = document.getElementById('authModal');
             if (authModal) authModal.style.display = 'flex';
         }
-    }
+    } 
 
     if (_resolveInitialAuth) {
         _resolveInitialAuth();
