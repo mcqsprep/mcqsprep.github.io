@@ -4094,14 +4094,19 @@ async function handleLiveSearch() {
     };
 
     // ==========================================
-    // TRUE DAILY STREAK VALIDATOR & AUTO-RESET ENGINE
+    // UNIFIED 10-QUESTION DAILY STREAK ENGINE (MOBILE + PC SYNCED)
     // ==========================================
+    const DAILY_STREAK_MIN_QUESTIONS = 10;
+
     var verifiedStreakData = {
         trueStreak: 0,
+        todayCount: 0,
         practicedToday: false,
         practicedYesterday: false,
         activeDateSet: new Set(),
-        lastCheckedUid: undefined
+        dayCountsMap: {},
+        lastCheckedUid: undefined,
+        hasSyncedOnce: false
     };
 
     function toLocalYMD(dateInput) {
@@ -4120,29 +4125,102 @@ async function handleLiveSearch() {
         return toLocalYMD(d);
     }
 
+    function getStreakLocalStoreKey(uid) {
+        return `mcqs_daily_streak_store_v3_${uid || 'guest'}`;
+    }
+
+    function readLocalDailyStreakStore(uid) {
+        try {
+            const raw = localStorage.getItem(getStreakLocalStoreKey(uid));
+            const parsed = raw ? JSON.parse(raw) : {};
+            return {
+                counts: (parsed && parsed.counts && typeof parsed.counts === 'object') ? parsed.counts : {},
+                idsByDate: (parsed && parsed.idsByDate && typeof parsed.idsByDate === 'object') ? parsed.idsByDate : {},
+                qualifiedDates: Array.isArray(parsed && parsed.qualifiedDates) ? parsed.qualifiedDates : []
+            };
+        } catch (e) {
+            return { counts: {}, idsByDate: {}, qualifiedDates: [] };
+        }
+    }
+
+    function writeLocalDailyStreakStore(uid, storeObj) {
+        try {
+            const keepDates = new Set();
+            for (let i = 0; i < 60; i++) keepDates.add(getPastLocalYMD(i));
+
+            const trimmedCounts = {};
+            Object.keys(storeObj.counts || {}).forEach(k => {
+                if (keepDates.has(k)) trimmedCounts[k] = Number(storeObj.counts[k]) || 0;
+            });
+
+            const trimmedIds = {};
+            Object.keys(storeObj.idsByDate || {}).forEach(k => {
+                if (keepDates.has(k) && Array.isArray(storeObj.idsByDate[k])) {
+                    trimmedIds[k] = Array.from(new Set(storeObj.idsByDate[k])).slice(-80);
+                }
+            });
+
+            const trimmedQualified = Array.from(new Set(storeObj.qualifiedDates || [])).filter(d => keepDates.has(d)).sort();
+
+            localStorage.setItem(getStreakLocalStoreKey(uid), JSON.stringify({
+                counts: trimmedCounts,
+                idsByDate: trimmedIds,
+                qualifiedDates: trimmedQualified
+            }));
+        } catch (e) {}
+    }
+
+    function applyStreakDisplaysAcrossUI() {
+        const valStr = String(verifiedStreakData.trueStreak || 0);
+        const navStreakEl = document.getElementById('nav-streak-display');
+        if (navStreakEl) navStreakEl.innerText = valStr;
+
+        const modalStreakEl = document.getElementById('modalStreakCount');
+        if (modalStreakEl) modalStreakEl.innerText = valStr;
+
+        const homeStreakBadge = document.getElementById('mcqsHomeDailyStreakNum');
+        if (homeStreakBadge) homeStreakBadge.innerText = valStr;
+
+        document.querySelectorAll('.mcqs-synced-streak-num').forEach(el => {
+            el.innerText = valStr;
+        });
+
+        const modal = document.getElementById('streakModal');
+        if (modal && window.getComputedStyle(modal).display !== 'none') {
+            renderStreakModalDetailsUI();
+        }
+    }
+
+    function computeConsecutiveStreakFromSet(qualifiedSet) {
+        const todayYMD = getPastLocalYMD(0);
+        const yesterdayYMD = getPastLocalYMD(1);
+        const practicedToday = qualifiedSet.has(todayYMD);
+        const practicedYesterday = qualifiedSet.has(yesterdayYMD);
+        let streak = 0;
+
+        if (practicedToday || practicedYesterday) {
+            const startOffset = practicedToday ? 0 : 1;
+            for (let offset = startOffset; offset < 365; offset++) {
+                if (qualifiedSet.has(getPastLocalYMD(offset))) streak++;
+                else break;
+            }
+        }
+        return { streak, practicedToday, practicedYesterday };
+    }
+
     async function verifyAndSyncAccurateDailyStreak(firestoreLeaderboardDocs = null) {
         const uid = (typeof currentUser !== 'undefined' && currentUser && currentUser.uid) ? currentUser.uid : null;
         const todayYMD = getPastLocalYMD(0);
-        const yesterdayYMD = getPastLocalYMD(1);
-        const dateSet = new Set();
 
-        try {
-            const localSavedDates = JSON.parse(localStorage.getItem(`mcqs_practice_dates_${uid || 'guest'}`) || '[]');
-            if (Array.isArray(localSavedDates)) {
-                localSavedDates.forEach(ymd => { if (ymd) dateSet.add(ymd); });
-            }
-        } catch (e) {}
+        const localStore = readLocalDailyStreakStore(uid);
+        const mergedCounts = { ...localStore.counts };
+        const mergedIdsByDate = {};
+        Object.keys(localStore.idsByDate).forEach(d => {
+            mergedIdsByDate[d] = new Set(Array.isArray(localStore.idsByDate[d]) ? localStore.idsByDate[d] : []);
+        });
+        const qualifiedSet = new Set(localStore.qualifiedDates || []);
 
-        try {
-            const localMap = JSON.parse(localStorage.getItem(`mcqsprep_topic_progress_v2_${uid || 'guest'}`) || '{}');
-            Object.values(localMap).forEach(rec => {
-                if (rec && rec.inProgress && rec.inProgress.updatedAt) {
-                    const ymd = toLocalYMD(rec.inProgress.updatedAt);
-                    if (ymd) dateSet.add(ymd);
-                }
-            });
-        } catch (e) {}
-
+        // 1. Sum attempted questions per local day from Firestore leaderboards
         let lbDocs = firestoreLeaderboardDocs;
         if (!lbDocs && uid && typeof db !== 'undefined') {
             try {
@@ -4153,138 +4231,303 @@ async function handleLiveSearch() {
                 lbDocs = [];
             }
         }
+
+        const lbSumByDate = {};
         (lbDocs || []).forEach(d => {
-            if (d && d.timestamp && typeof d.timestamp.toDate === 'function') {
-                const ymd = toLocalYMD(d.timestamp.toDate());
-                if (ymd) dateSet.add(ymd);
-            }
+            if (!d || !d.timestamp || typeof d.timestamp.toDate !== 'function') return;
+            const ymd = toLocalYMD(d.timestamp.toDate());
+            if (!ymd) return;
+            const attempted = d.attemptedQuestions !== undefined
+                ? Number(d.attemptedQuestions)
+                : ((Number(d.correctCount) || 0) + (Number(d.wrongCount) || 0));
+            lbSumByDate[ymd] = (lbSumByDate[ymd] || 0) + Math.max(0, attempted);
+        });
+        Object.keys(lbSumByDate).forEach(ymd => {
+            mergedCounts[ymd] = Math.max(Number(mergedCounts[ymd]) || 0, lbSumByDate[ymd]);
         });
 
+        // 2. Merge persisted daily question counts, unique IDs & qualified dates from Firestore users/{uid}
         let userDocData = null;
         if (uid && typeof db !== 'undefined') {
             try {
                 const uDoc = await db.collection('users').doc(uid).get();
                 if (uDoc.exists) {
                     userDocData = uDoc.data() || {};
-                    ['lastQuizDate', 'lastStreakDate', 'lastPracticeDate', 'streakUpdatedAt'].forEach(field => {
-                        const val = userDocData[field];
-                        if (!val) return;
-                        if (typeof val === 'string' && /^\d{4}-\d{2}-\d{2}/.test(val)) {
-                            dateSet.add(val.slice(0, 10));
-                        } else if (typeof val.toDate === 'function') {
-                            const ymd = toLocalYMD(val.toDate());
-                            if (ymd) dateSet.add(ymd);
-                        }
-                    });
+                    if (userDocData.dailyQuestionCounts && typeof userDocData.dailyQuestionCounts === 'object') {
+                        Object.keys(userDocData.dailyQuestionCounts).forEach(ymd => {
+                            mergedCounts[ymd] = Math.max(Number(mergedCounts[ymd]) || 0, Number(userDocData.dailyQuestionCounts[ymd]) || 0);
+                        });
+                    }
+                    if (userDocData.dailyQuestionIds && typeof userDocData.dailyQuestionIds === 'object') {
+                        Object.keys(userDocData.dailyQuestionIds).forEach(ymd => {
+                            if (!mergedIdsByDate[ymd]) mergedIdsByDate[ymd] = new Set();
+                            if (Array.isArray(userDocData.dailyQuestionIds[ymd])) {
+                                userDocData.dailyQuestionIds[ymd].forEach(id => mergedIdsByDate[ymd].add(id));
+                            }
+                        });
+                    }
+                    if (Array.isArray(userDocData.streakQualifiedDates)) {
+                        userDocData.streakQualifiedDates.forEach(ymd => {
+                            if (ymd && /^\d{4}-\d{2}-\d{2}$/.test(ymd)) {
+                                if ((mergedCounts[ymd] || 0) >= DAILY_STREAK_MIN_QUESTIONS || !lbSumByDate[ymd]) {
+                                    qualifiedSet.add(ymd);
+                                }
+                            }
+                        });
+                    }
                 }
             } catch (e) {}
         }
 
-        const practicedToday = dateSet.has(todayYMD);
-        const practicedYesterday = dateSet.has(yesterdayYMD);
-        let trueStreak = 0;
-
-        if (practicedToday || practicedYesterday) {
-            let startOffset = practicedToday ? 0 : 1;
-            for (let offset = startOffset; offset < 365; offset++) {
-                const checkYMD = getPastLocalYMD(offset);
-                if (dateSet.has(checkYMD)) {
-                    trueStreak++;
-                } else {
-                    break;
-                }
+        // 3. Reconcile unique IDs per date and mark every day with >= 10 MCQs as qualified
+        Object.keys(mergedIdsByDate).forEach(ymd => {
+            mergedCounts[ymd] = Math.max(Number(mergedCounts[ymd]) || 0, mergedIdsByDate[ymd].size);
+        });
+        Object.keys(mergedCounts).forEach(ymd => {
+            if ((Number(mergedCounts[ymd]) || 0) >= DAILY_STREAK_MIN_QUESTIONS) {
+                qualifiedSet.add(ymd);
             }
-        } else {
-            trueStreak = 0;
-        }
+        });
+
+        const { streak: trueStreak, practicedToday, practicedYesterday } = computeConsecutiveStreakFromSet(qualifiedSet);
+        const todayCount = Number(mergedCounts[todayYMD]) || 0;
 
         verifiedStreakData = {
             trueStreak,
+            todayCount,
             practicedToday,
             practicedYesterday,
-            activeDateSet: dateSet,
-            lastCheckedUid: uid
+            activeDateSet: qualifiedSet,
+            dayCountsMap: mergedCounts,
+            lastCheckedUid: uid,
+            hasSyncedOnce: true
         };
 
-        const navStreakEl = document.getElementById('nav-streak-display');
-        if (navStreakEl) navStreakEl.innerText = String(trueStreak);
-
-        const modalStreakEl = document.getElementById('modalStreakCount');
-        if (modalStreakEl) modalStreakEl.innerText = String(trueStreak);
-
-        const homeStreakBadge = document.getElementById('mcqsHomeDailyStreakNum');
-        if (homeStreakBadge) homeStreakBadge.innerText = String(trueStreak);
+        // Persist cleanly to localStorage
+        const serializedIds = {};
+        Object.keys(mergedIdsByDate).forEach(d => { serializedIds[d] = Array.from(mergedIdsByDate[d]); });
+        writeLocalDailyStreakStore(uid, {
+            counts: mergedCounts,
+            idsByDate: serializedIds,
+            qualifiedDates: Array.from(qualifiedSet)
+        });
 
         if (uid) {
             localStorage.setItem('mcqs_user_streak_' + uid, String(trueStreak));
-            try {
-                localStorage.setItem(`mcqs_practice_dates_${uid}`, JSON.stringify(Array.from(dateSet).slice(-60)));
-            } catch (e) {}
+        }
 
-            if (userDocData && Number(userDocData.currentStreak) !== trueStreak) {
+        applyStreakDisplaysAcrossUI();
+
+        // Keep Firestore users/{uid} in sync so PC & Mobile always show the exact same streak & days
+        if (uid && typeof db !== 'undefined') {
+            const storedStreak = userDocData ? Number(userDocData.currentStreak) : -1;
+            const storedTodayCount = (userDocData && userDocData.dailyQuestionCounts) ? Number(userDocData.dailyQuestionCounts[todayYMD] || 0) : -1;
+            const storedQualLen = (userDocData && Array.isArray(userDocData.streakQualifiedDates)) ? userDocData.streakQualifiedDates.length : -1;
+
+            if (storedStreak !== trueStreak || storedTodayCount !== todayCount || storedQualLen !== qualifiedSet.size) {
+                const keepSet = new Set();
+                for (let i = 0; i < 60; i++) keepSet.add(getPastLocalYMD(i));
+                const fsCounts = {};
+                Object.keys(mergedCounts).forEach(k => { if (keepSet.has(k) && mergedCounts[k] > 0) fsCounts[k] = mergedCounts[k]; });
+                const fsQual = Array.from(qualifiedSet).filter(k => keepSet.has(k)).sort();
+                const latestQual = fsQual.length ? fsQual[fsQual.length - 1] : '';
+
                 db.collection('users').doc(uid).set({
                     currentStreak: trueStreak,
-                    lastValidatedStreakDate: todayYMD
+                    lastActiveDate: latestQual,
+                    lastValidatedStreakDate: todayYMD,
+                    dailyQuestionCounts: fsCounts,
+                    streakQualifiedDates: fsQual
                 }, { merge: true }).catch(() => {});
             }
         }
+    }
+
+    async function recordDailyStreakProgress(questionIdsOrCount, forceCloudSync = false) {
+        const uid = (typeof currentUser !== 'undefined' && currentUser && currentUser.uid) ? currentUser.uid : null;
+        const todayYMD = getPastLocalYMD(0);
+        const store = readLocalDailyStreakStore(uid);
+
+        const prevQualified = verifiedStreakData.practicedToday || store.qualifiedDates.includes(todayYMD);
+        const todayIdSet = new Set(Array.isArray(store.idsByDate[todayYMD]) ? store.idsByDate[todayYMD] : []);
+
+        if (Array.isArray(questionIdsOrCount)) {
+            questionIdsOrCount.forEach(id => { if (id) todayIdSet.add(String(id)); });
+            store.counts[todayYMD] = Math.max(Number(store.counts[todayYMD]) || 0, todayIdSet.size);
+        } else if (typeof questionIdsOrCount === 'number' && questionIdsOrCount > 0) {
+            store.counts[todayYMD] = Math.max(Number(store.counts[todayYMD]) || 0, (Number(store.counts[todayYMD]) || 0) + questionIdsOrCount);
+        }
+
+        store.idsByDate[todayYMD] = Array.from(todayIdSet);
+        const newTodayCount = Number(store.counts[todayYMD]) || 0;
+        const justUnlockedToday = !prevQualified && newTodayCount >= DAILY_STREAK_MIN_QUESTIONS;
+
+        if (newTodayCount >= DAILY_STREAK_MIN_QUESTIONS && !store.qualifiedDates.includes(todayYMD)) {
+            store.qualifiedDates.push(todayYMD);
+        }
+
+        writeLocalDailyStreakStore(uid, store);
+
+        const mergedQual = new Set([...Array.from(verifiedStreakData.activeDateSet || []), ...store.qualifiedDates]);
+        const { streak: trueStreak, practicedToday, practicedYesterday } = computeConsecutiveStreakFromSet(mergedQual);
+
+        verifiedStreakData.trueStreak = trueStreak;
+        verifiedStreakData.todayCount = newTodayCount;
+        verifiedStreakData.practicedToday = practicedToday;
+        verifiedStreakData.practicedYesterday = practicedYesterday;
+        verifiedStreakData.activeDateSet = mergedQual;
+        verifiedStreakData.dayCountsMap[todayYMD] = newTodayCount;
+
+        if (uid) localStorage.setItem('mcqs_user_streak_' + uid, String(trueStreak));
+        applyStreakDisplaysAcrossUI();
+
+        if (justUnlockedToday && typeof showNotification === 'function') {
+            showNotification(`🔥 Daily Streak Unlocked! (${newTodayCount}/${DAILY_STREAK_MIN_QUESTIONS} MCQs Today — Day ${trueStreak})`);
+        }
+
+        if (uid && typeof db !== 'undefined' && (forceCloudSync || justUnlockedToday)) {
+            const keepSet = new Set();
+            for (let i = 0; i < 60; i++) keepSet.add(getPastLocalYMD(i));
+            const fsCounts = {};
+            Object.keys(verifiedStreakData.dayCountsMap).forEach(k => {
+                if (keepSet.has(k) && verifiedStreakData.dayCountsMap[k] > 0) fsCounts[k] = verifiedStreakData.dayCountsMap[k];
+            });
+            const fsQual = Array.from(mergedQual).filter(k => keepSet.has(k)).sort();
+            const latestQual = fsQual.length ? fsQual[fsQual.length - 1] : '';
+
+            const payload = {
+                currentStreak: trueStreak,
+                lastActiveDate: latestQual,
+                lastValidatedStreakDate: todayYMD,
+                dailyQuestionCounts: fsCounts,
+                streakQualifiedDates: fsQual
+            };
+            payload[`dailyQuestionIds.${todayYMD}`] = store.idsByDate[todayYMD].slice(-80);
+
+            try {
+                await db.collection('users').doc(uid).set(payload, { merge: true });
+            } catch (e) {}
+        }
+    }
+
+    window.verifyAndSyncAccurateDailyStreak = verifyAndSyncAccurateDailyStreak;
+    window.recordDailyStreakProgress = recordDailyStreakProgress;
+
+    // Safely hook selectOption so answering 10+ unique questions in ANY practice section counts live
+    function hookSelectOptionForDailyStreak() {
+        if (typeof window.selectOption === 'function' && !window.selectOption.__mcqsStreakHooked) {
+            const origSelect = window.selectOption;
+            const wrappedSelect = function(opt) {
+                const res = origSelect.apply(this, arguments);
+                try {
+                    if (typeof currentQuestions !== 'undefined' && typeof currentIndex === 'number' && currentQuestions[currentIndex]) {
+                        const q = currentQuestions[currentIndex];
+                        if (q && q.id && typeof userAnswers === 'object' && userAnswers && userAnswers[q.id]) {
+                            recordDailyStreakProgress([q.id], false);
+                        }
+                    }
+                } catch (e) {}
+                return res;
+            };
+            wrappedSelect.__mcqsStreakHooked = true;
+            window.selectOption = wrappedSelect;
+        }
+    }
+    window.addEventListener('load', hookSelectOptionForDailyStreak);
+    setTimeout(hookSelectOptionForDailyStreak, 300);
+
+    function renderStreakModalDetailsUI() {
+        const modalCount = document.getElementById('modalStreakCount');
+        if (modalCount) modalCount.innerText = String(verifiedStreakData.trueStreak || 0);
+
+        const modal = document.getElementById('streakModal');
+        if (!modal) return;
+        const contentBox = modal.querySelector('.modal-content');
+        if (!contentBox) return;
+
+        const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+        const todayYMD = getPastLocalYMD(0);
+        const todayCount = verifiedStreakData.todayCount || verifiedStreakData.dayCountsMap[todayYMD] || 0;
+        const todayPct = Math.min(100, Math.round((todayCount / DAILY_STREAK_MIN_QUESTIONS) * 100));
+        const remainingToday = Math.max(0, DAILY_STREAK_MIN_QUESTIONS - todayCount);
+
+        const last7Html = [];
+        for (let i = 6; i >= 0; i--) {
+            const d = new Date();
+            d.setHours(12, 0, 0, 0);
+            d.setDate(d.getDate() - i);
+            const ymd = toLocalYMD(d);
+            const done = verifiedStreakData.activeDateSet.has(ymd);
+            const dayQ = Number(verifiedStreakData.dayCountsMap[ymd]) || 0;
+            const isToday = i === 0;
+            const dayLbl = isToday ? 'Today' : dayNames[d.getDay()];
+            const dateNum = d.getDate();
+
+            const borderCol = done ? '#FF5722' : (isToday && dayQ > 0 ? '#fdb813' : '#1e293b');
+            const bgCol = done ? 'rgba(255,87,34,0.2)' : (isToday && dayQ > 0 ? 'rgba(253,184,19,0.1)' : '#090d16');
+            const iconHtml = done ? '🔥' : (dayQ > 0 ? '⏳' : '⚪');
+            const subBadge = done
+                ? `${dayQ >= DAILY_STREAK_MIN_QUESTIONS ? dayQ + 'Q' : '✓'}`
+                : (dayQ > 0 ? `${dayQ}/${DAILY_STREAK_MIN_QUESTIONS}` : '—');
+
+            last7Html.push(`
+                <div style="flex:1; background:${bgCol}; border:1px solid ${borderCol}; border-radius:9px; padding:6px 2px; text-align:center; min-width:0;">
+                    <div style="font-size:14px; line-height:1.1;">${iconHtml}</div>
+                    <div style="font-size:9.5px; font-weight:800; color:${done ? '#FF5722' : (isToday ? '#fdb813' : '#94a3b8')}; margin-top:3px;">${dayLbl}</div>
+                    <div style="font-size:8.5px; color:#64748b; font-weight:700;">${dateNum}</div>
+                    <div style="font-size:8.5px; font-weight:800; color:${done ? '#10b981' : (dayQ > 0 ? '#fdb813' : '#475569')}; margin-top:2px;">${subBadge}</div>
+                </div>
+            `);
+        }
+
+        let statusMsg = '';
+        if (verifiedStreakData.practicedToday) {
+            statusMsg = `<span style="color:#10b981; font-weight:800;">✅ Today's Streak Unlocked!</span> You attempted <b>${todayCount} MCQs</b> today. Come back tomorrow for 10+ MCQs to extend your streak!`;
+        } else if (verifiedStreakData.trueStreak > 0 && verifiedStreakData.practicedYesterday) {
+            statusMsg = `<span style="color:#fdb813; font-weight:800;">⏳ Keep It Alive Today:</span> Attempt <b>${remainingToday} more MCQ${remainingToday === 1 ? '' : 's'}</b> from any section before midnight to extend your ${verifiedStreakData.trueStreak}-day streak!`;
+        } else {
+            statusMsg = `<span style="color:#ef4444; font-weight:800;">🎯 Unlock Day 1 Today:</span> Attempt <b>${remainingToday} more MCQ${remainingToday === 1 ? '' : 's'}</b> from any section today to start your streak!`;
+        }
+
+        let trackerEl = document.getElementById('mcqsStreak7DayTracker');
+        if (!trackerEl) {
+            trackerEl = document.createElement('div');
+            trackerEl.id = 'mcqsStreak7DayTracker';
+            const btn = contentBox.querySelector('button.btn-exam');
+            if (btn) contentBox.insertBefore(trackerEl, btn);
+            else contentBox.appendChild(trackerEl);
+        }
+
+        trackerEl.innerHTML = `
+            <div style="margin-bottom:16px; text-align:left;">
+                <div style="background:#090d16; border:1px solid ${verifiedStreakData.practicedToday ? 'rgba(16,185,129,0.45)' : 'rgba(253,184,19,0.38)'}; border-radius:10px; padding:10px 12px; margin-bottom:12px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; font-size:11.5px; font-weight:800; margin-bottom:6px;">
+                        <span style="color:#e2e8f0;">🎯 Today's Unlock Progress (Any Section)</span>
+                        <span style="color:${verifiedStreakData.practicedToday ? '#10b981' : '#fdb813'};">${Math.min(todayCount, DAILY_STREAK_MIN_QUESTIONS)} / ${DAILY_STREAK_MIN_QUESTIONS} MCQs${todayCount > DAILY_STREAK_MIN_QUESTIONS ? ` (${todayCount} total)` : ''}</span>
+                    </div>
+                    <div style="width:100%; height:7px; background:#162038; border-radius:999px; overflow:hidden;">
+                        <div style="width:${todayPct}%; height:100%; background:${verifiedStreakData.practicedToday ? 'linear-gradient(90deg, #10b981, #34d399)' : 'linear-gradient(90deg, #FF5722, #fdb813)'}; border-radius:999px; transition:width 0.3s ease;"></div>
+                    </div>
+                </div>
+
+                <div style="font-size:11px; font-weight:800; color:#94a3b8; text-transform:uppercase; margin-bottom:6px;">Last 7 Days Streak Calendar (Min 10 MCQs/Day):</div>
+                <div style="display:flex; gap:5px; margin-bottom:10px;">${last7Html.join('')}</div>
+                <div style="background:#090d16; border:1px solid #1e293b; border-radius:8px; padding:9px 11px; font-size:12px; color:#cbd5e1; line-height:1.45;">
+                    ${statusMsg}
+                </div>
+            </div>
+        `;
     }
 
     if (typeof openStreakModal === 'function' && !window._origOpenStreakModalHookV10) {
         window._origOpenStreakModalHookV10 = openStreakModal;
         openStreakModal = function() {
             window._origOpenStreakModalHookV10();
-            const modalCount = document.getElementById('modalStreakCount');
-            if (modalCount) modalCount.innerText = String(verifiedStreakData.trueStreak);
-
-            const modal = document.getElementById('streakModal');
-            if (!modal) return;
-            const contentBox = modal.querySelector('.modal-content');
-            if (!contentBox) return;
-
-            const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-            const last7Html = [];
-            for (let i = 6; i >= 0; i--) {
-                const d = new Date();
-                d.setHours(12, 0, 0, 0);
-                d.setDate(d.getDate() - i);
-                const ymd = toLocalYMD(d);
-                const done = verifiedStreakData.activeDateSet.has(ymd);
-                const lbl = i === 0 ? 'Today' : dayNames[d.getDay()];
-                last7Html.push(`
-                    <div style="flex:1; background:${done ? 'rgba(255,87,34,0.18)' : '#090d16'}; border:1px solid ${done ? '#FF5722' : '#1e293b'}; border-radius:8px; padding:6px 2px; text-align:center;">
-                        <div style="font-size:14px;">${done ? '🔥' : '⚪'}</div>
-                        <div style="font-size:9.5px; font-weight:800; color:${done ? '#FF5722' : '#64748b'}; margin-top:2px;">${lbl}</div>
-                    </div>
-                `);
+            renderStreakModalDetailsUI();
+            const uid = (typeof currentUser !== 'undefined' && currentUser && currentUser.uid) ? currentUser.uid : null;
+            if (!verifiedStreakData.hasSyncedOnce || verifiedStreakData.lastCheckedUid !== uid) {
+                verifyAndSyncAccurateDailyStreak();
             }
-
-            let statusMsg = '';
-            if (verifiedStreakData.trueStreak === 0) {
-                statusMsg = `<span style="color:#ef4444; font-weight:800;">⚠️ Streak Reset to 0:</span> You missed a day of practice. Complete 1 quiz today to start a fresh Day 1 streak!`;
-            } else if (!verifiedStreakData.practicedToday && verifiedStreakData.practicedYesterday) {
-                statusMsg = `<span style="color:#fdb813; font-weight:800;">⏳ Due Today:</span> You practiced yesterday! Complete 1 quiz before midnight to extend your ${verifiedStreakData.trueStreak}-day streak.`;
-            } else {
-                statusMsg = `<span style="color:#10b981; font-weight:800;">✅ Locked In for Today!</span> You've completed today's practice. Come back tomorrow!`;
-            }
-
-            let trackerEl = document.getElementById('mcqsStreak7DayTracker');
-            if (!trackerEl) {
-                trackerEl = document.createElement('div');
-                trackerEl.id = 'mcqsStreak7DayTracker';
-                const btn = contentBox.querySelector('button.btn-exam');
-                if (btn) contentBox.insertBefore(trackerEl, btn);
-                else contentBox.appendChild(trackerEl);
-            }
-            trackerEl.innerHTML = `
-                <div style="margin-bottom:16px; text-align:left;">
-                    <div style="font-size:11px; font-weight:800; color:#94a3b8; text-transform:uppercase; margin-bottom:6px;">Last 7 Days Activity:</div>
-                    <div style="display:flex; gap:5px; margin-bottom:10px;">${last7Html.join('')}</div>
-                    <div style="background:#090d16; border:1px solid #1e293b; border-radius:8px; padding:9px 11px; font-size:12px; color:#cbd5e1; line-height:1.45;">
-                        ${statusMsg}
-                    </div>
-                </div>
-            `;
         };
     }
 
@@ -6713,6 +6956,8 @@ async function handleLiveSearch() {
                 </div>
             `;
         }).join('');
+        const attachMenu = document.getElementById('ai-attach-menu');
+        if (attachMenu) attachMenu.style.display = 'none';
         box.style.display = 'block';
     }
 
@@ -8741,6 +8986,7 @@ function getStudentProgressSummaryForApp(examPrefix = '') {
     // ==========================================
     var saBlitzGame = {
         questions: [],
+        answeredIds: [],
         examName: '',
         idx: 0,
         score: 0,
@@ -8785,6 +9031,7 @@ function getStudentProgressSummaryForApp(examPrefix = '') {
         }
 
         saBlitzGame.questions = pool.sort(() => Math.random() - 0.5);
+        saBlitzGame.answeredIds = [];
         saBlitzGame.examName = cleanEx;
         saBlitzGame.idx = 0;
         saBlitzGame.score = 0;
@@ -8825,6 +9072,9 @@ function getStudentProgressSummaryForApp(examPrefix = '') {
 
     function finishSaBlitzGame() {
         if (saBlitzGame.timer) clearInterval(saBlitzGame.timer);
+        if (typeof window.recordDailyStreakProgress === 'function' && saBlitzGame.answeredIds.length > 0) {
+            window.recordDailyStreakProgress(saBlitzGame.answeredIds, true);
+        }
         const acc = saBlitzGame.attempted > 0 ? Math.round((saBlitzGame.correct / saBlitzGame.attempted) * 100) : 0;
         if (saBlitzGame.score > saState.blitzBestScore) {
             saState.blitzBestScore = saBlitzGame.score;
@@ -8861,6 +9111,7 @@ function getStudentProgressSummaryForApp(examPrefix = '') {
         const q = saBlitzGame.questions[saBlitzGame.idx % saBlitzGame.questions.length];
         const corr = Array.isArray(q.correctAnswers) ? q.correctAnswers : ['A'];
         saBlitzGame.attempted++;
+        saBlitzGame.answeredIds.push(q.id || (`blitz_${Date.now()}_${saBlitzGame.idx}`));
         if (corr.includes(letter)) {
             saBlitzGame.correct++;
             saBlitzGame.streak++;
@@ -9101,7 +9352,7 @@ function getStudentProgressSummaryForApp(examPrefix = '') {
                     <span style="width:42px; height:42px; border-radius:11px; background:rgba(253,184,19,0.18); border:1px solid rgba(253,184,19,0.5); color:#fdb813; display:flex; align-items:center; justify-content:center; font-size:20px; flex-shrink:0;">📅</span>
                     <div style="min-width:0; flex:1;">
                         <div style="font-size:14px; font-weight:900; color:#fdb813; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">Daily Quiz Challenge</div>
-                        <div style="font-size:11px; color:#cbd5e1; margin-top:2px;">🔥 ${streakNum} Day Streak • Play Daily</div>
+                        <div style="font-size:11px; color:#cbd5e1; margin-top:2px;">🔥 <span class="mcqs-synced-streak-num">${streakNum}</span> Day Streak • Play Daily</div>
                     </div>
                 </div>
                 <span style="color:#fdb813; font-weight:900; font-size:18px; flex-shrink:0;">&rsaquo;</span>
