@@ -92,7 +92,28 @@ function autoExpandTextarea(field) {
 
 function toggleAttachMenu() {
     const menu = document.getElementById('ai-attach-menu');
-    if (menu) menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+    const fuzzyBox = document.getElementById('ai-fuzzy-box');
+    if (!menu) return;
+    const isOpening = window.getComputedStyle(menu).display === 'none';
+    if (isOpening) {
+        if (fuzzyBox) fuzzyBox.style.display = 'none';
+        menu.style.zIndex = '60';
+        menu.style.bottom = 'calc(100% + 12px)';
+        menu.style.display = 'block';
+    } else {
+        menu.style.display = 'none';
+    }
+}
+
+if (!window._aiAttachOutsideClickBound) {
+    window._aiAttachOutsideClickBound = true;
+    document.addEventListener('click', function(e) {
+        const menu = document.getElementById('ai-attach-menu');
+        if (!menu || menu.style.display === 'none') return;
+        if (!menu.contains(e.target) && !e.target.closest('button[onclick*="toggleAttachMenu"]')) {
+            menu.style.display = 'none';
+        }
+    });
 }
 
 function handleAIPaste(e) {
