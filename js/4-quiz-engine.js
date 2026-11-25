@@ -313,32 +313,16 @@ async function submitQuiz() {
                 subjectBreakdown: subjectBreakdown, timestamp: firebase.firestore.FieldValue.serverTimestamp()
             });
             
-            const userRef = db.collection("users").doc(activeUser.uid);
-            await db.runTransaction(async (transaction) => {
-                const doc = await transaction.get(userRef);
-                let todayStr = new Date().toISOString().split('T')[0];
-                let yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1);
-                let yesterdayStr = yesterday.toISOString().split('T')[0];
-
-                if (doc.exists) {
-                    let d = doc.data();
-                    let lastActiveStr = d.lastActiveDate || "";
-                    let streak = d.currentStreak || 0;
-                    
-                    if (lastActiveStr !== todayStr) {
-                        if (lastActiveStr === yesterdayStr) { streak++; } else { streak = 1; }
-                        transaction.update(userRef, { currentStreak: streak, lastActiveDate: todayStr });
-                        const streakEl = document.getElementById('nav-streak-display');
-                        if (streakEl) streakEl.innerText = streak;
-                    }
-                } else {
-                    transaction.set(userRef, { currentStreak: 1, lastActiveDate: todayStr }, { merge: true });
-                    const streakEl = document.getElementById('nav-streak-display');
-                    if (streakEl) streakEl.innerText = 1;
-                }
-            });
-        } catch(e) {
+            } catch(e) {
             console.error("Error saving quiz results:", e);
+        }
+    }
+
+    if (typeof window.recordDailyStreakProgress === 'function' && attemptedIds.length > 0) {
+        try {
+            await window.recordDailyStreakProgress(attemptedIds, true);
+        } catch (e) {
+            console.error("Error updating daily streak:", e);
         }
     }
 
