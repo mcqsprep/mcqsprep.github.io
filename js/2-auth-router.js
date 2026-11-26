@@ -394,10 +394,20 @@ auth.onAuthStateChanged(async (user) => {
                     syncUserRatingUI(d.rating, d.feedback || '');
                 }
             }
+           const _devInfo = typeof getVisitorDeviceInfo === 'function'
+                ? getVisitorDeviceInfo()
+                : { label: 'Web', deviceType: 'pc' };
             db.collection("users").doc(user.uid).set({ 
-                displayName: user.displayName, email: user.email, photoURL: user.photoURL, 
+                displayName: user.displayName,
+                email: user.email,
+                photoURL: user.photoURL,
+                lastDevice: _devInfo.label,
+                lastDeviceType: _devInfo.deviceType,
                 lastLogin: firebase.firestore.FieldValue.serverTimestamp() 
             }, { merge: true }).catch(() => {});
+            if (typeof trackSignedInVisitorAnalytics === 'function') {
+                trackSignedInVisitorAnalytics(user.uid);
+            }
         } catch (e) {}
         
         checkUserNotifications();
@@ -432,9 +442,156 @@ auth.onAuthStateChanged(async (user) => {
     }
 });
 
+ // ==========================================
+// SITE VISITOR ANALYTICS TRACKER (ALL VISITORS: GUEST + SIGNED-IN, MOBILE + PC, PWA + WEB)
+// ==========================================
+function getLocalYMDForAnalytics(dateObj = new Date()) {
+    const d = dateObj instanceof Date ? dateObj : new Date(dateObj);
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+}
+
+function getVisitorDeviceInfo() {
+    const ua = navigator.userAgent || '';
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua) || window.innerWidth <= 860;
+    const isPwa = window.matchMedia('(display-mode: standalone)').matches ||
+                  window.matchMedia('(display-mode: fullscreen)').matches ||
+                  window.navigator.standalone === true ||
+                  document.referrer.indexOf('android-app://') !== -1;
+
+    const deviceType = isMobile ? 'mobile' : 'pc';
+    const modeType = isPwa ? 'pwa' : 'web';
+    const label = isMobile ? (isPwa ? 'Mobile PWA' : 'Mobile Web') : (isPwa ? 'PC PWA' : 'PC Web');
+    return { isMobile, isPwa, deviceType, modeType, label };
+}
+
+async function trackSiteVisitorAnalytics() {
+    try {
+        if (typeof db === 'undefined' || typeof firebase === 'undefined') return;
+        const rawHash = (window.location.hash || '').toLowerCase();
+        if (rawHash === '#/admin' || rawHash === '#/admin-panel') return;
+
+        const todayYMD = getLocalYMDForAnalytics();
+        const dev = getVisitorDeviceInfo();
+        const inc = firebase.firestore.FieldValue.increment(1);
+
+        const sessKey = `mcqs_va_sess_${todayYMD}`;
+        const dayKey = `mcqs_va_day_${todayYMD}`;
+        const allTimeKey = 'mcqs_va_alltime_v1';
+
+        const isNewSession = !sessionStorage.getItem(sessKey);
+        const isNewDailyUnique = !localStorage.getItem(dayKey);
+        const isNewAllTimeUnique = !localStorage.getItem(allTimeKey);
+
+        if (!isNewSession && !isNewDailyUnique && !isNewAllTimeUnique) return;
+
+        const dailyUpdate = {
+            date: todayYMD,
+            type: 'daily',
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        };
+        const overallUpdate = {
+            type: 'overall',
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        };
+
+        if (isNewSession) {
+            dailyUpdate.totalVisits = inc;
+            overallUpdate.totalVisits = inc;
+            if (dev.isMobile) { dailyUpdate.mobileVisits = inc; overallUpdate.mobileVisits = inc; }
+            else { dailyUpdate.pcVisits = inc; overallUpdate.pcVisits = inc; }
+            if (dev.isPwa) { dailyUpdate.pwaVisits = inc; overallUpdate.pwaVisits = inc; }
+            else { dailyUpdate.webVisits = inc; overallUpdate.webVisits = inc; }
+        }
+
+        if (isNewDailyUnique) {
+            dailyUpdate.uniqueVisitors = inc;
+            if (dev.isMobile) {
+                dailyUpdate.mobileVisitors = inc;
+                if (dev.isPwa) dailyUpdate.mobilePwaVisitors = inc;
+                else dailyUpdate.mobileWebVisitors = inc;
+            } else {
+                dailyUpdate.pcVisitors = inc;
+                if (dev.isPwa) dailyUpdate.pcPwaVisitors = inc;
+                else dailyUpdate.pcWebVisitors = inc;
+            }
+            if (dev.isPwa) dailyUpdate.pwaVisitors = inc;
+            else dailyUpdate.webVisitors = inc;
+        }
+
+        if (isNewAllTimeUnique) {
+            overallUpdate.uniqueVisitors = inc;
+            if (dev.isMobile) {
+                overallUpdate.mobileUnique = inc;
+                if (dev.isPwa) overallUpdate.mobilePwaUnique = inc;
+                else overallUpdate.mobileWebUnique = inc;
+            } else {
+                overallUpdate.pcUnique = inc;
+                if (dev.isPwa) overallUpdate.pcPwaUnique = inc;
+                else overallUpdate.pcWebUnique = inc;
+            }
+            if (dev.isPwa) overallUpdate.pwaUnique = inc;
+            else overallUpdate.webUnique = inc;
+        }
+
+        const writes = [];
+        if (isNewSession || isNewDailyUnique) {
+            writes.push(db.collection('site_analytics').doc(`day_${todayYMD}`).set(dailyUpdate, { merge: true }));
+        }
+        if (isNewSession || isNewAllTimeUnique) {
+            writes.push(db.collection('site_analytics').doc('overall').set(overallUpdate, { merge: true }));
+        }
+
+        await Promise.all(writes);
+        if (isNewSession) sessionStorage.setItem(sessKey, '1');
+        if (isNewDailyUnique) localStorage.setItem(dayKey, '1');
+        if (isNewAllTimeUnique) localStorage.setItem(allTimeKey, '1');
+    } catch (e) {
+        // Fails silently if offline or blocked by privacy shields
+    }
+}
+
+async function trackSignedInVisitorAnalytics(uid) {
+    try {
+        if (!uid || typeof db === 'undefined' || typeof firebase === 'undefined') return;
+        const rawHash = (window.location.hash || '').toLowerCase();
+        if (rawHash === '#/admin' || rawHash === '#/admin-panel') return;
+
+        const todayYMD = getLocalYMDForAnalytics();
+        const signDayKey = `mcqs_va_signin_${todayYMD}_${uid}`;
+        if (localStorage.getItem(signDayKey)) return;
+
+        const dev = getVisitorDeviceInfo();
+        const inc = firebase.firestore.FieldValue.increment(1);
+
+        const dailyPatch = {
+            date: todayYMD,
+            type: 'daily',
+            signedInVisitors: inc,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        };
+        if (dev.isMobile) dailyPatch.signedInMobile = inc;
+        else dailyPatch.signedInPc = inc;
+
+        await Promise.all([
+            db.collection('site_analytics').doc(`day_${todayYMD}`).set(dailyPatch, { merge: true }),
+            db.collection('site_analytics').doc('overall').set({
+                type: 'overall',
+                signedInDailyLogins: inc,
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            }, { merge: true })
+        ]);
+
+        localStorage.setItem(signDayKey, '1');
+    } catch (e) {}
+}
+
 async function initApp() { 
     dataLoaded = true; 
     if (!window.location.hash) window.location.hash = '#/home'; 
+    trackSiteVisitorAnalytics();
     
     handleRouting(); 
     
