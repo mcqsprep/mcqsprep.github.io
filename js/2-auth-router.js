@@ -396,15 +396,19 @@ auth.onAuthStateChanged(async (user) => {
             }
            const _devInfo = typeof getVisitorDeviceInfo === 'function'
                 ? getVisitorDeviceInfo()
-                : { label: 'Web', deviceType: 'pc' };
-            db.collection("users").doc(user.uid).set({ 
+                : { label: 'Web', deviceType: 'pc', isPwa: false, isMobile: false };
+            const _userPatch = {
                 displayName: user.displayName,
                 email: user.email,
                 photoURL: user.photoURL,
                 lastDevice: _devInfo.label,
                 lastDeviceType: _devInfo.deviceType,
-                lastLogin: firebase.firestore.FieldValue.serverTimestamp() 
-            }, { merge: true }).catch(() => {});
+                lastLogin: firebase.firestore.FieldValue.serverTimestamp()
+            };
+            if (_devInfo.isPwa) {
+                _userPatch.installedPwa = _devInfo.isMobile ? 'Mobile App' : 'PC App';
+            }
+            db.collection("users").doc(user.uid).set(_userPatch, { merge: true }).catch(() => {});
             if (typeof trackSignedInVisitorAnalytics === 'function') {
                 trackSignedInVisitorAnalytics(user.uid);
             }
@@ -467,6 +471,54 @@ function getVisitorDeviceInfo() {
     return { isMobile, isPwa, deviceType, modeType, label };
 }
 
+async function trackPwaInstallation(triggerSource = 'standalone') {
+    try {
+        if (typeof db === 'undefined' || typeof firebase === 'undefined') return;
+        const installedKey = 'mcqs_va_pwa_installed_v1';
+        if (localStorage.getItem(installedKey)) return;
+
+        const dev = getVisitorDeviceInfo();
+        if (triggerSource === 'standalone' && !dev.isPwa) return;
+
+        const todayYMD = getLocalYMDForAnalytics();
+        const inc = firebase.firestore.FieldValue.increment(1);
+
+        const overallPatch = {
+            type: 'overall',
+            installedTotal: inc,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        };
+        const dailyPatch = {
+            date: todayYMD,
+            type: 'daily',
+            newInstalls: inc,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        };
+
+        if (dev.isMobile) {
+            overallPatch.installedMobile = inc;
+            dailyPatch.newMobileInstalls = inc;
+        } else {
+            overallPatch.installedPc = inc;
+            dailyPatch.newPcInstalls = inc;
+        }
+
+        await Promise.all([
+            db.collection('site_analytics').doc('overall').set(overallPatch, { merge: true }),
+            db.collection('site_analytics').doc(`day_${todayYMD}`).set(dailyPatch, { merge: true })
+        ]);
+
+        localStorage.setItem(installedKey, dev.isMobile ? 'mobile' : 'pc');
+    } catch (e) {}
+}
+
+if (!window._mcqsPwaInstallListenerBound) {
+    window._mcqsPwaInstallListenerBound = true;
+    window.addEventListener('appinstalled', () => {
+        trackPwaInstallation('appinstalled_event');
+    });
+}
+
 async function trackSiteVisitorAnalytics() {
     try {
         if (typeof db === 'undefined' || typeof firebase === 'undefined') return;
@@ -477,6 +529,11 @@ async function trackSiteVisitorAnalytics() {
         const dev = getVisitorDeviceInfo();
         const inc = firebase.firestore.FieldValue.increment(1);
 
+        // Count real installed PWA device once (covers existing installs & iOS standalone too)
+        if (dev.isPwa) {
+            trackPwaInstallation('standalone');
+        }
+
         const sessKey = `mcqs_va_sess_${todayYMD}`;
         const dayKey = `mcqs_va_day_${todayYMD}`;
         const allTimeKey = 'mcqs_va_alltime_v1';
@@ -486,7 +543,6 @@ async function trackSiteVisitorAnalytics() {
         const isNewAllTimeUnique = !localStorage.getItem(allTimeKey);
 
         if (!isNewSession && !isNewDailyUnique && !isNewAllTimeUnique) return;
-
         const dailyUpdate = {
             date: todayYMD,
             type: 'daily',
