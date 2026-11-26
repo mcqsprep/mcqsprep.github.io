@@ -5980,16 +5980,421 @@ async function openEditModalFromReport(qId) {
     else showNotification('❌ Question not found.');
 }
 
+let adminAnalyticsState = {
+    range: '30',
+    customDate: '',
+    searchQuery: '',
+    overall: {},
+    dailyList: [],
+    usersList: [],
+    totalQuizzes: 0,
+    todayQuizzes: 0,
+    analyticsPermError: ''
+};
+
+function setAdminAnalyticsRange(rangeVal) {
+    adminAnalyticsState.range = rangeVal;
+    adminAnalyticsState.customDate = '';
+    const dateInp = document.getElementById('adminAnalyticsDatePicker');
+    if (dateInp) dateInp.value = '';
+    renderAdminUsersAndTrafficDashboard();
+}
+
+function setAdminAnalyticsCustomDate(dateStr) {
+    adminAnalyticsState.customDate = dateStr || '';
+    if (dateStr) adminAnalyticsState.range = 'CUSTOM';
+    renderAdminUsersAndTrafficDashboard();
+}
+
+function filterAdminUsersTableLive(q) {
+    adminAnalyticsState.searchQuery = (q || '').trim().toLowerCase();
+    renderAdminRegisteredStudentsTableOnly();
+}
+
+function renderAdminRegisteredStudentsTableOnly() {
+    const mount = document.getElementById('adminRegisteredStudentsTableMount');
+    if (!mount) return;
+    const q = adminAnalyticsState.searchQuery;
+    const filtered = adminAnalyticsState.usersList.filter(u => {
+        if (!q) return true;
+        return (u.displayName || '').toLowerCase().includes(q) ||
+               (u.email || '').toLowerCase().includes(q) ||
+               (u.lastDevice || '').toLowerCase().includes(q);
+    });
+
+    if (!filtered.length) {
+        mount.innerHTML = `<div style="padding:28px; text-align:center; color:#888; font-size:13px;">No matching signed-in users found.</div>`;
+        return;
+    }
+
+    const rowsHtml = filtered.map((u, idx) => {
+        const devLabel = u.lastDevice || '—';
+        const isMob = /mobile/i.test(devLabel);
+        const devColor = devLabel === '—' ? '#64748b' : (isMob ? '#38bdf8' : '#c084fc');
+        const devIcon = devLabel === '—' ? '' : (isMob ? '📱 ' : '💻 ');
+        const streakNum = Number(u.currentStreak) || 0;
+        const lastLoginStr = u.lastLoginMs ? new Date(u.lastLoginMs).toLocaleString() : '—';
+        return `
+            <tr style="border-bottom:1px solid #232738;">
+                <td style="padding:12px 14px; color:#64748b; font-weight:700; font-size:12px;">#${idx + 1}</td>
+                <td style="padding:12px 14px; font-weight:700; color:#fff;">${u.displayName || 'User'}</td>
+                <td style="padding:12px 14px; color:#94a3b8; font-size:13px;">${u.email || '-'}</td>
+                <td style="padding:12px 14px;"><span style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:${devColor}; padding:3px 9px; border-radius:999px; font-size:11.5px; font-weight:700; white-space:nowrap;">${devIcon}${devLabel}</span></td>
+                <td style="padding:12px 14px; color:${streakNum > 0 ? '#FF5722' : '#64748b'}; font-weight:800; font-size:13px;">🔥 ${streakNum}</td>
+                <td style="padding:12px 14px; color:#cbd5e1; font-size:12.5px; white-space:nowrap;">${lastLoginStr}</td>
+            </tr>
+        `;
+    }).join('');
+
+    mount.innerHTML = `
+        <table style="width:100%; text-align:left; border-collapse:collapse; min-width:640px;">
+            <thead>
+                <tr style="background:#111522; border-bottom:1px solid #2b354f; color:#94a3b8; font-size:11.5px; text-transform:uppercase;">
+                    <th style="padding:12px 14px;">#</th>
+                    <th style="padding:12px 14px;">Name</th>
+                    <th style="padding:12px 14px;">Email</th>
+                    <th style="padding:12px 14px;">Last Device</th>
+                    <th style="padding:12px 14px;">Streak</th>
+                    <th style="padding:12px 14px;">Last Login</th>
+                </tr>
+            </thead>
+            <tbody>${rowsHtml}</tbody>
+        </table>
+    `;
+}
+
+function renderAdminUsersAndTrafficDashboard() {
+    const box = document.getElementById('users-table-container');
+    if (!box) return;
+
+    const ov = adminAnalyticsState.overall || {};
+    const dailyAll = adminAnalyticsState.dailyList || [];
+    const users = adminAnalyticsState.usersList || [];
+
+    const todayYMD = typeof getLocalYMDForAnalytics === 'function'
+        ? getLocalYMDForAnalytics()
+        : new Date().toISOString().slice(0, 10);
+
+    const todayRec = dailyAll.find(d => d.date === todayYMD) || {};
+
+    // Filter daily rows by selected range or custom date
+    let filteredDaily = [...dailyAll];
+    if (adminAnalyticsState.range === 'CUSTOM' && adminAnalyticsState.customDate) {
+        filteredDaily = dailyAll.filter(d => d.date === adminAnalyticsState.customDate);
+    } else if (adminAnalyticsState.range === '1') {
+        filteredDaily = dailyAll.filter(d => d.date === todayYMD);
+    } else if (adminAnalyticsState.range === '7' || adminAnalyticsState.range === '30') {
+        const cutoff = new Date();
+        cutoff.setHours(0, 0, 0, 0);
+        cutoff.setDate(cutoff.getDate() - (Number(adminAnalyticsState.range) - 1));
+        const cutoffStr = typeof getLocalYMDForAnalytics === 'function'
+            ? getLocalYMDForAnalytics(cutoff)
+            : cutoff.toISOString().slice(0, 10);
+        filteredDaily = dailyAll.filter(d => d.date >= cutoffStr);
+    }
+
+    // Overall Totals (combine overall doc with summed daily fallback)
+    const sumDailyVisits = dailyAll.reduce((a, d) => a + (Number(d.totalVisits) || 0), 0);
+    const sumDailyUnique = dailyAll.reduce((a, d) => a + (Number(d.uniqueVisitors) || 0), 0);
+    const sumDailyMob = dailyAll.reduce((a, d) => a + (Number(d.mobileVisitors) || 0), 0);
+    const sumDailyPc = dailyAll.reduce((a, d) => a + (Number(d.pcVisitors) || 0), 0);
+    const sumDailyPwa = dailyAll.reduce((a, d) => a + (Number(d.pwaVisitors) || 0), 0);
+    const sumDailyWeb = dailyAll.reduce((a, d) => a + (Number(d.webVisitors) || 0), 0);
+
+    const overallTotalVisits = Math.max(Number(ov.totalVisits) || 0, sumDailyVisits);
+    const overallUnique = Math.max(Number(ov.uniqueVisitors) || 0, sumDailyUnique ? Number(ov.uniqueVisitors) || 0 : 0);
+    const overallMobUnique = Number(ov.mobileUnique) || sumDailyMob;
+    const overallPcUnique = Number(ov.pcUnique) || sumDailyPc;
+    const overallMobVisits = Number(ov.mobileVisits) || sumDailyMob;
+    const overallPcVisits = Number(ov.pcVisits) || sumDailyPc;
+    const overallPwaUnique = Number(ov.pwaUnique) || sumDailyPwa;
+    const overallWebUnique = Number(ov.webUnique) || sumDailyWeb;
+
+    const totalSignedInUsers = users.length;
+    const signedInTodayFromUsers = users.filter(u => u.lastLoginDate === todayYMD).length;
+    const todayUnique = Math.max(Number(todayRec.uniqueVisitors) || 0, signedInTodayFromUsers);
+    const todayVisits = Math.max(Number(todayRec.totalVisits) || 0, todayUnique);
+    const todaySignedIn = Math.max(Number(todayRec.signedInVisitors) || 0, signedInTodayFromUsers);
+    const todayGuests = Math.max(0, todayUnique - todaySignedIn);
+    const todayMob = Number(todayRec.mobileVisitors) || 0;
+    const todayPc = Number(todayRec.pcVisitors) || 0;
+
+    const overallGuestApprox = Math.max(0, overallUnique - totalSignedInUsers);
+    const devTotal = Math.max(1, overallMobUnique + overallPcUnique);
+    const mobPct = Math.round((overallMobUnique / devTotal) * 100);
+    const pcPct = (overallMobUnique + overallPcUnique) > 0 ? (100 - mobPct) : 0;
+
+    const modeTotal = Math.max(1, overallPwaUnique + overallWebUnique);
+    const pwaPct = Math.round((overallPwaUnique / modeTotal) * 100);
+    const webPct = (overallPwaUnique + overallWebUnique) > 0 ? (100 - pwaPct) : 0;
+
+    const signBase = Math.max(1, overallUnique || totalSignedInUsers);
+    const signPct = Math.min(100, Math.round((totalSignedInUsers / signBase) * 100));
+
+    // Range Totals for the Date-Wise Table
+    let rangeUnique = 0, rangeVisits = 0, rangeMob = 0, rangeMobPwa = 0, rangeMobWeb = 0, rangePc = 0, rangeSignedIn = 0, rangeGuests = 0;
+    const dateRowsHtml = filteredDaily.map(d => {
+        const u = Math.max(Number(d.uniqueVisitors) || 0, Number(d.signedInVisitors) || 0);
+        const v = Math.max(Number(d.totalVisits) || 0, u);
+        const m = Number(d.mobileVisitors) || 0;
+        const mPwa = Number(d.mobilePwaVisitors) || 0;
+        const mWeb = Number(d.mobileWebVisitors) || Math.max(0, m - mPwa);
+        const pc = Number(d.pcVisitors) || 0;
+        const si = Number(d.signedInVisitors) || 0;
+        const g = Math.max(0, u - si);
+
+        rangeUnique += u; rangeVisits += v; rangeMob += m; rangeMobPwa += mPwa; rangeMobWeb += mWeb;
+        rangePc += pc; rangeSignedIn += si; rangeGuests += g;
+
+        const isTodayRow = d.date === todayYMD;
+        return `
+            <tr style="border-bottom:1px solid #232738; background:${isTodayRow ? 'rgba(253,184,19,0.06)' : 'transparent'};">
+                <td style="padding:11px 14px; font-weight:800; color:${isTodayRow ? '#fdb813' : '#fff'}; white-space:nowrap;">${d.date} ${isTodayRow ? '<span style="font-size:10px; background:rgba(253,184,19,0.18); color:#fdb813; padding:2px 6px; border-radius:4px; margin-left:4px;">TODAY</span>' : ''}</td>
+                <td style="padding:11px 14px; font-weight:900; color:#fff;">${u}</td>
+                <td style="padding:11px 14px; color:#cbd5e1;">${v}</td>
+                <td style="padding:11px 14px; color:#38bdf8; font-weight:700;">${m} <span style="font-size:11px; color:#94a3b8; font-weight:500;">(App: ${mPwa} • Web: ${mWeb})</span></td>
+                <td style="padding:11px 14px; color:#c084fc; font-weight:700;">${pc}</td>
+                <td style="padding:11px 14px; color:#10b981; font-weight:800;">${si}</td>
+                <td style="padding:11px 14px; color:#f59e0b; font-weight:700;">${g}</td>
+            </tr>
+        `;
+    }).join('');
+
+    const permBanner = adminAnalyticsState.analyticsPermError ? `
+        <div style="background:rgba(239,68,68,0.12); border:1px solid rgba(239,68,68,0.45); border-left:4px solid #ef4444; border-radius:12px; padding:12px 16px; margin-bottom:18px; font-size:12.5px; color:#fecaca;">
+            ⚠️ <b>Firestore Rule Notice:</b> Could not read <code>site_analytics</code> (${adminAnalyticsState.analyticsPermError}). Make sure your Firestore Rules allow read/write on <code>match /site_analytics/{docId} { allow read, write: if true; }</code> so both guest &amp; signed-in visits are logged.
+        </div>
+    ` : '';
+
+    box.style.background = 'transparent';
+    box.style.border = 'none';
+    box.style.boxShadow = 'none';
+    box.style.padding = '0';
+
+    box.innerHTML = `
+        ${permBanner}
+
+        <!-- 1. OVERALL & TODAY TRAFFIC KPI CARDS -->
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(185px, 1fr)); gap:14px; margin-bottom:20px;">
+            <div class="admin-panel-card" style="margin:0; padding:16px 18px; border-left:4px solid #fdb813;">
+                <div style="font-size:11px; font-weight:800; color:#94a3b8; text-transform:uppercase;">🌐 Overall Traffic</div>
+                <div style="font-size:28px; font-weight:900; color:#fdb813; margin-top:4px;">${overallTotalVisits} <span style="font-size:12px; color:#94a3b8; font-weight:700;">Visits</span></div>
+                <div style="font-size:12px; color:#cbd5e1; margin-top:4px;">Unique Devices: <b style="color:#fff;">${overallUnique}</b></div>
+            </div>
+
+            <div class="admin-panel-card" style="margin:0; padding:16px 18px; border-left:4px solid #10b981;">
+                <div style="font-size:11px; font-weight:800; color:#94a3b8; text-transform:uppercase;">📅 Today (${todayYMD})</div>
+                <div style="font-size:28px; font-weight:900; color:#10b981; margin-top:4px;">${todayUnique} <span style="font-size:12px; color:#94a3b8; font-weight:700;">People</span></div>
+                <div style="font-size:12px; color:#cbd5e1; margin-top:4px;">Sessions: <b style="color:#fff;">${todayVisits}</b> • Signed-In: <b style="color:#10b981;">${todaySignedIn}</b></div>
+            </div>
+
+            <div class="admin-panel-card" style="margin:0; padding:16px 18px; border-left:4px solid #38bdf8;">
+                <div style="font-size:11px; font-weight:800; color:#94a3b8; text-transform:uppercase;">📱 Mobile Visitors</div>
+                <div style="font-size:28px; font-weight:900; color:#38bdf8; margin-top:4px;">${overallMobUnique} <span style="font-size:12px; color:#94a3b8; font-weight:700;">(${mobPct}%)</span></div>
+                <div style="font-size:12px; color:#cbd5e1; margin-top:4px;">Today: <b style="color:#38bdf8;">${todayMob}</b> • Total Visits: <b style="color:#fff;">${overallMobVisits}</b></div>
+            </div>
+
+            <div class="admin-panel-card" style="margin:0; padding:16px 18px; border-left:4px solid #c084fc;">
+                <div style="font-size:11px; font-weight:800; color:#94a3b8; text-transform:uppercase;">💻 PC / Desktop Visitors</div>
+                <div style="font-size:28px; font-weight:900; color:#c084fc; margin-top:4px;">${overallPcUnique} <span style="font-size:12px; color:#94a3b8; font-weight:700;">(${pcPct}%)</span></div>
+                <div style="font-size:12px; color:#cbd5e1; margin-top:4px;">Today: <b style="color:#c084fc;">${todayPc}</b> • Total Visits: <b style="color:#fff;">${overallPcVisits}</b></div>
+            </div>
+
+            <div class="admin-panel-card" style="margin:0; padding:16px 18px; border-left:4px solid #22c55e;">
+                <div style="font-size:11px; font-weight:800; color:#94a3b8; text-transform:uppercase;">🔐 Signed-In Students</div>
+                <div style="font-size:28px; font-weight:900; color:#22c55e; margin-top:4px;">${totalSignedInUsers}</div>
+                <div style="font-size:12px; color:#cbd5e1; margin-top:4px;">Guests Today: <b style="color:#f59e0b;">${todayGuests}</b> • All-Time Est: <b style="color:#f59e0b;">${overallGuestApprox}</b></div>
+            </div>
+
+            <div class="admin-panel-card" style="margin:0; padding:16px 18px; border-left:4px solid #f43f5e;">
+                <div style="font-size:11px; font-weight:800; color:#94a3b8; text-transform:uppercase;">📝 Quizzes Submitted</div>
+                <div style="font-size:28px; font-weight:900; color:#f43f5e; margin-top:4px;">${adminAnalyticsState.totalQuizzes}</div>
+                <div style="font-size:12px; color:#cbd5e1; margin-top:4px;">Submitted Today: <b style="color:#fff;">${adminAnalyticsState.todayQuizzes}</b></div>
+            </div>
+        </div>
+
+        <!-- 2. DEVICE, APP VS WEB & SIGN-IN CONVERSION BARS -->
+        <div class="admin-panel-card" style="padding:18px 20px; margin-bottom:20px;">
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); gap:18px;">
+                <div>
+                    <div style="display:flex; justify-content:space-between; font-size:12px; font-weight:800; margin-bottom:6px;">
+                        <span style="color:#38bdf8;">📱 Mobile: ${mobPct}% (${overallMobUnique})</span>
+                        <span style="color:#c084fc;">💻 PC: ${pcPct}% (${overallPcUnique})</span>
+                    </div>
+                    <div style="width:100%; height:9px; background:#c084fc; border-radius:999px; overflow:hidden;">
+                        <div style="width:${mobPct}%; height:100%; background:#38bdf8;"></div>
+                    </div>
+                </div>
+                <div>
+                    <div style="display:flex; justify-content:space-between; font-size:12px; font-weight:800; margin-bottom:6px;">
+                        <span style="color:#fdb813;">📲 Installed PWA: ${pwaPct}% (${overallPwaUnique})</span>
+                        <span style="color:#94a3b8;">🌐 Browser Web: ${webPct}% (${overallWebUnique})</span>
+                    </div>
+                    <div style="width:100%; height:9px; background:#334155; border-radius:999px; overflow:hidden;">
+                        <div style="width:${pwaPct}%; height:100%; background:#fdb813;"></div>
+                    </div>
+                </div>
+                <div>
+                    <div style="display:flex; justify-content:space-between; font-size:12px; font-weight:800; margin-bottom:6px;">
+                        <span style="color:#10b981;">🔐 Signed-In Ratio: ${signPct}%</span>
+                        <span style="color:#cbd5e1;">${totalSignedInUsers} Registered Accounts</span>
+                    </div>
+                    <div style="width:100%; height:9px; background:#1e293b; border-radius:999px; overflow:hidden;">
+                        <div style="width:${signPct}%; height:100%; background:#10b981;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. DATE-WISE VISITOR LOG TABLE -->
+        <div class="admin-panel-card" style="padding:20px; margin-bottom:20px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:16px; border-bottom:1px solid #2b2b36; padding-bottom:14px;">
+                <div>
+                    <h3 style="margin:0; font-size:17px; color:#fff;">📊 Date-Wise Visitor Breakdown (Guest + Signed-In)</h3>
+                    <span style="font-size:12px; color:#94a3b8;">Tracks every visitor regardless of sign-in, split by Mobile (PWA vs Web), PC, Signed-In &amp; Guests.</span>
+                </div>
+                <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+                    <button type="button" onclick="setAdminAnalyticsRange('1')" style="background:${adminAnalyticsState.range === '1' ? '#fdb813' : '#1c1c24'}; color:${adminAnalyticsState.range === '1' ? '#000' : '#cbd5e1'}; border:1px solid ${adminAnalyticsState.range === '1' ? '#fdb813' : '#334155'}; border-radius:8px; padding:6px 11px; font-size:12px; font-weight:800; cursor:pointer;">Today</button>
+                    <button type="button" onclick="setAdminAnalyticsRange('7')" style="background:${adminAnalyticsState.range === '7' ? '#fdb813' : '#1c1c24'}; color:${adminAnalyticsState.range === '7' ? '#000' : '#cbd5e1'}; border:1px solid ${adminAnalyticsState.range === '7' ? '#fdb813' : '#334155'}; border-radius:8px; padding:6px 11px; font-size:12px; font-weight:800; cursor:pointer;">7 Days</button>
+                    <button type="button" onclick="setAdminAnalyticsRange('30')" style="background:${adminAnalyticsState.range === '30' ? '#fdb813' : '#1c1c24'}; color:${adminAnalyticsState.range === '30' ? '#000' : '#cbd5e1'}; border:1px solid ${adminAnalyticsState.range === '30' ? '#fdb813' : '#334155'}; border-radius:8px; padding:6px 11px; font-size:12px; font-weight:800; cursor:pointer;">30 Days</button>
+                    <button type="button" onclick="setAdminAnalyticsRange('ALL')" style="background:${adminAnalyticsState.range === 'ALL' ? '#fdb813' : '#1c1c24'}; color:${adminAnalyticsState.range === 'ALL' ? '#000' : '#cbd5e1'}; border:1px solid ${adminAnalyticsState.range === 'ALL' ? '#fdb813' : '#334155'}; border-radius:8px; padding:6px 11px; font-size:12px; font-weight:800; cursor:pointer;">All Dates</button>
+                    <input type="date" id="adminAnalyticsDatePicker" value="${adminAnalyticsState.customDate}" onchange="setAdminAnalyticsCustomDate(this.value)" style="background:#0d1322; color:#fff; border:1px solid #334155; border-radius:8px; padding:5px 10px; font-size:12px; margin:0; width:auto;">
+                </div>
+            </div>
+
+            <div style="overflow-x:auto;">
+                <table style="width:100%; text-align:left; border-collapse:collapse; min-width:660px;">
+                    <thead>
+                        <tr style="background:#111522; border-bottom:1px solid #2b354f; color:#94a3b8; font-size:11.5px; text-transform:uppercase;">
+                            <th style="padding:11px 14px;">Date</th>
+                            <th style="padding:11px 14px;">Unique People</th>
+                            <th style="padding:11px 14px;">Total Visits</th>
+                            <th style="padding:11px 14px;">📱 Mobile (App / Web)</th>
+                            <th style="padding:11px 14px;">💻 PC</th>
+                            <th style="padding:11px 14px;">🔐 Signed-In</th>
+                            <th style="padding:11px 14px;">👤 Guests</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${dateRowsHtml || `<tr><td colspan="7" style="padding:26px; text-align:center; color:#888; font-size:13px;">No visitor logs recorded for this date range yet. New visits start logging automatically from today!</td></tr>`}
+                    </tbody>
+                    ${filteredDaily.length > 0 ? `
+                    <tfoot>
+                        <tr style="background:#111829; border-top:2px solid rgba(253,184,19,0.4); font-weight:900;">
+                            <td style="padding:12px 14px; color:#fdb813;">Selected Range Total (${filteredDaily.length} Day${filteredDaily.length === 1 ? '' : 's'})</td>
+                            <td style="padding:12px 14px; color:#fff;">${rangeUnique}</td>
+                            <td style="padding:12px 14px; color:#cbd5e1;">${rangeVisits}</td>
+                            <td style="padding:12px 14px; color:#38bdf8;">${rangeMob} <span style="font-size:11px; color:#94a3b8; font-weight:600;">(App: ${rangeMobPwa} • Web: ${rangeMobWeb})</span></td>
+                            <td style="padding:12px 14px; color:#c084fc;">${rangePc}</td>
+                            <td style="padding:12px 14px; color:#10b981;">${rangeSignedIn}</td>
+                            <td style="padding:12px 14px; color:#f59e0b;">${rangeGuests}</td>
+                        </tr>
+                    </tfoot>` : ''}
+                </table>
+            </div>
+        </div>
+
+        <!-- 4. REGISTERED SIGNED-IN STUDENTS DIRECTORY -->
+        <div class="admin-panel-card" style="padding:20px; margin-bottom:0;">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:14px;">
+                <h3 style="margin:0; font-size:17px; color:#fff;">👥 Registered Signed-In Students <span style="font-size:12px; background:rgba(16,185,129,0.16); color:#10b981; border:1px solid rgba(16,185,129,0.4); padding:3px 10px; border-radius:20px; margin-left:6px;">${totalSignedInUsers} Total</span></h3>
+                <input type="text" class="input-field" placeholder="🔍 Search name, email or device..." value="${adminAnalyticsState.searchQuery.replace(/"/g, '&quot;')}" oninput="filterAdminUsersTableLive(this.value)" style="margin:0; width:260px; max-width:100%; padding:8px 12px; font-size:13px;">
+            </div>
+            <div id="adminRegisteredStudentsTableMount" style="overflow-x:auto;"></div>
+        </div>
+    `;
+
+    renderAdminRegisteredStudentsTableOnly();
+}
+
 async function loadAdminUsers() {
     const box = document.getElementById('users-table-container');
     if (!box) return;
-    const snap = await db.collection('users').orderBy('lastLogin', 'desc').limit(100).get();
-    let rows = `<table style="width:100%; text-align:left; border-collapse:collapse;"><tr style="background:#131318; border-bottom:1px solid #2b2b36;"><th style="padding:14px;">Name</th><th style="padding:14px;">Email</th><th style="padding:14px;">Last Login</th></tr>`;
-    snap.forEach(doc => {
-        const d = doc.data();
-        rows += `<tr style="border-bottom:1px solid #2b2b36;"><td style="padding:14px; font-weight:bold;">${d.displayName || 'User'}</td><td style="padding:14px; color:#aaa;">${d.email || '-'}</td><td style="padding:14px; color:#aaa; font-size:12.5px;">${d.lastLogin ? d.lastLogin.toDate().toLocaleString() : '-'}</td></tr>`;
+    box.innerHTML = `<div style="padding:35px; text-align:center; color:var(--primary-yellow); font-weight:700;">📊 Loading Visitor Traffic &amp; Students Analytics...</div>`;
+
+    const todayYMD = typeof getLocalYMDForAnalytics === 'function'
+        ? getLocalYMDForAnalytics()
+        : new Date().toISOString().slice(0, 10);
+
+    adminAnalyticsState.analyticsPermError = '';
+
+    // 1. Load Registered Signed-In Users
+    const usersList = [];
+    const historicalLoginsByDate = {};
+    try {
+        const uSnap = await db.collection('users').orderBy('lastLogin', 'desc').limit(500).get();
+        uSnap.forEach(doc => {
+            const d = doc.data() || {};
+            const ms = d.lastLogin && typeof d.lastLogin.toMillis === 'function' ? d.lastLogin.toMillis() : 0;
+            const loginYMD = ms && typeof getLocalYMDForAnalytics === 'function'
+                ? getLocalYMDForAnalytics(new Date(ms))
+                : '';
+            if (loginYMD) {
+                historicalLoginsByDate[loginYMD] = (historicalLoginsByDate[loginYMD] || 0) + 1;
+            }
+            usersList.push({
+                id: doc.id,
+                displayName: d.displayName || 'User',
+                email: d.email || '-',
+                lastDevice: d.lastDevice || '',
+                currentStreak: d.currentStreak || 0,
+                lastLoginMs: ms,
+                lastLoginDate: loginYMD
+            });
+        });
+    } catch (e) {
+        console.warn('Users fetch warning:', e);
+    }
+
+    // 2. Load Visitor Analytics (Overall + Date-Wise)
+    let overallDoc = {};
+    const dailyMap = new Map();
+    try {
+        const aSnap = await db.collection('site_analytics').get();
+        aSnap.forEach(doc => {
+            const d = doc.data() || {};
+            if (doc.id === 'overall' || d.type === 'overall') {
+                overallDoc = d;
+            } else if (doc.id.startsWith('day_') || d.date) {
+                const dateKey = d.date || doc.id.replace(/^day_/, '');
+                dailyMap.set(dateKey, { date: dateKey, ...d });
+            }
+        });
+    } catch (e) {
+        adminAnalyticsState.analyticsPermError = e.message || 'Permission denied';
+    }
+
+    // Merge historical signed-in dates so past dates with logins also appear in the table
+    Object.keys(historicalLoginsByDate).forEach(ymd => {
+        const existing = dailyMap.get(ymd) || { date: ymd };
+        existing.signedInVisitors = Math.max(Number(existing.signedInVisitors) || 0, historicalLoginsByDate[ymd]);
+        dailyMap.set(ymd, existing);
     });
-    box.innerHTML = rows + `</table>`;
+
+    const dailyList = Array.from(dailyMap.values()).sort((a, b) => b.date.localeCompare(a.date));
+
+    // 3. Load Quiz Activity Counts
+    let totalQuizzes = 0;
+    let todayQuizzes = 0;
+    try {
+        const lbSnap = await db.collection('leaderboards').limit(1000).get();
+        totalQuizzes = lbSnap.size;
+        lbSnap.forEach(doc => {
+            const d = doc.data();
+            if (d && d.timestamp && typeof d.timestamp.toDate === 'function') {
+                const ymd = typeof getLocalYMDForAnalytics === 'function' ? getLocalYMDForAnalytics(d.timestamp.toDate()) : '';
+                if (ymd === todayYMD) todayQuizzes++;
+            }
+        });
+    } catch (e) {}
+
+    adminAnalyticsState.overall = overallDoc;
+    adminAnalyticsState.dailyList = dailyList;
+    adminAnalyticsState.usersList = usersList;
+    adminAnalyticsState.totalQuizzes = totalQuizzes;
+    adminAnalyticsState.todayQuizzes = todayQuizzes;
+
+    renderAdminUsersAndTrafficDashboard();
 }
 
 async function loadAdminDoubts() {
