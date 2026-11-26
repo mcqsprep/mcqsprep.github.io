@@ -8065,6 +8065,47 @@ async function handleLiveSearch() {
             body:not(.mcqs-quiz-screen-active) #mobileAppDock .app-tab.ai-tab-inner .app-tab-label {
                 color: #000000 !important;
             }
+
+            /* ==========================================
+               9. MOBILE TOP CLEARANCE & CRISP CARD VISIBILITY (FIXES IMAGES 2, 3, 4, 5)
+               ========================================== */
+            @media (max-width: 860px) {
+                html body:not(.mcqs-quiz-screen-active),
+                html.is-standalone-pwa body:not(.mcqs-quiz-screen-active) {
+                    padding-top: calc(56px + env(safe-area-inset-top, 0px)) !important;
+                }
+                html body:not(.mcqs-quiz-screen-active):not(.mcqs-study-app-active) .container,
+                html.is-standalone-pwa body:not(.mcqs-quiz-screen-active):not(.mcqs-study-app-active) .container {
+                    padding: 16px 14px 108px 14px !important;
+                }
+                html body.mcqs-study-app-active:not(.mcqs-quiz-screen-active) .container {
+                    padding: 6px 0 96px 0 !important;
+                }
+                html body.mcqs-quiz-screen-active .container {
+                    padding: 14px 12px 40px 12px !important;
+                }
+                /* Restore crisp padding, surface contrast & bright headings on standalone PWA inner cards */
+                html body #dynamic-content .card,
+                html.is-standalone-pwa body #dynamic-content .card {
+                    background: linear-gradient(155deg, #111728 0%, #0a0f1c 100%) !important;
+                    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+                    border-radius: 16px !important;
+                    padding: 20px 16px !important;
+                    margin-top: 4px !important;
+                    margin-bottom: 16px !important;
+                    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.5) !important;
+                }
+                html body #dynamic-content .card .section-title,
+                html.is-standalone-pwa body #dynamic-content .card .section-title {
+                    color: #ffffff !important;
+                    font-size: 18px !important;
+                    font-weight: 900 !important;
+                    line-height: 1.3 !important;
+                    margin-top: 0 !important;
+                    margin-bottom: 12px !important;
+                    margin-left: 0 !important;
+                }
+            }
         `;
         document.head.appendChild(st);
     }
