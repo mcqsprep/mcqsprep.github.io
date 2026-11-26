@@ -5985,6 +5985,7 @@ let adminAnalyticsState = {
     customDate: '',
     searchQuery: '',
     overall: {},
+    dailyMap: {},
     dailyList: [],
     usersList: [],
     totalQuizzes: 0,
@@ -6011,6 +6012,20 @@ function filterAdminUsersTableLive(q) {
     renderAdminRegisteredStudentsTableOnly();
 }
 
+function buildCalendarDateSequence(daysCount) {
+    const list = [];
+    for (let i = 0; i < daysCount; i++) {
+        const d = new Date();
+        d.setHours(12, 0, 0, 0);
+        d.setDate(d.getDate() - i);
+        const ymd = typeof getLocalYMDForAnalytics === 'function'
+            ? getLocalYMDForAnalytics(d)
+            : d.toISOString().slice(0, 10);
+        list.push(ymd);
+    }
+    return list;
+}
+
 function renderAdminRegisteredStudentsTableOnly() {
     const mount = document.getElementById('adminRegisteredStudentsTableMount');
     if (!mount) return;
@@ -6019,7 +6034,8 @@ function renderAdminRegisteredStudentsTableOnly() {
         if (!q) return true;
         return (u.displayName || '').toLowerCase().includes(q) ||
                (u.email || '').toLowerCase().includes(q) ||
-               (u.lastDevice || '').toLowerCase().includes(q);
+               (u.lastDevice || '').toLowerCase().includes(q) ||
+               (u.installedPwa || '').toLowerCase().includes(q);
     });
 
     if (!filtered.length) {
@@ -6032,6 +6048,9 @@ function renderAdminRegisteredStudentsTableOnly() {
         const isMob = /mobile/i.test(devLabel);
         const devColor = devLabel === '—' ? '#64748b' : (isMob ? '#38bdf8' : '#c084fc');
         const devIcon = devLabel === '—' ? '' : (isMob ? '📱 ' : '💻 ');
+        const pwaBadge = u.installedPwa
+            ? `<span style="background:rgba(253,184,19,0.16); border:1px solid rgba(253,184,19,0.45); color:#fdb813; padding:2px 8px; border-radius:999px; font-size:10.5px; font-weight:800; margin-left:6px; white-space:nowrap;">📲 ${u.installedPwa}</span>`
+            : '';
         const streakNum = Number(u.currentStreak) || 0;
         const lastLoginStr = u.lastLoginMs ? new Date(u.lastLoginMs).toLocaleString() : '—';
         return `
@@ -6039,7 +6058,9 @@ function renderAdminRegisteredStudentsTableOnly() {
                 <td style="padding:12px 14px; color:#64748b; font-weight:700; font-size:12px;">#${idx + 1}</td>
                 <td style="padding:12px 14px; font-weight:700; color:#fff;">${u.displayName || 'User'}</td>
                 <td style="padding:12px 14px; color:#94a3b8; font-size:13px;">${u.email || '-'}</td>
-                <td style="padding:12px 14px;"><span style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:${devColor}; padding:3px 9px; border-radius:999px; font-size:11.5px; font-weight:700; white-space:nowrap;">${devIcon}${devLabel}</span></td>
+                <td style="padding:12px 14px; white-space:nowrap;">
+                    <span style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:${devColor}; padding:3px 9px; border-radius:999px; font-size:11.5px; font-weight:700;">${devIcon}${devLabel}</span>${pwaBadge}
+                </td>
                 <td style="padding:12px 14px; color:${streakNum > 0 ? '#FF5722' : '#64748b'}; font-weight:800; font-size:13px;">🔥 ${streakNum}</td>
                 <td style="padding:12px 14px; color:#cbd5e1; font-size:12.5px; white-space:nowrap;">${lastLoginStr}</td>
             </tr>
@@ -6047,13 +6068,13 @@ function renderAdminRegisteredStudentsTableOnly() {
     }).join('');
 
     mount.innerHTML = `
-        <table style="width:100%; text-align:left; border-collapse:collapse; min-width:640px;">
+        <table style="width:100%; text-align:left; border-collapse:collapse; min-width:700px;">
             <thead>
                 <tr style="background:#111522; border-bottom:1px solid #2b354f; color:#94a3b8; font-size:11.5px; text-transform:uppercase;">
                     <th style="padding:12px 14px;">#</th>
                     <th style="padding:12px 14px;">Name</th>
                     <th style="padding:12px 14px;">Email</th>
-                    <th style="padding:12px 14px;">Last Device</th>
+                    <th style="padding:12px 14px;">Last Device / App</th>
                     <th style="padding:12px 14px;">Streak</th>
                     <th style="padding:12px 14px;">Last Login</th>
                 </tr>
@@ -6068,6 +6089,7 @@ function renderAdminUsersAndTrafficDashboard() {
     if (!box) return;
 
     const ov = adminAnalyticsState.overall || {};
+    const dailyMap = adminAnalyticsState.dailyMap || {};
     const dailyAll = adminAnalyticsState.dailyList || [];
     const users = adminAnalyticsState.usersList || [];
 
@@ -6075,42 +6097,68 @@ function renderAdminUsersAndTrafficDashboard() {
         ? getLocalYMDForAnalytics()
         : new Date().toISOString().slice(0, 10);
 
-    const todayRec = dailyAll.find(d => d.date === todayYMD) || {};
+    const todayRec = dailyMap[todayYMD] || {};
 
-    // Filter daily rows by selected range or custom date
-    let filteredDaily = [...dailyAll];
+    // Build exact date list for selected range (7 Days = all 7 dates, 30 Days = all 30 dates — 100% real 0s on quiet days)
+    let displayDates = [];
     if (adminAnalyticsState.range === 'CUSTOM' && adminAnalyticsState.customDate) {
-        filteredDaily = dailyAll.filter(d => d.date === adminAnalyticsState.customDate);
+        displayDates = [adminAnalyticsState.customDate];
     } else if (adminAnalyticsState.range === '1') {
-        filteredDaily = dailyAll.filter(d => d.date === todayYMD);
-    } else if (adminAnalyticsState.range === '7' || adminAnalyticsState.range === '30') {
-        const cutoff = new Date();
-        cutoff.setHours(0, 0, 0, 0);
-        cutoff.setDate(cutoff.getDate() - (Number(adminAnalyticsState.range) - 1));
-        const cutoffStr = typeof getLocalYMDForAnalytics === 'function'
-            ? getLocalYMDForAnalytics(cutoff)
-            : cutoff.toISOString().slice(0, 10);
-        filteredDaily = dailyAll.filter(d => d.date >= cutoffStr);
+        displayDates = [todayYMD];
+    } else if (adminAnalyticsState.range === '7') {
+        displayDates = buildCalendarDateSequence(7);
+    } else if (adminAnalyticsState.range === '30') {
+        displayDates = buildCalendarDateSequence(30);
+    } else {
+        displayDates = dailyAll.map(d => d.date);
+        if (!displayDates.includes(todayYMD)) displayDates.unshift(todayYMD);
     }
 
-    // Overall Totals (combine overall doc with summed daily fallback)
+    const filteredDaily = displayDates.map(ymd => dailyMap[ymd] || { date: ymd });
+
+    // Overall Totals (strictly real Firestore counters)
     const sumDailyVisits = dailyAll.reduce((a, d) => a + (Number(d.totalVisits) || 0), 0);
-    const sumDailyUnique = dailyAll.reduce((a, d) => a + (Number(d.uniqueVisitors) || 0), 0);
     const sumDailyMob = dailyAll.reduce((a, d) => a + (Number(d.mobileVisitors) || 0), 0);
     const sumDailyPc = dailyAll.reduce((a, d) => a + (Number(d.pcVisitors) || 0), 0);
-    const sumDailyPwa = dailyAll.reduce((a, d) => a + (Number(d.pwaVisitors) || 0), 0);
+    const sumDailyMobPwa = dailyAll.reduce((a, d) => a + (Number(d.mobilePwaVisitors) || 0), 0);
+    const sumDailyPcPwa = dailyAll.reduce((a, d) => a + (Number(d.pcPwaVisitors) || 0), 0);
     const sumDailyWeb = dailyAll.reduce((a, d) => a + (Number(d.webVisitors) || 0), 0);
 
     const overallTotalVisits = Math.max(Number(ov.totalVisits) || 0, sumDailyVisits);
-    const overallUnique = Math.max(Number(ov.uniqueVisitors) || 0, sumDailyUnique ? Number(ov.uniqueVisitors) || 0 : 0);
+    const overallUnique = Number(ov.uniqueVisitors) || 0;
     const overallMobUnique = Number(ov.mobileUnique) || sumDailyMob;
     const overallPcUnique = Number(ov.pcUnique) || sumDailyPc;
     const overallMobVisits = Number(ov.mobileVisits) || sumDailyMob;
     const overallPcVisits = Number(ov.pcVisits) || sumDailyPc;
-    const overallPwaUnique = Number(ov.pwaUnique) || sumDailyPwa;
+
+    // 100% Real Installed PWA Counts (Mobile App vs PC App — deduplicated per device)
+    const installedMobileCount = Math.max(
+        Number(ov.installedMobile) || 0,
+        Number(ov.mobilePwaUnique) || 0,
+        sumDailyMobPwa > 0 ? 1 : 0
+    );
+    const installedPcCount = Math.max(
+        Number(ov.installedPc) || 0,
+        Number(ov.pcPwaUnique) || 0,
+        sumDailyPcPwa > 0 ? 1 : 0
+    );
+    const installedTotalCount = installedMobileCount + installedPcCount;
+    const installedBase = Math.max(1, installedTotalCount);
+    const instMobPct = installedTotalCount > 0 ? Math.round((installedMobileCount / installedBase) * 100) : 0;
+    const instPcPct = installedTotalCount > 0 ? (100 - instMobPct) : 0;
+
+    const todayMobPwa = Number(todayRec.mobilePwaVisitors) || 0;
+    const todayPcPwa = Number(todayRec.pcPwaVisitors) || 0;
+    const todayNewMobInst = Number(todayRec.newMobileInstalls) || 0;
+    const todayNewPcInst = Number(todayRec.newPcInstalls) || 0;
+
+    const overallPwaUnique = Math.max(Number(ov.pwaUnique) || 0, installedTotalCount);
     const overallWebUnique = Number(ov.webUnique) || sumDailyWeb;
 
     const totalSignedInUsers = users.length;
+    const signedInMobPwaUsers = users.filter(u => u.installedPwa === 'Mobile App' || u.lastDevice === 'Mobile PWA').length;
+    const signedInPcPwaUsers = users.filter(u => u.installedPwa === 'PC App' || u.lastDevice === 'PC PWA').length;
+
     const signedInTodayFromUsers = users.filter(u => u.lastLoginDate === todayYMD).length;
     const todayUnique = Math.max(Number(todayRec.uniqueVisitors) || 0, signedInTodayFromUsers);
     const todayVisits = Math.max(Number(todayRec.totalVisits) || 0, todayUnique);
@@ -6121,18 +6169,22 @@ function renderAdminUsersAndTrafficDashboard() {
 
     const overallGuestApprox = Math.max(0, overallUnique - totalSignedInUsers);
     const devTotal = Math.max(1, overallMobUnique + overallPcUnique);
-    const mobPct = Math.round((overallMobUnique / devTotal) * 100);
+    const mobPct = (overallMobUnique + overallPcUnique) > 0 ? Math.round((overallMobUnique / devTotal) * 100) : 0;
     const pcPct = (overallMobUnique + overallPcUnique) > 0 ? (100 - mobPct) : 0;
 
     const modeTotal = Math.max(1, overallPwaUnique + overallWebUnique);
-    const pwaPct = Math.round((overallPwaUnique / modeTotal) * 100);
+    const pwaPct = (overallPwaUnique + overallWebUnique) > 0 ? Math.round((overallPwaUnique / modeTotal) * 100) : 0;
     const webPct = (overallPwaUnique + overallWebUnique) > 0 ? (100 - pwaPct) : 0;
 
     const signBase = Math.max(1, overallUnique || totalSignedInUsers);
     const signPct = Math.min(100, Math.round((totalSignedInUsers / signBase) * 100));
 
-    // Range Totals for the Date-Wise Table
-    let rangeUnique = 0, rangeVisits = 0, rangeMob = 0, rangeMobPwa = 0, rangeMobWeb = 0, rangePc = 0, rangeSignedIn = 0, rangeGuests = 0;
+    // Range Totals & Rows for Date-Wise Table
+    let activeDaysCount = 0;
+    let rangeUnique = 0, rangeVisits = 0, rangeMob = 0, rangeMobPwa = 0, rangeMobWeb = 0;
+    let rangePc = 0, rangePcPwa = 0, rangePcWeb = 0, rangeSignedIn = 0, rangeGuests = 0;
+    let rangeInstMob = 0, rangeInstPc = 0;
+
     const dateRowsHtml = filteredDaily.map(d => {
         const u = Math.max(Number(d.uniqueVisitors) || 0, Number(d.signedInVisitors) || 0);
         const v = Math.max(Number(d.totalVisits) || 0, u);
@@ -6140,29 +6192,42 @@ function renderAdminUsersAndTrafficDashboard() {
         const mPwa = Number(d.mobilePwaVisitors) || 0;
         const mWeb = Number(d.mobileWebVisitors) || Math.max(0, m - mPwa);
         const pc = Number(d.pcVisitors) || 0;
+        const pcPwa = Number(d.pcPwaVisitors) || 0;
+        const pcWeb = Number(d.pcWebVisitors) || Math.max(0, pc - pcPwa);
         const si = Number(d.signedInVisitors) || 0;
         const g = Math.max(0, u - si);
+        const nMobInst = Number(d.newMobileInstalls) || 0;
+        const nPcInst = Number(d.newPcInstalls) || 0;
+
+        const hasActivity = u > 0 || v > 0 || nMobInst > 0 || nPcInst > 0;
+        if (hasActivity) activeDaysCount++;
 
         rangeUnique += u; rangeVisits += v; rangeMob += m; rangeMobPwa += mPwa; rangeMobWeb += mWeb;
-        rangePc += pc; rangeSignedIn += si; rangeGuests += g;
+        rangePc += pc; rangePcPwa += pcPwa; rangePcWeb += pcWeb; rangeSignedIn += si; rangeGuests += g;
+        rangeInstMob += nMobInst; rangeInstPc += nPcInst;
 
         const isTodayRow = d.date === todayYMD;
+        const rowOpacity = hasActivity || isTodayRow ? '1' : '0.45';
+
         return `
-            <tr style="border-bottom:1px solid #232738; background:${isTodayRow ? 'rgba(253,184,19,0.06)' : 'transparent'};">
-                <td style="padding:11px 14px; font-weight:800; color:${isTodayRow ? '#fdb813' : '#fff'}; white-space:nowrap;">${d.date} ${isTodayRow ? '<span style="font-size:10px; background:rgba(253,184,19,0.18); color:#fdb813; padding:2px 6px; border-radius:4px; margin-left:4px;">TODAY</span>' : ''}</td>
-                <td style="padding:11px 14px; font-weight:900; color:#fff;">${u}</td>
-                <td style="padding:11px 14px; color:#cbd5e1;">${v}</td>
-                <td style="padding:11px 14px; color:#38bdf8; font-weight:700;">${m} <span style="font-size:11px; color:#94a3b8; font-weight:500;">(App: ${mPwa} • Web: ${mWeb})</span></td>
-                <td style="padding:11px 14px; color:#c084fc; font-weight:700;">${pc}</td>
-                <td style="padding:11px 14px; color:#10b981; font-weight:800;">${si}</td>
-                <td style="padding:11px 14px; color:#f59e0b; font-weight:700;">${g}</td>
+            <tr style="border-bottom:1px solid #232738; background:${isTodayRow ? 'rgba(253,184,19,0.07)' : 'transparent'}; opacity:${rowOpacity};">
+                <td style="padding:10px 12px; font-weight:800; color:${isTodayRow ? '#fdb813' : (hasActivity ? '#fff' : '#64748b')}; white-space:nowrap;">
+                    ${d.date}${isTodayRow ? ' <span style="font-size:10px; background:rgba(253,184,19,0.18); color:#fdb813; padding:2px 6px; border-radius:4px; margin-left:4px;">TODAY</span>' : ''}
+                </td>
+                <td style="padding:10px 12px; font-weight:900; color:${u > 0 ? '#fff' : '#64748b'};">${u}</td>
+                <td style="padding:10px 12px; color:${v > 0 ? '#cbd5e1' : '#64748b'};">${v}</td>
+                <td style="padding:10px 12px; color:${m > 0 ? '#38bdf8' : '#64748b'}; font-weight:700; white-space:nowrap;">${m} <span style="font-size:10.5px; color:#94a3b8; font-weight:500;">(App: ${mPwa} • Web: ${mWeb})</span></td>
+                <td style="padding:10px 12px; color:${pc > 0 ? '#c084fc' : '#64748b'}; font-weight:700; white-space:nowrap;">${pc} <span style="font-size:10.5px; color:#94a3b8; font-weight:500;">(App: ${pcPwa} • Web: ${pcWeb})</span></td>
+                <td style="padding:10px 12px; color:${(nMobInst + nPcInst) > 0 ? '#fdb813' : '#64748b'}; font-weight:700; white-space:nowrap;">${nMobInst + nPcInst} <span style="font-size:10.5px; color:#94a3b8; font-weight:500;">(📱${nMobInst} • 💻${nPcInst})</span></td>
+                <td style="padding:10px 12px; color:${si > 0 ? '#10b981' : '#64748b'}; font-weight:800;">${si}</td>
+                <td style="padding:10px 12px; color:${g > 0 ? '#f59e0b' : '#64748b'}; font-weight:700;">${g}</td>
             </tr>
         `;
     }).join('');
 
     const permBanner = adminAnalyticsState.analyticsPermError ? `
         <div style="background:rgba(239,68,68,0.12); border:1px solid rgba(239,68,68,0.45); border-left:4px solid #ef4444; border-radius:12px; padding:12px 16px; margin-bottom:18px; font-size:12.5px; color:#fecaca;">
-            ⚠️ <b>Firestore Rule Notice:</b> Could not read <code>site_analytics</code> (${adminAnalyticsState.analyticsPermError}). Make sure your Firestore Rules allow read/write on <code>match /site_analytics/{docId} { allow read, write: if true; }</code> so both guest &amp; signed-in visits are logged.
+            ⚠️ <b>Firestore Rule Notice:</b> Could not read <code>site_analytics</code> (${adminAnalyticsState.analyticsPermError}). Ensure Firestore Rules allow read/write on <code>site_analytics</code>.
         </div>
     ` : '';
 
@@ -6203,7 +6268,7 @@ function renderAdminUsersAndTrafficDashboard() {
             <div class="admin-panel-card" style="margin:0; padding:16px 18px; border-left:4px solid #22c55e;">
                 <div style="font-size:11px; font-weight:800; color:#94a3b8; text-transform:uppercase;">🔐 Signed-In Students</div>
                 <div style="font-size:28px; font-weight:900; color:#22c55e; margin-top:4px;">${totalSignedInUsers}</div>
-                <div style="font-size:12px; color:#cbd5e1; margin-top:4px;">Guests Today: <b style="color:#f59e0b;">${todayGuests}</b> • All-Time Est: <b style="color:#f59e0b;">${overallGuestApprox}</b></div>
+                <div style="font-size:12px; color:#cbd5e1; margin-top:4px;">Guests Today: <b style="color:#f59e0b;">${todayGuests}</b> • All-Time Guests: <b style="color:#f59e0b;">${overallGuestApprox}</b></div>
             </div>
 
             <div class="admin-panel-card" style="margin:0; padding:16px 18px; border-left:4px solid #f43f5e;">
@@ -6213,83 +6278,120 @@ function renderAdminUsersAndTrafficDashboard() {
             </div>
         </div>
 
-        <!-- 2. DEVICE, APP VS WEB & SIGN-IN CONVERSION BARS -->
-        <div class="admin-panel-card" style="padding:18px 20px; margin-bottom:20px;">
-            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); gap:18px;">
+        <!-- 2. DEDICATED PWA APP INSTALLATIONS SECTION (MOBILE APP vs PC APP — 100% REAL) -->
+        <div class="admin-panel-card" style="padding:20px; margin-bottom:20px; border:1px solid rgba(253,184,19,0.35);">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:14px; border-bottom:1px solid #2b2b36; padding-bottom:12px;">
                 <div>
-                    <div style="display:flex; justify-content:space-between; font-size:12px; font-weight:800; margin-bottom:6px;">
-                        <span style="color:#38bdf8;">📱 Mobile: ${mobPct}% (${overallMobUnique})</span>
-                        <span style="color:#c084fc;">💻 PC: ${pcPct}% (${overallPcUnique})</span>
+                    <h3 style="margin:0; font-size:17px; color:#fff;">📲 Installed App Tracker (Mobile PWA vs PC PWA)</h3>
+                    <span style="font-size:12px; color:#94a3b8;">Counts real unique devices that installed or launched the standalone Mobile/PC app (deduplicated per device).</span>
+                </div>
+                <span style="background:rgba(253,184,19,0.16); color:#fdb813; border:1px solid rgba(253,184,19,0.45); padding:4px 12px; border-radius:999px; font-size:12px; font-weight:900;">
+                    Total Installed: ${installedTotalCount} Device${installedTotalCount === 1 ? '' : 's'}
+                </span>
+            </div>
+
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(210px, 1fr)); gap:14px; margin-bottom:16px;">
+                <div style="background:#0b101d; border:1px solid rgba(56,189,248,0.35); border-radius:12px; padding:14px 16px;">
+                    <div style="font-size:11px; font-weight:800; color:#38bdf8; text-transform:uppercase;">📱 Mobile App Installed</div>
+                    <div style="font-size:26px; font-weight:900; color:#fff; margin-top:4px;">${installedMobileCount} <span style="font-size:12px; color:#38bdf8; font-weight:800;">(${instMobPct}%)</span></div>
+                    <div style="font-size:11.5px; color:#94a3b8; margin-top:4px;">Active Today: <b style="color:#fff;">${todayMobPwa}</b> • New Today: <b style="color:#10b981;">+${todayNewMobInst}</b></div>
+                    <div style="font-size:11px; color:#64748b; margin-top:2px;">Signed-In on Mobile App: <b style="color:#cbd5e1;">${signedInMobPwaUsers}</b></div>
+                </div>
+
+                <div style="background:#0b101d; border:1px solid rgba(192,132,252,0.35); border-radius:12px; padding:14px 16px;">
+                    <div style="font-size:11px; font-weight:800; color:#c084fc; text-transform:uppercase;">💻 PC App Installed</div>
+                    <div style="font-size:26px; font-weight:900; color:#fff; margin-top:4px;">${installedPcCount} <span style="font-size:12px; color:#c084fc; font-weight:800;">(${instPcPct}%)</span></div>
+                    <div style="font-size:11.5px; color:#94a3b8; margin-top:4px;">Active Today: <b style="color:#fff;">${todayPcPwa}</b> • New Today: <b style="color:#10b981;">+${todayNewPcInst}</b></div>
+                    <div style="font-size:11px; color:#64748b; margin-top:2px;">Signed-In on PC App: <b style="color:#cbd5e1;">${signedInPcPwaUsers}</b></div>
+                </div>
+
+                <div style="background:#0b101d; border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:14px 16px;">
+                    <div style="font-size:11px; font-weight:800; color:#94a3b8; text-transform:uppercase;">🌐 Web Browser Only</div>
+                    <div style="font-size:26px; font-weight:900; color:#fff; margin-top:4px;">${overallWebUnique} <span style="font-size:12px; color:#94a3b8; font-weight:800;">(${webPct}%)</span></div>
+                    <div style="font-size:11.5px; color:#94a3b8; margin-top:4px;">App Share of Traffic: <b style="color:#fdb813;">${pwaPct}%</b></div>
+                    <div style="font-size:11px; color:#64748b; margin-top:2px;">Mobile + PC PWA Devices: <b style="color:#cbd5e1;">${installedTotalCount}</b></div>
+                </div>
+            </div>
+
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); gap:16px;">
+                <div>
+                    <div style="display:flex; justify-content:space-between; font-size:11.5px; font-weight:800; margin-bottom:5px;">
+                        <span style="color:#38bdf8;">📱 Mobile Installs: ${instMobPct}% (${installedMobileCount})</span>
+                        <span style="color:#c084fc;">💻 PC Installs: ${instPcPct}% (${installedPcCount})</span>
                     </div>
-                    <div style="width:100%; height:9px; background:#c084fc; border-radius:999px; overflow:hidden;">
+                    <div style="width:100%; height:8px; background:${installedTotalCount > 0 ? '#c084fc' : '#1e293b'}; border-radius:999px; overflow:hidden;">
+                        <div style="width:${instMobPct}%; height:100%; background:#38bdf8;"></div>
+                    </div>
+                </div>
+                <div>
+                    <div style="display:flex; justify-content:space-between; font-size:11.5px; font-weight:800; margin-bottom:5px;">
+                        <span style="color:#38bdf8;">📱 All Mobile: ${mobPct}% (${overallMobUnique})</span>
+                        <span style="color:#c084fc;">💻 All PC: ${pcPct}% (${overallPcUnique})</span>
+                    </div>
+                    <div style="width:100%; height:8px; background:${(overallMobUnique + overallPcUnique) > 0 ? '#c084fc' : '#1e293b'}; border-radius:999px; overflow:hidden;">
                         <div style="width:${mobPct}%; height:100%; background:#38bdf8;"></div>
                     </div>
                 </div>
                 <div>
-                    <div style="display:flex; justify-content:space-between; font-size:12px; font-weight:800; margin-bottom:6px;">
-                        <span style="color:#fdb813;">📲 Installed PWA: ${pwaPct}% (${overallPwaUnique})</span>
-                        <span style="color:#94a3b8;">🌐 Browser Web: ${webPct}% (${overallWebUnique})</span>
-                    </div>
-                    <div style="width:100%; height:9px; background:#334155; border-radius:999px; overflow:hidden;">
-                        <div style="width:${pwaPct}%; height:100%; background:#fdb813;"></div>
-                    </div>
-                </div>
-                <div>
-                    <div style="display:flex; justify-content:space-between; font-size:12px; font-weight:800; margin-bottom:6px;">
+                    <div style="display:flex; justify-content:space-between; font-size:11.5px; font-weight:800; margin-bottom:5px;">
                         <span style="color:#10b981;">🔐 Signed-In Ratio: ${signPct}%</span>
-                        <span style="color:#cbd5e1;">${totalSignedInUsers} Registered Accounts</span>
+                        <span style="color:#cbd5e1;">${totalSignedInUsers} Registered</span>
                     </div>
-                    <div style="width:100%; height:9px; background:#1e293b; border-radius:999px; overflow:hidden;">
+                    <div style="width:100%; height:8px; background:#1e293b; border-radius:999px; overflow:hidden;">
                         <div style="width:${signPct}%; height:100%; background:#10b981;"></div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- 3. DATE-WISE VISITOR LOG TABLE -->
+        <!-- 3. DATE-WISE VISITOR LOG TABLE (FULL 7 / 30 DAY CALENDAR) -->
         <div class="admin-panel-card" style="padding:20px; margin-bottom:20px;">
-            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:16px; border-bottom:1px solid #2b2b36; padding-bottom:14px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:14px; border-bottom:1px solid #2b2b36; padding-bottom:14px;">
                 <div>
-                    <h3 style="margin:0; font-size:17px; color:#fff;">📊 Date-Wise Visitor Breakdown (Guest + Signed-In)</h3>
-                    <span style="font-size:12px; color:#94a3b8;">Tracks every visitor regardless of sign-in, split by Mobile (PWA vs Web), PC, Signed-In &amp; Guests.</span>
+                    <h3 style="margin:0; font-size:17px; color:#fff; display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                        <span>📊 Date-Wise Visitor Breakdown (Guest + Signed-In)</span>
+                        <span style="font-size:11px; background:rgba(56,189,248,0.14); color:#38bdf8; border:1px solid rgba(56,189,248,0.35); padding:2px 9px; border-radius:999px; font-weight:800;">${filteredDaily.length} Day${filteredDaily.length === 1 ? '' : 's'} Shown • ${activeDaysCount} Active</span>
+                    </h3>
+                    <span style="font-size:11.5px; color:#94a3b8;">100% real data — live guest, device &amp; install tracking logs automatically from enable date; earlier dates reflect real historical Firebase login &amp; quiz records only.</span>
                 </div>
                 <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
                     <button type="button" onclick="setAdminAnalyticsRange('1')" style="background:${adminAnalyticsState.range === '1' ? '#fdb813' : '#1c1c24'}; color:${adminAnalyticsState.range === '1' ? '#000' : '#cbd5e1'}; border:1px solid ${adminAnalyticsState.range === '1' ? '#fdb813' : '#334155'}; border-radius:8px; padding:6px 11px; font-size:12px; font-weight:800; cursor:pointer;">Today</button>
                     <button type="button" onclick="setAdminAnalyticsRange('7')" style="background:${adminAnalyticsState.range === '7' ? '#fdb813' : '#1c1c24'}; color:${adminAnalyticsState.range === '7' ? '#000' : '#cbd5e1'}; border:1px solid ${adminAnalyticsState.range === '7' ? '#fdb813' : '#334155'}; border-radius:8px; padding:6px 11px; font-size:12px; font-weight:800; cursor:pointer;">7 Days</button>
                     <button type="button" onclick="setAdminAnalyticsRange('30')" style="background:${adminAnalyticsState.range === '30' ? '#fdb813' : '#1c1c24'}; color:${adminAnalyticsState.range === '30' ? '#000' : '#cbd5e1'}; border:1px solid ${adminAnalyticsState.range === '30' ? '#fdb813' : '#334155'}; border-radius:8px; padding:6px 11px; font-size:12px; font-weight:800; cursor:pointer;">30 Days</button>
-                    <button type="button" onclick="setAdminAnalyticsRange('ALL')" style="background:${adminAnalyticsState.range === 'ALL' ? '#fdb813' : '#1c1c24'}; color:${adminAnalyticsState.range === 'ALL' ? '#000' : '#cbd5e1'}; border:1px solid ${adminAnalyticsState.range === 'ALL' ? '#fdb813' : '#334155'}; border-radius:8px; padding:6px 11px; font-size:12px; font-weight:800; cursor:pointer;">All Dates</button>
+                    <button type="button" onclick="setAdminAnalyticsRange('ALL')" style="background:${adminAnalyticsState.range === 'ALL' ? '#fdb813' : '#1c1c24'}; color:${adminAnalyticsState.range === 'ALL' ? '#000' : '#cbd5e1'}; border:1px solid ${adminAnalyticsState.range === 'ALL' ? '#fdb813' : '#334155'}; border-radius:8px; padding:6px 11px; font-size:12px; font-weight:800; cursor:pointer;">All Active</button>
                     <input type="date" id="adminAnalyticsDatePicker" value="${adminAnalyticsState.customDate}" onchange="setAdminAnalyticsCustomDate(this.value)" style="background:#0d1322; color:#fff; border:1px solid #334155; border-radius:8px; padding:5px 10px; font-size:12px; margin:0; width:auto;">
                 </div>
             </div>
 
-            <div style="overflow-x:auto;">
-                <table style="width:100%; text-align:left; border-collapse:collapse; min-width:660px;">
-                    <thead>
-                        <tr style="background:#111522; border-bottom:1px solid #2b354f; color:#94a3b8; font-size:11.5px; text-transform:uppercase;">
-                            <th style="padding:11px 14px;">Date</th>
-                            <th style="padding:11px 14px;">Unique People</th>
-                            <th style="padding:11px 14px;">Total Visits</th>
-                            <th style="padding:11px 14px;">📱 Mobile (App / Web)</th>
-                            <th style="padding:11px 14px;">💻 PC</th>
-                            <th style="padding:11px 14px;">🔐 Signed-In</th>
-                            <th style="padding:11px 14px;">👤 Guests</th>
+            <div style="overflow:auto; max-height:460px; border:1px solid #1e273d; border-radius:10px;">
+                <table style="width:100%; text-align:left; border-collapse:collapse; min-width:860px;">
+                    <thead style="position:sticky; top:0; z-index:3;">
+                        <tr style="background:#111522; border-bottom:1px solid #2b354f; color:#94a3b8; font-size:11px; text-transform:uppercase;">
+                            <th style="padding:11px 12px;">Date</th>
+                            <th style="padding:11px 12px;">Unique</th>
+                            <th style="padding:11px 12px;">Visits</th>
+                            <th style="padding:11px 12px;">📱 Mobile (App / Web)</th>
+                            <th style="padding:11px 12px;">💻 PC (App / Web)</th>
+                            <th style="padding:11px 12px;">📲 New Installs</th>
+                            <th style="padding:11px 12px;">🔐 Signed-In</th>
+                            <th style="padding:11px 12px;">👤 Guests</th>
                         </tr>
                     </thead>
                     <tbody>
-                        ${dateRowsHtml || `<tr><td colspan="7" style="padding:26px; text-align:center; color:#888; font-size:13px;">No visitor logs recorded for this date range yet. New visits start logging automatically from today!</td></tr>`}
+                        ${dateRowsHtml}
                     </tbody>
-                    ${filteredDaily.length > 0 ? `
-                    <tfoot>
-                        <tr style="background:#111829; border-top:2px solid rgba(253,184,19,0.4); font-weight:900;">
-                            <td style="padding:12px 14px; color:#fdb813;">Selected Range Total (${filteredDaily.length} Day${filteredDaily.length === 1 ? '' : 's'})</td>
-                            <td style="padding:12px 14px; color:#fff;">${rangeUnique}</td>
-                            <td style="padding:12px 14px; color:#cbd5e1;">${rangeVisits}</td>
-                            <td style="padding:12px 14px; color:#38bdf8;">${rangeMob} <span style="font-size:11px; color:#94a3b8; font-weight:600;">(App: ${rangeMobPwa} • Web: ${rangeMobWeb})</span></td>
-                            <td style="padding:12px 14px; color:#c084fc;">${rangePc}</td>
-                            <td style="padding:12px 14px; color:#10b981;">${rangeSignedIn}</td>
-                            <td style="padding:12px 14px; color:#f59e0b;">${rangeGuests}</td>
+                    <tfoot style="position:sticky; bottom:0; z-index:3;">
+                        <tr style="background:#111829; border-top:2px solid rgba(253,184,19,0.45); font-weight:900;">
+                            <td style="padding:12px; color:#fdb813; white-space:nowrap;">Range Total (${filteredDaily.length}d)</td>
+                            <td style="padding:12px; color:#fff;">${rangeUnique}</td>
+                            <td style="padding:12px; color:#cbd5e1;">${rangeVisits}</td>
+                            <td style="padding:12px; color:#38bdf8; white-space:nowrap;">${rangeMob} <span style="font-size:10.5px; color:#94a3b8; font-weight:600;">(App: ${rangeMobPwa} • Web: ${rangeMobWeb})</span></td>
+                            <td style="padding:12px; color:#c084fc; white-space:nowrap;">${rangePc} <span style="font-size:10.5px; color:#94a3b8; font-weight:600;">(App: ${rangePcPwa} • Web: ${rangePcWeb})</span></td>
+                            <td style="padding:12px; color:#fdb813; white-space:nowrap;">${rangeInstMob + rangeInstPc} <span style="font-size:10.5px; color:#94a3b8; font-weight:600;">(📱${rangeInstMob} • 💻${rangeInstPc})</span></td>
+                            <td style="padding:12px; color:#10b981;">${rangeSignedIn}</td>
+                            <td style="padding:12px; color:#f59e0b;">${rangeGuests}</td>
                         </tr>
-                    </tfoot>` : ''}
+                    </tfoot>
                 </table>
             </div>
         </div>
@@ -6298,7 +6400,7 @@ function renderAdminUsersAndTrafficDashboard() {
         <div class="admin-panel-card" style="padding:20px; margin-bottom:0;">
             <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:14px;">
                 <h3 style="margin:0; font-size:17px; color:#fff;">👥 Registered Signed-In Students <span style="font-size:12px; background:rgba(16,185,129,0.16); color:#10b981; border:1px solid rgba(16,185,129,0.4); padding:3px 10px; border-radius:20px; margin-left:6px;">${totalSignedInUsers} Total</span></h3>
-                <input type="text" class="input-field" placeholder="🔍 Search name, email or device..." value="${adminAnalyticsState.searchQuery.replace(/"/g, '&quot;')}" oninput="filterAdminUsersTableLive(this.value)" style="margin:0; width:260px; max-width:100%; padding:8px 12px; font-size:13px;">
+                <input type="text" class="input-field" placeholder="🔍 Search name, email, device or app..." value="${adminAnalyticsState.searchQuery.replace(/"/g, '&quot;')}" oninput="filterAdminUsersTableLive(this.value)" style="margin:0; width:270px; max-width:100%; padding:8px 12px; font-size:13px;">
             </div>
             <div id="adminRegisteredStudentsTableMount" style="overflow-x:auto;"></div>
         </div>
@@ -6310,7 +6412,7 @@ function renderAdminUsersAndTrafficDashboard() {
 async function loadAdminUsers() {
     const box = document.getElementById('users-table-container');
     if (!box) return;
-    box.innerHTML = `<div style="padding:35px; text-align:center; color:var(--primary-yellow); font-weight:700;">📊 Loading Visitor Traffic &amp; Students Analytics...</div>`;
+    box.innerHTML = `<div style="padding:35px; text-align:center; color:var(--primary-yellow); font-weight:700;">📊 Loading Visitor Traffic, App Installs &amp; Students Analytics...</div>`;
 
     const todayYMD = typeof getLocalYMDForAnalytics === 'function'
         ? getLocalYMDForAnalytics()
@@ -6320,7 +6422,13 @@ async function loadAdminUsers() {
 
     // 1. Load Registered Signed-In Users
     const usersList = [];
-    const historicalLoginsByDate = {};
+    const historicalUsersByDate = {};
+    const addHistUid = (ymd, uid) => {
+        if (!ymd || !uid) return;
+        if (!historicalUsersByDate[ymd]) historicalUsersByDate[ymd] = new Set();
+        historicalUsersByDate[ymd].add(uid);
+    };
+
     try {
         const uSnap = await db.collection('users').orderBy('lastLogin', 'desc').limit(500).get();
         uSnap.forEach(doc => {
@@ -6329,14 +6437,14 @@ async function loadAdminUsers() {
             const loginYMD = ms && typeof getLocalYMDForAnalytics === 'function'
                 ? getLocalYMDForAnalytics(new Date(ms))
                 : '';
-            if (loginYMD) {
-                historicalLoginsByDate[loginYMD] = (historicalLoginsByDate[loginYMD] || 0) + 1;
-            }
+            if (loginYMD) addHistUid(loginYMD, doc.id);
+
             usersList.push({
                 id: doc.id,
                 displayName: d.displayName || 'User',
                 email: d.email || '-',
                 lastDevice: d.lastDevice || '',
+                installedPwa: d.installedPwa || '',
                 currentStreak: d.currentStreak || 0,
                 lastLoginMs: ms,
                 lastLoginDate: loginYMD
@@ -6346,9 +6454,29 @@ async function loadAdminUsers() {
         console.warn('Users fetch warning:', e);
     }
 
-    // 2. Load Visitor Analytics (Overall + Date-Wise)
+    // 2. Load Historical Quiz Activity (also recovers true past active signed-in dates)
+    let totalQuizzes = 0;
+    let todayQuizzes = 0;
+    try {
+        const lbSnap = await db.collection('leaderboards').limit(1500).get();
+        totalQuizzes = lbSnap.size;
+        lbSnap.forEach(doc => {
+            const d = doc.data();
+            if (d && d.timestamp && typeof d.timestamp.toDate === 'function') {
+                const ymd = typeof getLocalYMDForAnalytics === 'function'
+                    ? getLocalYMDForAnalytics(d.timestamp.toDate())
+                    : '';
+                if (ymd) {
+                    if (ymd === todayYMD) todayQuizzes++;
+                    if (d.userId) addHistUid(ymd, d.userId);
+                }
+            }
+        });
+    } catch (e) {}
+
+    // 3. Load Visitor & Install Analytics (Overall + Date-Wise)
     let overallDoc = {};
-    const dailyMap = new Map();
+    const dailyMapObj = {};
     try {
         const aSnap = await db.collection('site_analytics').get();
         aSnap.forEach(doc => {
@@ -6357,38 +6485,25 @@ async function loadAdminUsers() {
                 overallDoc = d;
             } else if (doc.id.startsWith('day_') || d.date) {
                 const dateKey = d.date || doc.id.replace(/^day_/, '');
-                dailyMap.set(dateKey, { date: dateKey, ...d });
+                dailyMapObj[dateKey] = { date: dateKey, ...d };
             }
         });
     } catch (e) {
         adminAnalyticsState.analyticsPermError = e.message || 'Permission denied';
     }
 
-    // Merge historical signed-in dates so past dates with logins also appear in the table
-    Object.keys(historicalLoginsByDate).forEach(ymd => {
-        const existing = dailyMap.get(ymd) || { date: ymd };
-        existing.signedInVisitors = Math.max(Number(existing.signedInVisitors) || 0, historicalLoginsByDate[ymd]);
-        dailyMap.set(ymd, existing);
+    // Merge real historical signed-in user counts per date (deduplicated via Set)
+    Object.keys(historicalUsersByDate).forEach(ymd => {
+        const existing = dailyMapObj[ymd] || { date: ymd };
+        const trueHistCount = historicalUsersByDate[ymd].size;
+        existing.signedInVisitors = Math.max(Number(existing.signedInVisitors) || 0, trueHistCount);
+        dailyMapObj[ymd] = existing;
     });
 
-    const dailyList = Array.from(dailyMap.values()).sort((a, b) => b.date.localeCompare(a.date));
-
-    // 3. Load Quiz Activity Counts
-    let totalQuizzes = 0;
-    let todayQuizzes = 0;
-    try {
-        const lbSnap = await db.collection('leaderboards').limit(1000).get();
-        totalQuizzes = lbSnap.size;
-        lbSnap.forEach(doc => {
-            const d = doc.data();
-            if (d && d.timestamp && typeof d.timestamp.toDate === 'function') {
-                const ymd = typeof getLocalYMDForAnalytics === 'function' ? getLocalYMDForAnalytics(d.timestamp.toDate()) : '';
-                if (ymd === todayYMD) todayQuizzes++;
-            }
-        });
-    } catch (e) {}
+    const dailyList = Object.values(dailyMapObj).sort((a, b) => b.date.localeCompare(a.date));
 
     adminAnalyticsState.overall = overallDoc;
+    adminAnalyticsState.dailyMap = dailyMapObj;
     adminAnalyticsState.dailyList = dailyList;
     adminAnalyticsState.usersList = usersList;
     adminAnalyticsState.totalQuizzes = totalQuizzes;
