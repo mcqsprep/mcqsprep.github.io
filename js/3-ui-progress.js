@@ -8256,7 +8256,40 @@ async function handleLiveSearch() {
         return Array.from(keys).filter(k => k && k !== 'Daily Quiz Challenge' && !deletedSet.has(k));
     }
 
-    const difficultyOrder = ['Easy', 'Medium', 'Hard', 'Mixed'];
+    function getDirectChildKeysFromAdmin(pathArr) {
+        const deletedSet = new Set((typeof topicOverrides !== 'undefined' && topicOverrides && topicOverrides.deletedPaths) || []);
+        const fullPrefix = pathArr.join(' > ');
+        let currNode = typeof appData !== 'undefined' ? appData : {};
+        for (let seg of pathArr) {
+            if (currNode && typeof currNode === 'object' && currNode[seg] !== undefined) {
+                currNode = currNode[seg];
+            } else {
+                currNode = null;
+                break;
+            }
+        }
+        const childSet = new Set();
+        if (currNode && typeof currNode === 'object' && !Array.isArray(currNode)) {
+            Object.keys(currNode).forEach(k => {
+                const candidateFull = fullPrefix ? `${fullPrefix} > ${k}` : k;
+                if (!deletedSet.has(candidateFull)) childSet.add(k);
+            });
+        }
+        if (typeof customTopicTypes !== 'undefined') {
+            const prefixWithArrow = fullPrefix ? (fullPrefix + ' > ') : '';
+            Object.keys(customTopicTypes).forEach(dbKey => {
+                if (deletedSet.has(dbKey)) return;
+                if (!fullPrefix) {
+                    const rootSeg = dbKey.split(' > ')[0];
+                    if (rootSeg && !deletedSet.has(rootSeg)) childSet.add(rootSeg);
+                } else if (dbKey.startsWith(prefixWithArrow)) {
+                    const nextSeg = dbKey.slice(prefixWithArrow.length).split(' > ')[0];
+                    const nextFull = `${fullPrefix} > ${nextSeg}`;
+                    if (nextSeg && !deletedSet.has(nextFull)) childSet.add(nextSeg);
+                }
+            });
+        }
+        const difficultyOrder = ['Easy', 'Medium', 'Hard', 'Mixed'];
         return Array.from(childSet).sort((a, b) => {
             const cA = cleanRawTopicLabel(a);
             const cB = cleanRawTopicLabel(b);
