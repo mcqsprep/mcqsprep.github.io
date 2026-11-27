@@ -9700,3 +9700,1077 @@ renderSaAppCustomMockCard();
         }, 140);
     }
 })();
+
+// ==========================================
+// 9. COMPLETE UI MODERNIZATION SUITE (PC + MOBILE)
+//    Modernizes: Custom Practice (Step 1 & 2), Start Quiz / Empty Folder Screens,
+//    PDF Resources, Bookmarks, Doubt Diary, Results/Review & Modals
+// ==========================================
+(function initMCQsPrepRemainingViewsModernizerV1() {
+    if (window._mcqsRemainingViewsModernizerV1) return;
+    window._mcqsRemainingViewsModernizerV1 = true;
+
+    function injectModernizedRemainingViewsCSS() {
+        if (document.getElementById('mcqs-modern-remaining-views-css')) return;
+        const st = document.createElement('style');
+        st.id = 'mcqs-modern-remaining-views-css';
+        st.textContent = `
+            /* Shared Modern Shell & Stepper */
+            .mv-shell {
+                display: flex;
+                flex-direction: column;
+                gap: 16px;
+                width: 100%;
+                max-width: 1120px;
+                margin: 0 auto;
+                box-sizing: border-box;
+            }
+            .mv-stepper {
+                display: inline-flex;
+                align-items: center;
+                gap: 8px;
+                flex-wrap: wrap;
+                margin-top: 10px;
+            }
+            .mv-step-chip {
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+                padding: 4px 11px;
+                border-radius: 999px;
+                font-size: 11px;
+                font-weight: 800;
+                background: rgba(255, 255, 255, 0.05);
+                border: 1px solid rgba(255, 255, 255, 0.12);
+                color: #94a3b8;
+            }
+            .mv-step-chip.active {
+                background: rgba(253, 184, 19, 0.18);
+                border-color: rgba(253, 184, 19, 0.55);
+                color: #fdb813;
+            }
+            .mv-step-chip.done {
+                background: rgba(16, 185, 129, 0.16);
+                border-color: rgba(16, 185, 129, 0.45);
+                color: #10b981;
+            }
+            .mv-panel {
+                background: linear-gradient(155deg, rgba(17, 23, 40, 0.96) 0%, rgba(10, 14, 24, 0.99) 100%);
+                border: 1px solid rgba(255, 255, 255, 0.09);
+                border-radius: 18px;
+                padding: 20px;
+                box-shadow: 0 12px 32px rgba(0, 0, 0, 0.48);
+                box-sizing: border-box;
+            }
+            .mv-panel-head {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                flex-wrap: wrap;
+                gap: 10px;
+                margin-bottom: 14px;
+                padding-bottom: 10px;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+            }
+            .mv-panel-title {
+                margin: 0;
+                font-size: 13.5px;
+                font-weight: 900;
+                color: #ffffff;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+                display: inline-flex;
+                align-items: center;
+                gap: 8px;
+            }
+            .mv-action-pill {
+                background: rgba(255, 255, 255, 0.06);
+                border: 1px solid rgba(255, 255, 255, 0.14);
+                color: #cbd5e1;
+                border-radius: 999px;
+                padding: 5px 12px;
+                font-size: 11.5px;
+                font-weight: 800;
+                cursor: pointer;
+                transition: all 0.16s ease;
+                font-family: inherit;
+            }
+            .mv-action-pill:hover {
+                border-color: #fdb813;
+                color: #fdb813;
+            }
+            .mv-action-pill.gold {
+                background: rgba(253, 184, 19, 0.15);
+                border-color: rgba(253, 184, 19, 0.42);
+                color: #fdb813;
+            }
+
+            /* Custom Practice Step 2 Grids & Cards */
+            .cw-multi-grid {
+                display: grid !important;
+                grid-template-columns: repeat(auto-fill, minmax(225px, 1fr)) !important;
+                gap: 10px !important;
+                max-height: 310px;
+                overflow-y: auto;
+                padding-right: 4px;
+            }
+            .cw-check-card {
+                display: flex !important;
+                align-items: center !important;
+                gap: 10px !important;
+                background: #0c1220 !important;
+                border: 1.5px solid rgba(255, 255, 255, 0.09) !important;
+                border-radius: 12px !important;
+                padding: 11px 13px !important;
+                cursor: pointer !important;
+                color: #e2e8f0 !important;
+                font-size: 13px !important;
+                font-weight: 700 !important;
+                transition: all 0.16s ease !important;
+                user-select: none !important;
+                box-sizing: border-box !important;
+            }
+            .cw-check-card:hover {
+                border-color: var(--topic-border, rgba(253, 184, 19, 0.5)) !important;
+                background: rgba(255, 255, 255, 0.04) !important;
+            }
+            .cw-check-card.selected {
+                background: linear-gradient(145deg, var(--topic-bg, rgba(253, 184, 19, 0.16)), #0d1323) !important;
+                border-color: var(--topic-color, #fdb813) !important;
+                color: #ffffff !important;
+                box-shadow: 0 6px 18px var(--topic-glow, rgba(253, 184, 19, 0.18)) !important;
+            }
+            .cw-check-card input[type="checkbox"] {
+                width: 17px !important;
+                height: 17px !important;
+                accent-color: var(--topic-color, #fdb813) !important;
+                flex-shrink: 0 !important;
+                margin: 0 !important;
+                cursor: pointer !important;
+            }
+            .cw-chapter-search-wrap {
+                position: relative;
+                margin-bottom: 12px;
+            }
+            .cw-chapter-search-input {
+                width: 100% !important;
+                background: #080c16 !important;
+                border: 1.5px solid rgba(253, 184, 19, 0.35) !important;
+                border-radius: 12px !important;
+                padding: 11px 14px !important;
+                color: #ffffff !important;
+                font-size: 13.5px !important;
+                outline: none !important;
+                box-sizing: border-box !important;
+                margin-bottom: 0 !important;
+            }
+            .cw-chapter-search-input:focus {
+                border-color: #fdb813 !important;
+                box-shadow: 0 0 0 3px rgba(253, 184, 19, 0.16) !important;
+            }
+            .cw-chapter-suggestions {
+                display: none;
+                position: absolute;
+                top: calc(100% + 6px);
+                left: 0;
+                right: 0;
+                background: #0d1527;
+                border: 1px solid rgba(253, 184, 19, 0.45);
+                border-radius: 12px;
+                max-height: 260px;
+                overflow-y: auto;
+                z-index: 950;
+                box-shadow: 0 16px 38px rgba(0, 0, 0, 0.88);
+            }
+            .cw-chapter-sug-item {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                gap: 10px;
+                padding: 11px 14px;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+                cursor: pointer;
+                font-size: 13px;
+                color: #f1f5f9;
+            }
+            .cw-chapter-sug-item:hover {
+                background: rgba(253, 184, 19, 0.12);
+            }
+            .mv-quick-pills-row {
+                display: flex;
+                gap: 7px;
+                flex-wrap: wrap;
+                margin-bottom: 10px;
+            }
+            .mv-quick-pill {
+                flex: 1;
+                min-width: 58px;
+                background: #090e1a;
+                border: 1px solid rgba(255, 255, 255, 0.12);
+                color: #cbd5e1;
+                border-radius: 10px;
+                padding: 8px 10px;
+                font-size: 12px;
+                font-weight: 800;
+                cursor: pointer;
+                text-align: center;
+                transition: all 0.15s ease;
+                font-family: inherit;
+            }
+            .mv-quick-pill.active {
+                background: #fdb813;
+                color: #000000;
+                border-color: #fdb813;
+                box-shadow: 0 4px 14px rgba(253, 184, 19, 0.3);
+            }
+            .mv-sticky-launch-bar {
+                display: flex;
+                gap: 12px;
+                flex-wrap: wrap;
+                padding-top: 14px;
+                border-top: 1px solid rgba(255, 255, 255, 0.08);
+            }
+
+            /* Modernized Quiz Results, Solutions Review & Global Modals */
+            .review-tabs {
+                display: flex !important;
+                gap: 8px !important;
+                margin-bottom: 18px !important;
+                flex-wrap: wrap !important;
+                background: #090d17;
+                padding: 6px;
+                border-radius: 12px;
+                border: 1px solid rgba(255, 255, 255, 0.08);
+            }
+            .review-tab-btn {
+                background: transparent !important;
+                border: 1px solid transparent !important;
+                color: #94a3b8 !important;
+                padding: 9px 14px !important;
+                border-radius: 9px !important;
+                font-weight: 800 !important;
+                font-size: 12px !important;
+                transition: all 0.16s ease !important;
+            }
+            .review-tab-btn.active {
+                background: rgba(253, 184, 19, 0.16) !important;
+                border-color: rgba(253, 184, 19, 0.45) !important;
+                color: #fdb813 !important;
+            }
+            .review-tab-btn.active.wrong {
+                background: rgba(239, 68, 68, 0.16) !important;
+                border-color: rgba(239, 68, 68, 0.5) !important;
+                color: #ef4444 !important;
+            }
+            .review-tab-btn.active.skipped {
+                background: rgba(56, 189, 248, 0.16) !important;
+                border-color: rgba(56, 189, 248, 0.5) !important;
+                color: #38bdf8 !important;
+            }
+            .review-item {
+                background: linear-gradient(155deg, #111829 0%, #0a0f1c 100%) !important;
+                border: 1px solid rgba(255, 255, 255, 0.09) !important;
+                border-left: 4px solid rgba(253, 184, 19, 0.65) !important;
+                border-radius: 14px !important;
+                padding: 18px !important;
+                margin-bottom: 14px !important;
+                box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4) !important;
+            }
+            .modal-content:not(.ai-fullscreen-modal) {
+                background: linear-gradient(155deg, #11182b 0%, #090e1a 100%) !important;
+                border: 1.5px solid rgba(253, 184, 19, 0.35) !important;
+                border-radius: 20px !important;
+                box-shadow: 0 24px 60px rgba(0, 0, 0, 0.85) !important;
+            }
+            .close-modal {
+                border-radius: 10px !important;
+                background: rgba(255, 255, 255, 0.06) !important;
+                border: 1px solid rgba(255, 255, 255, 0.12) !important;
+                color: #cbd5e1 !important;
+            }
+            .close-modal:hover {
+                background: rgba(239, 68, 68, 0.18) !important;
+                border-color: rgba(239, 68, 68, 0.5) !important;
+                color: #ef4444 !important;
+            }
+
+            @media (max-width: 768px) {
+                .mv-panel {
+                    padding: 15px 14px;
+                    border-radius: 15px;
+                }
+                .cw-multi-grid {
+                    grid-template-columns: 1fr !important;
+                    max-height: 260px;
+                }
+                .review-item {
+                    padding: 14px !important;
+                }
+            }
+        `;
+        document.head.appendChild(st);
+    }
+
+    const MODERN_MATH_DELIMS = [
+        { left: '$$', right: '$$', display: true },
+        { left: '$', right: '$', display: false },
+        { left: '\\(', right: '\\)', display: false },
+        { left: '\\[', right: '\\]', display: true }
+    ];
+
+    function safeRenderMath(el) {
+        if (el && typeof renderMathInElement === 'function') {
+            renderMathInElement(el, { delimiters: MODERN_MATH_DELIMS, throwOnError: false });
+        }
+    }
+
+    function getModernMarkingMeta(rootExam) {
+        const lower = String(rootExam || '').toLowerCase();
+        if (lower.includes('neet') || lower.includes('jee')) {
+            return { badge: '✔ +4 Correct • ✖ −1 Negative', color: '#fdb813' };
+        }
+        return { badge: '✔ +1 Correct • No Negative Marking', color: '#10b981' };
+    }
+
+    function getActiveRootExamsForModernUI() {
+        const deletedSet = new Set((typeof topicOverrides !== 'undefined' && topicOverrides && topicOverrides.deletedPaths) || []);
+        const keys = new Set(Object.keys(typeof appData !== 'undefined' ? appData : {}));
+        if (typeof customTopicTypes !== 'undefined') {
+            Object.keys(customTopicTypes).forEach(dbKey => {
+                if (deletedSet.has(dbKey)) return;
+                const root = dbKey.split(' > ')[0];
+                if (root && !deletedSet.has(root)) keys.add(root);
+            });
+        }
+        return Array.from(keys).filter(k => k && k !== 'Daily Quiz Challenge' && !deletedSet.has(k));
+    }
+
+    // ==========================================
+    // 1. MODERNIZED CUSTOM PRACTICE STEP 1 (FIXES SCREENSHOT)
+    // ==========================================
+    cwStep1 = function() {
+        injectModernizedRemainingViewsCSS();
+        document.body.classList.add('hide-ai-btn');
+        document.body.classList.add('hide-bottom-bar');
+
+        const mc = document.getElementById('dynamic-content');
+        if (!mc) return;
+        const bc = document.getElementById('breadcrumb-text');
+        if (bc) bc.innerText = 'Home / Custom Practice';
+
+        const excludedSet = new Set((window.customPracticeConfig && Array.isArray(window.customPracticeConfig.excludedExams)) ? window.customPracticeConfig.excludedExams : []);
+        const rootKeys = getActiveRootExamsForModernUI().filter(k => !excludedSet.has(k));
+
+        let usedColors = new Set();
+        let usedIcons = new Set();
+
+        const examCardsHtml = rootKeys.map((k, idx) => {
+            const cleanKey = typeof getTopicDisplayName === 'function' ? getTopicDisplayName([k], k) : formatCleanTopicTitle(k);
+            const customIcon = typeof getTopicDisplayIcon === 'function' ? getTopicDisplayIcon([k]) : null;
+            const safeKey = k.replace(/'/g, "\\'");
+            const th = getAutoTopicTheme(cleanKey, customIcon, idx, usedColors, '🎯', usedIcons, k);
+            const catalog = typeof buildCwCatalogForExam === 'function' ? buildCwCatalogForExam(k) : [];
+            const subjCount = catalog.length;
+            const chapCount = catalog.reduce((acc, s) => acc + (Array.isArray(s.chapters) ? s.chapters.length : 0), 0);
+            const subjPreview = catalog.slice(0, 4).map(s => {
+                const sLabel = typeof getTopicDisplayName === 'function' ? getTopicDisplayName(s.fullPath, s.label) : formatCleanTopicTitle(s.label);
+                return `<span class="mcqs-subfolder-chip" style="border-color:${th.border}; background:${th.bg}; pointer-events:none;">${sLabel}</span>`;
+            }).join('');
+
+            return `
+                <div class="mcqs-modern-subtopic-card" style="--topic-color:${th.c}; --topic-bg:${th.bg}; --topic-border:${th.border}; --topic-glow:${th.glow};" onclick="cwSetPath('${safeKey}')">
+                    <div>
+                        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px; margin-bottom:10px;">
+                            <div style="display:flex; align-items:center; gap:12px; min-width:0;">
+                                ${th.i === 'NONE' ? '' : `<div style="width:46px; height:46px; border-radius:13px; background:${th.bg}; border:1.5px solid ${th.border}; color:${th.c}; display:flex; align-items:center; justify-content:center; font-size:22px; flex-shrink:0; box-shadow:0 0 16px ${th.glow};">${th.i}</div>`}
+                                <div style="min-width:0;">
+                                    <div style="font-size:17.5px; font-weight:900; color:#ffffff; line-height:1.2;">${cleanKey}</div>
+                                    <div style="font-size:11.5px; color:#94a3b8; margin-top:3px;">${subjCount > 0 ? `${subjCount} Subject${subjCount === 1 ? '' : 's'} • ${chapCount || 'All'} Chapters` : 'Custom Mock Test Ready'}</div>
+                                </div>
+                            </div>
+                            <span style="font-size:10.5px; font-weight:800; background:${th.bg}; color:${th.c}; border:1px solid ${th.border}; padding:3px 9px; border-radius:999px; white-space:nowrap;">20–250 MCQs</span>
+                        </div>
+                        ${subjPreview ? `<div class="mcqs-subfolder-chip-row" style="margin-top:8px;">${subjPreview}${subjCount > 4 ? `<span style="font-size:10.5px; color:#94a3b8; align-self:center; font-weight:700;">+${subjCount - 4} more</span>` : ''}</div>` : ''}
+                    </div>
+
+                    <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid rgba(255,255,255,0.07); padding-top:10px; margin-top:14px; font-size:12px; font-weight:900; color:${th.c};">
+                        <span>Configure ${cleanKey} Mock Test</span>
+                        <span>Select &rarr;</span>
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        mc.innerHTML = `
+            <div class="mv-shell page-transition">
+                <div class="mcqs-inner-command-header" style="margin-bottom:0;">
+                    <div class="mcqs-crumb-bar">
+                        <span class="mcqs-crumb-pill" onclick="goHome()">🏠 Home</span>
+                        <span style="color:#475569; font-size:12px;">›</span>
+                        <span class="mcqs-crumb-pill active">🎯 Custom Practice Studio</span>
+                    </div>
+
+                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+                        <div style="display:flex; align-items:center; gap:13px;">
+                            <div style="width:48px; height:48px; border-radius:14px; background:rgba(253,184,19,0.16); border:1.5px solid rgba(253,184,19,0.5); display:flex; align-items:center; justify-content:center; font-size:24px; flex-shrink:0; box-shadow:0 0 18px rgba(253,184,19,0.22);">🎯</div>
+                            <div>
+                                <h1 style="margin:0; font-size:clamp(20px, 2.5vw, 27px); font-weight:900; color:#ffffff; line-height:1.15;">Custom Practice Setup</h1>
+                                <div style="font-size:12.5px; color:#94a3b8; margin-top:3px;">Mix multiple subjects &amp; chapters, choose your difficulty tier, and generate a tailored 20–250 MCQ mock test.</div>
+                            </div>
+                        </div>
+                        <button type="button" class="mv-action-pill" onclick="goHome()">❮ Back to Home</button>
+                    </div>
+
+                    <div class="mv-stepper">
+                        <span class="mv-step-chip active">1. Select Target Exam</span>
+                        <span style="color:#475569;">›</span>
+                        <span class="mv-step-chip">2. Subjects, Chapters &amp; Launch</span>
+                    </div>
+                </div>
+
+                <div class="mcqs-inner-subtopics-grid">
+                    ${examCardsHtml || `<div class="mv-panel" style="grid-column:1 / -1; text-align:center; color:#94a3b8;">No exams enabled for Custom Practice yet.</div>`}
+                </div>
+            </div>
+        `;
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    // ==========================================
+    // 2. MODERNIZED CUSTOM PRACTICE STEP 2 (WITH INTERACTIVE DIFFICULTY & COUNT PILLS)
+    // ==========================================
+    window.cwSetQuickDiff = function(diffVal) {
+        const sel = document.getElementById('cwDiffSelect');
+        if (sel) sel.value = diffVal;
+        document.querySelectorAll('.cw-diff-quick-pill').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.diff === diffVal);
+        });
+    };
+
+    window.cwSetQuickCount = function(numVal) {
+        const inp = document.getElementById('cwNum');
+        if (inp) inp.value = String(numVal);
+        document.querySelectorAll('.cw-count-quick-pill').forEach(btn => {
+            btn.classList.toggle('active', Number(btn.dataset.count) === Number(numVal));
+        });
+        if (typeof cwValidateLimit === 'function') cwValidateLimit();
+    };
+
+    cwStep2 = function() {
+        injectModernizedRemainingViewsCSS();
+        document.body.classList.add('hide-ai-btn');
+        document.body.classList.add('hide-bottom-bar');
+
+        const mc = document.getElementById('dynamic-content');
+        if (!mc) return;
+
+        const cleanExam = typeof getTopicDisplayName === 'function' ? getTopicDisplayName([cwPath], cwPath) : formatCleanTopicTitle(cwPath);
+        const bc = document.getElementById('breadcrumb-text');
+        if (bc) bc.innerText = `Home / Custom Practice / ${cleanExam}`;
+
+        if (!appData[cwPath]) {
+            mc.innerHTML = `
+                <div class="mv-shell page-transition">
+                    <div class="mv-panel" style="text-align:center; padding:38px 20px;">
+                        <div style="font-size:40px; margin-bottom:8px;">⚠️</div>
+                        <h2 style="margin:0 0 8px 0; color:#fff;">Exam Category Not Found</h2>
+                        <p style="color:#94a3b8; margin-bottom:20px;">Please pick an active exam category to configure your custom mock test.</p>
+                        <button class="mcqs-btn-gold" onclick="cwStep1()">❮ Back to Exam Selection</button>
+                    </div>
+                </div>`;
+            return;
+        }
+
+        cwSubjectCatalog = buildCwCatalogForExam(cwPath).map(s => ({
+            ...s,
+            label: typeof getTopicDisplayName === 'function' ? getTopicDisplayName(s.fullPath, s.label) : formatCleanTopicTitle(s.label),
+            chapters: Array.isArray(s.chapters)
+                ? s.chapters.map(c => ({
+                    ...c,
+                    label: typeof getTopicDisplayName === 'function' ? getTopicDisplayName(c.fullPath, c.label) : formatCleanTopicTitle(c.label)
+                }))
+                : []
+        }));
+
+        if (cwSelectedSubjects.length === 0 && cwSubjectCatalog.length > 0) {
+            cwSelectedSubjects = [cwSubjectCatalog[0].fullPath];
+        }
+
+        const examIcon = typeof getTopicDisplayIcon === 'function' ? getTopicDisplayIcon([cwPath]) : null;
+        const examTheme = getAutoTopicTheme(cleanExam, examIcon, 0, null, '🎯', null, cwPath);
+
+        let usedSubjColors = new Set();
+        let usedSubjIcons = new Set();
+        const subjectsGridHtml = cwSubjectCatalog.map((s, idx) => {
+            const isChecked = cwSelectedSubjects.includes(s.fullPath);
+            const cIcon = typeof getTopicDisplayIcon === 'function' ? getTopicDisplayIcon(s.fullPath) : null;
+            const iconObj = getAutoTopicTheme(s.label, cIcon, idx, usedSubjColors, '📘', usedSubjIcons, s.fullPath);
+            const chapCount = Array.isArray(s.chapters) ? s.chapters.length : 0;
+            return `
+                <label class="cw-check-card ${isChecked ? 'selected' : ''}" id="cwSubjCard_${idx}" style="--topic-color:${iconObj.c}; --topic-bg:${iconObj.bg}; --topic-border:${iconObj.border}; --topic-glow:${iconObj.glow}; border-left:4px solid ${iconObj.c} !important;">
+                    <input type="checkbox" value="${s.fullPath.replace(/"/g, '&quot;')}" ${isChecked ? 'checked' : ''} onchange="cwToggleSubject(this, ${idx})">
+                    <div style="min-width:0; flex:1;">
+                        <div style="font-size:13.5px; font-weight:800; color:#fff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${iconObj.i === 'NONE' ? '' : `${iconObj.i} `}${s.label}</div>
+                        <div style="font-size:10.5px; color:#94a3b8; margin-top:2px;">${chapCount > 0 ? `${chapCount} Chapters` : 'Direct Practice'}</div>
+                    </div>
+                </label>`;
+        }).join('');
+
+        const activeDiff = cwDiff || 'Mixed';
+        const activeLimit = Number(cwLimit) >= 20 && Number(cwLimit) <= 250 ? Number(cwLimit) : 45;
+
+        mc.innerHTML = `
+            <div class="mv-shell page-transition">
+                <div class="mcqs-inner-command-header" style="margin-bottom:0;">
+                    <div class="mcqs-crumb-bar">
+                        <span class="mcqs-crumb-pill" onclick="goHome()">🏠 Home</span>
+                        <span style="color:#475569; font-size:12px;">›</span>
+                        <span class="mcqs-crumb-pill" onclick="cwStep1()">🎯 Custom Practice</span>
+                        <span style="color:#475569; font-size:12px;">›</span>
+                        <span class="mcqs-crumb-pill active">${cleanExam}</span>
+                    </div>
+
+                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+                        <div style="display:flex; align-items:center; gap:12px;">
+                            <div style="width:46px; height:46px; border-radius:13px; background:${examTheme.bg}; border:1.5px solid ${examTheme.border}; color:${examTheme.c}; display:flex; align-items:center; justify-content:center; font-size:22px; flex-shrink:0;">
+                                ${examTheme.i === 'NONE' ? '🎯' : examTheme.i}
+                            </div>
+                            <div>
+                                <h1 style="margin:0; font-size:clamp(19px, 2.4vw, 26px); font-weight:900; color:#ffffff;">Customize Your ${cleanExam} Mock Test</h1>
+                                <div style="font-size:12px; color:#94a3b8; margin-top:3px;">Pick one or more subjects, filter chapters, set difficulty &amp; question count.</div>
+                            </div>
+                        </div>
+                        <button type="button" class="mv-action-pill" onclick="cwStep1()">❮ Change Exam</button>
+                    </div>
+
+                    <div class="mv-stepper">
+                        <span class="mv-step-chip done" onclick="cwStep1()" style="cursor:pointer;">✔ 1. ${cleanExam}</span>
+                        <span style="color:#475569;">›</span>
+                        <span class="mv-step-chip active">2. Configure &amp; Launch</span>
+                    </div>
+                </div>
+
+                <!-- 1. SUBJECT SELECTION -->
+                <div class="mv-panel">
+                    <div class="mv-panel-head">
+                        <h3 class="mv-panel-title"><span style="color:#fdb813;">1.</span> Select Subject(s)</h3>
+                        <div style="display:flex; gap:7px;">
+                            <button type="button" class="mv-action-pill gold" onclick="cwSelectAllSubjects(true)">Select All</button>
+                            <button type="button" class="mv-action-pill" onclick="cwSelectAllSubjects(false)">Clear</button>
+                        </div>
+                    </div>
+                    <div class="cw-multi-grid" id="cwSubjectsContainer">
+                        ${subjectsGridHtml || '<p style="color:#94a3b8; font-size:13px; margin:4px;">No subjects configured for this exam yet.</p>'}
+                    </div>
+                </div>
+
+                <!-- 2. CHAPTER SELECTION -->
+                <div class="mv-panel">
+                    <div class="mv-panel-head">
+                        <h3 class="mv-panel-title">
+                            <span style="color:#38bdf8;">2.</span> Select Chapters
+                            <span id="cwSelectedChapCount" style="background:rgba(253,184,19,0.16); color:#fdb813; border:1px solid rgba(253,184,19,0.4); padding:2px 9px; border-radius:999px; font-size:11px; font-weight:800;"></span>
+                        </h3>
+                        <div style="display:flex; gap:7px;">
+                            <button type="button" class="mv-action-pill gold" onclick="cwSelectAllChapters(true)">All Chapters</button>
+                            <button type="button" class="mv-action-pill" onclick="cwSelectAllChapters(false)">Clear</button>
+                        </div>
+                    </div>
+
+                    <div class="cw-chapter-search-wrap">
+                        <input type="text" id="cwChapterSearchInput" class="cw-chapter-search-input" placeholder="🔍 Search &amp; select specific chapters..." oninput="cwFilterChaptersLive()" onfocus="cwFilterChaptersLive()" onblur="setTimeout(() => { const s = document.getElementById('cwChapterSuggestions'); if(s) s.style.display='none'; }, 200)">
+                        <div id="cwChapterSuggestions" class="cw-chapter-suggestions"></div>
+                    </div>
+
+                    <div class="cw-multi-grid" id="cwChaptersContainer"></div>
+                </div>
+
+                <!-- 3 & 4. DIFFICULTY & QUESTION COUNT -->
+                <div class="mv-panel">
+                    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:20px; margin-bottom:18px;">
+                        <div>
+                            <div style="font-size:12px; font-weight:900; color:#fff; text-transform:uppercase; letter-spacing:0.4px; margin-bottom:9px;"><span style="color:#c084fc;">3.</span> Difficulty Level</div>
+                            <div class="mv-quick-pills-row">
+                                ${[
+                                    { v: 'Mixed', l: '⚡ Mixed' },
+                                    { v: 'Easy', l: '🟢 Easy' },
+                                    { v: 'Medium', l: '🟡 Med' },
+                                    { v: 'Hard', l: '🔴 Hard' }
+                                ].map(d => `<button type="button" class="mv-quick-pill cw-diff-quick-pill ${activeDiff === d.v ? 'active' : ''}" data-diff="${d.v}" onclick="cwSetQuickDiff('${d.v}')">${d.l}</button>`).join('')}
+                            </div>
+                            <select id="cwDiffSelect" class="input-field" style="font-size:13px; padding:10px 12px; margin-bottom:0;" onchange="cwSetQuickDiff(this.value)">
+                                <option value="Mixed" ${activeDiff === 'Mixed' ? 'selected' : ''}>Mixed (Real Exam Balance)</option>
+                                <option value="Easy" ${activeDiff === 'Easy' ? 'selected' : ''}>Easy (Warmup)</option>
+                                <option value="Medium" ${activeDiff === 'Medium' ? 'selected' : ''}>Medium (Standard)</option>
+                                <option value="Hard" ${activeDiff === 'Hard' ? 'selected' : ''}>Hard (Challenge)</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <div style="font-size:12px; font-weight:900; color:#fff; text-transform:uppercase; letter-spacing:0.4px; margin-bottom:9px;"><span style="color:#10b981;">4.</span> Number of Questions (20–250)</div>
+                            <div class="mv-quick-pills-row">
+                                ${[25, 45, 90, 180, 250].map(n => `<button type="button" class="mv-quick-pill cw-count-quick-pill ${activeLimit === n ? 'active' : ''}" data-count="${n}" onclick="cwSetQuickCount(${n})">${n}</button>`).join('')}
+                            </div>
+                            <input type="number" id="cwNum" class="input-field" style="font-size:13.5px; padding:10px 12px; margin-bottom:0;" value="${activeLimit}" min="20" max="250" oninput="cwValidateLimit(); document.querySelectorAll('.cw-count-quick-pill').forEach(b => b.classList.toggle('active', Number(b.dataset.count) === Number(this.value)));">
+                            <div id="cwNumCaution" style="display:none; color:#ef4444; background:rgba(239,68,68,0.12); border-left:3px solid #ef4444; padding:8px 10px; border-radius:6px; font-size:12px; font-weight:700; margin-top:8px;">
+                                ⚠️ Caution: Number of questions must be between 20 and 250.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mv-sticky-launch-bar">
+                        <button type="button" class="mcqs-btn-glass" onclick="cwStep1()" style="flex:1; min-width:140px;">❮ Change Exam</button>
+                        <button type="button" id="cwLaunchBtn" class="mcqs-btn-gold" onclick="cwLaunch()" style="flex:2; min-width:210px; padding:13px 20px; font-size:14.5px;">🚀 Launch Custom Practice</button>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        cwBuildAvailableChapters();
+        cwRenderChaptersList();
+        cwValidateLimit();
+        setTimeout(() => {
+            const dEl = document.getElementById('cwDiffSelect');
+            const nEl = document.getElementById('cwNum');
+            if (dEl) cwSetQuickDiff(dEl.value);
+            if (nEl) cwSetQuickCount(nEl.value);
+        }, 90);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    // ==========================================
+    // 3. MODERNIZED PDF RESOURCES VIEW
+    // ==========================================
+    _renderPdfResources = async function(checkPath, niceTitle) {
+        injectModernizedRemainingViewsCSS();
+        const mc = document.getElementById('dynamic-content');
+        if (!mc) return;
+
+        const cleanTitle = typeof getTopicDisplayName === 'function' ? getTopicDisplayName(currentPath, niceTitle) : formatCleanTopicTitle(niceTitle);
+        let crumbsHtml = `<span class="mcqs-crumb-pill" onclick="goHome()">🏠 Home</span>`;
+        (currentPath || []).forEach((seg, idx) => {
+            const cleanSeg = typeof getTopicDisplayName === 'function' ? getTopicDisplayName(currentPath.slice(0, idx + 1), seg) : formatCleanTopicTitle(seg);
+            const isLast = idx === currentPath.length - 1;
+            const subTrail = currentPath.slice(0, idx + 1).map(s => `'${s.replace(/'/g, "\\'")}'`).join(', ');
+            crumbsHtml += `<span style="color:#475569; font-size:12px;">›</span><span class="mcqs-crumb-pill ${isLast ? 'active' : ''}" onclick="jumpToSection([${subTrail}])">${cleanSeg}</span>`;
+        });
+
+        mc.innerHTML = `
+            <div class="mv-shell page-transition">
+                <div class="mcqs-inner-command-header" style="margin-bottom:0;">
+                    <div class="mcqs-crumb-bar">${crumbsHtml}</div>
+                    <h1 style="margin:0; font-size:clamp(20px, 2.5vw, 26px); font-weight:900; color:#fff;">📚 ${cleanTitle} Library</h1>
+                    <div style="font-size:12.5px; color:#94a3b8; margin-top:4px;">Loading PDF study materials...</div>
+                </div>
+            </div>`;
+
+        try {
+            const snap = await db.collection('content').where('path', '==', checkPath).get();
+            const items = [];
+            snap.forEach(doc => {
+                const d = doc.data();
+                if (d.type === 'material' || d.type === 'pdf' || d.fileUrl) items.push({ id: doc.id, ...d });
+            });
+
+            if (items.length === 0) {
+                mc.innerHTML = `
+                    <div class="mv-shell page-transition">
+                        <div class="mcqs-inner-command-header" style="margin-bottom:0;">
+                            <div class="mcqs-crumb-bar">${crumbsHtml}</div>
+                            <h1 style="margin:0; font-size:clamp(20px, 2.5vw, 26px); font-weight:900; color:#fff;">📚 ${cleanTitle}</h1>
+                        </div>
+                        <div class="mv-panel" style="text-align:center; padding:38px 20px;">
+                            <div style="font-size:40px; margin-bottom:8px;">📄</div>
+                            <h3 style="margin:0 0 6px 0; color:#fff;">No PDFs Uploaded Yet</h3>
+                            <p style="color:#94a3b8; font-size:13px; margin:0 0 18px 0;">Study materials added to this folder via the Admin Panel will appear here automatically.</p>
+                            <button class="mcqs-btn-glass" onclick="goBack()">❮ Go Back</button>
+                        </div>
+                    </div>`;
+                return;
+            }
+
+            items.sort((a, b) => (a.title || '').localeCompare(b.title || '', undefined, { numeric: true, sensitivity: 'base' }));
+
+            let usedColors = new Set();
+            const cardsHtml = items.map((item, idx) => {
+                const th = getAutoTopicTheme(item.title || cleanTitle, '📄', idx, usedColors, '📄', null, checkPath);
+                const encodedUrl = encodeURIComponent(item.fileUrl || '');
+                const encodedTitle = encodeURIComponent(item.title || cleanTitle || 'Study Material');
+                const readBtn = typeof openInAppMaterialViewer === 'function'
+                    ? `<button type="button" class="mcqs-btn-gold" onclick="openInAppMaterialViewer('${encodedUrl}', '${encodedTitle}')" style="padding:9px 16px; font-size:12.5px;">📖 Read PDF</button>`
+                    : '';
+                return `
+                    <div class="mv-panel" style="padding:16px 18px; border-color:${th.border}; border-left:5px solid ${th.c}; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:14px;">
+                        <div style="display:flex; align-items:center; gap:13px; min-width:200px; flex:1;">
+                            <div style="width:44px; height:44px; border-radius:12px; background:${th.bg}; border:1px solid ${th.border}; color:${th.c}; display:flex; align-items:center; justify-content:center; font-size:21px; flex-shrink:0;">📄</div>
+                            <div style="min-width:0;">
+                                <div style="font-weight:800; font-size:15px; color:#fff; line-height:1.3;">${item.title || 'Study Material'}</div>
+                                <div style="font-size:11.5px; color:#94a3b8; margin-top:3px;">${cleanTitle} • In-App Reader Ready</div>
+                            </div>
+                        </div>
+                        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                            ${readBtn}
+                            <a href="${item.fileUrl}" target="_blank" rel="noopener noreferrer" class="mcqs-btn-glass" style="padding:9px 14px; font-size:12.5px; text-decoration:none;">⬇️ Download ↗</a>
+                        </div>
+                    </div>`;
+            }).join('');
+
+            mc.innerHTML = `
+                <div class="mv-shell page-transition">
+                    <div class="mcqs-inner-command-header" style="margin-bottom:0;">
+                        <div class="mcqs-crumb-bar">${crumbsHtml}</div>
+                        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+                            <div>
+                                <h1 style="margin:0; font-size:clamp(20px, 2.5vw, 26px); font-weight:900; color:#fff;">📚 ${cleanTitle} Resources</h1>
+                                <div style="font-size:12.5px; color:#94a3b8; margin-top:3px;"><b style="color:#fdb813;">${items.length} Document${items.length === 1 ? '' : 's'}</b> available for instant reading or download.</div>
+                            </div>
+                            <button class="mv-action-pill" onclick="goBack()">❮ Back</button>
+                        </div>
+                    </div>
+                    <div style="display:flex; flex-direction:column; gap:12px;">${cardsHtml}</div>
+                </div>`;
+        } catch (e) {
+            mc.innerHTML = `<div class="mv-shell"><div class="mv-panel"><p style="color:#ef4444;">Error loading materials: ${e.message}</p></div></div>`;
+        }
+    };
+
+    // ==========================================
+    // 4. MODERNIZED BOOKMARKS VIEW
+    // ==========================================
+    _initiateBookmarkQuiz = async function() {
+        injectModernizedRemainingViewsCSS();
+        const mc = document.getElementById('dynamic-content');
+        if (!mc) return;
+        const bc = document.getElementById('breadcrumb-text');
+        if (bc) bc.innerText = 'Home / Profile / My Bookmarks';
+
+        const headerHtml = (countLabel) => `
+            <div class="mcqs-inner-command-header" style="margin-bottom:0;">
+                <div class="mcqs-crumb-bar">
+                    <span class="mcqs-crumb-pill" onclick="goHome()">🏠 Home</span>
+                    <span style="color:#475569; font-size:12px;">›</span>
+                    <span class="mcqs-crumb-pill active">🔖 My Bookmarks</span>
+                </div>
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+                    <div style="display:flex; align-items:center; gap:12px;">
+                        <div style="width:46px; height:46px; border-radius:13px; background:rgba(168,85,247,0.16); border:1.5px solid rgba(168,85,247,0.5); display:flex; align-items:center; justify-content:center; font-size:22px; flex-shrink:0;">🔖</div>
+                        <div>
+                            <h1 style="margin:0; font-size:clamp(20px, 2.5vw, 26px); font-weight:900; color:#fff;">Saved Bookmarks</h1>
+                            <div style="font-size:12.5px; color:#94a3b8; margin-top:3px;">${countLabel}</div>
+                        </div>
+                    </div>
+                    <button type="button" class="mcqs-btn-glass" onclick="openAIModal()" style="padding:8px 14px; font-size:12px;">✨ Ask AI Tutor</button>
+                </div>
+            </div>`;
+
+        if (!currentUser) {
+            mc.innerHTML = `
+                <div class="mv-shell page-transition">
+                    ${headerHtml('Sign in to sync your bookmarked questions across devices.')}
+                    <div class="mv-panel" style="text-align:center; padding:38px 20px;">
+                        <div style="font-size:42px; margin-bottom:10px;">🔒</div>
+                        <h3 style="margin:0 0 8px 0; color:#fff;">Sign In Required</h3>
+                        <p style="color:#94a3b8; font-size:13.5px; margin:0 0 20px 0;">Sign in with Google to save and revise high-yield questions.</p>
+                        <button class="mcqs-btn-gold" onclick="showAuthModal()">🔑 Sign In with Google</button>
+                    </div>
+                </div>`;
+            return;
+        }
+
+        const savedBookmarks = userBookmarks || [];
+        if (savedBookmarks.length === 0) {
+            mc.innerHTML = `
+                <div class="mv-shell page-transition">
+                    ${headerHtml('0 questions bookmarked yet.')}
+                    <div class="mv-panel" style="text-align:center; padding:40px 20px;">
+                        <div style="font-size:44px; margin-bottom:10px;">🔖</div>
+                        <h3 style="margin:0 0 8px 0; color:#fff;">No Bookmarks Yet</h3>
+                        <p style="color:#94a3b8; font-size:13.5px; margin:0 0 20px 0;">Tap <b>🔖 Save</b> on any tricky question during practice to build your personal revision deck here.</p>
+                        <button class="mcqs-btn-gold" onclick="goHome()">🚀 Explore Workspaces</button>
+                    </div>
+                </div>`;
+            return;
+        }
+
+        mc.innerHTML = `<div class="mv-shell page-transition">${headerHtml(`Loading ${savedBookmarks.length} saved question${savedBookmarks.length === 1 ? '' : 's'}...`)}</div>`;
+
+        try {
+            const allDocs = [];
+            for (let i = 0; i < savedBookmarks.length; i += 10) {
+                const chunk = savedBookmarks.slice(i, i + 10);
+                const snap = await db.collection('content').where(firebase.firestore.FieldPath.documentId(), 'in', chunk).get();
+                snap.forEach(doc => allDocs.push({ id: doc.id, ...doc.data() }));
+            }
+
+            if (allDocs.length === 0) {
+                mc.innerHTML = `<div class="mv-shell"><div class="mv-panel" style="text-align:center; color:#94a3b8;">Saved questions were not found in the question bank.</div></div>`;
+                return;
+            }
+
+            const cardsHtml = allDocs.map((q, idx) => {
+                const trailArr = (q.path || '').split(' > ').filter(Boolean);
+                const topicLbl = trailArr.length && typeof getTopicDisplayTrail === 'function'
+                    ? getTopicDisplayTrail(trailArr, ' › ')
+                    : formatCleanTopicTitle(trailArr.pop() || 'Saved Question');
+
+                return `
+                    <div class="review-item" id="bmCard_${q.id}">
+                        <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:12px;">
+                            <span style="background:rgba(168,85,247,0.15); color:#c084fc; border:1px solid rgba(168,85,247,0.4); padding:3px 10px; border-radius:999px; font-size:11px; font-weight:800;">#${idx + 1} • ${topicLbl}</span>
+                            <button onclick="removeBookmark('${q.id}')" style="background:rgba(239,68,68,0.12); border:1px solid rgba(239,68,68,0.35); color:#ef4444; border-radius:8px; padding:4px 10px; cursor:pointer; font-size:11.5px; font-weight:800;">✕ Remove</button>
+                        </div>
+                        <div style="font-weight:600; font-size:15px; line-height:1.6; margin-bottom:14px; color:#fff;" id="bmQ_${q.id}">${q.question}</div>
+                        ${q.imageUrl ? `<img src="${q.imageUrl}" style="max-height:180px; max-width:100%; border-radius:10px; margin-bottom:14px; display:block; border:1px solid rgba(255,255,255,0.12);">` : ''}
+
+                        <div style="display:grid; grid-template-columns:1fr; gap:8px; margin-bottom:14px;">
+                            ${['A', 'B', 'C', 'D'].map(opt => {
+                                const text = q.options ? q.options[opt] : '';
+                                if (!text) return '';
+                                const isCorr = (q.correctAnswers || []).includes(opt);
+                                const bg = isCorr ? 'rgba(16, 185, 129, 0.14)' : '#090e1a';
+                                const border = isCorr ? 'rgba(16, 185, 129, 0.65)' : 'rgba(255,255,255,0.08)';
+                                const col = isCorr ? '#ffffff' : '#94a3b8';
+                                return `<div style="background:${bg}; border:1px solid ${border}; color:${col}; padding:10px 14px; border-radius:10px; font-size:13.5px; display:flex; align-items:center; gap:10px;" id="bmOpt_${q.id}_${opt}">
+                                    <span style="width:24px; height:24px; border-radius:6px; background:${isCorr ? '#10b981' : 'rgba(255,255,255,0.07)'}; color:${isCorr ? '#000' : '#cbd5e1'}; display:inline-flex; align-items:center; justify-content:center; font-weight:900; font-size:11.5px; flex-shrink:0;">${opt}</span>
+                                    <span style="flex:1;">${text}</span>
+                                    ${isCorr ? '<span style="color:#10b981; font-weight:900; font-size:12px;">✔ Correct</span>' : ''}
+                                </div>`;
+                            }).join('')}
+                        </div>
+
+                        <button onclick="toggleViewAnswer('bmSol_${q.id}')" class="mv-action-pill gold">👁 View Explanation</button>
+
+                        <div id="bmSol_${q.id}" class="quiz-explanation">
+                            <strong style="color:#fdb813; display:block; margin-bottom:6px;">Explanation:</strong>
+                            <span id="bmExp_${q.id}">${q.explanation || 'No detailed explanation provided by the author.'}</span>
+                        </div>
+                    </div>`;
+            }).join('');
+
+            mc.innerHTML = `
+                <div class="mv-shell page-transition">
+                    ${headerHtml(`<b style="color:#c084fc;">${allDocs.length} Saved Question${allDocs.length === 1 ? '' : 's'}</b> ready for rapid revision.`)}
+                    <div>${cardsHtml}</div>
+                </div>`;
+
+            allDocs.forEach(q => {
+                safeRenderMath(document.getElementById('bmQ_' + q.id));
+                ['A', 'B', 'C', 'D'].forEach(opt => safeRenderMath(document.getElementById(`bmOpt_${q.id}_${opt}`)));
+                safeRenderMath(document.getElementById('bmExp_' + q.id));
+            });
+        } catch (e) {
+            mc.innerHTML = `<div class="mv-shell"><div class="mv-panel"><p style="color:#ef4444;">Error loading bookmarks: ${e.message}</p></div></div>`;
+        }
+    };
+
+    // ==========================================
+    // 5. MODERNIZED LEAF TOPIC "START QUIZ" & EMPTY FOLDER SCREENS
+    // ==========================================
+    function upgradeOldEndpointCardIfRendered() {
+        const mc = document.getElementById('dynamic-content');
+        if (!mc || !Array.isArray(currentPath) || currentPath.length === 0) return;
+
+        // Only upgrade the plain legacy endpoint cards (never touch active quizzes, folders, analytics, or PDFs)
+        const card = mc.querySelector(':scope > .card');
+        if (!card || card.dataset.mvEndpointModernized === 'true') return;
+        const startBtn = card.querySelector('button[onclick="forceStartQuiz()"]');
+        const isEmptyNotice = !startBtn && card.innerText.includes('no subtopics yet');
+        if (!startBtn && !isEmptyNotice) return;
+
+        const cleanTitle = typeof getTopicDisplayName === 'function'
+            ? getTopicDisplayName(currentPath, currentPath[currentPath.length - 1])
+            : formatCleanTopicTitle(currentPath[currentPath.length - 1]);
+        const rootExamClean = typeof getTopicDisplayName === 'function'
+            ? getTopicDisplayName([currentPath[0]], currentPath[0])
+            : formatCleanTopicTitle(currentPath[0]);
+        const customIcon = typeof getTopicDisplayIcon === 'function' ? getTopicDisplayIcon(currentPath) : null;
+        const theme = getAutoTopicTheme(cleanTitle, customIcon, 0, null, isEmptyNotice ? '📂' : '📝', null, currentPath.join(' > '));
+        const marking = getModernMarkingMeta(rootExamClean);
+
+        let crumbsHtml = `<span class="mcqs-crumb-pill" onclick="goHome()">🏠 Home</span>`;
+        currentPath.forEach((seg, idx) => {
+            const cleanSeg = typeof getTopicDisplayName === 'function' ? getTopicDisplayName(currentPath.slice(0, idx + 1), seg) : formatCleanTopicTitle(seg);
+            const isLast = idx === currentPath.length - 1;
+            const subTrail = currentPath.slice(0, idx + 1).map(s => `'${s.replace(/'/g, "\\'")}'`).join(', ');
+            crumbsHtml += `<span style="color:#475569; font-size:12px;">›</span><span class="mcqs-crumb-pill ${isLast ? 'active' : ''}" onclick="jumpToSection([${subTrail}])">${cleanSeg}</span>`;
+        });
+
+        const studentName = (currentUser && currentUser.displayName) ? currentUser.displayName.split(' ')[0] : 'Student';
+
+        if (isEmptyNotice) {
+            mc.innerHTML = `
+                <div class="mv-shell page-transition">
+                    <div class="mcqs-inner-command-header" style="margin-bottom:0;">
+                        <div class="mcqs-crumb-bar">${crumbsHtml}</div>
+                        <div style="display:flex; align-items:center; gap:12px;">
+                            <div style="width:46px; height:46px; border-radius:13px; background:${theme.bg}; border:1.5px solid ${theme.border}; color:${theme.c}; display:flex; align-items:center; justify-content:center; font-size:22px; flex-shrink:0;">${theme.i === 'NONE' ? '📂' : theme.i}</div>
+                            <div>
+                                <h1 style="margin:0; font-size:clamp(20px, 2.5vw, 26px); font-weight:900; color:#fff;">${cleanTitle}</h1>
+                                <div style="font-size:12px; color:#94a3b8; margin-top:2px;">${rootExamClean} Module</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mv-panel" style="text-align:center; padding:40px 20px;">
+                        <div style="font-size:40px; margin-bottom:10px;">📂</div>
+                        <h3 style="margin:0 0 8px 0; color:#fff;">Coming Soon</h3>
+                        <p style="color:#94a3b8; font-size:13.5px; max-width:420px; margin:0 auto 20px auto; line-height:1.55;">This section has no subtopics or files uploaded yet. Content added from the Admin Panel will show up here immediately.</p>
+                        <button class="mcqs-btn-glass" onclick="goBack()">❮ Go Back</button>
+                    </div>
+                </div>`;
+            return;
+        }
+
+        const isDaily = currentPath[0] === 'Daily Quiz Challenge';
+        mc.innerHTML = `
+            <div class="mv-shell page-transition">
+                <div class="mcqs-inner-command-header" style="margin-bottom:0;">
+                    <div class="mcqs-crumb-bar">${crumbsHtml}</div>
+                    <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
+                        <div style="display:flex; align-items:center; gap:13px;">
+                            <div style="width:48px; height:48px; border-radius:14px; background:${theme.bg}; border:1.5px solid ${theme.border}; color:${theme.c}; display:flex; align-items:center; justify-content:center; font-size:24px; flex-shrink:0; box-shadow:0 0 18px ${theme.glow};">${theme.i === 'NONE' ? '📝' : theme.i}</div>
+                            <div>
+                                <h1 style="margin:0; font-size:clamp(20px, 2.5vw, 27px); font-weight:900; color:#fff;">${isDaily ? `${cleanTitle} — Daily Quiz` : `${cleanTitle} Practice`}</h1>
+                                <div style="font-size:12.5px; color:#94a3b8; margin-top:3px;">${!currentUser ? 'Sign in to track your scores &amp; rank on the leaderboard.' : `Ready for practice, <b style="color:#fdb813;">${studentName}</b>?`}</div>
+                            </div>
+                        </div>
+                        <span style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.14); color:${marking.color}; padding:5px 12px; border-radius:999px; font-size:11.5px; font-weight:800;">${marking.badge}</span>
+                    </div>
+                </div>
+
+                <div class="mv-panel" style="display:flex; flex-direction:column; gap:16px;">
+                    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(170px, 1fr)); gap:10px;">
+                        <div style="background:#090d17; border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:12px 14px;">
+                            <div style="font-size:10.5px; color:#94a3b8; font-weight:800; text-transform:uppercase;">📚 Exam Suite</div>
+                            <div style="font-size:14px; font-weight:800; color:#fff; margin-top:4px;">${rootExamClean}</div>
+                        </div>
+                        <div style="background:#090d17; border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:12px 14px;">
+                            <div style="font-size:10.5px; color:#94a3b8; font-weight:800; text-transform:uppercase;">⏱️ Live Timer &amp; Analytics</div>
+                            <div style="font-size:14px; font-weight:800; color:#38bdf8; margin-top:4px;">Auto-Tracked</div>
+                        </div>
+                        <div style="background:#090d17; border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:12px 14px;">
+                            <div style="font-size:10.5px; color:#94a3b8; font-weight:800; text-transform:uppercase;">📖 Instant Solutions</div>
+                            <div style="font-size:14px; font-weight:800; color:#10b981; margin-top:4px;">After Submission</div>
+                        </div>
+                    </div>
+
+                    <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                        <button type="button" class="mcqs-btn-gold" onclick="forceStartQuiz()" style="flex:2; min-width:200px; padding:13px 22px; font-size:15px;">🚀 Start Practice Quiz &rarr;</button>
+                        <button type="button" class="mcqs-btn-glass" onclick="goBack()" style="flex:1; min-width:120px;">❮ Go Back</button>
+                    </div>
+                </div>
+            </div>`;
+    }
+
+    const _origRenderViewBeforeModernizerV1 = _renderView;
+    _renderView = function() {
+        injectModernizedRemainingViewsCSS();
+        _origRenderViewBeforeModernizerV1();
+        upgradeOldEndpointCardIfRendered();
+    };
+
+    // ==========================================
+    // 6. MODERNIZED DOUBT DIARY (SAFE HOOK AFTER 5-AI-TUTOR.JS LOADS)
+    // ==========================================
+    function installModernDoubtDiaryHook() {
+        if (window._mcqsModernDoubtDiaryInstalled) return;
+        window._mcqsModernDoubtDiaryInstalled = true;
+
+        window._renderDoubtDiary = async function() {
+            injectModernizedRemainingViewsCSS();
+            const mc = document.getElementById('dynamic-content');
+            if (!mc) return;
+            const bc = document.getElementById('breadcrumb-text');
+            if (bc) bc.innerText = 'Home / Profile / Doubt Diary';
+
+            const head = (sub) => `
+                <div class="mcqs-inner-command-header" style="margin-bottom:0;">
+                    <div class="mcqs-crumb-bar">
+                        <span class="mcqs-crumb-pill" onclick="goHome()">🏠 Home</span>
+                        <span style="color:#475569; font-size:12px;">›</span>
+                        <span class="mcqs-crumb-pill active">📔 Doubt Diary</span>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+                        <div style="display:flex; align-items:center; gap:12px;">
+                            <div style="width:46px; height:46px; border-radius:13px; background:rgba(253,184,19,0.16); border:1.5px solid rgba(253,184,19,0.5); display:flex; align-items:center; justify-content:center; font-size:22px; flex-shrink:0;">📔</div>
+                            <div>
+                                <h1 style="margin:0; font-size:clamp(20px, 2.5vw, 26px); font-weight:900; color:#fff;">Personal Doubt Diary</h1>
+                                <div style="font-size:12.5px; color:#94a3b8; margin-top:3px;">${sub}</div>
+                            </div>
+                        </div>
+                        <button type="button" class="mcqs-btn-gold" onclick="openAIModal()" style="padding:9px 15px; font-size:12px;">✨ Ask New Doubt</button>
+                    </div>
+                </div>`;
+
+            if (!currentUser) {
+                mc.innerHTML = `
+                    <div class="mv-shell page-transition">
+                        ${head('Sign in to access your saved AI explanations.')}
+                        <div class="mv-panel" style="text-align:center; padding:38px 20px;">
+                            <div style="font-size:42px; margin-bottom:10px;">🔒</div>
+                            <h3 style="margin:0 0 8px 0; color:#fff;">Sign In Required</h3>
+                            <p style="color:#94a3b8; font-size:13.5px; margin:0 0 20px 0;">Sign in to store step-by-step AI solutions in your personal Doubt Diary.</p>
+                            <button class="mcqs-btn-gold" onclick="showAuthModal()">🔑 Sign In with Google</button>
+                        </div>
+                    </div>`;
+                return;
+            }
+
+            mc.innerHTML = `<div class="mv-shell page-transition">${head('Loading your saved AI explanations...')}</div>`;
+
+            try {
+                const snap = await db.collection('ai_doubt_diary').where('userId', '==', currentUser.uid).limit(50).get();
+                const items = [];
+                snap.forEach(doc => items.push({ id: doc.id, ...doc.data() }));
+                items.sort((a, b) => (b.timestamp?.toMillis() || 0) - (a.timestamp?.toMillis() || 0));
+
+                if (items.length === 0) {
+                    mc.innerHTML = `
+                        <div class="mv-shell page-transition">
+                            ${head('0 doubts saved yet.')}
+                            <div class="mv-panel" style="text-align:center; padding:40px 20px;">
+                                <div style="font-size:44px; margin-bottom:10px;">📔</div>
+                                <h3 style="margin:0 0 8px 0; color:#fff;">Your Doubt Diary is Empty</h3>
+                                <p style="color:#94a3b8; font-size:13.5px; max-width:420px; margin:0 auto 20px auto; line-height:1.55;">Ask the AI Tutor any textbook question and tap <b>Save to Doubt Diary</b> to keep it here for quick revision.</p>
+                                <button class="mcqs-btn-gold" onclick="openAIModal()">✨ Open AI Tutor</button>
+                            </div>
+                        </div>`;
+                    return;
+                }
+
+                const cardsHtml = items.map((d, idx) => {
+                    const dateStr = d.timestamp ? new Date(d.timestamp.toMillis()).toLocaleDateString() : '';
+                    const sol = d.solution || {};
+                    const md = `**Core Concept:** ${sol.keyConcept || ''}\n\n**Step-by-Step:**\n${sol.stepByStep || ''}\n\n**Final Answer:** ${sol.finalAnswer || ''}`;
+                    const formattedSol = typeof formatTextWithMath === 'function' ? formatTextWithMath(md) : md;
+                    return `
+                        <div class="review-item">
+                            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:10px;">
+                                <span style="background:rgba(253,184,19,0.14); color:#fdb813; border:1px solid rgba(253,184,19,0.4); padding:3px 10px; border-radius:999px; font-size:11px; font-weight:800;">#${idx + 1} • ${d.subject || 'General'}</span>
+                                <span style="font-size:11.5px; color:#94a3b8; font-weight:700;">📅 ${dateStr}</span>
+                            </div>
+                            <div style="font-weight:700; font-size:15px; color:#fff; line-height:1.55; margin-bottom:12px;">${d.questionText}</div>
+                            <button onclick="toggleViewAnswer('diary_sol_${d.id}')" class="mv-action-pill gold">👁 View Step-by-Step Solution</button>
+                            <div id="diary_sol_${d.id}" class="quiz-explanation katex-render-target">${formattedSol}</div>
+                        </div>`;
+                }).join('');
+
+                mc.innerHTML = `
+                    <div class="mv-shell page-transition">
+                        ${head(`<b style="color:#fdb813;">${items.length} Saved Explanation${items.length === 1 ? '' : 's'}</b> synced to your account.`)}
+                        <div>${cardsHtml}</div>
+                    </div>`;
+
+                document.querySelectorAll('.katex-render-target').forEach(safeRenderMath);
+            } catch (e) {
+                mc.innerHTML = `<div class="mv-shell"><div class="mv-panel"><p style="color:#ef4444;">Error loading Doubt Diary: ${e.message}</p></div></div>`;
+            }
+        };
+    }
+
+    injectModernizedRemainingViewsCSS();
+    window.addEventListener('DOMContentLoaded', installModernDoubtDiaryHook);
+    window.addEventListener('load', installModernDoubtDiaryHook);
+    if (document.readyState === 'complete' || document.readyState === 'interactive') {
+        setTimeout(installModernDoubtDiaryHook, 150);
+    }
+})();
