@@ -223,9 +223,70 @@ function isValidCustomEmojiIcon(customIcon, displayKey = "") {
     return true;
 }
 
-function formatCleanTopicTitle(rawText) {
+function cleanRawTopicLabel(rawText) {
     let str = String(rawText || "").replace(/^\d+\.\s*/, '').trim();
     return str.replace(/\bCLass\b/g, "Class").replace(/\bcLass\b/g, "Class");
+}
+
+function getTopicDisplayName(fullPathOrArray, fallbackRawKey = "") {
+    const pathStr = Array.isArray(fullPathOrArray)
+        ? fullPathOrArray.filter(Boolean).join(" > ")
+        : String(fullPathOrArray || "").trim();
+    const rawLeaf = fallbackRawKey
+        || (Array.isArray(fullPathOrArray) ? fullPathOrArray[fullPathOrArray.length - 1] : pathStr.split(" > ").pop())
+        || "";
+    const editedMeta = (typeof topicOverrides !== 'undefined' && topicOverrides && topicOverrides.editedPaths && topicOverrides.editedPaths[pathStr]) || null;
+    const customMeta = (typeof customTopicTypes !== 'undefined' && customTopicTypes && customTopicTypes[pathStr]) || null;
+    const overridden = (editedMeta && (editedMeta.displayName || editedMeta.name))
+        || (customMeta && (customMeta.displayName || customMeta.name))
+        || "";
+    return cleanRawTopicLabel(overridden || rawLeaf);
+}
+
+function getTopicDisplayTrail(pathArray, sep = " / ") {
+    if (!Array.isArray(pathArray) || pathArray.length === 0) return "";
+    return pathArray.map((seg, idx) => getTopicDisplayName(pathArray.slice(0, idx + 1), seg)).join(sep);
+}
+
+function getTopicDisplayIcon(fullPathOrArray) {
+    const pathStr = Array.isArray(fullPathOrArray)
+        ? fullPathOrArray.filter(Boolean).join(" > ")
+        : String(fullPathOrArray || "").trim();
+    const editedMeta = (typeof topicOverrides !== 'undefined' && topicOverrides && topicOverrides.editedPaths && topicOverrides.editedPaths[pathStr]) || null;
+    const customMeta = (typeof customTopicTypes !== 'undefined' && customTopicTypes && customTopicTypes[pathStr]) || null;
+    if (editedMeta && editedMeta.icon) return editedMeta.icon;
+    if (customMeta && customMeta.icon) return customMeta.icon;
+    return null;
+}
+
+function resolveAdminLinkTitle(item) {
+    const rawPath = item && item.path ? String(item.path) : "";
+    const parts = rawPath.split(" > ").filter(Boolean);
+    let baseTitle = (item && item.title) ? String(item.title).trim() : "";
+    if (!baseTitle && parts.length > 0) {
+        baseTitle = getTopicDisplayName(parts, parts[parts.length - 1]);
+    }
+    if (parts.length > 0) {
+        const rootRaw = parts[0];
+        const rootDisp = getTopicDisplayName([rootRaw], rootRaw);
+        if (rootDisp && rootDisp !== rootRaw) {
+            const esc = rootRaw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            baseTitle = baseTitle.replace(new RegExp(`\\(${esc}\\)`, 'g'), `(${rootDisp})`);
+            if (baseTitle === rootRaw) baseTitle = rootDisp;
+        }
+    }
+    return cleanRawTopicLabel(baseTitle);
+}
+
+function formatCleanTopicTitle(rawText) {
+    const raw = String(rawText || "").trim();
+    if (!raw) return "";
+    const editedMeta = (typeof topicOverrides !== 'undefined' && topicOverrides && topicOverrides.editedPaths && topicOverrides.editedPaths[raw]) || null;
+    const customMeta = (typeof customTopicTypes !== 'undefined' && customTopicTypes && customTopicTypes[raw]) || null;
+    const overridden = (editedMeta && (editedMeta.displayName || editedMeta.name))
+        || (customMeta && (customMeta.displayName || customMeta.name))
+        || "";
+    return cleanRawTopicLabel(overridden || raw);
 }
 
 // Complete Granular Icon Dictionary (Every subtopic, state, board & chapter has its own distinct icon)
@@ -2607,13 +2668,14 @@ async function handleLiveSearch() {
     let topicMatchesMap = new Map();
     let deletedSet = new Set((topicOverrides && topicOverrides.deletedPaths) || []);
 
-    function scanTopics(obj, pathArr = []) {
+   function scanTopics(obj, pathArr = []) {
         for (let k in obj) {
             if (k === "Daily Quiz Challenge") continue;
             let nextPath = [...pathArr, k];
             let fullStr = nextPath.join(' > ');
             if (deletedSet.has(fullStr)) continue;
-            if (k.toLowerCase().includes(qLower)) {
+            let dispName = getTopicDisplayName(nextPath, k).toLowerCase();
+            if (k.toLowerCase().includes(qLower) || dispName.includes(qLower)) {
                 topicMatchesMap.set(fullStr, nextPath);
             }
             if (obj[k] && typeof obj[k] === 'object' && !Array.isArray(obj[k])) {
@@ -2626,23 +2688,24 @@ async function handleLiveSearch() {
     Object.keys(customTopicTypes).forEach(fullStr => {
         if (deletedSet.has(fullStr) || fullStr.startsWith("Daily Quiz Challenge")) return;
         let parts = fullStr.split(' > ').filter(Boolean);
-        let leaf = parts[parts.length - 1] || '';
-        if (leaf.toLowerCase().includes(qLower) && !topicMatchesMap.has(fullStr)) {
+        let leafRaw = parts[parts.length - 1] || '';
+        let leafDisp = getTopicDisplayName(parts, leafRaw).toLowerCase();
+        if ((leafRaw.toLowerCase().includes(qLower) || leafDisp.includes(qLower)) && !topicMatchesMap.has(fullStr)) {
             topicMatchesMap.set(fullStr, parts);
         }
     });
 
     Array.from(topicMatchesMap.values()).slice(0, 6).forEach((pathArr) => {
         let fullStr = pathArr.join(' > ');
-        let leaf = formatCleanTopicTitle(pathArr[pathArr.length - 1]);
-        let smartIcon = getAutomaticIconForName(leaf, null, fullStr);
+        let leaf = getTopicDisplayName(pathArr);
+        let customIcon = getTopicDisplayIcon(pathArr);
+        let smartIcon = (customIcon && customIcon !== 'NONE') ? customIcon : getAutomaticIconForName(leaf, null, fullStr);
         let encodedPath = pathArr.map(encodeURIComponent).join('/');
         html += `<div class="search-result-item" onmousedown="window.location.hash='#/path/${encodedPath}'; closeSearch();">
             <div style="font-size:13px; color:var(--primary-yellow); font-weight:700; margin-bottom:2px;">${smartIcon} ${leaf}</div>
-            <div style="font-size:11px; color:var(--text-muted);">${pathArr.map(s => formatCleanTopicTitle(s)).join(' > ')}</div>
+            <div style="font-size:11px; color:var(--text-muted);">${getTopicDisplayTrail(pathArr, ' > ')}</div>
         </div>`;
-    });
-
+    }); 
     try {
         const snap = await db.collection("content")
             .where("question", ">=", rawQuery)
@@ -5396,10 +5459,9 @@ async function handleLiveSearch() {
         let usedIcons = new Set();
 
         const cardsHtml = inv.exams.map((exKey, idx) => {
-            const cleanEx = formatCleanTopicTitle(exKey);
+            const cleanEx = getTopicDisplayName([exKey], exKey);
             const safeEx = exKey.replace(/'/g, "\\'");
-            const topicType = customTopicTypes[exKey];
-            const customIcon = topicType ? (typeof topicType === 'object' ? topicType.icon : null) : null;
+            const customIcon = getTopicDisplayIcon([exKey]);
             const th = getAutoTopicTheme(cleanEx, customIcon, idx, usedColors, '📘', usedIcons, exKey);
 
             const st = realStudentDiagnosticsCache.byExam?.[exKey];
@@ -5411,17 +5473,22 @@ async function handleLiveSearch() {
             let folderChipsHtml = '';
             if (directFolders.length > 0) {
                 let chipColorSet = new Set();
-                folderChipsHtml = directFolders.map((childKey, cIdx) => {
-                    const cleanChild = formatCleanTopicTitle(childKey);
+                const visibleFolders = directFolders.slice(0, 6);
+                folderChipsHtml = visibleFolders.map((childKey, cIdx) => {
                     const childFull = `${exKey} > ${childKey}`;
-                    const chipTheme = getAutoTopicTheme(cleanChild, null, cIdx, chipColorSet, '📘', null, childFull);
+                    const cleanChild = getTopicDisplayName([exKey, childKey], childKey);
+                    const childCustomIcon = getTopicDisplayIcon([exKey, childKey]);
+                    const chipTheme = getAutoTopicTheme(cleanChild, childCustomIcon, cIdx, chipColorSet, '📘', null, childFull);
                     const safeChild = childKey.replace(/'/g, "\\'");
                     return `
                         <span class="mcqs-subfolder-chip" style="border-color:${chipTheme.border}; background:${chipTheme.bg};" onclick="event.stopPropagation(); jumpToSection(['${safeEx}', '${safeChild}'])">
-                            <span style="color:${chipTheme.c};">${chipTheme.i}</span> <span>${cleanChild}</span>
+                            ${chipTheme.i === 'NONE' ? '' : `<span style="color:${chipTheme.c};">${chipTheme.i}</span>`} <span>${cleanChild}</span>
                         </span>
                     `;
                 }).join('');
+                if (directFolders.length > 6) {
+                    folderChipsHtml += `<span class="mcqs-subfolder-chip" style="border-color:${th.border}; background:${th.bg}; color:${th.c};">+${directFolders.length - 6} more &rarr;</span>`;
+                }
             } else {
                 folderChipsHtml = `
                     <span class="mcqs-subfolder-chip" style="border-color:rgba(6,182,212,0.5); background:rgba(6,182,212,0.12);" onclick="event.stopPropagation(); jumpToSection(['${safeEx}'])">📝 Practice MCQs</span>
@@ -5470,9 +5537,9 @@ async function handleLiveSearch() {
 
         let usedColorsQ = new Set();
         const qHtml = quickLinksList.map((item, idx) => {
-            const displayTitle = formatCleanTopicTitle(item.title || item.path.split(' > ').pop() || '');
+            const displayTitle = resolveAdminLinkTitle(item);
             const encodedPath = encodeURIComponent(item.path);
-            const th = getAutoTopicTheme(displayTitle, item.icon || null, idx, usedColorsQ, '📚', null, item.path);
+            const th = getAutoTopicTheme(displayTitle, item.icon || getTopicDisplayIcon(item.path), idx, usedColorsQ, '📚', null, item.path);
             return `
                 <div class="mcqs-modern-link-item" style="--link-color:${th.c}; --link-bg:${th.bg}; --link-border:${th.border}; --link-glow:${th.glow};" onclick="openSidebarItem('${encodedPath}')">
                     <div style="display:flex; align-items:center; gap:10px; min-width:0;">
@@ -5500,9 +5567,9 @@ async function handleLiveSearch() {
 
         essentialList.forEach((item, idx) => {
             if (item.path === 'Daily Quiz Challenge') return;
-            const displayTitle = formatCleanTopicTitle(item.title || item.path.split(' > ').pop() || '');
+            const displayTitle = resolveAdminLinkTitle(item);
             const encodedPath = encodeURIComponent(item.path);
-            const th = getAutoTopicTheme(displayTitle, item.icon || null, idx + 4, usedColorsE, '📝', null, item.path);
+            const th = getAutoTopicTheme(displayTitle, item.icon || getTopicDisplayIcon(item.path), idx + 4, usedColorsE, '📝', null, item.path);
             eHtml += `
                 <div class="mcqs-modern-link-item" style="--link-color:${th.c}; --link-bg:${th.bg}; --link-border:${th.border}; --link-glow:${th.glow};" onclick="openSidebarItem('${encodedPath}')">
                     <div style="display:flex; align-items:center; gap:10px; min-width:0;">
@@ -5582,17 +5649,17 @@ async function handleLiveSearch() {
         }
 
         const folderRaw = currentPath[currentPath.length - 1];
-        const folderClean = formatCleanTopicTitle(folderRaw);
+        const folderClean = getTopicDisplayName(currentPath, folderRaw);
         const rootExam = currentPath[0];
-        const cleanRootExam = formatCleanTopicTitle(rootExam);
+        const cleanRootExam = getTopicDisplayName([rootExam], rootExam);
         const safeRootExamJs = rootExam.replace(/'/g, "\\'");
 
-        const folderTheme = getAutoTopicTheme(folderClean, (customTopicTypes[checkPath]?.icon || null), 0, null, '📂', null, checkPath);
+        const folderTheme = getAutoTopicTheme(folderClean, getTopicDisplayIcon(currentPath), 0, null, '📂', null, checkPath);
         const pathStats = getRealStatsForPathPrefix(checkPath);
 
         let crumbsHtml = `<span class="mcqs-crumb-pill" onclick="goHome()">🏠 Home</span>`;
         currentPath.forEach((seg, idx) => {
-            const cleanSeg = formatCleanTopicTitle(seg);
+            const cleanSeg = getTopicDisplayName(currentPath.slice(0, idx + 1), seg);
             const isLast = idx === currentPath.length - 1;
             const subTrail = currentPath.slice(0, idx + 1).map(s => `'${s.replace(/'/g, "\\'")}'`).join(', ');
             crumbsHtml += `<span style="color:#475569; font-size:12px;">›</span>`;
@@ -5660,12 +5727,13 @@ async function handleLiveSearch() {
                 } else {
                     let subChipColors = new Set();
                     const previewChips = grandChildren.slice(0, 4).map((gk, gIdx) => {
-                        const cleanG = formatCleanTopicTitle(gk);
-                        const gTheme = getAutoTopicTheme(cleanG, null, gIdx, subChipColors, '📘', null, `${fullChildPath} > ${gk}`);
+                        const gFull = `${fullChildPath} > ${gk}`;
+                        const cleanG = getTopicDisplayName(gFull, gk);
+                        const gTheme = getAutoTopicTheme(cleanG, getTopicDisplayIcon(gFull), gIdx, subChipColors, '📘', null, gFull);
                         const safeGk = gk.replace(/'/g, "\\'");
                         return `
                             <span class="mcqs-subfolder-chip" style="border-color:${gTheme.border}; background:${gTheme.bg};" onclick="event.stopPropagation(); jumpToSection([${currentTrailJs}, '${safeKey}', '${safeGk}'])">
-                                <span style="color:${gTheme.c};">${gTheme.i}</span> <span>${cleanG}</span>
+                                ${gTheme.i === 'NONE' ? '' : `<span style="color:${gTheme.c};">${gTheme.i}</span>`} <span>${cleanG}</span>
                             </span>
                         `;
                     }).join('');
@@ -6290,7 +6358,7 @@ async function handleLiveSearch() {
         document.body.classList.remove('mcqs-on-root-home');
         document.body.classList.add('mcqs-on-inner-path');
         const bc = document.getElementById('breadcrumb-text');
-        if (bc) bc.innerText = 'Home / ' + currentPath.map(s => formatCleanTopicTitle(s)).join(' / ');
+        if (bc) bc.innerText = 'Home / ' + getTopicDisplayTrail(currentPath, ' / ');
 
         const handledModernFolder = renderModernizedInnerFolderView();
         if (!handledModernFolder) {
@@ -8188,40 +8256,17 @@ async function handleLiveSearch() {
         return Array.from(keys).filter(k => k && k !== 'Daily Quiz Challenge' && !deletedSet.has(k));
     }
 
-    function getDirectChildKeysFromAdmin(pathArr) {
-        const deletedSet = new Set((typeof topicOverrides !== 'undefined' && topicOverrides && topicOverrides.deletedPaths) || []);
-        const fullPrefix = pathArr.join(' > ');
-        let currNode = typeof appData !== 'undefined' ? appData : {};
-        for (let seg of pathArr) {
-            if (currNode && typeof currNode === 'object' && currNode[seg] !== undefined) {
-                currNode = currNode[seg];
-            } else {
-                currNode = null;
-                break;
-            }
-        }
-        const childSet = new Set();
-        if (currNode && typeof currNode === 'object' && !Array.isArray(currNode)) {
-            Object.keys(currNode).forEach(k => {
-                const candidateFull = fullPrefix ? `${fullPrefix} > ${k}` : k;
-                if (!deletedSet.has(candidateFull)) childSet.add(k);
-            });
-        }
-        if (typeof customTopicTypes !== 'undefined') {
-            const prefixWithArrow = fullPrefix ? (fullPrefix + ' > ') : '';
-            Object.keys(customTopicTypes).forEach(dbKey => {
-                if (deletedSet.has(dbKey)) return;
-                if (!fullPrefix) {
-                    const rootSeg = dbKey.split(' > ')[0];
-                    if (rootSeg && !deletedSet.has(rootSeg)) childSet.add(rootSeg);
-                } else if (dbKey.startsWith(prefixWithArrow)) {
-                    const nextSeg = dbKey.slice(prefixWithArrow.length).split(' > ')[0];
-                    const nextFull = `${fullPrefix} > ${nextSeg}`;
-                    if (nextSeg && !deletedSet.has(nextFull)) childSet.add(nextSeg);
-                }
-            });
-        }
-        return Array.from(childSet);
+    const difficultyOrder = ['Easy', 'Medium', 'Hard', 'Mixed'];
+        return Array.from(childSet).sort((a, b) => {
+            const cA = cleanRawTopicLabel(a);
+            const cB = cleanRawTopicLabel(b);
+            const iA = difficultyOrder.indexOf(cA);
+            const iB = difficultyOrder.indexOf(cB);
+            if (iA !== -1 && iB !== -1) return iA - iB;
+            if (iA !== -1) return -1;
+            if (iB !== -1) return 1;
+            return a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' });
+        });
     }
 
 function getStudentProgressSummaryForApp(examPrefix = '') {
@@ -8874,9 +8919,8 @@ function getStudentProgressSummaryForApp(examPrefix = '') {
     // ADMIN-DRIVEN SLIDES & MODULES FOR INSTALLED MOBILE APP
     // ==========================================
     function getAdminDrivenExamSlideData(examKey, idx) {
-        const clean = formatCleanTopicTitle(examKey);
-        const tMeta = (typeof customTopicTypes !== 'undefined' && customTopicTypes[examKey]) || null;
-        const cIcon = tMeta ? tMeta.icon : null;
+        const clean = getTopicDisplayName([examKey], examKey);
+        const cIcon = getTopicDisplayIcon([examKey]);
         const th = getAutoTopicTheme(clean, cIcon, idx, null, '📘', null, examKey);
 
         const directModules = getDirectChildKeysFromAdmin([examKey]);
@@ -8884,7 +8928,7 @@ function getStudentProgressSummaryForApp(examPrefix = '') {
         directModules.forEach(mKey => {
             const children = getDirectChildKeysFromAdmin([examKey, mKey]);
             children.forEach(ch => {
-                const cleanCh = formatCleanTopicTitle(ch);
+                const cleanCh = getTopicDisplayName([examKey, mKey, ch], ch);
                 if (!['easy', 'medium', 'hard', 'mixed'].includes(cleanCh.toLowerCase())) {
                     subTopicsList.push(cleanCh);
                 }
@@ -8922,21 +8966,20 @@ function getStudentProgressSummaryForApp(examPrefix = '') {
         let colorCounter = 0;
 
         targetExams.forEach(exKey => {
-            const cleanEx = formatCleanTopicTitle(exKey);
+            const cleanEx = getTopicDisplayName([exKey], exKey);
             const directChildren = getDirectChildKeysFromAdmin([exKey]);
 
             directChildren.forEach(childKey => {
                 const fullPath = `${exKey} > ${childKey}`;
-                const cleanChild = formatCleanTopicTitle(childKey);
-                const tMeta = (typeof customTopicTypes !== 'undefined' && customTopicTypes[fullPath]) || null;
-                const th = getAutoTopicTheme(cleanChild, tMeta?.icon || null, colorCounter++, null, '📘', null, fullPath);
+                const cleanChild = getTopicDisplayName([exKey, childKey], childKey);
+                const th = getAutoTopicTheme(cleanChild, getTopicDisplayIcon([exKey, childKey]), colorCounter++, null, '📘', null, fullPath);
                 const grandChildren = getDirectChildKeysFromAdmin([exKey, childKey]);
                 const modProg = getStudentProgressSummaryForApp(fullPath);
 
                 items.push({
                     title: selectedCat === 'ALL' ? `${cleanChild} (${cleanEx})` : cleanChild,
                     subtitle: grandChildren.length > 0
-                        ? grandChildren.slice(0, 4).map(g => formatCleanTopicTitle(g)).join(' • ')
+                        ? grandChildren.slice(0, 4).map(g => getTopicDisplayName([exKey, childKey, g], g)).join(' • ')
                         : `${cleanEx} Uploaded Module`,
                     statusBadge: modProg.solved > 0
                         ? `${SVG_CHECK_GREEN} ${modProg.solved} Solved (${modProg.acc}%)`
@@ -8951,17 +8994,16 @@ function getStudentProgressSummaryForApp(examPrefix = '') {
 
                 grandChildren.slice(0, 6).forEach(gKey => {
                     const gFull = `${fullPath} > ${gKey}`;
-                    const cleanG = formatCleanTopicTitle(gKey);
+                    const cleanG = getTopicDisplayName([exKey, childKey, gKey], gKey);
                     if (['easy', 'medium', 'hard', 'mixed'].includes(cleanG.toLowerCase())) return;
-                    const gMeta = (typeof customTopicTypes !== 'undefined' && customTopicTypes[gFull]) || null;
-                    const gTh = getAutoTopicTheme(cleanG, gMeta?.icon || null, colorCounter++, null, '📘', null, gFull);
+                    const gTh = getAutoTopicTheme(cleanG, getTopicDisplayIcon([exKey, childKey, gKey]), colorCounter++, null, '📘', null, gFull);
                     const leafChildren = getDirectChildKeysFromAdmin([exKey, childKey, gKey])
-                        .filter(lk => !['easy', 'medium', 'hard', 'mixed'].includes(formatCleanTopicTitle(lk).toLowerCase()));
+                        .filter(lk => !['easy', 'medium', 'hard', 'mixed'].includes(cleanRawTopicLabel(lk).toLowerCase()));
                     const gProg = getStudentProgressSummaryForApp(gFull);
 
                     items.push({
                         title: cleanG,
-                        subtitle: `${cleanEx} › ${cleanChild}${leafChildren.length > 0 ? ` • ${leafChildren.slice(0, 2).map(l => formatCleanTopicTitle(l)).join(', ')}` : ''}`,
+                        subtitle: `${cleanEx} › ${cleanChild}${leafChildren.length > 0 ? ` • ${leafChildren.slice(0, 2).map(l => getTopicDisplayName([exKey, childKey, gKey, l], l)).join(', ')}` : ''}`,
                         statusBadge: gProg.solved > 0
                             ? `${SVG_CHECK_GREEN} ${gProg.solved} Solved (${gProg.acc}%)`
                             : (leafChildren.length > 0 ? `● ${leafChildren.length} Chapters` : '● Practice MCQs'),
@@ -9237,21 +9279,31 @@ function getStudentProgressSummaryForApp(examPrefix = '') {
             const slide = getAdminDrivenExamSlideData(exKey, idx);
             const encodedExArr = encodeURIComponent(JSON.stringify([exKey]));
 
-            const uploadedChipsHtml = slide.directModules.slice(0, 6).map(mKey => {
-                const cleanM = formatCleanTopicTitle(mKey);
-                const mIcon = getAutomaticIconForName(cleanM, null, `${exKey} > ${mKey}`);
+           const hasOverflowMods = slide.directModules.length > 6;
+            const shownMods = hasOverflowMods ? slide.directModules.slice(0, 5) : slide.directModules.slice(0, 6);
+            let uploadedChipsHtml = shownMods.map(mKey => {
+                const cleanM = getTopicDisplayName([exKey, mKey], mKey);
+                const cModIcon = getTopicDisplayIcon([exKey, mKey]);
+                const mIcon = (cModIcon && cModIcon !== 'NONE') ? cModIcon : getAutomaticIconForName(cleanM, null, `${exKey} > ${mKey}`);
                 const encodedModArr = encodeURIComponent(JSON.stringify([exKey, mKey]));
                 return `
                     <span class="sa-uploaded-chip" onclick="saJumpToPathEncoded('${encodedModArr}', event)">
-                        <span style="flex-shrink:0;">${mIcon}</span>
+                        ${cModIcon === 'NONE' ? '' : `<span style="flex-shrink:0;">${mIcon}</span>`}
                         <span>${cleanM}</span>
                     </span>
                 `;
             }).join('');
+            if (hasOverflowMods) {
+                uploadedChipsHtml += `
+                    <span class="sa-uploaded-chip" style="border-color:${slide.border}; color:${slide.color};" onclick="saJumpToPathEncoded('${encodedExArr}', event)">
+                        <span>+${slide.directModules.length - 5} more &rarr;</span>
+                    </span>
+                `;
+            }
 
             const subTopicsLine = slide.uniqueSubTopics.length > 0
                 ? slide.uniqueSubTopics.slice(0, 5).join(' • ')
-                : (slide.directModules.map(m => formatCleanTopicTitle(m)).join(' • ') || 'Complete Study & Practice Suite');
+                : (slide.directModules.map(m => getTopicDisplayName([exKey, m], m)).join(' • ') || 'Complete Study & Practice Suite');
 
             const progressPill = slide.prog.solved > 0
                 ? `<span style="background:rgba(16,185,129,0.22); color:#10b981; border:1px solid rgba(16,185,129,0.5); padding:4px 9px; border-radius:999px; font-size:10px; font-weight:900; display:inline-flex; align-items:center; gap:4px; white-space:nowrap; flex-shrink:0;">${SVG_CHECK_GREEN} ${slide.prog.solved} Solved (${slide.prog.acc}%)</span>`
@@ -9365,10 +9417,10 @@ function getStudentProgressSummaryForApp(examPrefix = '') {
         let usedColorsQ = new Set();
         const qCardCls = quickLinksList.length <= 1 ? 'sa-quick-card sa-quick-card-single' : 'sa-quick-card';
         const quickLinksCardsHtml = quickLinksList.map((item, idx) => {
-            const displayTitle = formatCleanTopicTitle(item.title || item.path.split(' > ').pop() || '');
-            const parentExam = formatCleanTopicTitle(item.path.split(' > ')[0] || 'Resource');
+            const displayTitle = resolveAdminLinkTitle(item);
+            const parentExam = getTopicDisplayName([item.path.split(' > ')[0]], item.path.split(' > ')[0] || 'Resource');
             const encodedPath = encodeURIComponent(item.path);
-            const th = getAutoTopicTheme(displayTitle, item.icon || null, idx, usedColorsQ, '📚', null, item.path);
+            const th = getAutoTopicTheme(displayTitle, item.icon || getTopicDisplayIcon(item.path), idx, usedColorsQ, '📚', null, item.path);
             return `
                 <div class="${qCardCls}" style="border-left:4px solid ${th.c};" onclick="openSidebarItem('${encodedPath}')">
                     <div style="display:flex; align-items:center; gap:11px; min-width:0; flex:1;">
@@ -9401,10 +9453,10 @@ function getStudentProgressSummaryForApp(examPrefix = '') {
         `;
 
         essentialItemsFiltered.forEach((item, idx) => {
-            const displayTitle = formatCleanTopicTitle(item.title || item.path.split(' > ').pop() || '');
-            const parentExam = formatCleanTopicTitle(item.path.split(' > ')[0] || 'Practice');
+            const displayTitle = resolveAdminLinkTitle(item);
+            const parentExam = getTopicDisplayName([item.path.split(' > ')[0]], item.path.split(' > ')[0] || 'Practice');
             const encodedPath = encodeURIComponent(item.path);
-            const th = getAutoTopicTheme(displayTitle, item.icon || null, idx + 4, usedColorsE, '📝', null, item.path);
+            const th = getAutoTopicTheme(displayTitle, item.icon || getTopicDisplayIcon(item.path), idx + 4, usedColorsE, '📝', null, item.path);
             essentialCardsHtml += `
                 <div class="sa-quick-card" style="border-left:4px solid ${th.c};" onclick="openSidebarItem('${encodedPath}')">
                     <div style="display:flex; align-items:center; gap:11px; min-width:0; flex:1;">
