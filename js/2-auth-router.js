@@ -69,6 +69,14 @@ async function loadCustomTopics() {
             }
         } catch (e) {}
 
+        // Keep an untouched snapshot of built-in appData so live reloads after Admin edits stay 100% synced
+        if (!window.__mcqsBaseAppDataSnapshot && typeof appData === 'object') {
+            window.__mcqsBaseAppDataSnapshot = JSON.parse(JSON.stringify(appData));
+        } else if (window.__mcqsBaseAppDataSnapshot && typeof appData === 'object') {
+            Object.keys(appData).forEach(k => delete appData[k]);
+            Object.assign(appData, JSON.parse(JSON.stringify(window.__mcqsBaseAppDataSnapshot)));
+        }
+
         // 3. Reset customTopicTypes and apply Edited Paths
         customTopicTypes = {};
         if (topicOverrides && topicOverrides.editedPaths) {
@@ -264,7 +272,7 @@ async function ensureUploadedPdfsVisible(pathArray) {
                     <div style="width:46px; height:46px; border-radius:12px; background:${theme.bg}; border:1px solid ${theme.border}; color:${theme.c}; display:flex; align-items:center; justify-content:center; font-size:22px; flex-shrink:0; box-shadow:0 0 12px ${theme.glow};">📄</div>
                     <div>
                         <div style="font-size:16px; font-weight:800; color:#ffffff; line-height:1.35;">${item.title || safeTitle}</div>
-                        <div style="font-size:12px; color:#94a3b8; margin-top:4px;">📚 ${pathArray[pathArray.length - 1].replace(/^\d+\.\s*/, '')} • PDF / Study Material</div>
+                        <div style="font-size:12px; color:#94a3b8; margin-top:4px;">📚 ${typeof getTopicDisplayName === 'function' ? getTopicDisplayName(pathArray) : pathArray[pathArray.length - 1].replace(/^\d+\.\s*/, '')} • PDF / Study Material</div>
                     </div>
                 </div>
                 <div style="display:flex; gap:10px; flex-wrap:wrap;">
@@ -278,7 +286,7 @@ async function ensureUploadedPdfsVisible(pathArray) {
             <div id="universal-pdf-materials-box" class="card page-transition" style="margin-top:16px; border:1px solid rgba(253,184,19,0.35);">
                 <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:14px; margin-bottom:18px; flex-wrap:wrap; gap:10px;">
                     <h3 style="margin:0; font-size:18px; color:#fff; display:flex; align-items:center; gap:10px;">
-                        <span>📚</span> <span>${pathArray[pathArray.length - 1].replace(/^\d+\.\s*/, '')} — PDFs & Study Materials</span>
+                        <span>📚</span> <span>${typeof getTopicDisplayName === 'function' ? getTopicDisplayName(pathArray) : pathArray[pathArray.length - 1].replace(/^\d+\.\s*/, '')} — PDFs & Study Materials</span>
                     </h3>
                     <span style="font-size:12px; background:rgba(253,184,19,0.15); color:var(--primary-yellow); border:1px solid rgba(253,184,19,0.35); padding:4px 12px; border-radius:20px; font-weight:700;">${materials.length} Document${materials.length > 1 ? 's' : ''}</span>
                 </div>
@@ -802,8 +810,22 @@ function handleRouting() {
         let rawHash = window.location.hash.replace(/^#\/?/, ''); 
         let hash = decodeURIComponent(rawHash);
         
-        if (hash === 'admin' || hash === 'admin-panel') document.body.classList.add('admin-mode');
-        else document.body.classList.remove('admin-mode');
+        const isAdminRoute = (hash === 'admin' || hash === 'admin-panel');
+        if (isAdminRoute) {
+            window.__mcqsWasInAdminWorkspace = true;
+            document.body.classList.add('admin-mode');
+        } else {
+            document.body.classList.remove('admin-mode');
+            if (window.__mcqsWasInAdminWorkspace && !window.__mcqsRefreshingFromAdmin) {
+                window.__mcqsWasInAdminWorkspace = false;
+                window.__mcqsRefreshingFromAdmin = true;
+                loadCustomTopics().finally(() => {
+                    window.__mcqsRefreshingFromAdmin = false;
+                    handleRouting();
+                });
+                return;
+            }
+        }
         
         let isRootHome = (!hash || hash === 'home');
         
